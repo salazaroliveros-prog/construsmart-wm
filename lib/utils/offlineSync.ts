@@ -107,8 +107,189 @@ export async function syncOfflineData(): Promise<SyncResult> {
       }
     }
 
-    // Similar sync logic for other entities (budgets, items, transactions, etc.)
-    // ... (would be implemented following the same pattern)
+    // Sync financial transactions created offline
+    const offlineTransactions = await offlineDB.financialTransactions
+      .where('sync_status')
+      .equals('created_offline')
+      .toArray();
+
+    for (const transaction of offlineTransactions) {
+      try {
+        const { data, error } = await supabase
+          .from('financial_transactions')
+          .insert({
+            project_id: transaction.project_id,
+            type: transaction.type,
+            category: transaction.category,
+            description: transaction.description,
+            quantity: transaction.quantity,
+            unit: transaction.unit,
+            unit_cost: transaction.unit_cost,
+            total_cost: transaction.total_cost,
+            date: transaction.date,
+            receipt_url: transaction.receipt_url,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Update local record with server ID and sync status
+        await offlineDB.financialTransactions.update(transaction.id!, {
+          id: data.id,
+          sync_status: 'synced',
+        });
+
+        result.synced++;
+      } catch (error) {
+        result.failed++;
+        result.errors.push(`Failed to sync transaction ${transaction.description}: ${error}`);
+      }
+    }
+
+    // Sync financial transactions updated offline
+    const updatedTransactions = await offlineDB.financialTransactions
+      .where('sync_status')
+      .equals('updated_offline')
+      .toArray();
+
+    for (const transaction of updatedTransactions) {
+      try {
+        const { error } = await supabase
+          .from('financial_transactions')
+          .update({
+            project_id: transaction.project_id,
+            type: transaction.type,
+            category: transaction.category,
+            description: transaction.description,
+            quantity: transaction.quantity,
+            unit: transaction.unit,
+            unit_cost: transaction.unit_cost,
+            total_cost: transaction.total_cost,
+            date: transaction.date,
+            receipt_url: transaction.receipt_url,
+          })
+          .eq('id', transaction.id);
+
+        if (error) throw error;
+
+        await offlineDB.financialTransactions.update(transaction.id!, {
+          sync_status: 'synced',
+        });
+
+        result.synced++;
+      } catch (error) {
+        result.failed++;
+        result.errors.push(`Failed to sync transaction update ${transaction.description}: ${error}`);
+      }
+    }
+
+    // Sync budgets created offline
+    const offlineBudgets = await offlineDB.budgets
+      .where('sync_status')
+      .equals('created_offline')
+      .toArray();
+
+    for (const budget of offlineBudgets) {
+      try {
+        const { data, error } = await supabase
+          .from('budgets')
+          .insert({
+            project_id: budget.project_id,
+            version: budget.version.toString(),
+            direct_cost: budget.direct_cost,
+            indirect_percentage: budget.indirect_percentage,
+            contingency_percentage: budget.contingency_percentage,
+            profit_percentage: budget.profit_percentage,
+            total_amount: budget.total_amount,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        await offlineDB.budgets.update(budget.id!, {
+          id: data.id,
+          sync_status: 'synced',
+        });
+
+        result.synced++;
+      } catch (error) {
+        result.failed++;
+        result.errors.push(`Failed to sync budget: ${error}`);
+      }
+    }
+
+    // Sync payroll employees created offline
+    const offlineEmployees = await offlineDB.payrollEmployees
+      .where('sync_status')
+      .equals('created_offline')
+      .toArray();
+
+    for (const employee of offlineEmployees) {
+      try {
+        const { data, error } = await supabase
+          .from('payroll_employees')
+          .insert({
+            name: employee.name,
+            position: employee.position,
+            daily_rate: employee.daily_rate,
+            category: employee.category,
+            department: employee.department,
+            hire_date: employee.hire_date,
+            active: employee.active,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        await offlineDB.payrollEmployees.update(employee.id!, {
+          id: data.id,
+          sync_status: 'synced',
+        });
+
+        result.synced++;
+      } catch (error) {
+        result.failed++;
+        result.errors.push(`Failed to sync employee ${employee.name}: ${error}`);
+      }
+    }
+
+    // Sync warehouse stock created offline
+    const offlineStock = await offlineDB.warehouseStock
+      .where('sync_status')
+      .equals('created_offline')
+      .toArray();
+
+    for (const stock of offlineStock) {
+      try {
+        const { data, error } = await supabase
+          .from('warehouse_stock')
+          .insert({
+            item_code: stock.item_code,
+            description: stock.description,
+            unit: stock.unit,
+            current_stock: stock.current_stock,
+            minimum_threshold: stock.minimum_threshold,
+            unit_cost: stock.unit_cost,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        await offlineDB.warehouseStock.update(stock.id!, {
+          id: data.id,
+          sync_status: 'synced',
+        });
+
+        result.synced++;
+      } catch (error) {
+        result.failed++;
+        result.errors.push(`Failed to sync stock ${stock.item_code}: ${error}`);
+      }
+    }
 
     return result;
   } catch (error) {
