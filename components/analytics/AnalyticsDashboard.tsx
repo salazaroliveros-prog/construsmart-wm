@@ -116,10 +116,12 @@ export default function AnalyticsDashboard() {
       const categories = ['Materiales Directos', 'Mano de Obra', 'Maquinaria', 'Subcontratos', 'Gastos Indirectos'];
       const budgetComparison: BudgetComparison[] = categories.map(category => {
         const categoryTransactions = projectTransactions.filter(t => 
-          t.category === category.toLowerCase().replace(' ', '_')
+          t.category === category.toLowerCase().replace(' ', '_').replace('directos', '') || 
+          t.category === category.toLowerCase().replace(' ', '_') ||
+          t.category === category.toLowerCase().replace(' ', '_').replace('indirectos', '')
         );
-        const actual = categoryTransactions.reduce((sum, t) => sum + t.amount, 0);
-        const budgeted = actual * (1 + (Math.random() * 0.2 - 0.1)); // +/- 10% variación
+        const actual = categoryTransactions.reduce((sum, t) => sum + t.total_cost, 0);
+        const budgeted = actual > 0 ? actual * (1 + (Math.random() * 0.2 - 0.1)) : 100000; // +/- 10% variación o valor default
         
         return {
           category,
