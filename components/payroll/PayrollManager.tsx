@@ -84,7 +84,7 @@ export default function PayrollManager() {
       const localEmployees = await offlineDB.payrollEmployees.toArray();
       setEmployees(localEmployees);
       
-      if (navigator.onLine) {
+      if (navigator.onLine && supabase) {
         const { data: supabaseEmployees } = await supabase
           .from('payroll_employees')
           .select('*')
@@ -112,7 +112,7 @@ export default function PayrollManager() {
       const localRecords = await offlineDB.payrollRecords.toArray();
       setPayrollRecords(localRecords);
       
-      if (navigator.onLine) {
+      if (navigator.onLine && supabase) {
         const { data: supabaseRecords } = await supabase
           .from('payroll_records')
           .select('*')
@@ -210,7 +210,7 @@ export default function PayrollManager() {
           sync_status: isOnline ? 'synced' : 'updated_offline',
         });
         
-        if (isOnline && editingEmployee.id) {
+        if (isOnline && editingEmployee.id && supabase) {
           await supabase
             .from('payroll_employees')
             .update(employeeData)
@@ -219,7 +219,7 @@ export default function PayrollManager() {
       } else {
         const id = await offlineDB.payrollEmployees.add(employeeData);
         
-        if (isOnline) {
+        if (isOnline && supabase) {
           const { data } = await supabase
             .from('payroll_employees')
             .insert(employeeData)
@@ -338,7 +338,7 @@ export default function PayrollManager() {
       } else {
         const id = await offlineDB.payrollRecords.add(payrollData);
         
-        if (isOnline) {
+        if (isOnline && supabase) {
           const { data } = await supabase
             .from('payroll_records')
             .insert(payrollData)

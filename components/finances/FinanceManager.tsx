@@ -69,7 +69,7 @@ export default function FinanceManager() {
       const localTransactions = await offlineDB.financialTransactions.toArray();
       setTransactions(localTransactions);
       
-      if (navigator.onLine) {
+      if (navigator.onLine && supabase) {
         const { data: supabaseTransactions } = await supabase
           .from('financial_transactions')
           .select('*')
@@ -163,7 +163,7 @@ export default function FinanceManager() {
           sync_status: isOnline ? 'synced' : 'updated_offline',
         });
         
-        if (isOnline && editingTransaction.id) {
+        if (isOnline && editingTransaction.id && supabase) {
           await supabase
             .from('financial_transactions')
             .update(transactionData)
@@ -172,7 +172,7 @@ export default function FinanceManager() {
       } else {
         const id = await offlineDB.financialTransactions.add(transactionData);
         
-        if (isOnline) {
+        if (isOnline && supabase) {
           const { data } = await supabase
             .from('financial_transactions')
             .insert(transactionData)

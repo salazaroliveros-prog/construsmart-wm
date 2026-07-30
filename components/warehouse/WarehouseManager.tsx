@@ -55,7 +55,7 @@ export default function WarehouseManager() {
       const localItems = await offlineDB.warehouseStock.toArray();
       setStockItems(localItems);
       
-      if (navigator.onLine) {
+      if (navigator.onLine && supabase) {
         const { data: supabaseItems } = await supabase
           .from('warehouse_stock')
           .select('*')
@@ -129,7 +129,7 @@ export default function WarehouseManager() {
           sync_status: isOnline ? 'synced' : 'updated_offline',
         });
         
-        if (isOnline && editingItem.id) {
+        if (isOnline && editingItem.id && supabase) {
           await supabase
             .from('warehouse_stock')
             .update(itemData)
@@ -138,7 +138,7 @@ export default function WarehouseManager() {
       } else {
         const id = await offlineDB.warehouseStock.add(itemData);
         
-        if (isOnline) {
+        if (isOnline && supabase) {
           const { data } = await supabase
             .from('warehouse_stock')
             .insert(itemData)

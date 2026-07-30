@@ -73,7 +73,7 @@ export default function ProjectManager() {
       setProjects(localProjects);
       
       // If online, try to sync with Supabase
-      if (navigator.onLine) {
+      if (navigator.onLine && supabase) {
         const { data: supabaseProjects } = await supabase
           .from('projects')
           .select('*')
@@ -185,7 +185,7 @@ export default function ProjectManager() {
           sync_status: isOnline ? 'synced' : 'updated_offline',
         });
         
-        if (isOnline && editingProject.id) {
+        if (isOnline && editingProject.id && supabase) {
           await supabase
             .from('projects')
             .update(projectData)
@@ -195,7 +195,7 @@ export default function ProjectManager() {
         // Create new project
         const id = await offlineDB.projects.add(projectData);
         
-        if (isOnline) {
+        if (isOnline && supabase) {
           const { data } = await supabase
             .from('projects')
             .insert(projectData)
