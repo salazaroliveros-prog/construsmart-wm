@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 import { Building2, DollarSign, TrendingUp, Users, Hammer, Calendar } from 'lucide-react';
 
 interface StatCardProps {
@@ -59,6 +61,8 @@ function StatCard({ title, value, subtitle, icon, trend, trendUp }: StatCardProp
   );
 }
 
+const StatCardComponent = StatCard;
+
 export default function DashboardStats() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
@@ -111,3 +115,7 @@ export default function DashboardStats() {
     </div>
   );
 }
+
+const StatCardComponent = StatCard;
+
+export default React.memo(DashboardStats);

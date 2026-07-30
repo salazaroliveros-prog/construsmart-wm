@@ -497,8 +497,8 @@ export default function PayrollManager() {
 
       {activeTab === 'employees' ? (
         /* Employees Table */
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
+          <table className="w-full text-sm" style={{ minWidth: '600px' }}>
             <thead>
               <tr className="border-b border-white/10">
                 <th className="text-left text-white/60 py-3 px-4">Nombre</th>
@@ -551,7 +551,7 @@ export default function PayrollManager() {
         </div>
       ) : (
         /* Payroll Records Table */
-        <div className="overflow-x-auto">
+        <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
           <div className="flex justify-end mb-4">
             <button
               onClick={() => handleOpenPayrollModal()}
@@ -561,7 +561,7 @@ export default function PayrollManager() {
               <span>Nuevo Registro</span>
             </button>
           </div>
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" style={{ minWidth: '600px' }}>
             <thead>
               <tr className="border-b border-white/10">
                 <th className="text-left text-white/60 py-3 px-4">Empleado</th>

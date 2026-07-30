@@ -1,7 +1,7 @@
 'use client';
 
+import React, { useState } from 'react';
 import { LayoutDashboard, FolderKanban, Calculator, TrendingUp, Users, Warehouse, FileText, Settings, HelpCircle } from 'lucide-react';
-import { useState } from 'react';
 
 interface NavItem {
   id: string;
@@ -98,3 +98,5 @@ export default function DashboardNav({ activeTab, onTabChange }: DashboardNavPro
     </nav>
   );
 }
+
+export default React.memo(DashboardNav);

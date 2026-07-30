@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Calendar, DollarSign, BarChart3, Filter } from 'lucide-react';
 import { offlineDB, LocalProject, LocalBudget, LocalFinancialTransaction } from '@/lib/db/offlineStore';
@@ -39,10 +39,18 @@ export default function AnalyticsDashboard() {
   const [ganttData, setGanttData] = useState<GanttData[]>([]);
   const [advanceData, setAdvanceData] = useState<AdvanceData[]>([]);
   const [budgetComparison, setBudgetComparison] = useState<BudgetComparison[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     loadProjects();
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  const checkMobile = () => {
+    setIsMobile(window.innerWidth < 768);
+  };
 
   useEffect(() => {
     loadAnalyticsData();
@@ -170,18 +178,18 @@ export default function AnalyticsDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 responsive-grid">
         {/* Gráfica 1: Curva S */}
-        <div className="glass-card p-4 rounded-xl">
+        <div className="glass-card p-4 rounded-xl chart-container">
           <h3 className="text-white font-medium mb-4 flex items-center space-x-2">
             <TrendingUp className="w-5 h-5 text-cyan-400" />
             <span>Curva S: Programado vs Real vs Proyectado</span>
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={isMobile ? 260 : 300}>
             <LineChart data={progressData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-              <XAxis dataKey="month" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} />
-              <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} domain={[0, 100]} />
+              <XAxis dataKey="month" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: isMobile ? 10 : 12 }} />
+              <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: isMobile ? 10 : 12 }} domain={[0, 100]} />
               <Tooltip 
                 contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)' }}
                 labelStyle={{ color: 'rgba(255,255,255,0.9)' }}
@@ -196,16 +204,16 @@ export default function AnalyticsDashboard() {
         </div>
 
         {/* Gráfica 2: Avance Físico vs Financiero */}
-        <div className="glass-card p-4 rounded-xl">
+        <div className="glass-card p-4 rounded-xl chart-container">
           <h3 className="text-white font-medium mb-4 flex items-center space-x-2">
             <BarChart3 className="w-5 h-5 text-emerald-400" />
             <span>Avance Físico vs Financiero</span>
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={isMobile ? 260 : 300}>
             <BarChart data={advanceData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-              <XAxis dataKey="project" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 11 }} />
-              <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} domain={[0, 100]} />
+              <XAxis dataKey="project" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: isMobile ? 10 : 11 }} />
+              <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: isMobile ? 10 : 12 }} domain={[0, 100]} />
               <Tooltip 
                 contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)' }}
                 labelStyle={{ color: 'rgba(255,255,255,0.9)' }}
@@ -219,16 +227,16 @@ export default function AnalyticsDashboard() {
         </div>
 
         {/* Gráfica 3: Presupuestado vs Real */}
-        <div className="glass-card p-4 rounded-xl lg:col-span-2">
+        <div className="glass-card p-4 rounded-xl lg:col-span-2 chart-container">
           <h3 className="text-white font-medium mb-4 flex items-center space-x-2">
             <DollarSign className="w-5 h-5 text-amber-400" />
             <span>Presupuestado vs Real Ejecutado</span>
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={isMobile ? 260 : 300}>
             <BarChart data={budgetComparison} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-              <XAxis type="number" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} tickFormatter={formatCurrency} />
-              <YAxis dataKey="category" type="category" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} width={100} />
+              <XAxis type="number" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: isMobile ? 10 : 12 }} tickFormatter={formatCurrency} />
+              <YAxis dataKey="category" type="category" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: isMobile ? 10 : 12 }} width={isMobile ? 80 : 100} />
               <Tooltip 
                 contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)' }}
                 labelStyle={{ color: 'rgba(255,255,255,0.9)' }}
@@ -273,3 +281,5 @@ export default function AnalyticsDashboard() {
     </div>
   );
 }
+
+export default React.memo(AnalyticsDashboard);

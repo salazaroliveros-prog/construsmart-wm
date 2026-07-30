@@ -1,114 +1,249 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@layer base {
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
   :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-  }
-  
-  body {
-    background: linear-gradient(to bottom right, rgb(15 23 42), rgb(30 41 59), rgb(15 23 42));
-    color: white;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
   }
 }
 
-@layer utilities {
-  .glass-panel {
-    background: rgba(15, 23, 42, 0.55);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.125);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+/* Glassmorphism Base Styles */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-button {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease;
+}
+
+.glass-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+/* Mobile-First Responsive Styles */
+@media (max-width: 768px) {
+  /* Touch-friendly adjustments */
+  button, input, select, textarea {
+    min-height: 44px !important;
+    min-width: 44px !important;
   }
 
-  .glass-card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 1rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Typography adjustments for mobile */
+  h1 {
+    font-size: 1.5rem !important;
+    line-height: 1.3;
   }
 
-  .glass-card:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(56, 189, 248, 0.4);
-    box-shadow: 0 0 25px rgba(56, 189, 248, 0.2);
-    transform: translateY(-2px);
+  h2 {
+    font-size: 1.25rem !important;
+    line-height: 1.3;
   }
 
-  .glass-input {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
+  h3 {
+    font-size: 1.1rem !important;
+    line-height: 1.3;
   }
 
-  .glass-input:focus {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(56, 189, 248, 0.5);
-    box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
-    outline: none;
+  p, li, label {
+    font-size: 0.9rem !important;
+    line-height: 1.5;
+  }
+
+  /* Container padding adjustments */
+  .main-content {
+    padding-left: 0.8rem !important;
+    padding-right: 0.8rem !important;
+    padding-top: 1rem !important;
+    padding-bottom: 2rem !important;
+  }
+
+  /* Button adjustments for touch */
+  .glass-button {
+    width: 100% !important;
+    min-height: 48px !important;
+    font-size: 1rem !important;
+    border-radius: 8px !important;
+    margin-bottom: 8px !important;
+  }
+
+  /* Form elements spacing */
+  input, select, textarea {
+    margin-bottom: 12px !important;
+    padding: 12px !important;
+  }
+
+  /* Hide non-essential decorative elements */
+  .hide-on-mobile {
+    display: none !important;
+  }
+
+  /* Sidebar adjustments */
+  .sidebar-container {
+    position: fixed;
+    left: -100%;
+    transition: left 0.3s ease;
+    z-index: 50;
+  }
+
+  .sidebar-container.open {
+    left: 0;
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 40;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Further optimizations for small phones */
+  h1 {
+    font-size: 1.3rem !important;
+  }
+
+  h2 {
+    font-size: 1.1rem !important;
   }
 
   .glass-button {
-    background: rgba(56, 189, 248, 0.2);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(56, 189, 248, 0.3);
-    transition: all 0.3s ease;
-  }
-
-  .glass-button:hover {
-    background: rgba(56, 189, 248, 0.3);
-    border-color: rgba(56, 189, 248, 0.5);
-    box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
-    transform: translateY(-1px);
-  }
-
-  .glass-modal {
-    background: rgba(15, 23, 42, 0.85);
-    backdrop-filter: blur(20px) saturate(200%);
-    -webkit-backdrop-filter: blur(20px) saturate(200%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  }
-
-  .glass-badge {
-    background: rgba(16, 185, 129, 0.2);
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-  }
-
-  .text-glow {
-    text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
-  }
-
-  .border-glow {
-    box-shadow: 0 0 15px rgba(56, 189, 248, 0.3), inset 0 0 15px rgba(56, 189, 248, 0.1);
+    min-height: 52px !important;
+    font-size: 1.1rem !important;
   }
 }
 
-@layer components {
-  .zero-scroll-dashboard {
-    height: 100vh;
-    overflow: hidden;
+/* Horizontal scroll for tables */
+.data-table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
+}
+
+.data-table-container table {
+  min-width: 600px;
+}
+
+/* Responsive chart containers */
+.chart-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .chart-container {
+    min-height: 260px;
+  }
+}
+
+/* KPI cards responsive adjustments */
+@media (max-width: 768px) {
+  .kpi-value {
+    font-size: 1.4rem !important;
   }
 
-  .glass-header {
-    background: rgba(15, 23, 42, 0.55);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.125);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    padding: 1rem 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  .kpi-label {
+    font-size: 0.85rem !important;
+  }
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive grid adjustments */
+@media (max-width: 768px) {
+  .responsive-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .responsive-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Modal responsive adjustments */
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95% !important;
+    max-width: none !important;
+    margin: 1rem !important;
+  }
+}
+
+/* Loading spinner mobile optimization */
+@media (max-width: 768px) {
+  .loading-spinner {
+    width: 40px !important;
+    height: 40px !important;
+  }
+}
+
+/* Smooth transitions for mobile */
+@media (max-width: 768px) {
+  * {
+    -webkit-tap-highlight-color: transparent;
   }
 
-  .brand-avatar-ring {
-    box-shadow: 0 10px 15px -3px rgba(6, 182, 212, 0.2);
-    --tw-ring-color: rgba(6, 182, 212, 0.5);
-    --tw-ring-offset-width: 2px;
+  .transition-smooth {
+    transition: all 0.2s ease;
   }
 }
