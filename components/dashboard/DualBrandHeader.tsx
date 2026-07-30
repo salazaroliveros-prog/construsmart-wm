@@ -44,7 +44,7 @@ export default function DualBrandHeader() {
   };
 
   return (
-    <header className="glass-panel border-b border-white/10 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between lg:relative fixed top-0 left-0 right-0 z-30">
+    <header className="glass-panel border-b border-white/10 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between fixed top-0 left-0 right-0 z-30 lg:relative lg:top-auto lg:left-auto lg:right-auto">
       <div className="flex items-center gap-3 sm:gap-4">
         <div className="flex items-center gap-2 sm:gap-3">
           {imgError ? (

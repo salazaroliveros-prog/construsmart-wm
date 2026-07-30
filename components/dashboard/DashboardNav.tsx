@@ -29,7 +29,7 @@ export default function DashboardNav({ activeTab, onTabChange }: DashboardNavPro
   const isActive = (id: string) => activeTab === id;
 
   return (
-    <nav className="glass-panel border-r border-white/10 flex flex-col h-full" aria-label="Navegación principal">
+    <nav className="glass-panel border-r border-white/10 flex flex-col h-full z-40" aria-label="Navegación principal">
       <div className="px-3 sm:px-4 py-3 sm:py-4 border-b border-white/10">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center">

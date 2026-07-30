@@ -2,18 +2,23 @@
 // Slogan: "CONSTRUYENDO EL FUTURO"
 // Progressive Web App - 100% Offline Capable
 
-const CACHE_NAME = 'constructora-wm-v1';
-const STATIC_CACHE = 'constructora-wm-static-v1';
-const DATA_CACHE = 'constructora-wm-data-v1';
+const CACHE_NAME = 'constructora-wm-v2';
+const STATIC_CACHE = 'constructora-wm-static-v2';
+const DATA_CACHE = 'constructora-wm-data-v2';
+const RUNTIME_CACHE = 'constructora-wm-runtime-v2';
 
-// Assets to cache immediately (Cache-First Strategy)
+// Detect environment
+const isDevelopment = self.location.hostname === 'localhost' || 
+                       self.location.hostname === '127.0.0.1' ||
+                       self.location.protocol === 'file:';
+
+// Assets to cache immediately (Network-First in Development, Cache-First in Production)
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
   '/logo.png',
   '/assets/branding/logo-constructora-wm.jpg',
   '/assets/branding/letterhead-multiservicios.jpg',
-  // Add fonts, icons, and other static assets here
 ];
 
 // API endpoints to cache (Stale-While-Revalidate Strategy)
@@ -63,10 +68,16 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { url, method } = event.request;
   
+  // Skip cross-origin requests
+  if (!url.startsWith(self.location.origin)) {
+    return;
+  }
+  
   // Handle different request types with appropriate strategies
   if (isStaticAsset(url)) {
-    // Cache-First for static assets
-    event.respondWith(cacheFirst(event.request));
+    // Network-First in Development, Cache-First in Production
+    const strategy = isDevelopment ? networkFirst : cacheFirst;
+    event.respondWith(strategy(event.request));
   } else if (isAPIRequest(url)) {
     // Network-First for API requests with offline fallback
     event.respondWith(networkFirst(event.request));

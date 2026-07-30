@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
+import { useScrollLock } from '@/lib/hooks/useScrollLock';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -14,8 +15,6 @@ interface ConfirmDialogProps {
   onCancel: () => void;
 }
 
-const scrollCountRef = useRef(0);
-
 export default function ConfirmDialog({
   isOpen,
   title,
@@ -27,23 +26,9 @@ export default function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   const confirmRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      scrollCountRef.current = (scrollCountRef.current || 0) + 1;
-      if (scrollCountRef.current === 1) {
-        document.body.style.overflow = 'hidden';
-      }
-      setTimeout(() => confirmRef.current?.focus(), 50);
-    }
-    return () => {
-      const wasOpen = scrollCountRef.current > 0;
-      scrollCountRef.current = Math.max(0, (scrollCountRef.current || 0) - 1);
-      if (wasOpen && scrollCountRef.current === 0) {
-        document.body.style.overflow = '';
-      }
-    };
-  }, [isOpen]);
+  
+  // Use the scroll lock hook
+  useScrollLock(isOpen);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -54,6 +39,12 @@ export default function ConfirmDialog({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onConfirm, onCancel]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => confirmRef.current?.focus(), 50);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
