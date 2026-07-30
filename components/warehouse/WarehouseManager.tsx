@@ -282,7 +282,7 @@ export default function WarehouseManager() {
           </div>
           <button
             onClick={() => handleOpenModal()}
-            className="glass-button px-4 py-2 rounded-lg text-sm text-cyan-300 flex items-center space-x-2"
+            className="glass-button-inline px-4 py-2 rounded-lg text-sm text-cyan-300 flex items-center space-x-2"
           >
             <Plus className="w-4 h-4" />
             <span>Nuevo Material</span>

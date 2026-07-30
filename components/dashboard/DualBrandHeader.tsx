@@ -8,6 +8,8 @@ export default function DualBrandHeader() {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
+  const [imgError, setImgError] = useState(false);
+
   useEffect(() => {
     setIsMounted(true);
     setCurrentTime(new Date());
@@ -24,6 +26,8 @@ export default function DualBrandHeader() {
       clearInterval(timer);
     };
   }, []);
+
+  const handleImageError = () => setImgError(true);
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('es-GT', {
@@ -43,17 +47,24 @@ export default function DualBrandHeader() {
   };
 
   return (
-    <header className="glass-panel border-b border-white/10 px-6 py-4 flex items-center justify-between">
+    <header className="glass-panel border-b border-white/10 px-6 py-4 flex items-center justify-between lg:relative fixed top-0 left-0 right-0 z-30">
       {/* Dual Brand Container */}
       <div className="flex items-center gap-4">
         {/* Constructora WM Logo */}
         <div className="flex items-center gap-3">
           <div className="relative">
-            <img
-              src="/assets/branding/logo-constructora-wm.jpg"
-              alt="CONSTRUCTORA WM/M&S"
-              className="h-12 w-auto object-contain"
-            />
+            {imgError ? (
+              <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center">
+                <Building2 className="w-7 h-7 text-white" />
+              </div>
+            ) : (
+              <img
+                src="/assets/branding/logo-constructora-wm.jpg"
+                alt="CONSTRUCTORA WM/M&S"
+                className="h-12 w-auto object-contain"
+                onError={handleImageError}
+              />
+            )}
           </div>
           
           {/* Glass Divider */}
@@ -61,11 +72,18 @@ export default function DualBrandHeader() {
           
           {/* Multiservicios Logo */}
           <div className="relative">
-            <img
-              src="/assets/branding/letterhead-multiservicios.jpg"
-              alt="Multi Servicios de Guatemala"
-              className="h-10 w-auto object-contain"
-            />
+            {imgError ? (
+              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                <span className="text-white text-xs font-bold">M&S</span>
+              </div>
+            ) : (
+              <img
+                src="/assets/branding/letterhead-multiservicios.jpg"
+                alt="Multi Servicios de Guatemala"
+                className="h-10 w-auto object-contain"
+                onError={handleImageError}
+              />
+            )}
           </div>
         </div>
 

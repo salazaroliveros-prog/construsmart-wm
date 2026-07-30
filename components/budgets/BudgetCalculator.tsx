@@ -202,7 +202,7 @@ export default function BudgetCalculator() {
           <button
             onClick={handleSave}
             disabled={saveLoading}
-            className="glass-button px-4 py-2 rounded-lg text-sm text-emerald-300 flex items-center space-x-2 disabled:opacity-50"
+            className="glass-button-inline px-4 py-2 rounded-lg text-sm text-emerald-300 flex items-center space-x-2 disabled:opacity-50"
           >
             <Save className={`w-4 h-4 ${saveLoading ? 'animate-spin' : ''}`} />
             <span>{saveLoading ? 'Guardando...' : 'Guardar'}</span>

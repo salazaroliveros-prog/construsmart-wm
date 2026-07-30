@@ -126,7 +126,7 @@ export default function Dashboard() {
                   <span>Acciones Rápidas</span>
                 </h2>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button
                     onClick={() => setActiveTab('projects')}
                     className="glass-button p-4 rounded-xl text-left group"
@@ -286,7 +286,7 @@ export default function Dashboard() {
           }} />
         </aside>
 
-        <main className="flex-1 overflow-y-auto p-6 main-content" id="main-content" role="main" aria-label="Contenido principal">
+        <main className="flex-1 overflow-y-auto p-6 main-content pt-20 lg:pt-6" id="main-content" role="main" aria-label="Contenido principal">
           <div className="max-w-7xl mx-auto space-y-6">
             <nav className="flex flex-wrap gap-2 mb-6 overflow-x-auto pb-1" aria-label="Navegación de pestañas">
               {tabs.map(tab => {
