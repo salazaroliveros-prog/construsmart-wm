@@ -68,7 +68,7 @@ export default function Dashboard() {
         <main className="flex-1 overflow-y-auto p-6 main-content">
           <div className="max-w-7xl mx-auto space-y-6">
             {/* Tab Navigation */}
-            <div className="flex space-x-2 mb-6">
+            <div className="flex flex-wrap gap-2 mb-6">
               <button
                 onClick={() => setActiveTab('dashboard')}
                 className={`px-4 py-2 rounded-lg transition-all ${

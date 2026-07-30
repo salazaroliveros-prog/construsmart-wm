@@ -90,38 +90,15 @@ export default function ProjectOverview() {
         {projects.map((project) => (
           <div
             key={project.id}
-            style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              backdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '1rem',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              padding: '1rem'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-              e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.4)';
-              e.currentTarget.style.boxShadow = '0 0 25px rgba(56, 189, 248, 0.2)';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-              e.currentTarget.style.boxShadow = 'none';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
+            className="glass-card p-4 rounded-xl transition-all duration-300 hover:bg-white/10 hover:border-cyan-500/40 hover:shadow-lg hover:shadow-cyan-500/20 hover:-translate-y-0.5"
           >
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'rgb(34, 211, 238)' }}>{project.code}</span>
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-mono text-cyan-400">{project.code}</span>
                   <span 
+                    className="px-2 py-0.5 rounded-full text-xs font-medium border"
                     style={{
-                      padding: '0.125rem 0.5rem',
-                      borderRadius: '9999px',
-                      fontSize: '0.75rem',
-                      fontWeight: 500,
-                      border: '1px solid',
                       background: statusColors[project.status].bg,
                       color: statusColors[project.status].text,
                       borderColor: statusColors[project.status].border
@@ -130,59 +107,42 @@ export default function ProjectOverview() {
                     {statusLabels[project.status]}
                   </span>
                 </div>
-                <h3 style={{ color: 'white', fontWeight: 500, marginBottom: '0.25rem' }}>{project.name}</h3>
-                <p style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.6)' }}>{project.client}</p>
+                <h3 className="text-white font-medium mb-1">{project.name}</h3>
+                <p className="text-sm text-white/60">{project.client}</p>
               </div>
               <button 
-                style={{
-                  padding: '0.375rem',
-                  borderRadius: '0.5rem',
-                  transition: 'background-color 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
               >
-                <MoreVertical style={{ width: '1rem', height: '1rem', color: 'rgba(255, 255, 255, 0.4)' }} />
+                <MoreVertical className="w-4 h-4 text-white/40" />
               </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '0.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                <MapPin style={{ width: '1rem', height: '1rem', color: 'rgba(255, 255, 255, 0.4)' }} />
-                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>{project.location}</span>
+            <div className="grid grid-cols-2 gap-4 mb-3">
+              <div className="flex items-center gap-2 text-sm">
+                <MapPin className="w-4 h-4 text-white/40" />
+                <span className="text-white/70">{project.location}</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                <Calendar style={{ width: '1rem', height: '1rem', color: 'rgba(255, 255, 255, 0.4)' }} />
-                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>{project.endDate}</span>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <DollarSign style={{ width: '1rem', height: '1rem', color: 'rgb(52, 211, 153)' }} />
-                <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'white' }}>{formatCurrency(project.budget)}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <TrendingUp style={{ width: '1rem', height: '1rem', color: 'rgb(139, 92, 246)' }} />
-                <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'white' }}>{project.progress}%</span>
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="w-4 h-4 text-white/40" />
+                <span className="text-white/70">{project.endDate}</span>
               </div>
             </div>
 
-            <div style={{ 
-              marginTop: '0.75rem', 
-              height: '0.5rem', 
-              background: 'rgba(255, 255, 255, 0.1)', 
-              borderRadius: '9999px', 
-              overflow: 'hidden' 
-            }}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-emerald-400" />
+                <span className="text-sm font-medium text-white">{formatCurrency(project.budget)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-violet-400" />
+                <span className="text-sm font-medium text-white">{project.progress}%</span>
+              </div>
+            </div>
+
+            <div className="mt-3 h-2 bg-white/10 rounded-full overflow-hidden">
               <div
-                style={{
-                  height: '100%',
-                  borderRadius: '9999px',
-                  transition: 'all 0.5s',
-                  width: `${project.progress}%`,
-                  background: 'linear-gradient(to right, rgb(6, 182, 212), rgb(139, 92, 246))'
-                }}
+                className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-cyan-500 to-violet-500"
+                style={{ width: `${project.progress}%` }}
               />
             </div>
           </div>

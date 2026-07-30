@@ -489,31 +489,21 @@ export default function PayrollManager() {
       <div className="flex space-x-2 mb-6">
         <button
           onClick={() => setActiveTab('employees')}
-          style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '0.5rem',
-            background: activeTab === 'employees' 
-              ? 'linear-gradient(to right, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2))' 
-              : 'transparent',
-            border: activeTab === 'employees' ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid transparent',
-            color: activeTab === 'employees' ? 'white' : 'rgba(255, 255, 255, 0.6)',
-            transition: 'all 0.2s'
-          }}
+          className={`px-4 py-2 rounded-lg transition-all ${
+            activeTab === 'employees'
+              ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
+              : 'text-white/60 hover:text-white border border-transparent'
+          }`}
         >
           Empleados
         </button>
         <button
           onClick={() => setActiveTab('records')}
-          style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '0.5rem',
-            background: activeTab === 'records' 
-              ? 'linear-gradient(to right, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2))' 
-              : 'transparent',
-            border: activeTab === 'records' ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid transparent',
-            color: activeTab === 'records' ? 'white' : 'rgba(255, 255, 255, 0.6)',
-            transition: 'all 0.2s'
-          }}
+          className={`px-4 py-2 rounded-lg transition-all ${
+            activeTab === 'records'
+              ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
+              : 'text-white/60 hover:text-white border border-transparent'
+          }`}
         >
           Registros de Pago
         </button>
