@@ -6,7 +6,7 @@ const DYNAMIC_CACHE = 'constructora-wm-dynamic-v1';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
-  '/assets/branding/logo-constructora-wm.jpg',
+  '/logo.png',
   '/assets/branding/letterhead-multiservicios.jpg',
 ];
 
@@ -14,7 +14,16 @@ const STATIC_ASSETS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
+      return cache.addAll(STATIC_ASSETS.map(url => {
+        // Return a promise that resolves even if the asset fails to load
+        return fetch(url).then(response => {
+          if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+          return cache.put(url, response);
+        }).catch(err => {
+          console.warn(`Failed to cache ${url}:`, err);
+          return Promise.resolve(); // Don't fail the entire install
+        });
+      }));
     })
   );
   self.skipWaiting();

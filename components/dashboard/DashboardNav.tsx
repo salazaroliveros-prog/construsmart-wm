@@ -14,20 +14,23 @@ const navItems: NavItem[] = [
   { id: 'dashboard', label: 'Tablero Principal', icon: <LayoutDashboard className="w-5 h-5" /> },
   { id: 'projects', label: 'Proyectos', icon: <FolderKanban className="w-5 h-5" />, badge: 12 },
   { id: 'budgets', label: 'Presupuestos', icon: <Calculator className="w-5 h-5" /> },
-  { id: 'tracking', label: 'Seguimiento', icon: <TrendingUp className="w-5 h-5" /> },
   { id: 'finances', label: 'Finanzas', icon: <Calculator className="w-5 h-5" /> },
   { id: 'payroll', label: 'Nómina', icon: <Users className="w-5 h-5" /> },
   { id: 'warehouse', label: 'Almacén', icon: <Warehouse className="w-5 h-5" /> },
-  { id: 'reports', label: 'Reportes', icon: <FileText className="w-5 h-5" /> },
 ];
 
-const bottomNavItems: NavItem[] = [
-  { id: 'settings', label: 'Configuración', icon: <Settings className="w-5 h-5" /> },
-  { id: 'help', label: 'Ayuda', icon: <HelpCircle className="w-5 h-5" /> },
-];
+interface DashboardNavProps {
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+}
 
-export default function DashboardNav() {
-  const [activeNav, setActiveNav] = useState('dashboard');
+export default function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
+  const [activeNav, setActiveNav] = useState(activeTab);
+
+  const handleNavClick = (itemId: string) => {
+    setActiveNav(itemId);
+    onTabChange(itemId);
+  };
 
   return (
     <nav className="glass-panel border-r border-white/10 flex flex-col h-full">
@@ -50,7 +53,7 @@ export default function DashboardNav() {
           {navItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveNav(item.id)}
+              onClick={() => handleNavClick(item.id)}
               style={{
                 width: '100%',
                 display: 'flex',
@@ -87,47 +90,6 @@ export default function DashboardNav() {
                   {item.badge}
                 </span>
               )}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Bottom Navigation */}
-      <div className="p-4 border-t border-white/10">
-        <div className="space-y-1">
-          {bottomNavItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveNav(item.id)}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0.75rem 1rem',
-                borderRadius: '0.75rem',
-                transition: 'all 0.2s',
-                background: activeNav === item.id 
-                  ? 'linear-gradient(to right, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2))' 
-                  : 'transparent',
-                border: activeNav === item.id ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid transparent',
-                color: activeNav === item.id ? 'white' : 'rgba(255, 255, 255, 0.6)',
-              }}
-              onMouseEnter={(e) => {
-                if (activeNav !== item.id) {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                  e.currentTarget.style.color = 'white';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (activeNav !== item.id) {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)';
-                }
-              }}
-            >
-              {item.icon}
-              <span className="font-medium">{item.label}</span>
             </button>
           ))}
         </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -24,13 +25,13 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        <link rel="icon" href="/assets/branding/logo-constructora-wm.jpg" />
-        <link rel="apple-touch-icon" href="/assets/branding/logo-constructora-wm.jpg" />
+        <link rel="icon" href="/logo.png" />
+        <link rel="apple-touch-icon" href="/logo.png" />
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={inter.className}>
         {children}
-        {/* ServiceWorkerRegistration deshabilitado temporalmente para evitar errores de PWA en producción */}
+        <ServiceWorkerRegistration />
       </body>
     </html>
   );

@@ -23,7 +23,7 @@ export default function Dashboard() {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar Navigation */}
         <aside className="hidden lg:block w-64 flex-shrink-0">
-          <DashboardNav />
+          <DashboardNav activeTab={activeTab} onTabChange={setActiveTab} />
         </aside>
 
         {/* Dashboard Content */}
