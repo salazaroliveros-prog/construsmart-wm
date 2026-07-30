@@ -4,6 +4,7 @@ import React from 'react';
 
 import { Building2, DollarSign, TrendingUp, Users, Hammer, Calendar } from 'lucide-react';
 
+// Mobile-responsive dashboard stats component
 interface StatCardProps {
   title: string;
   value: string;
