@@ -8,10 +8,41 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'CONSTRUCTORA WM/M&S - Sistema de Control de Seguimiento',
   description: 'Sistema ERP de construcción con control de presupuestos, seguimiento de proyectos y gestión financiera. "CONSTRUYENDO EL FUTURO"',
+  keywords: ['construcción', 'ERP', 'presupuestos', 'gestión de proyectos', 'control de costos', 'obras', 'constructora'],
+  authors: [{ name: 'Constructora WM/M&S' }],
+  creator: 'Constructora WM/M&S',
+  publisher: 'Constructora WM/M&S',
+  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'CONSTRUCTORA WM/M&S',
+    title: 'WM/M&S ERP',
+  },
+  icons: {
+    icon: [
+      { url: '/logo.png', sizes: '192x192', type: 'image/png' },
+      { url: '/logo.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/logo.png', sizes: '192x192', type: 'image/png' },
+    ],
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'es_GT',
+    url: 'https://your-domain.com',
+    title: 'CONSTRUCTORA WM/M&S - Sistema de Control de Seguimiento',
+    description: 'Sistema ERP de construcción con control de presupuestos, seguimiento de proyectos y gestión financiera.',
+    siteName: 'CONSTRUCTORA WM/M&S',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'CONSTRUCTORA WM/M&S - Sistema de Control de Seguimiento',
+    description: 'Sistema ERP de construcción con control de presupuestos, seguimiento de proyectos y gestión financiera.',
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
