@@ -259,7 +259,7 @@ export default function Dashboard() {
       {isMounted && isMobile && (
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="lg:hidden fixed top-20 left-4 z-50 p-3 rounded-lg glass-button"
+          className="lg:hidden fixed top-20 left-4 z-[60] p-3 rounded-lg glass-button"
           aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
           aria-expanded={isMobileMenuOpen}
         >
@@ -269,7 +269,7 @@ export default function Dashboard() {
 
       {isMounted && isMobile && isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-50 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
           aria-hidden="true"
         />
@@ -278,6 +278,7 @@ export default function Dashboard() {
       <div className="flex flex-1 overflow-hidden relative">
         <aside
           className={`sidebar-container fixed lg:relative w-64 flex-shrink-0 h-full lg:block ${isMobileMenuOpen ? 'open' : ''}`}
+          style={{ zIndex: 60 }}
           aria-label="Menú lateral de navegación"
         >
           <DashboardNav activeTab={activeTab} onTabChange={(tab) => {
@@ -286,16 +287,16 @@ export default function Dashboard() {
           }} />
         </aside>
 
-        <main className="flex-1 overflow-y-auto p-6 main-content pt-20 lg:pt-6" id="main-content" role="main" aria-label="Contenido principal">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <nav className="flex flex-wrap gap-2 mb-6 overflow-x-auto pb-1" aria-label="Navegación de pestañas">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 main-content pt-20 lg:pt-6" id="main-content" role="main" aria-label="Contenido principal" style={{ position: 'relative', zIndex: 1 }}>
+          <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+            <nav className="flex flex-wrap gap-2 mb-4 sm:mb-6 overflow-x-auto pb-1" aria-label="Navegación de pestañas">
               {tabs.map(tab => {
                 const isTabActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
+                    className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all whitespace-nowrap text-sm ${
                       isTabActive
                         ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
                         : 'text-gray-400 hover:text-white border border-transparent'

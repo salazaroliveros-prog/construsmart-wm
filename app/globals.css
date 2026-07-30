@@ -173,7 +173,9 @@ body {
     left: -100%;
     top: 73px;
     transition: left 0.3s ease;
-    z-index: 50;
+    z-index: 60;
+    max-height: calc(100vh - 73px);
+    overflow-y: auto;
   }
 
   .sidebar-container.open {
@@ -188,7 +190,7 @@ body {
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 40;
+    z-index: 50;
   }
 
   /* Glass cards optimization for mobile */

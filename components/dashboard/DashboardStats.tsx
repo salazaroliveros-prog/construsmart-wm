@@ -17,15 +17,15 @@ interface StatCardProps {
 
 function StatCard({ title, value, subtitle, icon, trend, trendUp }: StatCardProps) {
   return (
-    <div className="glass-card p-4 rounded-xl transition-all hover:bg-white/5">
-      <div className="flex items-center justify-between mb-2">
+    <div className="glass-card p-4 sm:p-5 rounded-xl transition-all hover:bg-white/5 flex flex-col gap-2">
+      <div className="flex items-center justify-between">
         <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
           {icon}
         </div>
         {trend && (
           <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-md ${
-            trendUp 
-              ? 'text-green-400 bg-green-400/10' 
+            trendUp
+              ? 'text-green-400 bg-green-400/10'
               : 'text-red-400 bg-red-400/10'
           }`}>
             <TrendingUp className={`w-3 h-3 ${!trendUp ? 'rotate-180' : ''}`} />
@@ -33,9 +33,11 @@ function StatCard({ title, value, subtitle, icon, trend, trendUp }: StatCardProp
           </div>
         )}
       </div>
-      <h3 className="text-sm font-medium text-gray-400 mb-1">{title}</h3>
-      <p className="text-2xl font-bold text-white mb-1 drop-shadow-lg" style={{ textShadow: '0 0 10px rgba(56, 189, 248, 0.5)' }}>{value}</p>
-      <p className="text-xs text-cyan-400">{subtitle}</p>
+      <div>
+        <h3 className="text-xs sm:text-sm font-medium text-gray-400 mb-1">{title}</h3>
+        <p className="text-xl sm:text-2xl font-bold text-white drop-shadow-lg">{value}</p>
+        <p className="text-[11px] sm:text-xs text-cyan-400 mt-0.5">{subtitle}</p>
+      </div>
     </div>
   );
 }
@@ -95,7 +97,7 @@ export default function DashboardStats() {
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
         {!isLoading ? (
         <>
           <MemoizedStatCard
