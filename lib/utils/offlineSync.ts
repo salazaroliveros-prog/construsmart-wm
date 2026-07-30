@@ -1,3 +1,11 @@
+/**
+ * CONSTRUCTORA WM/M&S - OFFLINE SYNC SYSTEM
+ * Slogan: "CONSTRUYENDO EL FUTURO"
+ * 
+ * Bidirectional synchronization between Supabase (PostgreSQL) and Dexie (IndexedDB)
+ * Full offline-first architecture with conflict resolution
+ */
+
 import { offlineDB } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
 
@@ -6,6 +14,16 @@ export interface SyncResult {
   synced: number;
   failed: number;
   errors: string[];
+  timestamp: number;
+}
+
+export interface SyncStats {
+  pendingProjects: number;
+  pendingBudgets: number;
+  pendingTransactions: number;
+  pendingPayroll: number;
+  pendingWarehouse: number;
+  lastSync: number | null;
 }
 
 export async function syncOfflineData(): Promise<SyncResult> {
@@ -14,6 +32,7 @@ export async function syncOfflineData(): Promise<SyncResult> {
     synced: 0,
     failed: 0,
     errors: [],
+    timestamp: Date.now(),
   };
 
   if (!supabase) {
@@ -346,4 +365,134 @@ export function setupNetworkListeners() {
   window.addEventListener('offline', () => {
     console.log('Network status: offline');
   });
+}
+
+/**
+ * Get sync statistics to show pending operations
+ */
+export async function getSyncStats(): Promise<SyncStats> {
+  const stats: SyncStats = {
+    pendingProjects: 0,
+    pendingBudgets: 0,
+    pendingTransactions: 0,
+    pendingPayroll: 0,
+    pendingWarehouse: 0,
+    lastSync: null,
+  };
+
+  try {
+    // Count pending items across all tables
+    stats.pendingProjects = await offlineDB.projects
+      .where('sync_status')
+      .anyOf(['created_offline', 'updated_offline'])
+      .count();
+
+    stats.pendingBudgets = await offlineDB.budgets
+      .where('sync_status')
+      .anyOf(['created_offline', 'updated_offline'])
+      .count();
+
+    stats.pendingTransactions = await offlineDB.financialTransactions
+      .where('sync_status')
+      .anyOf(['created_offline', 'updated_offline'])
+      .count();
+
+    stats.pendingPayroll = await offlineDB.payrollEmployees
+      .where('sync_status')
+      .anyOf(['created_offline', 'updated_offline'])
+      .count() +
+      await offlineDB.payrollRecords
+      .where('sync_status')
+      .anyOf(['created_offline', 'updated_offline'])
+      .count();
+
+    stats.pendingWarehouse = await offlineDB.warehouseStock
+      .where('sync_status')
+      .anyOf(['created_offline', 'updated_offline'])
+      .count();
+
+    // Get last sync timestamp from localStorage
+    const lastSync = localStorage.getItem('lastSyncTimestamp');
+    if (lastSync) {
+      stats.lastSync = parseInt(lastSync, 10);
+    }
+  } catch (error) {
+    console.error('Failed to get sync stats:', error);
+  }
+
+  return stats;
+}
+
+/**
+ * Update last sync timestamp
+ */
+export function updateLastSyncTimestamp() {
+  localStorage.setItem('lastSyncTimestamp', Date.now().toString());
+}
+
+/**
+ * Force full sync from server to client (refresh local data)
+ */
+export async function forceFullSync(): Promise<SyncResult> {
+  const result: SyncResult = {
+    success: true,
+    synced: 0,
+    failed: 0,
+    errors: [],
+    timestamp: Date.now(),
+  };
+
+  if (!supabase) {
+    result.success = false;
+    result.errors.push('Supabase not configured.');
+    return result;
+  }
+
+  try {
+    // Fetch all projects from server
+    const { data: projects, error: projectsError } = await supabase
+      .from('projects')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (projectsError) throw projectsError;
+
+    // Clear local projects and repopulate
+    await offlineDB.projects.clear();
+    for (const project of projects || []) {
+      await offlineDB.projects.put({
+        ...project,
+        sync_status: 'synced',
+      });
+    }
+
+    result.synced += projects?.length || 0;
+
+    // Fetch all financial transactions
+    const { data: transactions, error: transactionsError } = await supabase
+      .from('financial_transactions')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (transactionsError) throw transactionsError;
+
+    await offlineDB.financialTransactions.clear();
+    for (const transaction of transactions || []) {
+      await offlineDB.financialTransactions.put({
+        ...transaction,
+        sync_status: 'synced',
+      });
+    }
+
+    result.synced += transactions?.length || 0;
+
+    // Update last sync timestamp
+    updateLastSyncTimestamp();
+
+    return result;
+  } catch (error) {
+    result.success = false;
+    result.errors.push(`Full sync failed: ${error}`);
+    return result;
+  }
 }

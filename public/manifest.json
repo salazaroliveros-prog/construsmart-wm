@@ -1,7 +1,7 @@
 {
-  "name": "CONSTRUCTORA WM/M&S - Enterprise Platform",
-  "short_name": "WM/M&S ERP",
-  "description": "Sistema de Gestión de Obras, Presupuestos y Control de Costos para Constructora WM/M&S - Edificando el Futuro",
+  "name": "CONSTRUCTORA WM/M&S",
+  "short_name": "Constructora WM",
+  "description": "Sistema de Gestión de Construcción - CONSTRUYENDO EL FUTURO",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
@@ -10,18 +10,44 @@
   "scope": "/",
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "/assets/branding/logo-constructora-wm.jpg",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any maskable"
     },
     {
-      "src": "/logo.png",
+      "src": "/assets/branding/logo-constructora-wm.jpg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any maskable"
     }
   ],
-  "categories": ["business", "productivity", "finance"],
-  "screenshots": []
+  "categories": ["business", "productivity", "utilities"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Tablero Principal",
+      "short_name": "Tablero",
+      "description": "Ver dashboard principal",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/assets/branding/logo-constructora-wm.jpg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Proyectos",
+      "short_name": "Proyectos",
+      "description": "Gestionar proyectos",
+      "url": "/?tab=projects",
+      "icons": [
+        {
+          "src": "/assets/branding/logo-constructora-wm.jpg",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
 }

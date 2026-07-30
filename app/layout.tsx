@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { APP_CONFIG } from '@/lib/config/app.config';
+import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -49,8 +50,12 @@ export default function RootLayout({
         <link rel="icon" href="/logo.png" />
         <link rel="apple-touch-icon" href="/logo.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0f172a" />
+        <meta name="description" content="Sistema de Gestión de Construcción - CONSTRUCTORA WM/M&S - CONSTRUYENDO EL FUTURO" />
       </head>
       <body className={inter.className}>
+        <ServiceWorkerRegistration />
         {children}
       </body>
     </html>

@@ -1,7 +1,16 @@
+/**
+ * CONSTRUCTORA WM/M&S - PDF GENERATOR
+ * Slogan: "CONSTRUYENDO EL FUTURO"
+ * 
+ * PDF Export with Multi Servicios Letterhead
+ * Professional budget reports with corporate branding
+ */
+
 'use client';
 
 import { jsPDF } from 'jspdf';
 import { FileText, Download } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 interface BudgetItem {
   code: string;
@@ -39,7 +48,7 @@ export default function PDFGenerator({
   contingencyPercentage,
   profitPercentage,
 }: PDFGeneratorProps) {
-  const generatePDF = () => {
+  const generatePDF = async () => {
     const doc = new jsPDF();
     
     // Page dimensions
@@ -58,31 +67,57 @@ export default function PDFGenerator({
     const textColorBlue = 59;
     
     // Add Multi Servicios Letterhead
-    // Note: In production, you would load the actual image
-    // For now, we'll create a text-based letterhead
+    try {
+      // Load the letterhead image
+      const letterheadResponse = await fetch('/assets/branding/letterhead-multiservicios.jpg');
+      const letterheadBlob = await letterheadResponse.blob();
+      const letterheadDataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(letterheadBlob);
+      });
+      
+      // Add letterhead image to PDF
+      doc.addImage(letterheadDataUrl, 'JPEG', 15, 10, 40, 25);
+    } catch (error) {
+      console.error('Failed to load letterhead image:', error);
+      // Fallback to text-based letterhead
+      doc.setFillColor(primaryColor, primaryGreen, primaryBlue);
+      doc.rect(0, 0, pageWidth, 40, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('CONSTRUCTORA WM/M&S', 15, 20);
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'italic');
+      doc.text('"CONSTRUYENDO EL FUTURO"', 15, 28);
+      
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Guatemala, C.A. | Tel: (+502) 5555-0000 | Email: contacto@constructorawm.com', 15, 35);
+    }
     
-    // Header background
-    doc.setFillColor(primaryColor, primaryGreen, primaryBlue);
-    doc.rect(0, 0, pageWidth, 40, 'F');
-    
-    // Company information
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
+    // Company information right side
+    doc.setTextColor(textColorRed, textColorGreen, textColorBlue);
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('CONSTRUCTORA WM/M&S', 15, 20);
+    doc.text('CONSTRUCTORA WM/M&S', pageWidth - 65, 15);
     
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'italic');
-    doc.text('"CONSTRUYENDO EL FUTURO"', 15, 28);
-    
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Guatemala, C.A. | Tel: (+502) 5555-0000 | Email: contacto@constructorawm.com', 15, 35);
-    
-    // Multi Servicios branding placeholder
-    doc.setTextColor(255, 255, 255);
     doc.setFontSize(9);
-    doc.text('Multi Servicios de Guatemala', pageWidth - 60, 20);
+    doc.setFont('helvetica', 'italic');
+    doc.text('"CONSTRUYENDO EL FUTURO"', pageWidth - 65, 22);
+    
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Guatemala, C.A. | Tel: (+502) 5555-0000', pageWidth - 65, 28);
+    doc.text('Email: contacto@constructorawm.com', pageWidth - 65, 33);
+    
+    // Divider line
+    doc.setDrawColor(primaryColor, primaryGreen, primaryBlue);
+    doc.setLineWidth(0.5);
+    doc.line(15, 40, pageWidth - 15, 40);
     
     // Report title
     doc.setTextColor(textColorRed, textColorGreen, textColorBlue);
@@ -239,14 +274,14 @@ export default function PDFGenerator({
     doc.text(formatCurrency(summary.total), pageWidth - 45, currentY + 6);
     
     // Footer
-    const footerY = pageHeight - 20;
+    const disclaimerY = pageHeight - 20;
     doc.setTextColor(128, 128, 128);
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.text(
       'Este documento es un presupuesto estimado. Los precios finales pueden variar según condiciones específicas del proyecto.',
       pageWidth / 2,
-      footerY,
+      disclaimerY,
       { align: 'center' }
     );
     
@@ -260,6 +295,16 @@ export default function PDFGenerator({
     doc.setFontSize(9);
     doc.text('Elaborado por:', 30, signatureY + 5);
     doc.text('Aprobado por:', pageWidth - 80, signatureY + 5);
+    
+    // Footer with Multi Servicios branding
+    const footerY = pageHeight - 15;
+    doc.setDrawColor(primaryColor, primaryGreen, primaryBlue);
+    doc.line(15, footerY - 5, pageWidth - 15, footerY - 5);
+    
+    doc.setTextColor(128, 128, 128);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Multi Servicios de Guatemala - Servicios Integrales de Construcción', pageWidth / 2, footerY, { align: 'center' });
     
     // Save the PDF
     doc.save(`presupuesto_${projectName.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
