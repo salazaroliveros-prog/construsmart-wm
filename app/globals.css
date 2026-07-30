@@ -162,7 +162,7 @@ body {
     left: -100%;
     top: 64px;
     transition: left 0.3s ease;
-    z-index: 60;
+    z-index: 40;
     max-height: calc(100vh - 64px);
     overflow-y: auto;
   }
@@ -179,7 +179,7 @@ body {
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 50;
+    z-index: 30;
   }
 
   .glass-card {
