@@ -254,23 +254,16 @@ export default function Dashboard() {
 
       {isMounted && isMobile && isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-50 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
           aria-hidden="true"
         />
       )}
 
       <div className="flex flex-1 overflow-hidden relative">
-        {isMounted && isMobile && isMobileMenuOpen && (
-          <div
-            className="fixed inset-0 bg-black/60 z-40 lg:hidden"
-            onClick={() => setIsMobileMenuOpen(false)}
-            aria-hidden="true"
-          />
-        )}
-
         <aside
           className={`sidebar-container fixed lg:relative w-64 flex-shrink-0 h-full lg:block ${isMobileMenuOpen ? 'open' : ''}`}
+          style={{ zIndex: 50 }}
           aria-label="Menú lateral de navegación"
         >
           <DashboardNav activeTab={activeTab} onTabChange={(tab) => {
@@ -279,7 +272,7 @@ export default function Dashboard() {
           }} />
         </aside>
 
-        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 main-content pt-16 sm:pt-20 lg:pt-6 relative z-10" id="main-content" role="main" aria-label="Contenido principal">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 main-content pt-16 sm:pt-20 lg:pt-6" id="main-content" role="main" aria-label="Contenido principal">
           <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
             <nav className="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-1" aria-label="Navegación de pestañas">
               {tabs.map(tab => {

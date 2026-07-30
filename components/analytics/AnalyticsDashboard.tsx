@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Calendar, DollarSign, BarChart3, Filter } from 'lucide-react';
-import { offlineDB, LocalProject, LocalBudget, LocalFinancialTransaction } from '@/lib/db/offlineStore';
+import { offlineDB, LocalProject, LocalFinancialTransaction } from '@/lib/db/offlineStore';
 
 interface ProgressData {
   month: string;

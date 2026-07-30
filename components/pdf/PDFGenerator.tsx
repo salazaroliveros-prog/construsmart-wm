@@ -9,8 +9,7 @@
 'use client';
 
 import { jsPDF } from 'jspdf';
-import { FileText, Download } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Download } from 'lucide-react';
 
 interface BudgetItem {
   code: string;
