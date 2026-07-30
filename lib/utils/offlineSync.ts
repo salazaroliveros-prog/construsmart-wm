@@ -16,6 +16,12 @@ export async function syncOfflineData(): Promise<SyncResult> {
     errors: [],
   };
 
+  if (!supabase) {
+    result.success = false;
+    result.errors.push('Supabase not configured. Cannot sync.');
+    return result;
+  }
+
   try {
     // Sync projects created offline
     const offlineProjects = await offlineDB.projects
@@ -113,6 +119,11 @@ export async function syncOfflineData(): Promise<SyncResult> {
 }
 
 export async function fetchProjectsForOffline() {
+  if (!supabase) {
+    console.error('Supabase not configured. Cannot fetch projects.');
+    return [];
+  }
+
   try {
     const { data: projects, error } = await supabase
       .from('projects')
@@ -146,7 +157,9 @@ export function setupNetworkListeners() {
   window.addEventListener('online', () => {
     console.log('Network status: online');
     // Trigger sync when coming back online
-    syncOfflineData();
+    if (supabase) {
+      syncOfflineData();
+    }
   });
 
   window.addEventListener('offline', () => {
