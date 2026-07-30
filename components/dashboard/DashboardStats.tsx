@@ -17,46 +17,25 @@ interface StatCardProps {
 
 function StatCard({ title, value, subtitle, icon, trend, trendUp }: StatCardProps) {
   return (
-    <div style={{
-      background: 'rgba(255, 255, 255, 0.03)',
-      backdropFilter: 'blur(10px)',
-      WebkitBackdropFilter: 'blur(10px)',
-      border: '1px solid rgba(255, 255, 255, 0.08)',
-      borderRadius: '12px',
-      padding: '1rem',
-      transition: 'all 0.3s ease'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-        <div style={{
-          width: '2.5rem',
-          height: '2.5rem',
-          borderRadius: '8px',
-          background: 'rgba(56, 189, 248, 0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
+    <div className="glass-card p-4 rounded-xl transition-all hover:bg-white/5">
+      <div className="flex items-center justify-between mb-2">
+        <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
           {icon}
         </div>
         {trend && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.25rem',
-            fontSize: '0.75rem',
-            color: trendUp ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)',
-            background: trendUp ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-            padding: '0.25rem 0.5rem',
-            borderRadius: '6px'
-          }}>
-            <TrendingUp style={{ width: '0.75rem', height: '0.75rem', transform: !trendUp ? 'rotate(180deg)' : 'none' }} />
+          <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-md ${
+            trendUp 
+              ? 'text-green-400 bg-green-400/10' 
+              : 'text-red-400 bg-red-400/10'
+          }`}>
+            <TrendingUp className={`w-3 h-3 ${!trendUp ? 'rotate-180' : ''}`} />
             <span>{trend}</span>
           </div>
         )}
       </div>
-      <h3 style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>{title}</h3>
-      <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white', marginBottom: '0.25rem', textShadow: '0 0 10px rgba(56, 189, 248, 0.5)' }}>{value}</p>
-      <p style={{ fontSize: '0.75rem', color: 'rgb(34, 211, 238)' }}>{subtitle}</p>
+      <h3 className="text-sm font-medium text-gray-400 mb-1">{title}</h3>
+      <p className="text-2xl font-bold text-white mb-1 drop-shadow-lg" style={{ textShadow: '0 0 10px rgba(56, 189, 248, 0.5)' }}>{value}</p>
+      <p className="text-xs text-cyan-400">{subtitle}</p>
     </div>
   );
 }

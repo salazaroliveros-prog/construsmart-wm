@@ -29,7 +29,7 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen" style={{ background: 'linear-gradient(to bottom right, rgb(15 23 42), rgb(30 41 59), rgb(15 23 42))' }}>
+    <div className="flex flex-col h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
       <DualBrandHeader />
 
@@ -71,106 +71,71 @@ export default function Dashboard() {
             <div className="flex space-x-2 mb-6">
               <button
                 onClick={() => setActiveTab('dashboard')}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.5rem',
-                  background: activeTab === 'dashboard' 
-                    ? 'linear-gradient(to right, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2))' 
-                    : 'transparent',
-                  border: activeTab === 'dashboard' ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid transparent',
-                  color: activeTab === 'dashboard' ? 'white' : 'rgba(255, 255, 255, 0.6)',
-                  transition: 'all 0.2s'
-                }}
+                className={`px-4 py-2 rounded-lg transition-all ${
+                  activeTab === 'dashboard'
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
+                    : 'text-gray-400 hover:text-white border border-transparent'
+                }`}
               >
                 Tablero Principal
               </button>
               <button
                 onClick={() => setActiveTab('projects')}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.5rem',
-                  background: activeTab === 'projects' 
-                    ? 'linear-gradient(to right, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2))' 
-                    : 'transparent',
-                  border: activeTab === 'projects' ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid transparent',
-                  color: activeTab === 'projects' ? 'white' : 'rgba(255, 255, 255, 0.6)',
-                  transition: 'all 0.2s'
-                }}
+                className={`px-4 py-2 rounded-lg transition-all ${
+                  activeTab === 'projects'
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
+                    : 'text-gray-400 hover:text-white border border-transparent'
+                }`}
               >
                 Gestión de Proyectos
               </button>
               <button
                 onClick={() => setActiveTab('budgets')}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.5rem',
-                  background: activeTab === 'budgets' 
-                    ? 'linear-gradient(to right, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2))' 
-                    : 'transparent',
-                  border: activeTab === 'budgets' ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid transparent',
-                  color: activeTab === 'budgets' ? 'white' : 'rgba(255, 255, 255, 0.6)',
-                  transition: 'all 0.2s'
-                }}
+                className={`px-4 py-2 rounded-lg transition-all ${
+                  activeTab === 'budgets'
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
+                    : 'text-gray-400 hover:text-white border border-transparent'
+                }`}
               >
                 Calculadora de Presupuestos
               </button>
               <button
                 onClick={() => setActiveTab('finances')}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.5rem',
-                  background: activeTab === 'finances' 
-                    ? 'linear-gradient(to right, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2))' 
-                    : 'transparent',
-                  border: activeTab === 'finances' ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid transparent',
-                  color: activeTab === 'finances' ? 'white' : 'rgba(255, 255, 255, 0.6)',
-                  transition: 'all 0.2s'
-                }}
+                className={`px-4 py-2 rounded-lg transition-all ${
+                  activeTab === 'finances'
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
+                    : 'text-gray-400 hover:text-white border border-transparent'
+                }`}
               >
                 Finanzas
               </button>
               <button
                 onClick={() => setActiveTab('payroll')}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.5rem',
-                  background: activeTab === 'payroll' 
-                    ? 'linear-gradient(to right, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2))' 
-                    : 'transparent',
-                  border: activeTab === 'payroll' ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid transparent',
-                  color: activeTab === 'payroll' ? 'white' : 'rgba(255, 255, 255, 0.6)',
-                  transition: 'all 0.2s'
-                }}
+                className={`px-4 py-2 rounded-lg transition-all ${
+                  activeTab === 'payroll'
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
+                    : 'text-gray-400 hover:text-white border border-transparent'
+                }`}
               >
                 Nómina
               </button>
               <button
                 onClick={() => setActiveTab('warehouse')}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.5rem',
-                  background: activeTab === 'warehouse' 
-                    ? 'linear-gradient(to right, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2))' 
-                    : 'transparent',
-                  border: activeTab === 'warehouse' ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid transparent',
-                  color: activeTab === 'warehouse' ? 'white' : 'rgba(255, 255, 255, 0.6)',
-                  transition: 'all 0.2s'
-                }}
+                className={`px-4 py-2 rounded-lg transition-all ${
+                  activeTab === 'warehouse'
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
+                    : 'text-gray-400 hover:text-white border border-transparent'
+                }`}
               >
                 Almacén
               </button>
               <button
                 onClick={() => setActiveTab('analytics')}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.5rem',
-                  background: activeTab === 'analytics' 
-                    ? 'linear-gradient(to right, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2))' 
-                    : 'transparent',
-                  border: activeTab === 'analytics' ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid transparent',
-                  color: activeTab === 'analytics' ? 'white' : 'rgba(255, 255, 255, 0.6)',
-                  transition: 'all 0.2s'
-                }}
+                className={`px-4 py-2 rounded-lg transition-all ${
+                  activeTab === 'analytics'
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
+                    : 'text-gray-400 hover:text-white border border-transparent'
+                }`}
               >
                 Analytics
               </button>

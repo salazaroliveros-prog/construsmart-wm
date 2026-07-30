@@ -17,16 +17,15 @@ const STATIC_ASSETS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll(STATIC_ASSETS.map(url => {
-        // Return a promise that resolves even if the asset fails to load
-        return fetch(url).then(response => {
-          if (!response.ok) throw new Error(`Failed to fetch ${url}`);
-          return cache.put(url, response);
-        }).catch(err => {
-          console.warn(`Failed to cache ${url}:`, err);
-          return Promise.resolve(); // Don't fail the entire install
-        });
-      }));
+      // Cache assets individually to prevent complete failure
+      return Promise.allSettled(
+        STATIC_ASSETS.map(url => {
+          return cache.add(url).catch(err => {
+            console.warn(`Failed to cache ${url}:`, err);
+            return null; // Continue even if one asset fails
+          });
+        })
+      );
     }).catch(err => {
       console.error('Failed to open cache:', err);
       // Don't fail the install even if cache fails

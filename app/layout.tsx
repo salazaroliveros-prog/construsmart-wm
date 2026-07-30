@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration';
 import { APP_CONFIG } from '@/lib/config/app.config';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -13,21 +12,6 @@ export const metadata: Metadata = {
   authors: [{ name: APP_CONFIG.name }],
   creator: APP_CONFIG.name,
   publisher: APP_CONFIG.name,
-  manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: APP_CONFIG.shortName,
-  },
-  icons: {
-    icon: [
-      { url: '/logo.png', sizes: '192x192', type: 'image/png' },
-      { url: '/logo.png', sizes: '512x512', type: 'image/png' },
-    ],
-    apple: [
-      { url: '/logo.png', sizes: '192x192', type: 'image/png' },
-    ],
-  },
   openGraph: {
     type: 'website',
     locale: 'es_GT',
@@ -64,11 +48,9 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/logo.png" />
         <link rel="apple-touch-icon" href="/logo.png" />
-        <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={inter.className}>
         {children}
-        <ServiceWorkerRegistration />
       </body>
     </html>
   );
