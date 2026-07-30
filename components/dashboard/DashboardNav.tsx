@@ -17,6 +17,7 @@ const navItems: NavItem[] = [
   { id: 'finances', label: 'Finanzas', icon: <Calculator className="w-5 h-5" /> },
   { id: 'payroll', label: 'Nómina', icon: <Users className="w-5 h-5" /> },
   { id: 'warehouse', label: 'Almacén', icon: <Warehouse className="w-5 h-5" /> },
+  { id: 'analytics', label: 'Analytics', icon: <TrendingUp className="w-5 h-5" /> },
 ];
 
 interface DashboardNavProps {

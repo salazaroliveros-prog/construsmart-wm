@@ -10,6 +10,7 @@ import ProjectManager from '@/components/dashboard/ProjectManager';
 import FinanceManager from '@/components/finances/FinanceManager';
 import PayrollManager from '@/components/payroll/PayrollManager';
 import WarehouseManager from '@/components/warehouse/WarehouseManager';
+import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -120,6 +121,21 @@ export default function Dashboard() {
                 }}
               >
                 Almacén
+              </button>
+              <button
+                onClick={() => setActiveTab('analytics')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  background: activeTab === 'analytics' 
+                    ? 'linear-gradient(to right, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2))' 
+                    : 'transparent',
+                  border: activeTab === 'analytics' ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid transparent',
+                  color: activeTab === 'analytics' ? 'white' : 'rgba(255, 255, 255, 0.6)',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Analytics
               </button>
             </div>
 
@@ -271,8 +287,10 @@ export default function Dashboard() {
               <FinanceManager />
             ) : activeTab === 'payroll' ? (
               <PayrollManager />
-            ) : (
+            ) : activeTab === 'warehouse' ? (
               <WarehouseManager />
+            ) : (
+              <AnalyticsDashboard />
             )}
           </div>
         </main>
