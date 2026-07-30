@@ -55,32 +55,11 @@ export default function DashboardNav({ activeTab, onTabChange }: DashboardNavPro
             <button
               key={item.id}
               onClick={() => handleNavClick(item.id)}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0.75rem 1rem',
-                borderRadius: '0.75rem',
-                transition: 'all 0.2s',
-                background: activeNav === item.id 
-                  ? 'linear-gradient(to right, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2))' 
-                  : 'transparent',
-                border: activeNav === item.id ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid transparent',
-                color: activeNav === item.id ? 'white' : 'rgba(255, 255, 255, 0.6)',
-              }}
-              onMouseEnter={(e) => {
-                if (activeNav !== item.id) {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                  e.currentTarget.style.color = 'white';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (activeNav !== item.id) {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)';
-                }
-              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all ${
+                activeNav === item.id
+                  ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
+                  : 'text-white/60 hover:bg-white/5 hover:text-white border border-transparent'
+              }`}
             >
               <div className="flex items-center space-x-3">
                 {item.icon}
