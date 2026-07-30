@@ -1,0 +1,5 @@
+v1.0.1 - Clean deployment with Supabase integration
+- All Supabase tables migrated successfully
+- 40 APU library items loaded
+- Environment variables configured in Vercel
+- Callback URLs configured in Supabase
