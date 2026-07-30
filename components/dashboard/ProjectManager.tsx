@@ -221,7 +221,7 @@ export default function ProjectManager() {
     try {
       await offlineDB.projects.delete(project.id!);
       
-      if (isOnline && project.id) {
+      if (isOnline && project.id && supabase) {
         await supabase.from('projects').delete().eq('id', project.id);
       }
       

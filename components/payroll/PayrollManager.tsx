@@ -245,7 +245,7 @@ export default function PayrollManager() {
     try {
       await offlineDB.payrollEmployees.delete(employee.id!);
       
-      if (isOnline && employee.id) {
+      if (isOnline && employee.id && supabase) {
         await supabase.from('payroll_employees').delete().eq('id', employee.id);
       }
       

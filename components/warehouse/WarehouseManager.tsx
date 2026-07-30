@@ -164,7 +164,7 @@ export default function WarehouseManager() {
     try {
       await offlineDB.warehouseStock.delete(item.id!);
       
-      if (isOnline && item.id) {
+      if (isOnline && item.id && supabase) {
         await supabase.from('warehouse_stock').delete().eq('id', item.id);
       }
       
@@ -187,7 +187,7 @@ export default function WarehouseManager() {
         sync_status: isOnline ? 'synced' : 'updated_offline',
       });
       
-      if (isOnline && item.id) {
+      if (isOnline && item.id && supabase) {
         await supabase
           .from('warehouse_stock')
           .update({ current_stock: newStock })

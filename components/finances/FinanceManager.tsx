@@ -198,7 +198,7 @@ export default function FinanceManager() {
     try {
       await offlineDB.financialTransactions.delete(transaction.id!);
       
-      if (isOnline && transaction.id) {
+      if (isOnline && transaction.id && supabase) {
         await supabase.from('financial_transactions').delete().eq('id', transaction.id);
       }
       
