@@ -24,6 +24,7 @@
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.5.4",
     "dexie": "^4.4.4",
+    "dotenv": "^17.4.2",
     "framer-motion": "^12.43.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
