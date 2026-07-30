@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Menu, X, Clock, Zap, ClipboardList, BarChart3, DollarSign, Package } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import DualBrandHeader from '@/components/dashboard/DualBrandHeader';
 import DashboardNav from '@/components/dashboard/DashboardNav';
 import DashboardStats from '@/components/dashboard/DashboardStats';
@@ -10,6 +10,7 @@ import ProjectOverview from '@/components/dashboard/ProjectOverview';
 import { offlineDB } from '@/lib/db/offlineStore';
 import { useScrollLock } from '@/lib/hooks/useScrollLock';
 
+// Dynamic imports for code splitting
 const ProjectManager = dynamic(() => import('@/components/dashboard/ProjectManager'), { ssr: false });
 const BudgetCalculator = dynamic(() => import('@/components/budgets/BudgetCalculator'), { ssr: false });
 const FinanceManager = dynamic(() => import('@/components/finances/FinanceManager'), { ssr: false });
@@ -17,15 +18,16 @@ const PayrollManager = dynamic(() => import('@/components/payroll/PayrollManager
 const WarehouseManager = dynamic(() => import('@/components/warehouse/WarehouseManager'), { ssr: false });
 const AnalyticsDashboard = dynamic(() => import('@/components/analytics/AnalyticsDashboard'), { ssr: false });
 
-const tabs = [
-  { id: 'dashboard', label: 'Tablero Principal' },
-  { id: 'projects', label: 'Gestión de Proyectos' },
-  { id: 'budgets', label: 'Calculadora de Presupuestos' },
-  { id: 'finances', label: 'Finanzas' },
-  { id: 'payroll', label: 'Nómina' },
-  { id: 'warehouse', label: 'Almacén' },
-  { id: 'analytics', label: 'Analytics' },
-];
+// Navigation tabs configuration
+const NAVIGATION_TABS = [
+  { id: 'dashboard', label: 'Tablero Principal', icon: 'LayoutDashboard' },
+  { id: 'projects', label: 'Proyectos', icon: 'FolderKanban' },
+  { id: 'budgets', label: 'Presupuestos', icon: 'Calculator' },
+  { id: 'finances', label: 'Finanzas', icon: 'DollarSign' },
+  { id: 'payroll', label: 'Nómina', icon: 'Users' },
+  { id: 'warehouse', label: 'Almacén', icon: 'Warehouse' },
+  { id: 'analytics', label: 'Analytics', icon: 'TrendingUp' },
+] as const;
 
 interface RecentActivity {
   id: string;
@@ -106,119 +108,31 @@ export default function Dashboard() {
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
               <ProjectOverview />
-
+              
               <div className="glass-panel rounded-2xl p-4 sm:p-6">
-                <h2 className="text-base sm:text-lg font-semibold text-white mb-4 sm:mb-6 flex items-center space-x-2">
-                  <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center">
-                    <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-white" aria-hidden="true" />
-                  </span>
-                  <span>Acciones Rápidas</span>
+                <h2 className="text-base sm:text-lg font-semibold text-white mb-4 sm:mb-6">
+                  Matriz de Costos Residenciales (GTQ)
                 </h2>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <button
-                    onClick={() => setActiveTab('projects')}
-                    className="glass-button-inline p-3 sm:p-4 rounded-xl text-left group"
-                  >
-                    <div className="flex items-center space-x-2 sm:space-x-3 mb-1 sm:mb-2">
-                      <div className="p-1.5 sm:p-2 rounded-lg bg-emerald-500/20 group-hover:bg-emerald-500/30 transition-colors">
-                        <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 text-white" aria-hidden="true" />
-                      </div>
-                      <span className="text-white font-medium text-sm sm:text-base">Nuevo Proyecto</span>
-                    </div>
-                    <p className="text-xs text-white/60 hidden sm:block">Crear proyecto desde cero</p>
-                  </button>
-
-                  <button
-                    onClick={() => setActiveTab('budgets')}
-                    className="glass-button-inline p-3 sm:p-4 rounded-xl text-left group"
-                  >
-                    <div className="flex items-center space-x-2 sm:space-x-3 mb-1 sm:mb-2">
-                      <div className="p-1.5 sm:p-2 rounded-lg bg-cyan-500/20 group-hover:bg-cyan-500/30 transition-colors">
-                        <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-white" aria-hidden="true" />
-                      </div>
-                      <span className="text-white font-medium text-sm sm:text-base">Nuevo Presupuesto</span>
-                    </div>
-                    <p className="text-xs text-white/60 hidden sm:block">Generar APU detallado</p>
-                  </button>
-
-                  <button
-                    onClick={() => setActiveTab('finances')}
-                    className="glass-button-inline p-3 sm:p-4 rounded-xl text-left group"
-                  >
-                    <div className="flex items-center space-x-2 sm:space-x-3 mb-1 sm:mb-2">
-                      <div className="p-1.5 sm:p-2 rounded-lg bg-violet-500/20 group-hover:bg-violet-500/30 transition-colors">
-                        <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-white" aria-hidden="true" />
-                      </div>
-                      <span className="text-white font-medium text-sm sm:text-base">Gestión Financiera</span>
-                    </div>
-                    <p className="text-xs text-white/60 hidden sm:block">Control de gastos e ingresos</p>
-                  </button>
-
-                  <button
-                    onClick={() => setActiveTab('warehouse')}
-                    className="glass-button-inline p-3 sm:p-4 rounded-xl text-left group"
-                  >
-                    <div className="flex items-center space-x-2 sm:space-x-3 mb-1 sm:mb-2">
-                      <div className="p-1.5 sm:p-2 rounded-lg bg-teal-500/20 group-hover:bg-teal-500/30 transition-colors">
-                        <Package className="w-4 h-4 sm:w-5 sm:h-5 text-white" aria-hidden="true" />
-                      </div>
-                      <span className="text-white font-medium text-sm sm:text-base">Almacén</span>
-                    </div>
-                    <p className="text-xs text-white/60 hidden sm:block">Control de inventario</p>
-                  </button>
-                </div>
-
-                <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/10">
-                  <h3 className="text-sm font-medium text-white mb-3 sm:mb-4 flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-white/60" aria-hidden="true" />
-                    <span>Actividad Reciente</span>
-                  </h3>
-                  {recentActivity.length === 0 ? (
-                    <p className="text-sm text-white/40">No hay actividad reciente</p>
-                  ) : (
-                    <div className="space-y-2 sm:space-y-3">
-                      {recentActivity.map((activity) => (
-                        <div key={activity.id} className="flex items-center space-x-2 sm:space-x-3 text-sm">
-                          <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${activity.color}`} />
-                          <span className="text-white/70 truncate text-xs sm:text-sm">{activity.text}</span>
-                          {activity.time && (
-                            <span className="text-white/40 text-[10px] sm:text-xs ml-auto whitespace-nowrap">{activity.time}</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="glass-panel rounded-2xl p-4 sm:p-6">
-              <h2 className="text-base sm:text-lg font-semibold text-white mb-4 sm:mb-6 flex items-center space-x-2">
-                  <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-                    <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-white" aria-hidden="true" />
-                  </span>
-                <span>Matriz de Costos Residenciales (GTQ)</span>
-              </h2>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-blue-500">
-                  <h3 className="text-blue-400 font-semibold mb-1 sm:mb-2 text-sm sm:text-base">Nivel Básico</h3>
-                  <p className="text-xl sm:text-2xl font-bold text-white mb-1">Q. 3,000 - Q. 3,500</p>
-                  <p className="text-xs sm:text-sm text-white/60">por m²</p>
-                  <p className="text-[10px] sm:text-xs text-white/40 mt-1 sm:mt-2">Acabados económicos estándar</p>
-                </div>
-                <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-emerald-500">
-                  <h3 className="text-emerald-400 font-semibold mb-1 sm:mb-2 text-sm sm:text-base">Nivel Moderado</h3>
-                  <p className="text-xl sm:text-2xl font-bold text-white mb-1">Q. 3,500 - Q. 4,000</p>
-                  <p className="text-xs sm:text-sm text-white/60">por m²</p>
-                  <p className="text-[10px] sm:text-xs text-white/40 mt-1 sm:mt-2">Acabados de calidad media</p>
-                </div>
-                <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-violet-500">
-                  <h3 className="text-violet-400 font-semibold mb-1 sm:mb-2 text-sm sm:text-base">Nivel Premium</h3>
-                  <p className="text-xl sm:text-2xl font-bold text-white mb-1">Q. 4,000 - Q. 5,000</p>
-                  <p className="text-xs sm:text-sm text-white/60">por m²</p>
-                  <p className="text-[10px] sm:text-xs text-white/40 mt-1 sm:mt-2">Acabados de alta gama</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                  <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-blue-500">
+                    <h3 className="text-blue-400 font-semibold mb-1 sm:mb-2 text-sm sm:text-base">Nivel Básico</h3>
+                    <p className="text-xl sm:text-2xl font-bold text-white mb-1">Q. 3,000 - Q. 3,500</p>
+                    <p className="text-xs sm:text-sm text-white/60">por m²</p>
+                    <p className="text-[10px] sm:text-xs text-white/40 mt-1 sm:mt-2">Acabados económicos estándar</p>
+                  </div>
+                  <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-emerald-500">
+                    <h3 className="text-emerald-400 font-semibold mb-1 sm:mb-2 text-sm sm:text-base">Nivel Moderado</h3>
+                    <p className="text-xl sm:text-2xl font-bold text-white mb-1">Q. 3,500 - Q. 4,000</p>
+                    <p className="text-xs sm:text-sm text-white/60">por m²</p>
+                    <p className="text-[10px] sm:text-xs text-white/40 mt-1 sm:mt-2">Acabados de calidad media</p>
+                  </div>
+                  <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-violet-500">
+                    <h3 className="text-violet-400 font-semibold mb-1 sm:mb-2 text-sm sm:text-base">Nivel Premium</h3>
+                    <p className="text-xl sm:text-2xl font-bold text-white mb-1">Q. 4,000 - Q. 5,000</p>
+                    <p className="text-xs sm:text-sm text-white/60">por m²</p>
+                    <p className="text-[10px] sm:text-xs text-white/40 mt-1 sm:mt-2">Acabados de alta gama</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -252,7 +166,7 @@ export default function Dashboard() {
           aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
           aria-expanded={isMobileMenuOpen}
         >
-          {isMobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" aria-hidden="true" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6 text-white" aria-hidden="true" />}
+          {isMobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6 text-white" />}
         </button>
       )}
 
@@ -279,7 +193,7 @@ export default function Dashboard() {
         <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 main-content pt-20 sm:pt-24 lg:pt-6" id="main-content" role="main" aria-label="Contenido principal">
           <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
             <nav className="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-1" aria-label="Navegación de pestañas">
-              {tabs.map(tab => {
+              {NAVIGATION_TABS.map(tab => {
                 const isTabActive = activeTab === tab.id;
                 return (
                   <button
@@ -305,5 +219,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-// deployment verification 2026-07-30 17:12:55
