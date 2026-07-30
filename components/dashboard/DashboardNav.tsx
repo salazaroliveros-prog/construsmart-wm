@@ -51,17 +51,17 @@ export default function DashboardNav({ activeTab, onTabChange }: DashboardNavPro
       <div className="flex-1 overflow-y-auto py-4">
         <div className="px-3 space-y-1">
           {navItems.map((item) => {
-            const isActive = activeNav === item.id;
+            const active = isActive(item.id);
             return (
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${
-                  isActive
+                  active
                     ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
                     : 'text-white/60 hover:bg-white/5 hover:text-white border border-transparent'
                 }`}
-                aria-current={isActive ? 'page' : undefined}
+                aria-current={active ? 'page' : undefined}
               >
                 <div className="flex items-center space-x-3">
                   {item.icon}
