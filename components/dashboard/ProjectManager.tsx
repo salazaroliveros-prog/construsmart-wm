@@ -179,31 +179,78 @@ export default function ProjectManager() {
       };
 
       if (editingProject) {
-        // Update existing project
+        // Update existing project in localStorage
         await offlineDB.projects.update(editingProject.id!, {
           ...projectData,
           sync_status: isOnline ? 'synced' : 'updated_offline',
         });
         
+        // Update in Supabase if online
         if (isOnline && editingProject.id && supabase) {
-          await supabase
+          const { error } = await supabase
             .from('projects')
-            .update(projectData)
+            .update({
+              code: projectData.code,
+              name: projectData.name,
+              client_name: projectData.client_name,
+              client_phone: projectData.client_phone,
+              client_email: projectData.client_email,
+              location: projectData.location,
+              typology: projectData.typology,
+              area_m2: projectData.area_m2,
+              quality_level: projectData.quality_level,
+              status: projectData.status,
+              start_date: projectData.start_date,
+              estimated_end_date: projectData.estimated_end_date,
+              duration_days: projectData.duration_days,
+              total_budget: projectData.total_budget,
+            })
             .eq('id', editingProject.id);
+          
+          if (error) {
+            console.error('Error updating project in Supabase:', error);
+            // Keep sync_status as updated_offline if failed
+            await offlineDB.projects.update(editingProject.id!, {
+              sync_status: 'updated_offline',
+            });
+          }
         }
       } else {
-        // Create new project
+        // Create new project in localStorage
         const id = await offlineDB.projects.add(projectData);
         
+        // Create in Supabase if online
         if (isOnline && supabase) {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('projects')
-            .insert(projectData)
+            .insert({
+              code: projectData.code,
+              name: projectData.name,
+              client_name: projectData.client_name,
+              client_phone: projectData.client_phone,
+              client_email: projectData.client_email,
+              location: projectData.location,
+              typology: projectData.typology,
+              area_m2: projectData.area_m2,
+              quality_level: projectData.quality_level,
+              status: projectData.status,
+              start_date: projectData.start_date,
+              estimated_end_date: projectData.estimated_end_date,
+              duration_days: projectData.duration_days,
+              total_budget: projectData.total_budget,
+            })
             .select()
             .single();
           
-          if (data) {
-            await offlineDB.projects.update(id, { id: data.id, sync_status: 'synced' });
+          if (error) {
+            console.error('Error creating project in Supabase:', error);
+            // Keep as created_offline
+          } else if (data) {
+            // Update local record with server ID
+            await offlineDB.projects.update(id, {
+              id: data.id,
+              sync_status: 'synced',
+            });
           }
         }
       }
@@ -219,10 +266,16 @@ export default function ProjectManager() {
     if (!confirm(`¿Está seguro de eliminar el proyecto ${project.name}?`)) return;
 
     try {
+      // Delete from localStorage
       await offlineDB.projects.delete(project.id!);
       
+      // Delete from Supabase if online
       if (isOnline && project.id && supabase) {
-        await supabase.from('projects').delete().eq('id', project.id);
+        const { error } = await supabase.from('projects').delete().eq('id', project.id);
+        
+        if (error) {
+          console.error('Error deleting project from Supabase:', error);
+        }
       }
       
       await loadProjects();

@@ -158,29 +158,67 @@ export default function FinanceManager() {
       };
 
       if (editingTransaction) {
+        // Update in localStorage
         await offlineDB.financialTransactions.update(editingTransaction.id!, {
           ...transactionData,
           sync_status: isOnline ? 'synced' : 'updated_offline',
         });
         
+        // Update in Supabase if online
         if (isOnline && editingTransaction.id && supabase) {
-          await supabase
+          const { error } = await supabase
             .from('financial_transactions')
-            .update(transactionData)
+            .update({
+              project_id: transactionData.project_id,
+              type: transactionData.type,
+              category: transactionData.category,
+              description: transactionData.description,
+              quantity: transactionData.quantity,
+              unit: transactionData.unit,
+              unit_cost: transactionData.unit_cost,
+              total_cost: transactionData.total_cost,
+              date: transactionData.date,
+              receipt_url: transactionData.receipt_url,
+            })
             .eq('id', editingTransaction.id);
+          
+          if (error) {
+            console.error('Error updating transaction in Supabase:', error);
+            await offlineDB.financialTransactions.update(editingTransaction.id!, {
+              sync_status: 'updated_offline',
+            });
+          }
         }
       } else {
+        // Create in localStorage
         const id = await offlineDB.financialTransactions.add(transactionData);
         
+        // Create in Supabase if online
         if (isOnline && supabase) {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('financial_transactions')
-            .insert(transactionData)
+            .insert({
+              project_id: transactionData.project_id,
+              type: transactionData.type,
+              category: transactionData.category,
+              description: transactionData.description,
+              quantity: transactionData.quantity,
+              unit: transactionData.unit,
+              unit_cost: transactionData.unit_cost,
+              total_cost: transactionData.total_cost,
+              date: transactionData.date,
+              receipt_url: transactionData.receipt_url,
+            })
             .select()
             .single();
           
-          if (data) {
-            await offlineDB.financialTransactions.update(id, { id: data.id, sync_status: 'synced' });
+          if (error) {
+            console.error('Error creating transaction in Supabase:', error);
+          } else if (data) {
+            await offlineDB.financialTransactions.update(id, {
+              id: data.id,
+              sync_status: 'synced',
+            });
           }
         }
       }
@@ -196,10 +234,16 @@ export default function FinanceManager() {
     if (!confirm(`¿Está seguro de eliminar esta transacción?`)) return;
 
     try {
+      // Delete from localStorage
       await offlineDB.financialTransactions.delete(transaction.id!);
       
+      // Delete from Supabase if online
       if (isOnline && transaction.id && supabase) {
-        await supabase.from('financial_transactions').delete().eq('id', transaction.id);
+        const { error } = await supabase.from('financial_transactions').delete().eq('id', transaction.id);
+        
+        if (error) {
+          console.error('Error deleting transaction from Supabase:', error);
+        }
       }
       
       await loadTransactions();

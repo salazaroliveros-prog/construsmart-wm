@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { Building2, DollarSign, TrendingUp, Users, Hammer, Calendar } from 'lucide-react';
+import { offlineDB, LocalProject, LocalFinancialTransaction, LocalPayrollEmployee, LocalWarehouseStock } from '@/lib/db/offlineStore';
 
-// Mobile-responsive dashboard stats component
+// Mobile-responsive dashboard stats component with real data
 interface StatCardProps {
   title: string;
   value: string;
@@ -63,52 +64,87 @@ function StatCard({ title, value, subtitle, icon, trend, trendUp }: StatCardProp
 const MemoizedStatCard = React.memo(StatCard);
 
 export default function DashboardStats() {
+  const [projects, setProjects] = useState<LocalProject[]>([]);
+  const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
+  const [employees, setEmployees] = useState<LocalPayrollEmployee[]>([]);
+  const [stockItems, setStockItems] = useState<LocalWarehouseStock[]>([]);
+
+  useEffect(() => {
+    loadRealData();
+  }, []);
+
+  const loadRealData = async () => {
+    try {
+      const [localProjects, localTransactions, localEmployees, localStock] = await Promise.all([
+        offlineDB.projects.toArray(),
+        offlineDB.financialTransactions.toArray(),
+        offlineDB.payrollEmployees.toArray(),
+        offlineDB.warehouseStock.toArray()
+      ]);
+
+      setProjects(localProjects);
+      setTransactions(localTransactions);
+      setEmployees(localEmployees);
+      setStockItems(localStock);
+    } catch (error) {
+      console.error('Error loading real data:', error);
+    }
+  };
+
+  // Calculate real statistics
+  const activeProjects = projects.filter(p => p.status === 'execution' || p.status === 'planning');
+  const totalBudget = projects.reduce((sum, p) => sum + (p.total_budget || 0), 0);
+  const totalSpent = transactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + (t.total_cost || 0), 0);
+  const activeEmployees = employees.filter(e => e.active).length;
+  const lowStockItems = stockItems.filter(s => s.current_stock <= s.minimum_threshold).length;
+
+  const formatCurrency = (amount: number): string => {
+    return new Intl.NumberFormat('es-GT', {
+      style: 'currency',
+      currency: 'GTQ',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
       <MemoizedStatCard
         title="Proyectos Activos"
-        value="12"
-        subtitle="3 en ejecución"
+        value={activeProjects.length.toString()}
+        subtitle={`${projects.length} total`}
         icon={<Building2 className="w-5 h-5 text-cyan-400" />}
-        trend="+2"
-        trendUp={true}
       />
       <MemoizedStatCard
         title="Presupuesto Total"
-        value="Q. 4.2M"
-        subtitle="Este mes"
+        value={formatCurrency(totalBudget)}
+        subtitle="Todos los proyectos"
         icon={<DollarSign className="w-5 h-5 text-emerald-400" />}
-        trend="+12%"
-        trendUp={true}
       />
       <MemoizedStatCard
         title="Costo Real"
-        value="Q. 3.8M"
-        subtitle="90.5% del presupuesto"
+        value={formatCurrency(totalSpent)}
+        subtitle={totalBudget > 0 ? `${((totalSpent / totalBudget) * 100).toFixed(1)}% del presupuesto` : 'Sin presupuesto'}
         icon={<TrendingUp className="w-5 h-5 text-violet-400" />}
-        trend="+8%"
-        trendUp={true}
       />
       <MemoizedStatCard
         title="Empleados"
-        value="45"
-        subtitle="Operativos activos"
+        value={activeEmployees.toString()}
+        subtitle={`${employees.length} registrados`}
         icon={<Users className="w-5 h-5 text-amber-400" />}
-        trend="+3"
-        trendUp={true}
       />
       <MemoizedStatCard
-        title="Tareas Pendientes"
-        value="23"
-        subtitle="Esta semana"
+        title="Stock Bajo"
+        value={lowStockItems.toString()}
+        subtitle={`${stockItems.length} items totales`}
         icon={<Hammer className="w-5 h-5 text-red-400" />}
-        trend="-5"
-        trendUp={false}
       />
       <MemoizedStatCard
-        title="Próxima Entrega"
-        value="15 días"
-        subtitle="Residencial Villa Real"
+        title="Transacciones"
+        value={transactions.length.toString()}
+        subtitle="Últimos 30 días"
         icon={<Calendar className="w-5 h-5 text-cyan-400" />}
       />
     </div>

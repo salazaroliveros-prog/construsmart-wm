@@ -124,29 +124,59 @@ export default function WarehouseManager() {
       };
 
       if (editingItem) {
+        // Update in localStorage
         await offlineDB.warehouseStock.update(editingItem.id!, {
           ...itemData,
           sync_status: isOnline ? 'synced' : 'updated_offline',
         });
         
+        // Update in Supabase if online
         if (isOnline && editingItem.id && supabase) {
-          await supabase
+          const { error } = await supabase
             .from('warehouse_stock')
-            .update(itemData)
+            .update({
+              item_code: itemData.item_code,
+              description: itemData.description,
+              unit: itemData.unit,
+              current_stock: itemData.current_stock,
+              minimum_threshold: itemData.minimum_threshold,
+              unit_cost: itemData.unit_cost,
+            })
             .eq('id', editingItem.id);
+          
+          if (error) {
+            console.error('Error updating stock in Supabase:', error);
+            await offlineDB.warehouseStock.update(editingItem.id!, {
+              sync_status: 'updated_offline',
+            });
+          }
         }
       } else {
+        // Create in localStorage
         const id = await offlineDB.warehouseStock.add(itemData);
         
+        // Create in Supabase if online
         if (isOnline && supabase) {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('warehouse_stock')
-            .insert(itemData)
+            .insert({
+              item_code: itemData.item_code,
+              description: itemData.description,
+              unit: itemData.unit,
+              current_stock: itemData.current_stock,
+              minimum_threshold: itemData.minimum_threshold,
+              unit_cost: itemData.unit_cost,
+            })
             .select()
             .single();
           
-          if (data) {
-            await offlineDB.warehouseStock.update(id, { id: data.id, sync_status: 'synced' });
+          if (error) {
+            console.error('Error creating stock in Supabase:', error);
+          } else if (data) {
+            await offlineDB.warehouseStock.update(id, {
+              id: data.id,
+              sync_status: 'synced',
+            });
           }
         }
       }
@@ -162,10 +192,16 @@ export default function WarehouseManager() {
     if (!confirm(`¿Está seguro de eliminar el item ${item.description}?`)) return;
 
     try {
+      // Delete from localStorage
       await offlineDB.warehouseStock.delete(item.id!);
       
+      // Delete from Supabase if online
       if (isOnline && item.id && supabase) {
-        await supabase.from('warehouse_stock').delete().eq('id', item.id);
+        const { error } = await supabase.from('warehouse_stock').delete().eq('id', item.id);
+        
+        if (error) {
+          console.error('Error deleting stock from Supabase:', error);
+        }
       }
       
       await loadStockItems();

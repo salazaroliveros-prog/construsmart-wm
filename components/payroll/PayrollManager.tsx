@@ -205,29 +205,61 @@ export default function PayrollManager() {
       };
 
       if (editingEmployee) {
+        // Update in localStorage
         await offlineDB.payrollEmployees.update(editingEmployee.id!, {
           ...employeeData,
           sync_status: isOnline ? 'synced' : 'updated_offline',
         });
         
+        // Update in Supabase if online
         if (isOnline && editingEmployee.id && supabase) {
-          await supabase
+          const { error } = await supabase
             .from('payroll_employees')
-            .update(employeeData)
+            .update({
+              name: employeeData.name,
+              position: employeeData.position,
+              daily_rate: employeeData.daily_rate,
+              category: employeeData.category,
+              department: employeeData.department,
+              hire_date: employeeData.hire_date,
+              active: employeeData.active,
+            })
             .eq('id', editingEmployee.id);
+          
+          if (error) {
+            console.error('Error updating employee in Supabase:', error);
+            await offlineDB.payrollEmployees.update(editingEmployee.id!, {
+              sync_status: 'updated_offline',
+            });
+          }
         }
       } else {
+        // Create in localStorage
         const id = await offlineDB.payrollEmployees.add(employeeData);
         
+        // Create in Supabase if online
         if (isOnline && supabase) {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('payroll_employees')
-            .insert(employeeData)
+            .insert({
+              name: employeeData.name,
+              position: employeeData.position,
+              daily_rate: employeeData.daily_rate,
+              category: employeeData.category,
+              department: employeeData.department,
+              hire_date: employeeData.hire_date,
+              active: employeeData.active,
+            })
             .select()
             .single();
           
-          if (data) {
-            await offlineDB.payrollEmployees.update(id, { id: data.id, sync_status: 'synced' });
+          if (error) {
+            console.error('Error creating employee in Supabase:', error);
+          } else if (data) {
+            await offlineDB.payrollEmployees.update(id, {
+              id: data.id,
+              sync_status: 'synced',
+            });
           }
         }
       }
@@ -243,10 +275,16 @@ export default function PayrollManager() {
     if (!confirm(`¿Está seguro de eliminar al empleado ${employee.name}?`)) return;
 
     try {
+      // Delete from localStorage
       await offlineDB.payrollEmployees.delete(employee.id!);
       
+      // Delete from Supabase if online
       if (isOnline && employee.id && supabase) {
-        await supabase.from('payroll_employees').delete().eq('id', employee.id);
+        const { error } = await supabase.from('payroll_employees').delete().eq('id', employee.id);
+        
+        if (error) {
+          console.error('Error deleting employee from Supabase:', error);
+        }
       }
       
       await loadEmployees();
