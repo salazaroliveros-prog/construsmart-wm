@@ -329,7 +329,7 @@ export default function PayrollManager() {
           sync_status: isOnline ? 'synced' : 'updated_offline',
         });
         
-        if (isOnline && editingPayroll.id) {
+        if (isOnline && editingPayroll.id && supabase) {
           await supabase
             .from('payroll_records')
             .update(payrollData)
