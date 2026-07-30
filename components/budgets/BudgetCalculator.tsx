@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Calculator, Plus, Trash2, Save } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Calculator, Plus, Trash2, Save, Download } from 'lucide-react';
 import { calculateSlab, SlabDimensions, calculateSlabCost, SlabCostParams } from '@/lib/calculators/slabCalculators';
 import PDFGenerator from '@/components/pdf/PDFGenerator';
 import { offlineDB } from '@/lib/db/offlineStore';
@@ -184,12 +184,12 @@ export default function BudgetCalculator() {
 
   return (
     <div className="glass-panel rounded-2xl p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-white flex items-center space-x-2">
-          <Calculator className="w-5 h-5 text-cyan-400" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
+        <h2 className="text-base sm:text-lg font-semibold text-white flex items-center space-x-2">
+          <Calculator className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
           <span>Calculadora de Presupuestos APU</span>
         </h2>
-        <div className="flex space-x-2">
+        <div className="flex items-center gap-2">
           <PDFGenerator
             projectName={projectName}
             clientName={clientName}
@@ -202,10 +202,10 @@ export default function BudgetCalculator() {
           <button
             onClick={handleSave}
             disabled={saveLoading}
-            className="glass-button-inline px-4 py-2 rounded-lg text-sm text-emerald-300 flex items-center space-x-2 disabled:opacity-50"
+            className="glass-button-inline px-3 sm:px-4 py-2 rounded-lg text-sm text-emerald-300 flex items-center space-x-2 disabled:opacity-50"
           >
             <Save className={`w-4 h-4 ${saveLoading ? 'animate-spin' : ''}`} />
-            <span>{saveLoading ? 'Guardando...' : 'Guardar'}</span>
+            <span className="hidden sm:inline">{saveLoading ? 'Guardando...' : 'Guardar'}</span>
           </button>
         </div>
       </div>

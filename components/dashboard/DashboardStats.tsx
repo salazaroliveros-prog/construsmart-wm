@@ -1,11 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-
 import { Building2, DollarSign, TrendingUp, Users, Hammer, Calendar } from 'lucide-react';
 import { offlineDB, LocalProject, LocalFinancialTransaction, LocalPayrollEmployee, LocalWarehouseStock } from '@/lib/db/offlineStore';
 
-// Mobile-responsive dashboard stats component with real data
 interface StatCardProps {
   title: string;
   value: string;
@@ -17,26 +15,26 @@ interface StatCardProps {
 
 function StatCard({ title, value, subtitle, icon, trend, trendUp }: StatCardProps) {
   return (
-    <div className="glass-card p-4 sm:p-5 rounded-xl transition-all hover:bg-white/5 flex flex-col gap-2">
+    <div className="glass-card p-3 sm:p-4 rounded-xl transition-all hover:bg-white/5 flex flex-col gap-1.5 sm:gap-2">
       <div className="flex items-center justify-between">
-        <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
           {icon}
         </div>
         {trend && (
-          <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-md ${
+          <div className={`flex items-center gap-1 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md ${
             trendUp
               ? 'text-green-400 bg-green-400/10'
               : 'text-red-400 bg-red-400/10'
           }`}>
-            <TrendingUp className={`w-3 h-3 ${!trendUp ? 'rotate-180' : ''}`} />
+            <TrendingUp className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${!trendUp ? 'rotate-180' : ''}`} />
             <span>{trend}</span>
           </div>
         )}
       </div>
       <div>
-        <h3 className="text-xs sm:text-sm font-medium text-gray-400 mb-1">{title}</h3>
-        <p className="text-xl sm:text-2xl font-bold text-white drop-shadow-lg">{value}</p>
-        <p className="text-[11px] sm:text-xs text-cyan-400 mt-0.5">{subtitle}</p>
+        <h3 className="text-[10px] sm:text-xs font-medium text-gray-400 mb-0.5 sm:mb-1">{title}</h3>
+        <p className="text-lg sm:text-xl font-bold text-white drop-shadow-lg">{value}</p>
+        <p className="text-[10px] sm:text-xs text-cyan-400">{subtitle}</p>
       </div>
     </div>
   );
@@ -75,7 +73,6 @@ export default function DashboardStats() {
     }
   };
 
-  // Calculate real statistics
   const activeProjects = projects.filter(p => p.status === 'execution' || p.status === 'planning');
   const totalBudget = projects.reduce((sum, p) => sum + (p.total_budget || 0), 0);
   const totalSpent = transactions
@@ -97,54 +94,53 @@ export default function DashboardStats() {
   };
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-3 lg:gap-4">
         {!isLoading ? (
         <>
           <MemoizedStatCard
             title="Proyectos Activos"
             value={activeProjects.length.toString()}
             subtitle={`${projects.length} total`}
-            icon={<Building2 className="w-5 h-5 text-cyan-400" />}
+            icon={<Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />}
           />
           <MemoizedStatCard
             title="Presupuesto Total"
             value={formatCurrency(totalBudget)}
             subtitle="Todos los proyectos"
-            icon={<DollarSign className="w-5 h-5 text-emerald-400" />}
+            icon={<DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />}
           />
           <MemoizedStatCard
             title="Costo Real"
             value={formatCurrency(totalSpent)}
             subtitle={totalBudget > 0 ? `${((totalSpent / totalBudget) * 100).toFixed(1)}% del presupuesto` : 'Sin presupuesto'}
-            icon={<TrendingUp className="w-5 h-5 text-violet-400" />}
+            icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400" />}
           />
           <MemoizedStatCard
             title="Empleados"
             value={activeEmployees.toString()}
             subtitle={`${employees.length} registrados`}
-            icon={<Users className="w-5 h-5 text-amber-400" />}
+            icon={<Users className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />}
           />
           <MemoizedStatCard
             title="Stock Bajo"
             value={lowStockItems.toString()}
             subtitle={`${stockItems.length} items totales`}
-            icon={<Hammer className="w-5 h-5 text-red-400" />}
+            icon={<Hammer className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />}
           />
           <MemoizedStatCard
             title="Transacciones"
             value={transactions.length.toString()}
             subtitle="Últimos 30 días"
-            icon={<Calendar className="w-5 h-5 text-cyan-400" />}
+            icon={<Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />}
           />
         </>
       ) : (
-        // Skeleton loading state to avoid hydration mismatch
         <>
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="glass-card p-4 rounded-xl animate-pulse">
-              <div className="h-8 bg-white/10 rounded mb-2 w-1/2"></div>
-              <div className="h-6 bg-white/10 rounded mb-1 w-3/4"></div>
-              <div className="h-4 bg-white/10 rounded w-1/3"></div>
+            <div key={i} className="glass-card p-3 sm:p-4 rounded-xl animate-pulse">
+              <div className="h-6 sm:h-8 bg-white/10 rounded mb-1 sm:mb-2 w-1/2"></div>
+              <div className="h-4 sm:h-6 bg-white/10 rounded mb-1 w-3/4"></div>
+              <div className="h-3 sm:h-4 bg-white/10 rounded w-1/3"></div>
             </div>
           ))}
         </>

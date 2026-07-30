@@ -9,25 +9,12 @@ import DashboardStats from '@/components/dashboard/DashboardStats';
 import ProjectOverview from '@/components/dashboard/ProjectOverview';
 import { offlineDB } from '@/lib/db/offlineStore';
 
-const BudgetCalculator = dynamic(() => import('@/components/budgets/BudgetCalculator'), { ssr: false });
 const ProjectManager = dynamic(() => import('@/components/dashboard/ProjectManager'), { ssr: false });
+const BudgetCalculator = dynamic(() => import('@/components/budgets/BudgetCalculator'), { ssr: false });
 const FinanceManager = dynamic(() => import('@/components/finances/FinanceManager'), { ssr: false });
 const PayrollManager = dynamic(() => import('@/components/payroll/PayrollManager'), { ssr: false });
 const WarehouseManager = dynamic(() => import('@/components/warehouse/WarehouseManager'), { ssr: false });
 const AnalyticsDashboard = dynamic(() => import('@/components/analytics/AnalyticsDashboard'), { ssr: false });
-
-function TabSkeleton() {
-  return (
-    <div className="glass-panel rounded-2xl p-6 animate-pulse">
-      <div className="h-6 bg-white/10 rounded w-48 mb-6" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {[1, 2, 3, 4].map(i => (
-          <div key={`sk-${i}`} className="h-24 bg-white/10 rounded-xl" />
-        ))}
-      </div>
-    </div>
-  );
-}
 
 const tabs = [
   { id: 'dashboard', label: 'Tablero Principal' },
@@ -56,9 +43,7 @@ export default function Dashboard() {
   useEffect(() => {
     setIsMounted(true);
     loadRecentActivity();
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -105,96 +90,96 @@ export default function Dashboard() {
         return (
           <>
             <div className="mb-6">
-              <h1 className="text-3xl font-bold text-white mb-2" style={{ textShadow: '0 0 10px rgba(56, 189, 248, 0.5)' }}>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
                 Bienvenido al Sistema de Control
               </h1>
-              <p className="text-white/60">
+              <p className="text-white/60 text-sm sm:text-base">
                 Gestione proyectos, presupuestos y seguimiento en tiempo real
               </p>
             </div>
 
             <DashboardStats />
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
               <ProjectOverview />
 
-              <div className="glass-panel rounded-2xl p-6">
-                <h2 className="text-lg font-semibold text-white mb-6 flex items-center space-x-2">
-                  <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-white" aria-hidden="true" />
+              <div className="glass-panel rounded-2xl p-4 sm:p-6">
+                <h2 className="text-base sm:text-lg font-semibold text-white mb-4 sm:mb-6 flex items-center space-x-2">
+                  <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center">
+                    <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-white" aria-hidden="true" />
                   </span>
                   <span>Acciones Rápidas</span>
                 </h2>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <button
                     onClick={() => setActiveTab('projects')}
-                    className="glass-button p-4 rounded-xl text-left group"
+                    className="glass-button-inline p-3 sm:p-4 rounded-xl text-left group"
                   >
-                    <div className="flex items-center space-x-3 mb-2">
-                      <div className="p-2 rounded-lg bg-emerald-500/20 group-hover:bg-emerald-500/30 transition-colors">
-                        <ClipboardList className="w-5 h-5 text-white" aria-hidden="true" />
+                    <div className="flex items-center space-x-2 sm:space-x-3 mb-1 sm:mb-2">
+                      <div className="p-1.5 sm:p-2 rounded-lg bg-emerald-500/20 group-hover:bg-emerald-500/30 transition-colors">
+                        <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 text-white" aria-hidden="true" />
                       </div>
-                      <span className="text-white font-medium">Nuevo Proyecto</span>
+                      <span className="text-white font-medium text-sm sm:text-base">Nuevo Proyecto</span>
                     </div>
-                    <p className="text-xs text-white/60">Crear proyecto desde cero</p>
+                    <p className="text-xs text-white/60 hidden sm:block">Crear proyecto desde cero</p>
                   </button>
 
                   <button
                     onClick={() => setActiveTab('budgets')}
-                    className="glass-button p-4 rounded-xl text-left group"
+                    className="glass-button-inline p-3 sm:p-4 rounded-xl text-left group"
                   >
-                    <div className="flex items-center space-x-3 mb-2">
-                      <div className="p-2 rounded-lg bg-cyan-500/20 group-hover:bg-cyan-500/30 transition-colors">
-                        <BarChart3 className="w-5 h-5 text-white" aria-hidden="true" />
+                    <div className="flex items-center space-x-2 sm:space-x-3 mb-1 sm:mb-2">
+                      <div className="p-1.5 sm:p-2 rounded-lg bg-cyan-500/20 group-hover:bg-cyan-500/30 transition-colors">
+                        <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-white" aria-hidden="true" />
                       </div>
-                      <span className="text-white font-medium">Nuevo Presupuesto</span>
+                      <span className="text-white font-medium text-sm sm:text-base">Nuevo Presupuesto</span>
                     </div>
-                    <p className="text-xs text-white/60">Generar APU detallado</p>
+                    <p className="text-xs text-white/60 hidden sm:block">Generar APU detallado</p>
                   </button>
 
                   <button
                     onClick={() => setActiveTab('finances')}
-                    className="glass-button p-4 rounded-xl text-left group"
+                    className="glass-button-inline p-3 sm:p-4 rounded-xl text-left group"
                   >
-                    <div className="flex items-center space-x-3 mb-2">
-                      <div className="p-2 rounded-lg bg-violet-500/20 group-hover:bg-violet-500/30 transition-colors">
-                        <DollarSign className="w-5 h-5 text-white" aria-hidden="true" />
+                    <div className="flex items-center space-x-2 sm:space-x-3 mb-1 sm:mb-2">
+                      <div className="p-1.5 sm:p-2 rounded-lg bg-violet-500/20 group-hover:bg-violet-500/30 transition-colors">
+                        <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-white" aria-hidden="true" />
                       </div>
-                      <span className="text-white font-medium">Gestión Financiera</span>
+                      <span className="text-white font-medium text-sm sm:text-base">Gestión Financiera</span>
                     </div>
-                    <p className="text-xs text-white/60">Control de gastos e ingresos</p>
+                    <p className="text-xs text-white/60 hidden sm:block">Control de gastos e ingresos</p>
                   </button>
 
                   <button
                     onClick={() => setActiveTab('warehouse')}
-                    className="glass-button p-4 rounded-xl text-left group"
+                    className="glass-button-inline p-3 sm:p-4 rounded-xl text-left group"
                   >
-                    <div className="flex items-center space-x-3 mb-2">
-                      <div className="p-2 rounded-lg bg-teal-500/20 group-hover:bg-teal-500/30 transition-colors">
-                        <Package className="w-5 h-5 text-white" aria-hidden="true" />
+                    <div className="flex items-center space-x-2 sm:space-x-3 mb-1 sm:mb-2">
+                      <div className="p-1.5 sm:p-2 rounded-lg bg-teal-500/20 group-hover:bg-teal-500/30 transition-colors">
+                        <Package className="w-4 h-4 sm:w-5 sm:h-5 text-white" aria-hidden="true" />
                       </div>
-                      <span className="text-white font-medium">Almacén</span>
+                      <span className="text-white font-medium text-sm sm:text-base">Almacén</span>
                     </div>
-                    <p className="text-xs text-white/60">Control de inventario</p>
+                    <p className="text-xs text-white/60 hidden sm:block">Control de inventario</p>
                   </button>
                 </div>
 
-                <div className="mt-6 pt-6 border-t border-white/10">
-                  <h3 className="text-sm font-medium text-white mb-4 flex items-center space-x-2">
+                <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/10">
+                  <h3 className="text-sm font-medium text-white mb-3 sm:mb-4 flex items-center space-x-2">
                     <Clock className="w-4 h-4 text-white/60" aria-hidden="true" />
                     <span>Actividad Reciente</span>
                   </h3>
                   {recentActivity.length === 0 ? (
                     <p className="text-sm text-white/40">No hay actividad reciente</p>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                       {recentActivity.map((activity) => (
-                        <div key={activity.id} className="flex items-center space-x-3 text-sm">
-                          <div className={`w-2 h-2 rounded-full ${activity.color}`} />
-                          <span className="text-white/70 truncate">{activity.text}</span>
+                        <div key={activity.id} className="flex items-center space-x-2 sm:space-x-3 text-sm">
+                          <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${activity.color}`} />
+                          <span className="text-white/70 truncate text-xs sm:text-sm">{activity.text}</span>
                           {activity.time && (
-                            <span className="text-white/40 text-xs ml-auto whitespace-nowrap">{activity.time}</span>
+                            <span className="text-white/40 text-[10px] sm:text-xs ml-auto whitespace-nowrap">{activity.time}</span>
                           )}
                         </div>
                       ))}
@@ -204,32 +189,32 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="glass-panel rounded-2xl p-6">
-              <h2 className="text-lg font-semibold text-white mb-6 flex items-center space-x-2">
-                  <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-                    <DollarSign className="w-4 h-4 text-white" aria-hidden="true" />
+            <div className="glass-panel rounded-2xl p-4 sm:p-6">
+              <h2 className="text-base sm:text-lg font-semibold text-white mb-4 sm:mb-6 flex items-center space-x-2">
+                  <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                    <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-white" aria-hidden="true" />
                   </span>
                 <span>Matriz de Costos Residenciales (GTQ)</span>
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="glass-card p-4 rounded-xl border-l-4 border-l-blue-500">
-                  <h3 className="text-blue-400 font-semibold mb-2">Nivel Básico</h3>
-                  <p className="text-2xl font-bold text-white mb-1">Q. 3,000 - Q. 3,500</p>
-                  <p className="text-sm text-white/60">por m²</p>
-                  <p className="text-xs text-white/40 mt-2">Acabados económicos estándar</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-blue-500">
+                  <h3 className="text-blue-400 font-semibold mb-1 sm:mb-2 text-sm sm:text-base">Nivel Básico</h3>
+                  <p className="text-xl sm:text-2xl font-bold text-white mb-1">Q. 3,000 - Q. 3,500</p>
+                  <p className="text-xs sm:text-sm text-white/60">por m²</p>
+                  <p className="text-[10px] sm:text-xs text-white/40 mt-1 sm:mt-2">Acabados económicos estándar</p>
                 </div>
-                <div className="glass-card p-4 rounded-xl border-l-4 border-l-emerald-500">
-                  <h3 className="text-emerald-400 font-semibold mb-2">Nivel Moderado</h3>
-                  <p className="text-2xl font-bold text-white mb-1">Q. 3,500 - Q. 4,000</p>
-                  <p className="text-sm text-white/60">por m²</p>
-                  <p className="text-xs text-white/40 mt-2">Acabados de calidad media</p>
+                <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-emerald-500">
+                  <h3 className="text-emerald-400 font-semibold mb-1 sm:mb-2 text-sm sm:text-base">Nivel Moderado</h3>
+                  <p className="text-xl sm:text-2xl font-bold text-white mb-1">Q. 3,500 - Q. 4,000</p>
+                  <p className="text-xs sm:text-sm text-white/60">por m²</p>
+                  <p className="text-[10px] sm:text-xs text-white/40 mt-1 sm:mt-2">Acabados de calidad media</p>
                 </div>
-                <div className="glass-card p-4 rounded-xl border-l-4 border-l-violet-500">
-                  <h3 className="text-violet-400 font-semibold mb-2">Nivel Premium</h3>
-                  <p className="text-2xl font-bold text-white mb-1">Q. 4,000 - Q. 5,000</p>
-                  <p className="text-sm text-white/60">por m²</p>
-                  <p className="text-xs text-white/40 mt-2">Acabados de alta gama</p>
+                <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-violet-500">
+                  <h3 className="text-violet-400 font-semibold mb-1 sm:mb-2 text-sm sm:text-base">Nivel Premium</h3>
+                  <p className="text-xl sm:text-2xl font-bold text-white mb-1">Q. 4,000 - Q. 5,000</p>
+                  <p className="text-xs sm:text-sm text-white/60">por m²</p>
+                  <p className="text-[10px] sm:text-xs text-white/40 mt-1 sm:mt-2">Acabados de alta gama</p>
                 </div>
               </div>
             </div>
@@ -259,11 +244,11 @@ export default function Dashboard() {
       {isMounted && isMobile && (
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="lg:hidden fixed top-20 left-4 z-[60] p-3 rounded-lg glass-button"
+          className="lg:hidden fixed top-20 left-3 sm:left-4 z-[60] p-2.5 sm:p-3 rounded-lg glass-button"
           aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
           aria-expanded={isMobileMenuOpen}
         >
-          {isMobileMenuOpen ? <X className="w-6 h-6 text-white" aria-hidden="true" /> : <Menu className="w-6 h-6 text-white" aria-hidden="true" />}
+          {isMobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" aria-hidden="true" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6 text-white" aria-hidden="true" />}
         </button>
       )}
 
@@ -278,7 +263,6 @@ export default function Dashboard() {
       <div className="flex flex-1 overflow-hidden relative">
         <aside
           className={`sidebar-container fixed lg:relative w-64 flex-shrink-0 h-full lg:block ${isMobileMenuOpen ? 'open' : ''}`}
-          style={{ zIndex: 60 }}
           aria-label="Menú lateral de navegación"
         >
           <DashboardNav activeTab={activeTab} onTabChange={(tab) => {
@@ -287,16 +271,16 @@ export default function Dashboard() {
           }} />
         </aside>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 main-content pt-20 lg:pt-6" id="main-content" role="main" aria-label="Contenido principal" style={{ position: 'relative', zIndex: 1 }}>
+        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 main-content pt-16 sm:pt-20 lg:pt-6" id="main-content" role="main" aria-label="Contenido principal">
           <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
-            <nav className="flex flex-wrap gap-2 mb-4 sm:mb-6 overflow-x-auto pb-1" aria-label="Navegación de pestañas">
+            <nav className="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-1" aria-label="Navegación de pestañas">
               {tabs.map(tab => {
                 const isTabActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all whitespace-nowrap text-sm ${
+                    className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all whitespace-nowrap text-xs sm:text-sm ${
                       isTabActive
                         ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
                         : 'text-gray-400 hover:text-white border border-transparent'

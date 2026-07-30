@@ -333,27 +333,27 @@ export default function FinanceManager() {
   };
 
   return (
-    <div className="glass-panel rounded-2xl p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-white flex items-center space-x-2">
-          <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center">
-            <DollarSign className="w-5 h-5 text-white" />
+    <div className="glass-panel rounded-2xl p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
+        <h2 className="text-base sm:text-lg font-semibold text-white flex items-center space-x-2">
+          <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center">
+            <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </span>
           <span>Gestión Financiera</span>
         </h2>
-        <div className="flex items-center space-x-2">
-          <div className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full ${isOnline ? 'bg-emerald-500/20 border border-emerald-500/30' : 'bg-amber-500/20 border border-amber-500/30'}`}>
-            <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-            <span className={`text-xs font-medium ${isOnline ? 'text-emerald-300' : 'text-amber-300'}`}>
+        <div className="flex items-center gap-2">
+          <div className={`flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full ${isOnline ? 'bg-emerald-500/20 border border-emerald-500/30' : 'bg-amber-500/20 border border-amber-500/30'}`}>
+            <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+            <span className={`text-[10px] sm:text-xs font-medium ${isOnline ? 'text-emerald-300' : 'text-amber-300'}`}>
               {isOnline ? 'Online' : 'Offline'}
             </span>
           </div>
           <button
             onClick={() => handleOpenModal()}
-            className="glass-button-inline px-4 py-2 rounded-lg text-sm text-cyan-300 flex items-center space-x-2"
+            className="glass-button-inline px-3 sm:px-4 py-2 rounded-lg text-sm text-cyan-300 flex items-center space-x-2"
           >
             <Plus className="w-4 h-4" />
-            <span>Nueva Transacción</span>
+            <span className="hidden sm:inline">Nueva Transacción</span>
           </button>
         </div>
       </div>
