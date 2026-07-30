@@ -327,7 +327,7 @@ export default function ProjectManager() {
         />
       ) : (
         <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
-          <table className="w-full text-sm" style={{ minWidth: '600px' }}>
+          <table className="w-full text-sm min-w-[600px]">
             <thead>
               <tr className="border-b border-white/10">
                 <th className="text-left text-white/60 py-3 px-4">Código</th>
