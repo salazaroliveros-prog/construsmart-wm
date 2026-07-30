@@ -2,21 +2,22 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration';
+import { APP_CONFIG } from '@/lib/config/app.config';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'CONSTRUCTORA WM/M&S - Sistema de Control de Seguimiento',
-  description: 'Sistema ERP de construcción con control de presupuestos, seguimiento de proyectos y gestión financiera. "CONSTRUYENDO EL FUTURO"',
-  keywords: ['construcción', 'ERP', 'presupuestos', 'gestión de proyectos', 'control de costos', 'obras', 'constructora'],
-  authors: [{ name: 'Constructora WM/M&S' }],
-  creator: 'Constructora WM/M&S',
-  publisher: 'Constructora WM/M&S',
+  title: `${APP_CONFIG.name} - Sistema de Control de Seguimiento`,
+  description: APP_CONFIG.description,
+  keywords: APP_CONFIG.keywords,
+  authors: [{ name: APP_CONFIG.name }],
+  creator: APP_CONFIG.name,
+  publisher: APP_CONFIG.name,
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'WM/M&S ERP',
+    title: APP_CONFIG.shortName,
   },
   icons: {
     icon: [
@@ -30,15 +31,15 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'es_GT',
-    url: 'https://your-domain.com',
-    title: 'CONSTRUCTORA WM/M&S - Sistema de Control de Seguimiento',
-    description: 'Sistema ERP de construcción con control de presupuestos, seguimiento de proyectos y gestión financiera.',
-    siteName: 'CONSTRUCTORA WM/M&S',
+    url: APP_CONFIG.url,
+    title: `${APP_CONFIG.name} - Sistema de Control de Seguimiento`,
+    description: APP_CONFIG.description,
+    siteName: APP_CONFIG.name,
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'CONSTRUCTORA WM/M&S - Sistema de Control de Seguimiento',
-    description: 'Sistema ERP de construcción con control de presupuestos, seguimiento de proyectos y gestión financiera.',
+    title: `${APP_CONFIG.name} - Sistema de Control de Seguimiento`,
+    description: APP_CONFIG.description,
   },
   robots: {
     index: true,
