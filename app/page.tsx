@@ -17,9 +17,11 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Detect mobile viewport
   useEffect(() => {
+    setIsMounted(true);
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -34,7 +36,7 @@ export default function Dashboard() {
       <DualBrandHeader />
 
       {/* Mobile Menu Button */}
-      {isMobile && (
+      {isMounted && isMobile && (
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="lg:hidden fixed top-20 left-4 z-50 p-3 rounded-lg glass-button"
@@ -45,7 +47,7 @@ export default function Dashboard() {
       )}
 
       {/* Mobile Sidebar Overlay */}
-      {isMobile && isMobileMenuOpen && (
+      {isMounted && isMobile && isMobileMenuOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}

@@ -47,8 +47,10 @@ export default function DashboardStats() {
   const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
   const [employees, setEmployees] = useState<LocalPayrollEmployee[]>([]);
   const [stockItems, setStockItems] = useState<LocalWarehouseStock[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     loadRealData();
   }, []);
 
@@ -93,42 +95,57 @@ export default function DashboardStats() {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-      <MemoizedStatCard
-        title="Proyectos Activos"
-        value={activeProjects.length.toString()}
-        subtitle={`${projects.length} total`}
-        icon={<Building2 className="w-5 h-5 text-cyan-400" />}
-      />
-      <MemoizedStatCard
-        title="Presupuesto Total"
-        value={formatCurrency(totalBudget)}
-        subtitle="Todos los proyectos"
-        icon={<DollarSign className="w-5 h-5 text-emerald-400" />}
-      />
-      <MemoizedStatCard
-        title="Costo Real"
-        value={formatCurrency(totalSpent)}
-        subtitle={totalBudget > 0 ? `${((totalSpent / totalBudget) * 100).toFixed(1)}% del presupuesto` : 'Sin presupuesto'}
-        icon={<TrendingUp className="w-5 h-5 text-violet-400" />}
-      />
-      <MemoizedStatCard
-        title="Empleados"
-        value={activeEmployees.toString()}
-        subtitle={`${employees.length} registrados`}
-        icon={<Users className="w-5 h-5 text-amber-400" />}
-      />
-      <MemoizedStatCard
-        title="Stock Bajo"
-        value={lowStockItems.toString()}
-        subtitle={`${stockItems.length} items totales`}
-        icon={<Hammer className="w-5 h-5 text-red-400" />}
-      />
-      <MemoizedStatCard
-        title="Transacciones"
-        value={transactions.length.toString()}
-        subtitle="Últimos 30 días"
-        icon={<Calendar className="w-5 h-5 text-cyan-400" />}
-      />
+      {isMounted ? (
+        <>
+          <MemoizedStatCard
+            title="Proyectos Activos"
+            value={activeProjects.length.toString()}
+            subtitle={`${projects.length} total`}
+            icon={<Building2 className="w-5 h-5 text-cyan-400" />}
+          />
+          <MemoizedStatCard
+            title="Presupuesto Total"
+            value={formatCurrency(totalBudget)}
+            subtitle="Todos los proyectos"
+            icon={<DollarSign className="w-5 h-5 text-emerald-400" />}
+          />
+          <MemoizedStatCard
+            title="Costo Real"
+            value={formatCurrency(totalSpent)}
+            subtitle={totalBudget > 0 ? `${((totalSpent / totalBudget) * 100).toFixed(1)}% del presupuesto` : 'Sin presupuesto'}
+            icon={<TrendingUp className="w-5 h-5 text-violet-400" />}
+          />
+          <MemoizedStatCard
+            title="Empleados"
+            value={activeEmployees.toString()}
+            subtitle={`${employees.length} registrados`}
+            icon={<Users className="w-5 h-5 text-amber-400" />}
+          />
+          <MemoizedStatCard
+            title="Stock Bajo"
+            value={lowStockItems.toString()}
+            subtitle={`${stockItems.length} items totales`}
+            icon={<Hammer className="w-5 h-5 text-red-400" />}
+          />
+          <MemoizedStatCard
+            title="Transacciones"
+            value={transactions.length.toString()}
+            subtitle="Últimos 30 días"
+            icon={<Calendar className="w-5 h-5 text-cyan-400" />}
+          />
+        </>
+      ) : (
+        // Skeleton loading state to avoid hydration mismatch
+        <>
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="glass-card p-4 rounded-xl animate-pulse">
+              <div className="h-8 bg-white/10 rounded mb-2 w-1/2"></div>
+              <div className="h-6 bg-white/10 rounded mb-1 w-3/4"></div>
+              <div className="h-4 bg-white/10 rounded w-1/3"></div>
+            </div>
+          ))}
+        </>
+      )}
     </div>
   );
 }

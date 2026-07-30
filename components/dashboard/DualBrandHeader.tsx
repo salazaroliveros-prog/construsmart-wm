@@ -5,21 +5,24 @@ import { useState, useEffect } from 'react';
 
 export default function DualBrandHeader() {
   const [isOnline, setIsOnline] = useState(true);
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+    setCurrentTime(new Date());
+    
     const updateOnlineStatus = () => setIsOnline(navigator.onLine);
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
+    
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    
     return () => {
       window.removeEventListener('online', updateOnlineStatus);
       window.removeEventListener('offline', updateOnlineStatus);
+      clearInterval(timer);
     };
-  }, []);
-
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
   }, []);
 
   const formatDate = (date: Date) => {
@@ -80,16 +83,18 @@ export default function DualBrandHeader() {
       {/* Right Side - User Info & Status */}
       <div className="flex items-center gap-6">
         {/* Date & Time */}
-        <div className="hidden lg:flex items-center gap-4 text-sm text-white/70">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            <span>{formatDate(currentTime)}</span>
+        {isMounted && currentTime && (
+          <div className="hidden lg:flex items-center gap-4 text-sm text-white/70">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              <span>{formatDate(currentTime)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              <span>{formatTime(currentTime)}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            <span>{formatTime(currentTime)}</span>
-          </div>
-        </div>
+        )}
 
         {/* Sync Status Badge */}
         <div className="flex items-center gap-2">
