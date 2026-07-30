@@ -47,10 +47,9 @@ export default function DashboardStats() {
   const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
   const [employees, setEmployees] = useState<LocalPayrollEmployee[]>([]);
   const [stockItems, setStockItems] = useState<LocalWarehouseStock[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsMounted(true);
     loadRealData();
   }, []);
 
@@ -69,6 +68,8 @@ export default function DashboardStats() {
       setStockItems(localStock);
     } catch (error) {
       console.error('Error loading real data:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -95,7 +96,7 @@ export default function DashboardStats() {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-      {isMounted ? (
+        {!isLoading ? (
         <>
           <MemoizedStatCard
             title="Proyectos Activos"

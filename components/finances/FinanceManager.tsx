@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Filter, TrendingUp, TrendingDown, DollarSign, Wallet, ArrowDownCircle, ArrowUpCircle, Calendar, Download, X, Save } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Filter, TrendingUp, TrendingDown, DollarSign, Wallet, ArrowDownCircle, ArrowUpCircle, Calendar, Download, X, Save, Inbox } from 'lucide-react';
 import { offlineDB, LocalFinancialTransaction, LocalProject } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
+import { useToast } from '@/components/ui/Toast';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import EmptyState from '@/components/ui/EmptyState';
 
 interface TransactionFormData {
   project_id?: string;
@@ -21,6 +24,7 @@ type TransactionType = 'income' | 'expense';
 type TransactionCategory = 'materiales' | 'mano_de_obra' | 'herramienta' | 'sub_contrato' | 'administrativo' | 'personal' | 'transporte' | 'fijos' | 'hogar' | 'aporte' | 'trabajos_extra';
 
 export default function FinanceManager() {
+  const { showToast } = useToast();
   const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<LocalFinancialTransaction | null>(null);
@@ -29,6 +33,7 @@ export default function FinanceManager() {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [isOnline, setIsOnline] = useState(true);
   const [selectedProject, setSelectedProject] = useState<string>('all');
+  const [deleteConfirm, setDeleteConfirm] = useState<LocalFinancialTransaction | null>(null);
 
   const [formData, setFormData] = useState<TransactionFormData>({
     type: 'expense',
@@ -47,13 +52,13 @@ export default function FinanceManager() {
     loadTransactions();
     loadProjects();
     checkOnlineStatus();
-    
+
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
-    
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    
+
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
@@ -68,13 +73,13 @@ export default function FinanceManager() {
     try {
       const localTransactions = await offlineDB.financialTransactions.toArray();
       setTransactions(localTransactions);
-      
+
       if (navigator.onLine && supabase) {
         const { data: supabaseTransactions } = await supabase
           .from('financial_transactions')
           .select('*')
           .order('date', { ascending: false });
-        
+
         if (supabaseTransactions) {
           for (const transaction of supabaseTransactions) {
             await offlineDB.financialTransactions.put({
@@ -82,7 +87,7 @@ export default function FinanceManager() {
               sync_status: 'synced',
             });
           }
-          
+
           const updatedTransactions = await offlineDB.financialTransactions.toArray();
           setTransactions(updatedTransactions);
         }
@@ -149,7 +154,7 @@ export default function FinanceManager() {
   const handleSaveTransaction = async () => {
     try {
       const totalCost = formData.quantity * formData.unit_cost;
-      
+
       const transactionData: LocalFinancialTransaction = {
         ...formData,
         total_cost: totalCost,
@@ -158,13 +163,11 @@ export default function FinanceManager() {
       };
 
       if (editingTransaction) {
-        // Update in localStorage
         await offlineDB.financialTransactions.update(editingTransaction.id!, {
           ...transactionData,
           sync_status: isOnline ? 'synced' : 'updated_offline',
         });
-        
-        // Update in Supabase if online
+
         if (isOnline && editingTransaction.id && supabase) {
           const { error } = await supabase
             .from('financial_transactions')
@@ -181,7 +184,7 @@ export default function FinanceManager() {
               receipt_url: transactionData.receipt_url,
             })
             .eq('id', editingTransaction.id);
-          
+
           if (error) {
             console.error('Error updating transaction in Supabase:', error);
             await offlineDB.financialTransactions.update(editingTransaction.id!, {
@@ -189,11 +192,11 @@ export default function FinanceManager() {
             });
           }
         }
+
+        showToast('success', 'Transacción actualizada');
       } else {
-        // Create in localStorage
         const id = await offlineDB.financialTransactions.add(transactionData);
-        
-        // Create in Supabase if online
+
         if (isOnline && supabase) {
           const { data, error } = await supabase
             .from('financial_transactions')
@@ -211,7 +214,7 @@ export default function FinanceManager() {
             })
             .select()
             .single();
-          
+
           if (error) {
             console.error('Error creating transaction in Supabase:', error);
           } else if (data) {
@@ -221,52 +224,54 @@ export default function FinanceManager() {
             });
           }
         }
+
+        showToast('success', 'Transacción creada exitosamente');
       }
 
       await loadTransactions();
       handleCloseModal();
     } catch (error) {
       console.error('Error saving transaction:', error);
+      showToast('error', 'Error al guardar la transacción');
     }
   };
 
-  const handleDeleteTransaction = async (transaction: LocalFinancialTransaction) => {
-    if (!confirm(`¿Está seguro de eliminar esta transacción?`)) return;
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm) return;
 
     try {
-      // Delete from localStorage
-      await offlineDB.financialTransactions.delete(transaction.id!);
-      
-      // Delete from Supabase if online
-      if (isOnline && transaction.id && supabase) {
-        const { error } = await supabase.from('financial_transactions').delete().eq('id', transaction.id);
-        
-        if (error) {
-          console.error('Error deleting transaction from Supabase:', error);
-        }
+      await offlineDB.financialTransactions.delete(deleteConfirm.id!);
+
+      if (isOnline && deleteConfirm.id && supabase) {
+        const { error } = await supabase.from('financial_transactions').delete().eq('id', deleteConfirm.id);
+        if (error) console.error('Error deleting from Supabase:', error);
       }
-      
+
+      showToast('success', 'Transacción eliminada');
       await loadTransactions();
     } catch (error) {
       console.error('Error deleting transaction:', error);
+      showToast('error', 'Error al eliminar la transacción');
+    } finally {
+      setDeleteConfirm(null);
     }
   };
 
   const calculateSummary = () => {
-    const filtered = selectedProject === 'all' 
-      ? transactions 
+    const filtered = selectedProject === 'all'
+      ? transactions
       : transactions.filter(t => t.project_id === selectedProject);
-    
+
     const income = filtered
       .filter(t => t.type === 'income')
       .reduce((sum, t) => sum + t.total_cost, 0);
-    
+
     const expenses = filtered
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + t.total_cost, 0);
-    
+
     const balance = income - expenses;
-    
+
     const expensesByCategory = filtered
       .filter(t => t.type === 'expense')
       .reduce((acc, t) => {
@@ -280,14 +285,14 @@ export default function FinanceManager() {
   const summary = calculateSummary();
 
   const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = 
+    const matchesSearch =
       transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       transaction.category.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesType = filterType === 'all' || transaction.type === filterType;
     const matchesCategory = filterCategory === 'all' || transaction.category === filterCategory;
     const matchesProject = selectedProject === 'all' || transaction.project_id === selectedProject;
-    
+
     return matchesSearch && matchesType && matchesCategory && matchesProject;
   });
 
@@ -388,21 +393,23 @@ export default function FinanceManager() {
       </div>
 
       {/* Expenses by Category */}
-      <div className="mb-6 p-4 rounded-xl border border-white/10 bg-white/5">
-        <h3 className="text-white font-medium mb-4">Gastos por Categoría</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {Object.entries(summary.expensesByCategory).map(([category, amount]) => (
-            <div key={category} className="glass-card p-3 rounded-lg">
-              <span className="text-xs text-white/60 mb-1">{categoryLabels[category as keyof typeof categoryLabels]}</span>
-              <p className="text-lg font-bold text-white">{formatCurrency(amount)}</p>
-            </div>
-          ))}
+      {Object.keys(summary.expensesByCategory).length > 0 && (
+        <div className="mb-6 p-4 rounded-xl border border-white/10 bg-white/5">
+          <h3 className="text-white font-medium mb-4">Gastos por Categoría</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {Object.entries(summary.expensesByCategory).map(([category, amount]) => (
+              <div key={category} className="glass-card p-3 rounded-lg">
+                <span className="text-xs text-white/60 mb-1">{categoryLabels[category as keyof typeof categoryLabels]}</span>
+                <p className="text-lg font-bold text-white">{formatCurrency(amount)}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Search and Filter */}
-      <div className="flex items-center space-x-4 mb-6">
-        <div className="flex-1 relative">
+      <div className="flex flex-wrap items-center gap-4 mb-6">
+        <div className="flex-1 min-w-[200px] relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/40" />
           <input
             type="text"
@@ -410,12 +417,14 @@ export default function FinanceManager() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
+            aria-label="Buscar transacciones"
           />
         </div>
         <select
           value={selectedProject}
           onChange={(e) => setSelectedProject(e.target.value)}
           className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
+          aria-label="Filtrar por proyecto"
         >
           <option value="all">Todos los Proyectos</option>
           {availableProjects.map((project) => (
@@ -426,6 +435,7 @@ export default function FinanceManager() {
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
           className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
+          aria-label="Filtrar por tipo"
         >
           <option value="all">Todos los Tipos</option>
           <option value="income">Ingresos</option>
@@ -435,6 +445,7 @@ export default function FinanceManager() {
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value)}
           className="px-4 py-2 rounded-lg bg-white/10 border border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
+          aria-label="Filtrar por categoría"
         >
           <option value="all">Todas las Categorías</option>
           {Object.keys(categoryLabels).map((cat) => (
@@ -443,80 +454,108 @@ export default function FinanceManager() {
         </select>
       </div>
 
-      {/* Transactions Table */}
-      <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
-        <table className="w-full text-sm" style={{ minWidth: '600px' }}>
-          <thead>
-            <tr className="border-b border-white/10">
-              <th className="text-left text-white/60 py-3 px-4">Fecha</th>
-              <th className="text-left text-white/60 py-3 px-4">Descripción</th>
-              <th className="text-left text-white/60 py-3 px-4">Categoría</th>
-              <th className="text-left text-white/60 py-3 px-4">Tipo</th>
-              <th className="text-left text-white/60 py-3 px-4">Cantidad</th>
-              <th className="text-left text-white/60 py-3 px-4">Unit. Costo</th>
-              <th className="text-left text-white/60 py-3 px-4">Total</th>
-              <th className="text-left text-white/60 py-3 px-4">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTransactions.map((transaction) => (
-              <tr key={transaction.id} className="border-b border-white/5 hover:bg-white/5">
-                <td className="py-3 px-4 text-white/70">{transaction.date}</td>
-                <td className="py-3 px-4 text-white font-medium">{transaction.description}</td>
-                <td className="py-3 px-4">
-                  <span
-                    className="px-2 py-1 rounded-full text-xs font-medium border"
-                    style={{
-                      background: categoryColors[transaction.category as keyof typeof categoryColors].bg,
-                      color: categoryColors[transaction.category as keyof typeof categoryColors].text,
-                      borderColor: categoryColors[transaction.category as keyof typeof categoryColors].border
-                    }}
-                  >
-                    {categoryLabels[transaction.category as keyof typeof categoryLabels]}
-                  </span>
-                </td>
-                <td className="py-3 px-4">
-                  <span className={`flex items-center space-x-1 ${transaction.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {transaction.type === 'income' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                    <span className="capitalize">{transaction.type === 'income' ? 'Ingreso' : 'Gasto'}</span>
-                  </span>
-                </td>
-                <td className="py-3 px-4 text-white/70">{transaction.quantity} {transaction.unit}</td>
-                <td className="py-3 px-4 text-white/70">{formatCurrency(transaction.unit_cost)}</td>
-                <td className="py-3 px-4 text-white font-medium">{formatCurrency(transaction.total_cost)}</td>
-                <td className="py-3 px-4">
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => handleOpenModal(transaction)}
-                      className="text-cyan-400 hover:text-cyan-300"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteTransaction(transaction)}
-                      className="text-red-400 hover:text-red-300"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
+      {/* Transactions Table or Empty State */}
+      {filteredTransactions.length === 0 ? (
+        <EmptyState
+          icon={<Inbox className="w-8 h-8 text-white/30" />}
+          title="No hay transacciones"
+          description={searchTerm || filterType !== 'all' || filterCategory !== 'all' ? 'No se encontraron transacciones con los filtros actuales.' : 'Agregue su primera transacción financiera usando el botón "Nueva Transacción".'}
+          action={
+            !searchTerm && filterType === 'all' && filterCategory === 'all' ? (
+              <button
+                onClick={() => handleOpenModal()}
+                className="glass-button px-4 py-2 rounded-lg text-sm text-cyan-300 flex items-center space-x-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Nueva Transacción</span>
+              </button>
+            ) : undefined
+          }
+        />
+      ) : (
+        <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
+          <table className="w-full text-sm" style={{ minWidth: '600px' }}>
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="text-left text-white/60 py-3 px-4">Fecha</th>
+                <th className="text-left text-white/60 py-3 px-4">Descripción</th>
+                <th className="text-left text-white/60 py-3 px-4">Categoría</th>
+                <th className="text-left text-white/60 py-3 px-4">Tipo</th>
+                <th className="text-left text-white/60 py-3 px-4">Cantidad</th>
+                <th className="text-left text-white/60 py-3 px-4">Unit. Costo</th>
+                <th className="text-left text-white/60 py-3 px-4">Total</th>
+                <th className="text-left text-white/60 py-3 px-4">Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredTransactions.map((transaction) => (
+                <tr key={transaction.id} className="border-b border-white/5 hover:bg-white/5">
+                  <td className="py-3 px-4 text-white/70">{transaction.date}</td>
+                  <td className="py-3 px-4 text-white font-medium">{transaction.description}</td>
+                  <td className="py-3 px-4">
+                    <span
+                      className="px-2 py-1 rounded-full text-xs font-medium border"
+                      style={{
+                        background: categoryColors[transaction.category as keyof typeof categoryColors].bg,
+                        color: categoryColors[transaction.category as keyof typeof categoryColors].text,
+                        borderColor: categoryColors[transaction.category as keyof typeof categoryColors].border
+                      }}
+                    >
+                      {categoryLabels[transaction.category as keyof typeof categoryLabels]}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className={`flex items-center space-x-1 ${transaction.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {transaction.type === 'income' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                      <span className="capitalize">{transaction.type === 'income' ? 'Ingreso' : 'Gasto'}</span>
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-white/70">{transaction.quantity} {transaction.unit}</td>
+                  <td className="py-3 px-4 text-white/70">{formatCurrency(transaction.unit_cost)}</td>
+                  <td className="py-3 px-4 text-white font-medium">{formatCurrency(transaction.total_cost)}</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleOpenModal(transaction)}
+                        className="text-cyan-400 hover:text-cyan-300"
+                        aria-label={`Editar transacción ${transaction.description}`}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirm(transaction)}
+                        className="text-red-400 hover:text-red-300"
+                        aria-label={`Eliminar transacción ${transaction.description}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="glass-panel rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+          onClick={handleCloseModal}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="transaction-modal-title"
+        >
+          <div className="glass-panel rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-white">
+              <h3 id="transaction-modal-title" className="text-lg font-semibold text-white">
                 {editingTransaction ? 'Editar Transacción' : 'Nueva Transacción'}
               </h3>
               <button
                 onClick={handleCloseModal}
                 className="text-white/60 hover:text-white"
+                aria-label="Cerrar modal"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -524,8 +563,9 @@ export default function FinanceManager() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-white/60 mb-1 block">Tipo</label>
+                <label className="text-xs text-white/60 mb-1 block" htmlFor="transaction-type">Tipo</label>
                 <select
+                  id="transaction-type"
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value as TransactionType })}
                   className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
@@ -535,8 +575,9 @@ export default function FinanceManager() {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-white/60 mb-1 block">Categoría</label>
+                <label className="text-xs text-white/60 mb-1 block" htmlFor="transaction-category">Categoría</label>
                 <select
+                  id="transaction-category"
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value as TransactionCategory })}
                   className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
@@ -547,8 +588,9 @@ export default function FinanceManager() {
                 </select>
               </div>
               <div className="md:col-span-2">
-                <label className="text-xs text-white/60 mb-1 block">Descripción</label>
+                <label className="text-xs text-white/60 mb-1 block" htmlFor="transaction-description">Descripción</label>
                 <input
+                  id="transaction-description"
                   type="text"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -556,8 +598,9 @@ export default function FinanceManager() {
                 />
               </div>
               <div>
-                <label className="text-xs text-white/60 mb-1 block">Cantidad</label>
+                <label className="text-xs text-white/60 mb-1 block" htmlFor="transaction-quantity">Cantidad</label>
                 <input
+                  id="transaction-quantity"
                   type="number"
                   value={formData.quantity}
                   onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
@@ -565,8 +608,9 @@ export default function FinanceManager() {
                 />
               </div>
               <div>
-                <label className="text-xs text-white/60 mb-1 block">Unidad</label>
+                <label className="text-xs text-white/60 mb-1 block" htmlFor="transaction-unit">Unidad</label>
                 <input
+                  id="transaction-unit"
                   type="text"
                   value={formData.unit}
                   onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
@@ -574,8 +618,9 @@ export default function FinanceManager() {
                 />
               </div>
               <div>
-                <label className="text-xs text-white/60 mb-1 block">Costo Unitario</label>
+                <label className="text-xs text-white/60 mb-1 block" htmlFor="transaction-unit-cost">Costo Unitario</label>
                 <input
+                  id="transaction-unit-cost"
                   type="number"
                   value={formData.unit_cost}
                   onChange={(e) => setFormData({ ...formData, unit_cost: Number(e.target.value) })}
@@ -583,8 +628,9 @@ export default function FinanceManager() {
                 />
               </div>
               <div>
-                <label className="text-xs text-white/60 mb-1 block">Fecha</label>
+                <label className="text-xs text-white/60 mb-1 block" htmlFor="transaction-date">Fecha</label>
                 <input
+                  id="transaction-date"
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
@@ -592,8 +638,9 @@ export default function FinanceManager() {
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="text-xs text-white/60 mb-1 block">Proyecto</label>
+                <label className="text-xs text-white/60 mb-1 block" htmlFor="transaction-project">Proyecto</label>
                 <select
+                  id="transaction-project"
                   value={formData.project_id || ''}
                   onChange={(e) => setFormData({ ...formData, project_id: e.target.value || undefined })}
                   className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
@@ -605,8 +652,9 @@ export default function FinanceManager() {
                 </select>
               </div>
               <div className="md:col-span-2">
-                <label className="text-xs text-white/60 mb-1 block">URL de Recibo (opcional)</label>
+                <label className="text-xs text-white/60 mb-1 block" htmlFor="transaction-receipt">URL de Recibo (opcional)</label>
                 <input
+                  id="transaction-receipt"
                   type="text"
                   value={formData.receipt_url}
                   onChange={(e) => setFormData({ ...formData, receipt_url: e.target.value })}
@@ -633,6 +681,16 @@ export default function FinanceManager() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteConfirm !== null}
+        title="Eliminar Transacción"
+        message="¿Está seguro de eliminar esta transacción? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        variant="danger"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </div>
   );
 }

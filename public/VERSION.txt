@@ -1,5 +1,8 @@
-v1.0.1 - Clean deployment with Supabase integration
-- All Supabase tables migrated successfully
-- 40 APU library items loaded
-- Environment variables configured in Vercel
-- Callback URLs configured in Supabase
+v1.0.2 - Schema alignment & documentation
+- All Supabase tables verified (9/9 present)
+- 40 APU library items loaded in Supabase
+- Schema corrections applied (budgets columns renamed, categories aligned)
+- docs/DATABASE_SCHEMA.md created with full schema reference
+- docs/CALCULATION_ENGINE_RULES.md created with structural formulas
+- Migration 003 created for remaining fixes (budget_item_breakdown columns)
+- npm run build: ✅ Zero errors

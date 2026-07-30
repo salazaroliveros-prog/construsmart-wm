@@ -11,13 +11,13 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { id: 'dashboard', label: 'Tablero Principal', icon: <LayoutDashboard className="w-5 h-5" /> },
-  { id: 'projects', label: 'Proyectos', icon: <FolderKanban className="w-5 h-5" />, badge: 12 },
-  { id: 'budgets', label: 'Presupuestos', icon: <Calculator className="w-5 h-5" /> },
-  { id: 'finances', label: 'Finanzas', icon: <Calculator className="w-5 h-5" /> },
-  { id: 'payroll', label: 'Nómina', icon: <Users className="w-5 h-5" /> },
-  { id: 'warehouse', label: 'Almacén', icon: <Warehouse className="w-5 h-5" /> },
-  { id: 'analytics', label: 'Analytics', icon: <TrendingUp className="w-5 h-5" /> },
+  { id: 'dashboard', label: 'Tablero Principal', icon: <LayoutDashboard className="w-5 h-5" aria-hidden="true" /> },
+  { id: 'projects', label: 'Proyectos', icon: <FolderKanban className="w-5 h-5" aria-hidden="true" /> },
+  { id: 'budgets', label: 'Presupuestos', icon: <Calculator className="w-5 h-5" aria-hidden="true" /> },
+  { id: 'finances', label: 'Finanzas', icon: <Calculator className="w-5 h-5" aria-hidden="true" /> },
+  { id: 'payroll', label: 'Nómina', icon: <Users className="w-5 h-5" aria-hidden="true" /> },
+  { id: 'warehouse', label: 'Almacén', icon: <Warehouse className="w-5 h-5" aria-hidden="true" /> },
+  { id: 'analytics', label: 'Analytics', icon: <TrendingUp className="w-5 h-5" aria-hidden="true" /> },
 ];
 
 interface DashboardNavProps {
@@ -34,12 +34,12 @@ export default function DashboardNav({ activeTab, onTabChange }: DashboardNavPro
   };
 
   return (
-    <nav className="glass-panel border-r border-white/10 flex flex-col h-full">
+    <nav className="glass-panel border-r border-white/10 flex flex-col h-full" aria-label="Navegación principal">
       {/* Logo Section */}
-      <div className="p-6 border-b border-white/10">
+      <div className="px-6 py-5 border-b border-white/10">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center">
-            <LayoutDashboard className="w-5 h-5 text-white" />
+            <LayoutDashboard className="w-5 h-5 text-white" aria-hidden="true" />
           </div>
           <div>
             <h2 className="text-white font-bold text-lg">CONSTRUCTORA WM</h2>
@@ -50,28 +50,32 @@ export default function DashboardNav({ activeTab, onTabChange }: DashboardNavPro
 
       {/* Main Navigation */}
       <div className="flex-1 overflow-y-auto py-4">
-        <div className="px-4 space-y-1">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => handleNavClick(item.id)}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all ${
-                activeNav === item.id
-                  ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
-                  : 'text-white/60 hover:bg-white/5 hover:text-white border border-transparent'
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                {item.icon}
-                <span className="font-medium">{item.label}</span>
-              </div>
-              {item.badge && (
-                <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-medium">
-                  {item.badge}
-                </span>
-              )}
-            </button>
-          ))}
+        <div className="px-3 space-y-1">
+          {navItems.map((item) => {
+            const isActive = activeNav === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNavClick(item.id)}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${
+                  isActive
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
+                    : 'text-white/60 hover:bg-white/5 hover:text-white border border-transparent'
+                }`}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                <div className="flex items-center space-x-3">
+                  {item.icon}
+                  <span className="font-medium text-sm">{item.label}</span>
+                </div>
+                {item.badge && (
+                  <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-medium">
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
     </nav>

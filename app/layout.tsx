@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { APP_CONFIG } from '@/lib/config/app.config';
 import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration';
+import { ToastProvider } from '@/components/ui/Toast';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -55,8 +56,10 @@ export default function RootLayout({
         <meta name="description" content="Sistema de Gestión de Construcción - CONSTRUCTORA WM/M&S - CONSTRUYENDO EL FUTURO" />
       </head>
       <body className={inter.className}>
-        <ServiceWorkerRegistration />
-        {children}
+        <ToastProvider>
+          <ServiceWorkerRegistration />
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );

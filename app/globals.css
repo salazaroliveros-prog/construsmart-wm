@@ -6,6 +6,21 @@
   --foreground-rgb: 255, 255, 255;
   --background-start-rgb: 15, 23, 42;
   --background-end-rgb: 30, 41, 59;
+
+  /* Glassmorphism tokens */
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-bg-hover: rgba(255, 255, 255, 0.1);
+  --glass-card-bg: rgba(255, 255, 255, 0.03);
+  --glass-card-bg-hover: rgba(255, 255, 255, 0.08);
+  --glass-button-bg: rgba(255, 255, 255, 0.1);
+  --glass-button-bg-hover: rgba(255, 255, 255, 0.15);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-border-hover: rgba(255, 255, 255, 0.15);
+  --glass-border-strong: rgba(255, 255, 255, 0.2);
+  --glass-blur-panel: 20px;
+  --glass-blur-card: 10px;
+  --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --glass-shadow-hover: 0 4px 8px -1px rgba(0, 0, 0, 0.15);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -26,45 +41,45 @@ body {
   min-height: 100vh;
 }
 
-/* Glassmorphism Base Styles */
+/* Glassmorphism Base Styles — tokens consistentes */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-panel));
+  -webkit-backdrop-filter: blur(var(--glass-blur-panel));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: var(--glass-card-bg);
+  backdrop-filter: blur(var(--glass-blur-card));
+  -webkit-backdrop-filter: blur(var(--glass-blur-card));
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 }
 
 .glass-card:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--glass-card-bg-hover);
+  border-color: var(--glass-border-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px -1px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--glass-shadow-hover);
 }
 
 .glass-button {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--glass-button-bg);
+  backdrop-filter: blur(var(--glass-blur-card));
+  -webkit-backdrop-filter: blur(var(--glass-blur-card));
+  border: 1px solid var(--glass-border-strong);
   transition: all 0.3s ease;
   box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
 }
 
 .glass-button:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--glass-button-bg-hover);
   border-color: rgba(255, 255, 255, 0.25);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px -1px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--glass-shadow-hover);
 }
 
 .glass-button:active {
@@ -217,6 +232,31 @@ body {
   .kpi-label {
     font-size: 0.85rem !important;
   }
+}
+
+/* Reduced motion for vestibular disorders */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Toast slide-up animation */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.25s ease-out;
 }
 
 /* Custom scrollbar for webkit browsers */

@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Users, DollarSign, Calendar, BadgeCheck, X, Save } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Users, DollarSign, Calendar, BadgeCheck, X, Save, UserPlus } from 'lucide-react';
 import { offlineDB, LocalPayrollEmployee, LocalPayrollRecord } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
+import { useToast } from '@/components/ui/Toast';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import EmptyState from '@/components/ui/EmptyState';
 
 interface EmployeeFormData {
   name: string;
@@ -27,6 +30,7 @@ interface PayrollFormData {
 }
 
 export default function PayrollManager() {
+  const { showToast } = useToast();
   const [employees, setEmployees] = useState<LocalPayrollEmployee[]>([]);
   const [payrollRecords, setPayrollRecords] = useState<LocalPayrollRecord[]>([]);
   const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
@@ -36,6 +40,7 @@ export default function PayrollManager() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isOnline, setIsOnline] = useState(true);
   const [activeTab, setActiveTab] = useState<'employees' | 'records'>('employees');
+  const [deleteConfirm, setDeleteConfirm] = useState<LocalPayrollEmployee | null>(null);
 
   const [employeeFormData, setEmployeeFormData] = useState<EmployeeFormData>({
     name: '',
@@ -266,30 +271,32 @@ export default function PayrollManager() {
 
       await loadEmployees();
       handleCloseEmployeeModal();
+      showToast(
+        'success',
+        editingEmployee
+          ? `Empleado "${employeeFormData.name}" actualizado`
+          : `Empleado "${employeeFormData.name}" creado`
+      );
     } catch (error) {
       console.error('Error saving employee:', error);
+      showToast('error', 'Error al guardar el empleado');
     }
   };
 
   const handleDeleteEmployee = async (employee: LocalPayrollEmployee) => {
-    if (!confirm(`¿Está seguro de eliminar al empleado ${employee.name}?`)) return;
-
     try {
-      // Delete from localStorage
       await offlineDB.payrollEmployees.delete(employee.id!);
       
-      // Delete from Supabase if online
       if (isOnline && employee.id && supabase) {
         const { error } = await supabase.from('payroll_employees').delete().eq('id', employee.id);
-        
-        if (error) {
-          console.error('Error deleting employee from Supabase:', error);
-        }
+        if (error) console.error('Error deleting employee from Supabase:', error);
       }
       
       await loadEmployees();
+      showToast('info', `Empleado "${employee.name}" eliminado`);
     } catch (error) {
       console.error('Error deleting employee:', error);
+      showToast('error', 'Error al eliminar el empleado');
     }
   };
 
@@ -391,8 +398,15 @@ export default function PayrollManager() {
 
       await loadPayrollRecords();
       handleClosePayrollModal();
+      showToast(
+        'success',
+        editingPayroll
+          ? 'Registro de nómina actualizado'
+          : 'Registro de nómina creado'
+      );
     } catch (error) {
-      console.error('Error saving payroll record:', error);
+      console.error('Error saving payroll:', error);
+      showToast('error', 'Error al guardar el registro de nómina');
     }
   };
 
@@ -524,101 +538,126 @@ export default function PayrollManager() {
       </div>
 
       {activeTab === 'employees' ? (
-        /* Employees Table */
-        <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
-          <table className="w-full text-sm" style={{ minWidth: '600px' }}>
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left text-white/60 py-3 px-4">Nombre</th>
-                <th className="text-left text-white/60 py-3 px-4">Posición</th>
-                <th className="text-left text-white/60 py-3 px-4">Categoría</th>
-                <th className="text-left text-white/60 py-3 px-4">Departamento</th>
-                <th className="text-left text-white/60 py-3 px-4">Tarifa Diaria</th>
-                <th className="text-left text-white/60 py-3 px-4">Estado</th>
-                <th className="text-left text-white/60 py-3 px-4">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredEmployees.map((employee) => (
-                <tr key={employee.id} className="border-b border-white/5 hover:bg-white/5">
-                  <td className="py-3 px-4 text-white font-medium">{employee.name}</td>
-                  <td className="py-3 px-4 text-white/70">{employee.position}</td>
-                  <td className="py-3 px-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${employee.category === 'obrero' ? 'bg-blue-500/20 text-blue-300' : 'bg-purple-500/20 text-purple-300'}`}>
-                      {employee.category === 'obrero' ? 'Obrero' : 'Empleado'}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-white/70">{employee.department}</td>
-                  <td className="py-3 px-4 text-white font-medium">{formatCurrency(employee.daily_rate)}</td>
-                  <td className="py-3 px-4">
-                    <span className={`flex items-center space-x-1 ${employee.active ? 'text-emerald-400' : 'text-red-400'}`}>
-                      <span className={`w-2 h-2 rounded-full ${employee.active ? 'bg-emerald-400' : 'bg-red-400'}`} />
-                      <span className="capitalize">{employee.active ? 'Activo' : 'Inactivo'}</span>
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleOpenEmployeeModal(employee)}
-                        className="text-cyan-400 hover:text-cyan-300"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteEmployee(employee)}
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+        filteredEmployees.length === 0 ? (
+          <EmptyState
+            icon={<UserPlus className="w-12 h-12" />}
+            title={employees.length === 0 ? "No hay empleados" : "Sin resultados"}
+            description={employees.length === 0 ? "Registre empleados para comenzar a gestionar la nómina." : "Intente con otros términos de búsqueda."}
+            action={employees.length === 0 ? (
+              <button
+                onClick={() => handleOpenEmployeeModal()}
+                className="glass-button px-4 py-2 rounded-lg text-sm text-cyan-300 flex items-center space-x-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Nuevo Empleado</span>
+              </button>
+            ) : undefined}
+          />
+        ) : (
+          <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
+            <table className="w-full text-sm" style={{ minWidth: '600px' }}>
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left text-white/60 py-3 px-4">Nombre</th>
+                  <th className="text-left text-white/60 py-3 px-4">Posición</th>
+                  <th className="text-left text-white/60 py-3 px-4">Categoría</th>
+                  <th className="text-left text-white/60 py-3 px-4">Departamento</th>
+                  <th className="text-left text-white/60 py-3 px-4">Salario Diario</th>
+                  <th className="text-left text-white/60 py-3 px-4">Estado</th>
+                  <th className="text-left text-white/60 py-3 px-4">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        /* Payroll Records Table */
-        <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={() => handleOpenPayrollModal()}
-              className="glass-button px-4 py-2 rounded-lg text-sm text-cyan-300 flex items-center space-x-2"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Nuevo Registro</span>
-            </button>
-          </div>
-          <table className="w-full text-sm" style={{ minWidth: '600px' }}>
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left text-white/60 py-3 px-4">Empleado</th>
-                <th className="text-left text-white/60 py-3 px-4">Periodo</th>
-                <th className="text-left text-white/60 py-3 px-4">Días</th>
-                <th className="text-left text-white/60 py-3 px-4">Horas Extra</th>
-                <th className="text-left text-white/60 py-3 px-4">Salario Base</th>
-                <th className="text-left text-white/60 py-3 px-4">IGSS</th>
-                <th className="text-left text-white/60 py-3 px-4">Neto</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payrollRecords.map((record) => {
-                const employee = employees.find(e => e.id === record.employee_id);
-                return (
-                  <tr key={record.id} className="border-b border-white/5 hover:bg-white/5">
-                    <td className="py-3 px-4 text-white font-medium">{employee?.name || 'N/A'}</td>
-                    <td className="py-3 px-4 text-white/70">{record.period_start} - {record.period_end}</td>
-                    <td className="py-3 px-4 text-white/70">{record.days_worked}</td>
-                    <td className="py-3 px-4 text-white/70">{record.overtime_hours}</td>
-                    <td className="py-3 px-4 text-white font-medium">{formatCurrency(record.gross_salary)}</td>
-                    <td className="py-3 px-4 text-white/70">{formatCurrency(record.igss_deduction)}</td>
-                    <td className="py-3 px-4 text-emerald-400 font-medium">{formatCurrency(record.net_salary)}</td>
+              </thead>
+              <tbody>
+                {filteredEmployees.map((employee) => (
+                  <tr key={employee.id} className="border-b border-white/5 hover:bg-white/5">
+                    <td className="py-3 px-4 text-white font-medium">{employee.name}</td>
+                    <td className="py-3 px-4 text-white/70">{employee.position}</td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${employee.category === 'obrero' ? 'bg-blue-500/20 text-blue-300' : 'bg-purple-500/20 text-purple-300'}`}>
+                        {employee.category === 'obrero' ? 'Obrero' : 'Empleado'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-white/70">{employee.department}</td>
+                    <td className="py-3 px-4 text-white font-medium">{formatCurrency(employee.daily_rate)}</td>
+                    <td className="py-3 px-4">
+                      <span className={`flex items-center space-x-1 ${employee.active ? 'text-emerald-400' : 'text-red-400'}`}>
+                        <span className={`w-2 h-2 rounded-full ${employee.active ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                        <span className="capitalize">{employee.active ? 'Activo' : 'Inactivo'}</span>
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleOpenEmployeeModal(employee)}
+                          className="text-cyan-400 hover:text-cyan-300"
+                          aria-label={`Editar empleado ${employee.name}`}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirm(employee)}
+                          className="text-red-400 hover:text-red-300"
+                          aria-label={`Eliminar empleado ${employee.name}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      ) : (
+        payrollRecords.length === 0 ? (
+          <EmptyState
+            icon={<DollarSign className="w-12 h-12" />}
+            title="No hay registros de pago"
+            description="Genere registros de nómina para los empleados registrados."
+          />
+        ) : (
+          <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={() => handleOpenPayrollModal()}
+                className="glass-button px-4 py-2 rounded-lg text-sm text-cyan-300 flex items-center space-x-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Nuevo Registro</span>
+              </button>
+            </div>
+            <table className="w-full text-sm" style={{ minWidth: '600px' }}>
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left text-white/60 py-3 px-4">Empleado</th>
+                  <th className="text-left text-white/60 py-3 px-4">Periodo</th>
+                  <th className="text-left text-white/60 py-3 px-4">Días</th>
+                  <th className="text-left text-white/60 py-3 px-4">Horas Extra</th>
+                  <th className="text-left text-white/60 py-3 px-4">Salario Base</th>
+                  <th className="text-left text-white/60 py-3 px-4">IGSS</th>
+                  <th className="text-left text-white/60 py-3 px-4">Neto</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payrollRecords.map((record) => {
+                  const employee = employees.find(e => e.id === record.employee_id);
+                  return (
+                    <tr key={record.id} className="border-b border-white/5 hover:bg-white/5">
+                      <td className="py-3 px-4 text-white font-medium">{employee?.name || 'N/A'}</td>
+                      <td className="py-3 px-4 text-white/70">{record.period_start} - {record.period_end}</td>
+                      <td className="py-3 px-4 text-white/70">{record.days_worked}</td>
+                      <td className="py-3 px-4 text-white/70">{record.overtime_hours}</td>
+                      <td className="py-3 px-4 text-white font-medium">{formatCurrency(record.gross_salary)}</td>
+                      <td className="py-3 px-4 text-white/70">{formatCurrency(record.igss_deduction)}</td>
+                      <td className="py-3 px-4 text-emerald-400 font-medium">{formatCurrency(record.net_salary)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )
       )}
 
       {/* Employee Modal */}
@@ -839,6 +878,16 @@ export default function PayrollManager() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!deleteConfirm}
+        title="Eliminar empleado"
+        message={`¿Está seguro de eliminar al empleado "${deleteConfirm?.name}"? Esta acción no se puede deshacer.`}
+        variant="danger"
+        confirmLabel="Eliminar"
+        onConfirm={() => { if (deleteConfirm) handleDeleteEmployee(deleteConfirm); setDeleteConfirm(null); }}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </div>
   );
 }

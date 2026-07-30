@@ -1,10 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Calculator, Plus, Trash2, Save, FileText } from 'lucide-react';
+import { Calculator, Plus, Trash2, Save } from 'lucide-react';
 import { calculateSlab, SlabDimensions, calculateSlabCost, SlabCostParams } from '@/lib/calculators/slabCalculators';
-import { calculateRectangularVolume, DimensionalParams } from '@/lib/calculators/volumetricCalculators';
 import PDFGenerator from '@/components/pdf/PDFGenerator';
+import { offlineDB } from '@/lib/db/offlineStore';
+import { useToast } from '@/components/ui/Toast';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import EmptyState from '@/components/ui/EmptyState';
 
 interface BudgetItem {
   id: string;
@@ -26,12 +29,15 @@ interface BudgetSummary {
 }
 
 export default function BudgetCalculator() {
+  const { showToast } = useToast();
   const [items, setItems] = useState<BudgetItem[]>([]);
   const [indirectPercentage, setIndirectPercentage] = useState(15);
   const [contingencyPercentage, setContingencyPercentage] = useState(5);
   const [profitPercentage, setProfitPercentage] = useState(10);
   const [projectName, setProjectName] = useState('Proyecto Sample');
   const [clientName, setClientName] = useState('Cliente Sample');
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; desc: string } | null>(null);
+  const [saveLoading, setSaveLoading] = useState(false);
 
   // Slab calculator state
   const [slabDimensions, setSlabDimensions] = useState<SlabDimensions>({
@@ -82,6 +88,7 @@ export default function BudgetCalculator() {
     };
 
     setItems([...items, newItem]);
+    showToast('success', 'Cálculo de losa agregado al presupuesto');
   };
 
   const addItem = () => {
@@ -96,6 +103,7 @@ export default function BudgetCalculator() {
       category: 'General',
     };
     setItems([...items, newItem]);
+    showToast('success', 'Item agregado al presupuesto');
   };
 
   const updateItem = (id: string, field: keyof BudgetItem, value: string | number) => {
@@ -112,8 +120,56 @@ export default function BudgetCalculator() {
     setItems(updatedItems);
   };
 
-  const removeItem = (id: string) => {
-    setItems(items.filter((item) => item.id !== id));
+  const confirmRemoveItem = () => {
+    if (!deleteConfirm) return;
+    setItems(items.filter((item) => item.id !== deleteConfirm.id));
+    showToast('info', `Item "${deleteConfirm.desc}" eliminado`);
+    setDeleteConfirm(null);
+  };
+
+  const handleSave = async () => {
+    setSaveLoading(true);
+    try {
+      const summary = calculateSummary();
+
+      const budgetId = await offlineDB.budgets.add({
+        project_id: crypto.randomUUID(),
+        version: 1,
+        direct_cost: summary.directCost,
+        indirect_percentage: indirectPercentage,
+        contingency_percentage: contingencyPercentage,
+        profit_percentage: profitPercentage,
+        total_amount: summary.total,
+        duration_days: 0,
+        sync_status: 'created_offline',
+        created_at: new Date().toISOString(),
+      });
+
+      if (items.length > 0) {
+        await offlineDB.budgetItems.bulkAdd(
+          items.map((item, idx) => ({
+            budget_id: budgetId,
+            item_order: idx,
+            code: item.code,
+            description: item.description,
+            unit: item.unit,
+            quantity: item.quantity,
+            unit_cost: item.unitCost,
+            total_cost: item.totalCost,
+            is_custom: true,
+            sync_status: 'pending',
+            created_at: new Date().toISOString(),
+          }))
+        );
+      }
+
+      showToast('success', `Presupuesto guardado correctamente — Q${summary.total.toLocaleString('es-GT', { minimumFractionDigits: 2 })}`);
+    } catch (error) {
+      console.error('Error saving budget:', error);
+      showToast('error', 'Error al guardar el presupuesto');
+    } finally {
+      setSaveLoading(false);
+    }
   };
 
   const summary = calculateSummary();
@@ -143,9 +199,13 @@ export default function BudgetCalculator() {
             contingencyPercentage={contingencyPercentage}
             profitPercentage={profitPercentage}
           />
-          <button className="glass-button px-4 py-2 rounded-lg text-sm text-emerald-300 flex items-center space-x-2">
-            <Save className="w-4 h-4" />
-            <span>Guardar</span>
+          <button
+            onClick={handleSave}
+            disabled={saveLoading}
+            className="glass-button px-4 py-2 rounded-lg text-sm text-emerald-300 flex items-center space-x-2 disabled:opacity-50"
+          >
+            <Save className={`w-4 h-4 ${saveLoading ? 'animate-spin' : ''}`} />
+            <span>{saveLoading ? 'Guardando...' : 'Guardar'}</span>
           </button>
         </div>
       </div>
@@ -201,7 +261,7 @@ export default function BudgetCalculator() {
             <label className="text-xs text-white/60 mb-1 block">Tipo de Losa</label>
             <select
               value={slabDimensions.slabType}
-              onChange={(e) => setSlabDimensions({ ...slabDimensions, slabType: e.target.value as any })}
+              onChange={(e) => setSlabDimensions({ ...slabDimensions, slabType: e.target.value as SlabDimensions['slabType'] })}
               className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
             >
               <option value="solid">Losa Sólida</option>
@@ -244,78 +304,87 @@ export default function BudgetCalculator() {
           </button>
         </div>
 
-        <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
-          <table className="w-full text-sm" style={{ minWidth: '600px' }}>
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left text-white/60 py-2 px-3">Código</th>
-                <th className="text-left text-white/60 py-2 px-3">Descripción</th>
-                <th className="text-left text-white/60 py-2 px-3">Unidad</th>
-                <th className="text-left text-white/60 py-2 px-3">Cantidad</th>
-                <th className="text-left text-white/60 py-2 px-3">Costo Unit.</th>
-                <th className="text-left text-white/60 py-2 px-3">Total</th>
-                <th className="text-left text-white/60 py-2 px-3">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr key={item.id} className="border-b border-white/5 hover:bg-white/5">
-                  <td className="py-2 px-3">
-                    <input
-                      type="text"
-                      value={item.code}
-                      onChange={(e) => updateItem(item.id, 'code', e.target.value)}
-                      className="w-full bg-transparent border-none text-white/80 text-xs focus:outline-none"
-                    />
-                  </td>
-                  <td className="py-2 px-3">
-                    <input
-                      type="text"
-                      value={item.description}
-                      onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                      className="w-full bg-transparent border-none text-white/80 text-xs focus:outline-none"
-                    />
-                  </td>
-                  <td className="py-2 px-3">
-                    <input
-                      type="text"
-                      value={item.unit}
-                      onChange={(e) => updateItem(item.id, 'unit', e.target.value)}
-                      className="w-full bg-transparent border-none text-white/80 text-xs focus:outline-none"
-                    />
-                  </td>
-                  <td className="py-2 px-3">
-                    <input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => updateItem(item.id, 'quantity', Number(e.target.value))}
-                      className="w-20 bg-white/10 border border-white/20 text-white/80 text-xs rounded px-2 py-1 focus:outline-none focus:border-cyan-500"
-                    />
-                  </td>
-                  <td className="py-2 px-3">
-                    <input
-                      type="number"
-                      value={item.unitCost}
-                      onChange={(e) => updateItem(item.id, 'unitCost', Number(e.target.value))}
-                      className="w-24 bg-white/10 border border-white/20 text-white/80 text-xs rounded px-2 py-1 focus:outline-none focus:border-cyan-500"
-                    />
-                  </td>
-                  <td className="py-2 px-3 text-white font-medium">
-                    {formatCurrency(item.totalCost)}
-                  </td>
-                  <td className="py-2 px-3">
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      className="text-red-400 hover:text-red-300"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
+        {items.length === 0 ? (
+          <EmptyState
+            icon={<Calculator className="w-12 h-12" />}
+            title="Sin items en el presupuesto"
+            description="Agregue cálculos de losa o items manuales para comenzar a armar el presupuesto."
+          />
+        ) : (
+          <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
+            <table className="w-full text-sm" style={{ minWidth: '600px' }}>
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left text-white/60 py-2 px-3">Código</th>
+                  <th className="text-left text-white/60 py-2 px-3">Descripción</th>
+                  <th className="text-left text-white/60 py-2 px-3">Unidad</th>
+                  <th className="text-left text-white/60 py-2 px-3">Cantidad</th>
+                  <th className="text-left text-white/60 py-2 px-3">Costo Unit.</th>
+                  <th className="text-left text-white/60 py-2 px-3">Total</th>
+                  <th className="text-left text-white/60 py-2 px-3">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr key={item.id} className="border-b border-white/5 hover:bg-white/5">
+                    <td className="py-2 px-3">
+                      <input
+                        type="text"
+                        value={item.code}
+                        onChange={(e) => updateItem(item.id, 'code', e.target.value)}
+                        className="w-full bg-transparent border-none text-white/80 text-xs focus:outline-none"
+                      />
+                    </td>
+                    <td className="py-2 px-3">
+                      <input
+                        type="text"
+                        value={item.description}
+                        onChange={(e) => updateItem(item.id, 'description', e.target.value)}
+                        className="w-full bg-transparent border-none text-white/80 text-xs focus:outline-none"
+                      />
+                    </td>
+                    <td className="py-2 px-3">
+                      <input
+                        type="text"
+                        value={item.unit}
+                        onChange={(e) => updateItem(item.id, 'unit', e.target.value)}
+                        className="w-full bg-transparent border-none text-white/80 text-xs focus:outline-none"
+                      />
+                    </td>
+                    <td className="py-2 px-3">
+                      <input
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => updateItem(item.id, 'quantity', Number(e.target.value))}
+                        className="w-20 bg-white/10 border border-white/20 text-white/80 text-xs rounded px-2 py-1 focus:outline-none focus:border-cyan-500"
+                      />
+                    </td>
+                    <td className="py-2 px-3">
+                      <input
+                        type="number"
+                        value={item.unitCost}
+                        onChange={(e) => updateItem(item.id, 'unitCost', Number(e.target.value))}
+                        className="w-24 bg-white/10 border border-white/20 text-white/80 text-xs rounded px-2 py-1 focus:outline-none focus:border-cyan-500"
+                      />
+                    </td>
+                    <td className="py-2 px-3 text-white font-medium">
+                      {formatCurrency(item.totalCost)}
+                    </td>
+                    <td className="py-2 px-3">
+                      <button
+                        onClick={() => setDeleteConfirm({ id: item.id, desc: item.description })}
+                        className="text-red-400 hover:text-red-300"
+                        aria-label={`Eliminar item ${item.description}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Budget Summary */}
@@ -377,6 +446,15 @@ export default function BudgetCalculator() {
           <span className="text-2xl font-bold text-cyan-400">{formatCurrency(summary.total)}</span>
         </div>
       </div>
+      <ConfirmDialog
+        isOpen={!!deleteConfirm}
+        title="Eliminar item"
+        message={`¿Eliminar "${deleteConfirm?.desc ?? ''}" del presupuesto? Esta acción no se puede deshacer.`}
+        variant="danger"
+        confirmLabel="Eliminar"
+        onConfirm={confirmRemoveItem}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </div>
   );
 }

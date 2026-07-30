@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Filter, Save, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Save, X, FolderOpen } from 'lucide-react';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
+import { useToast } from '@/components/ui/Toast';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import EmptyState from '@/components/ui/EmptyState';
 
 interface ProjectFormData {
   code: string;
@@ -23,12 +26,14 @@ interface ProjectFormData {
 }
 
 export default function ProjectManager() {
+  const { showToast } = useToast();
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<LocalProject | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [isOnline, setIsOnline] = useState(true);
+  const [deleteConfirm, setDeleteConfirm] = useState<LocalProject | null>(null);
 
   const [formData, setFormData] = useState<ProjectFormData>({
     code: '',
@@ -257,30 +262,32 @@ export default function ProjectManager() {
 
       await loadProjects();
       handleCloseModal();
+      showToast(
+        'success',
+        editingProject
+          ? `Proyecto "${projectData.name}" actualizado`
+          : `Proyecto "${projectData.name}" creado`
+      );
     } catch (error) {
       console.error('Error saving project:', error);
+      showToast('error', 'Error al guardar el proyecto');
     }
   };
 
   const handleDeleteProject = async (project: LocalProject) => {
-    if (!confirm(`¿Está seguro de eliminar el proyecto ${project.name}?`)) return;
-
     try {
-      // Delete from localStorage
       await offlineDB.projects.delete(project.id!);
       
-      // Delete from Supabase if online
       if (isOnline && project.id && supabase) {
         const { error } = await supabase.from('projects').delete().eq('id', project.id);
-        
-        if (error) {
-          console.error('Error deleting project from Supabase:', error);
-        }
+        if (error) console.error('Error deleting project from Supabase:', error);
       }
       
       await loadProjects();
+      showToast('info', `Proyecto "${project.name}" eliminado`);
     } catch (error) {
       console.error('Error deleting project:', error);
+      showToast('error', 'Error al eliminar el proyecto');
     }
   };
 
@@ -379,63 +386,81 @@ export default function ProjectManager() {
         </select>
       </div>
 
-      {/* Projects Table */}
-      <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
-        <table className="w-full text-sm" style={{ minWidth: '600px' }}>
-          <thead>
-            <tr className="border-b border-white/10">
-              <th className="text-left text-white/60 py-3 px-4">Código</th>
-              <th className="text-left text-white/60 py-3 px-4">Nombre</th>
-              <th className="text-left text-white/60 py-3 px-4">Cliente</th>
-              <th className="text-left text-white/60 py-3 px-4">Ubicación</th>
-              <th className="text-left text-white/60 py-3 px-4">Área</th>
-              <th className="text-left text-white/60 py-3 px-4">Estado</th>
-              <th className="text-left text-white/60 py-3 px-4">Presupuesto</th>
-              <th className="text-left text-white/60 py-3 px-4">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredProjects.map((project) => (
-              <tr key={project.id} className="border-b border-white/5 hover:bg-white/5">
-                <td className="py-3 px-4 text-cyan-400 font-mono text-xs">{project.code}</td>
-                <td className="py-3 px-4 text-white font-medium">{project.name}</td>
-                <td className="py-3 px-4 text-white/70">{project.client_name}</td>
-                <td className="py-3 px-4 text-white/70">{project.location}</td>
-                <td className="py-3 px-4 text-white/70">{project.area_m2.toFixed(2)} m²</td>
-                <td className="py-3 px-4">
-                  <span
-                    className="px-2 py-1 rounded-full text-xs font-medium border"
-                    style={{
-                      background: statusColors[project.status].bg,
-                      color: statusColors[project.status].text,
-                      borderColor: statusColors[project.status].border
-                    }}
-                  >
-                    {statusLabels[project.status]}
-                  </span>
-                </td>
-                <td className="py-3 px-4 text-white font-medium">{formatCurrency(project.total_budget)}</td>
-                <td className="py-3 px-4">
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => handleOpenModal(project)}
-                      className="text-cyan-400 hover:text-cyan-300"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteProject(project)}
-                      className="text-red-400 hover:text-red-300"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
+      {filteredProjects.length === 0 ? (
+        <EmptyState
+          icon={<FolderOpen className="w-12 h-12" />}
+          title={projects.length === 0 ? "No hay proyectos" : "Sin resultados"}
+          description={projects.length === 0 ? "Cree su primer proyecto para comenzar a gestionar." : "Intente con otros términos de búsqueda o filtros."}
+          action={projects.length === 0 ? (
+            <button
+              onClick={() => handleOpenModal()}
+              className="glass-button px-4 py-2 rounded-lg text-sm text-cyan-300"
+            >
+              <Plus className="w-4 h-4 mr-2 inline" />
+              Nuevo Proyecto
+            </button>
+          ) : undefined}
+        />
+      ) : (
+        <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
+          <table className="w-full text-sm" style={{ minWidth: '600px' }}>
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="text-left text-white/60 py-3 px-4">Código</th>
+                <th className="text-left text-white/60 py-3 px-4">Nombre</th>
+                <th className="text-left text-white/60 py-3 px-4">Cliente</th>
+                <th className="text-left text-white/60 py-3 px-4">Ubicación</th>
+                <th className="text-left text-white/60 py-3 px-4">Área</th>
+                <th className="text-left text-white/60 py-3 px-4">Estado</th>
+                <th className="text-left text-white/60 py-3 px-4">Presupuesto</th>
+                <th className="text-left text-white/60 py-3 px-4">Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredProjects.map((project) => (
+                <tr key={project.id} className="border-b border-white/5 hover:bg-white/5">
+                  <td className="py-3 px-4 text-cyan-400 font-mono text-xs">{project.code}</td>
+                  <td className="py-3 px-4 text-white font-medium">{project.name}</td>
+                  <td className="py-3 px-4 text-white/70">{project.client_name}</td>
+                  <td className="py-3 px-4 text-white/70">{project.location}</td>
+                  <td className="py-3 px-4 text-white/70">{project.area_m2.toFixed(2)} m²</td>
+                  <td className="py-3 px-4">
+                    <span
+                      className="px-2 py-1 rounded-full text-xs font-medium border"
+                      style={{
+                        background: statusColors[project.status].bg,
+                        color: statusColors[project.status].text,
+                        borderColor: statusColors[project.status].border
+                      }}
+                    >
+                      {statusLabels[project.status]}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-white font-medium">{formatCurrency(project.total_budget)}</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleOpenModal(project)}
+                        className="text-cyan-400 hover:text-cyan-300"
+                        aria-label={`Editar proyecto ${project.name}`}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirm(project)}
+                        className="text-red-400 hover:text-red-300"
+                        aria-label={`Eliminar proyecto ${project.name}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Modal */}
       {isModalOpen && (
@@ -512,7 +537,7 @@ export default function ProjectManager() {
                 <label className="text-xs text-white/60 mb-1 block">Tipología</label>
                 <select
                   value={formData.typology}
-                  onChange={(e) => setFormData({ ...formData, typology: e.target.value as any })}
+                  onChange={(e) => setFormData({ ...formData, typology: e.target.value as ProjectFormData['typology'] })}
                   className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
                 >
                   <option value="residential">Residencial</option>
@@ -547,7 +572,7 @@ export default function ProjectManager() {
                     const quality = e.target.value;
                     setFormData({ 
                       ...formData, 
-                      quality_level: quality as any,
+                      quality_level: quality as ProjectFormData['quality_level'],
                       duration_days: formData.duration_days,
                       total_budget: calculateEstimatedBudget(formData.area_m2, quality)
                     });
@@ -563,7 +588,7 @@ export default function ProjectManager() {
                 <label className="text-xs text-white/60 mb-1 block">Estado</label>
                 <select
                   value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any, duration_days: formData.duration_days })}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as ProjectFormData['status'], duration_days: formData.duration_days })}
                   className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
                 >
                   <option value="planning">Planificación</option>
@@ -625,6 +650,16 @@ export default function ProjectManager() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!deleteConfirm}
+        title="Eliminar proyecto"
+        message={`¿Está seguro de eliminar el proyecto "${deleteConfirm?.name}"? Esta acción no se puede deshacer.`}
+        variant="danger"
+        confirmLabel="Eliminar"
+        onConfirm={() => { if (deleteConfirm) handleDeleteProject(deleteConfirm); setDeleteConfirm(null); }}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </div>
   );
 }

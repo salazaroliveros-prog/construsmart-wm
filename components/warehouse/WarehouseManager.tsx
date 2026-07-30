@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Package, AlertTriangle, TrendingUp, X, Save, ArrowDown, ArrowUp } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Package, AlertTriangle, TrendingUp, X, Save, ArrowDown, ArrowUp, PackagePlus } from 'lucide-react';
 import { offlineDB, LocalWarehouseStock } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
+import { useToast } from '@/components/ui/Toast';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import EmptyState from '@/components/ui/EmptyState';
 
 interface StockFormData {
   item_code: string;
@@ -15,11 +18,13 @@ interface StockFormData {
 }
 
 export default function WarehouseManager() {
+  const { showToast } = useToast();
   const [stockItems, setStockItems] = useState<LocalWarehouseStock[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<LocalWarehouseStock | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isOnline, setIsOnline] = useState(true);
+  const [deleteConfirm, setDeleteConfirm] = useState<LocalWarehouseStock | null>(null);
 
   const [formData, setFormData] = useState<StockFormData>({
     item_code: '',
@@ -183,30 +188,32 @@ export default function WarehouseManager() {
 
       await loadStockItems();
       handleCloseModal();
+      showToast(
+        'success',
+        editingItem
+          ? `Material "${formData.description}" actualizado`
+          : `Material "${formData.description}" agregado al inventario`
+      );
     } catch (error) {
       console.error('Error saving stock item:', error);
+      showToast('error', 'Error al guardar el material');
     }
   };
 
   const handleDeleteItem = async (item: LocalWarehouseStock) => {
-    if (!confirm(`¿Está seguro de eliminar el item ${item.description}?`)) return;
-
     try {
-      // Delete from localStorage
       await offlineDB.warehouseStock.delete(item.id!);
       
-      // Delete from Supabase if online
       if (isOnline && item.id && supabase) {
         const { error } = await supabase.from('warehouse_stock').delete().eq('id', item.id);
-        
-        if (error) {
-          console.error('Error deleting stock from Supabase:', error);
-        }
+        if (error) console.error('Error deleting stock from Supabase:', error);
       }
       
       await loadStockItems();
+      showToast('info', `Material "${item.description}" eliminado del inventario`);
     } catch (error) {
       console.error('Error deleting stock item:', error);
+      showToast('error', 'Error al eliminar el material');
     }
   };
 
@@ -214,7 +221,7 @@ export default function WarehouseManager() {
     try {
       const newStock = item.current_stock + adjustment;
       if (newStock < 0) {
-        alert('El stock no puede ser negativo');
+        showToast('warning', 'El stock no puede ser negativo');
         return;
       }
 
@@ -231,8 +238,13 @@ export default function WarehouseManager() {
       }
       
       await loadStockItems();
+      showToast(
+        'success',
+        `Stock de "${item.description}" ${adjustment > 0 ? 'aumentado' : 'disminuido'} en ${Math.abs(adjustment)}`
+      );
     } catch (error) {
       console.error('Error adjusting stock:', error);
+      showToast('error', 'Error al ajustar el stock');
     }
   };
 
@@ -343,85 +355,111 @@ export default function WarehouseManager() {
         </div>
       </div>
 
-      {/* Stock Table */}
-      <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
-        <table className="w-full text-sm" style={{ minWidth: '600px' }}>
-          <thead>
-            <tr className="border-b border-white/10">
-              <th className="text-left text-white/60 py-3 px-4">Código</th>
-              <th className="text-left text-white/60 py-3 px-4">Descripción</th>
-              <th className="text-left text-white/60 py-3 px-4">Unidad</th>
-              <th className="text-left text-white/60 py-3 px-4">Stock Actual</th>
-              <th className="text-left text-white/60 py-3 px-4">Mínimo</th>
-              <th className="text-left text-white/60 py-3 px-4">Costo Unit.</th>
-              <th className="text-left text-white/60 py-3 px-4">Valor Total</th>
-              <th className="text-left text-white/60 py-3 px-4">Estado</th>
-              <th className="text-left text-white/60 py-3 px-4">Ajuste</th>
-              <th className="text-left text-white/60 py-3 px-4">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredItems.map((item) => (
-              <tr key={item.id} className="border-b border-white/5 hover:bg-white/5">
-                <td className="py-3 px-4 text-cyan-400 font-mono text-xs">{item.item_code}</td>
-                <td className="py-3 px-4 text-white font-medium">{item.description}</td>
-                <td className="py-3 px-4 text-white/70">{item.unit}</td>
-                <td className="py-3 px-4 text-white font-medium">{item.current_stock.toLocaleString()}</td>
-                <td className="py-3 px-4 text-white/70">{item.minimum_threshold}</td>
-                <td className="py-3 px-4 text-white/70">{formatCurrency(item.unit_cost)}</td>
-                <td className="py-3 px-4 text-white font-medium">{formatCurrency(item.current_stock * item.unit_cost)}</td>
-                <td className="py-3 px-4">
-                  {item.current_stock <= item.minimum_threshold ? (
-                    <span className="flex items-center space-x-1 text-amber-400">
-                      <AlertTriangle className="w-4 h-4" />
-                      <span>Bajo</span>
-                    </span>
-                  ) : (
-                    <span className="flex items-center space-x-1 text-emerald-400">
-                      <Package className="w-4 h-4" />
-                      <span>OK</span>
-                    </span>
-                  )}
-                </td>
-                <td className="py-3 px-4">
-                  <div className="flex items-center space-x-1">
-                    <button
-                      onClick={() => handleStockAdjustment(item, 1)}
-                      className="p-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
-                      title="Aumentar stock"
-                    >
-                      <ArrowUp className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleStockAdjustment(item, -1)}
-                      className="p-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                      title="Disminuir stock"
-                    >
-                      <ArrowDown className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-                <td className="py-3 px-4">
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => handleOpenModal(item)}
-                      className="text-cyan-400 hover:text-cyan-300"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteItem(item)}
-                      className="text-red-400 hover:text-red-300"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
+      {stockItems.length === 0 ? (
+        <EmptyState
+          icon={<PackagePlus className="w-12 h-12" />}
+          title="Inventario vacío"
+          description="Agregue materiales al inventario para comenzar a gestionar el almacén."
+          action={
+            <button
+              onClick={() => handleOpenModal()}
+              className="glass-button px-4 py-2 rounded-lg text-sm text-cyan-300 flex items-center space-x-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Nuevo Material</span>
+            </button>
+          }
+        />
+      ) : filteredItems.length === 0 ? (
+        <EmptyState
+          icon={<Search className="w-12 h-12" />}
+          title="Sin resultados"
+          description="Intente con otros términos de búsqueda."
+        />
+      ) : (
+        <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
+          <table className="w-full text-sm" style={{ minWidth: '600px' }}>
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="text-left text-white/60 py-3 px-4">Código</th>
+                <th className="text-left text-white/60 py-3 px-4">Descripción</th>
+                <th className="text-left text-white/60 py-3 px-4">Unidad</th>
+                <th className="text-left text-white/60 py-3 px-4">Stock Actual</th>
+                <th className="text-left text-white/60 py-3 px-4">Mínimo</th>
+                <th className="text-left text-white/60 py-3 px-4">Costo Unit.</th>
+                <th className="text-left text-white/60 py-3 px-4">Valor Total</th>
+                <th className="text-left text-white/60 py-3 px-4">Estado</th>
+                <th className="text-left text-white/60 py-3 px-4">Ajuste</th>
+                <th className="text-left text-white/60 py-3 px-4">Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredItems.map((item) => (
+                <tr key={item.id} className="border-b border-white/5 hover:bg-white/5">
+                  <td className="py-3 px-4 text-cyan-400 font-mono text-xs">{item.item_code}</td>
+                  <td className="py-3 px-4 text-white font-medium">{item.description}</td>
+                  <td className="py-3 px-4 text-white/70">{item.unit}</td>
+                  <td className="py-3 px-4 text-white font-medium">{item.current_stock.toLocaleString()}</td>
+                  <td className="py-3 px-4 text-white/70">{item.minimum_threshold}</td>
+                  <td className="py-3 px-4 text-white/70">{formatCurrency(item.unit_cost)}</td>
+                  <td className="py-3 px-4 text-white font-medium">{formatCurrency(item.current_stock * item.unit_cost)}</td>
+                  <td className="py-3 px-4">
+                    {item.current_stock <= item.minimum_threshold ? (
+                      <span className="flex items-center space-x-1 text-amber-400">
+                        <AlertTriangle className="w-4 h-4" />
+                        <span>Bajo</span>
+                      </span>
+                    ) : (
+                      <span className="flex items-center space-x-1 text-emerald-400">
+                        <Package className="w-4 h-4" />
+                        <span>OK</span>
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => handleStockAdjustment(item, 1)}
+                        className="p-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                        title="Aumentar stock"
+                        aria-label={`Aumentar stock de ${item.description}`}
+                      >
+                        <ArrowUp className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleStockAdjustment(item, -1)}
+                        className="p-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                        title="Disminuir stock"
+                        aria-label={`Disminuir stock de ${item.description}`}
+                      >
+                        <ArrowDown className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleOpenModal(item)}
+                        className="text-cyan-400 hover:text-cyan-300"
+                        aria-label={`Editar material ${item.description}`}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirm(item)}
+                        className="text-red-400 hover:text-red-300"
+                        aria-label={`Eliminar material ${item.description}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Modal */}
       {isModalOpen && (
@@ -523,6 +561,16 @@ export default function WarehouseManager() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!deleteConfirm}
+        title="Eliminar material"
+        message={`¿Está seguro de eliminar "${deleteConfirm?.description}" del inventario? Esta acción no se puede deshacer.`}
+        variant="danger"
+        confirmLabel="Eliminar"
+        onConfirm={() => { if (deleteConfirm) handleDeleteItem(deleteConfirm); setDeleteConfirm(null); }}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </div>
   );
 }
