@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
   },
   // Ensure consistent production URL
   env: {
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'https://control-constructora-wm.vercel.app',
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'https://control-constructora-ir8cxwljy-proyectoswm.vercel.app',
   },
 };
 

@@ -101,6 +101,9 @@ export default function DashboardStats() {
   const lowStockItems = stockItems.filter(s => s.current_stock <= s.minimum_threshold).length;
 
   const formatCurrency = (amount: number): string => {
+    if (isNaN(amount) || amount === null || amount === undefined) {
+      return 'Q. 0';
+    }
     return new Intl.NumberFormat('es-GT', {
       style: 'currency',
       currency: 'GTQ',

@@ -27,6 +27,9 @@ self.addEventListener('install', (event) => {
           return Promise.resolve(); // Don't fail the entire install
         });
       }));
+    }).catch(err => {
+      console.error('Failed to open cache:', err);
+      // Don't fail the install even if cache fails
     })
   );
   self.skipWaiting();
