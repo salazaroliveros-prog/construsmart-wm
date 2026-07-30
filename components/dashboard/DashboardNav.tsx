@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { LayoutDashboard, FolderKanban, Calculator, TrendingUp, Users, Warehouse, FileText, Settings, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp } from 'lucide-react';
 
 interface NavItem {
   id: string;
@@ -14,7 +14,7 @@ const navItems: NavItem[] = [
   { id: 'dashboard', label: 'Tablero Principal', icon: <LayoutDashboard className="w-5 h-5" aria-hidden="true" /> },
   { id: 'projects', label: 'Proyectos', icon: <FolderKanban className="w-5 h-5" aria-hidden="true" /> },
   { id: 'budgets', label: 'Presupuestos', icon: <Calculator className="w-5 h-5" aria-hidden="true" /> },
-  { id: 'finances', label: 'Finanzas', icon: <Calculator className="w-5 h-5" aria-hidden="true" /> },
+  { id: 'finances', label: 'Finanzas', icon: <DollarSign className="w-5 h-5" aria-hidden="true" /> },
   { id: 'payroll', label: 'Nómina', icon: <Users className="w-5 h-5" aria-hidden="true" /> },
   { id: 'warehouse', label: 'Almacén', icon: <Warehouse className="w-5 h-5" aria-hidden="true" /> },
   { id: 'analytics', label: 'Analytics', icon: <TrendingUp className="w-5 h-5" aria-hidden="true" /> },
@@ -26,10 +26,9 @@ interface DashboardNavProps {
 }
 
 export default function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
-  const [activeNav, setActiveNav] = useState(activeTab);
+  const isActive = (id: string) => activeTab === id;
 
   const handleNavClick = (itemId: string) => {
-    setActiveNav(itemId);
     onTabChange(itemId);
   };
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Filter, TrendingUp, TrendingDown, DollarSign, Wallet, ArrowDownCircle, ArrowUpCircle, Calendar, Download, X, Save, Inbox } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, TrendingUp, TrendingDown, DollarSign, Wallet, ArrowDownCircle, ArrowUpCircle, Calendar, X, Save, Inbox } from 'lucide-react';
 import { offlineDB, LocalFinancialTransaction, LocalProject } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/Toast';
@@ -337,7 +337,7 @@ export default function FinanceManager() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold text-white flex items-center space-x-2">
           <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center">
-            <span className="text-white text-sm font-bold">💰</span>
+            <DollarSign className="w-5 h-5 text-white" />
           </span>
           <span>Gestión Financiera</span>
         </h2>
@@ -444,7 +444,7 @@ export default function FinanceManager() {
         <select
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value)}
-          className="px-4 py-2 rounded-lg bg-white/10 border border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
+          className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
           aria-label="Filtrar por categoría"
         >
           <option value="all">Todas las Categorías</option>

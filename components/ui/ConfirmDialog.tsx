@@ -14,6 +14,8 @@ interface ConfirmDialogProps {
   onCancel: () => void;
 }
 
+const scrollCountRef = useRef(0);
+
 export default function ConfirmDialog({
   isOpen,
   title,
@@ -28,10 +30,19 @@ export default function ConfirmDialog({
 
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      scrollCountRef.current = (scrollCountRef.current || 0) + 1;
+      if (scrollCountRef.current === 1) {
+        document.body.style.overflow = 'hidden';
+      }
       setTimeout(() => confirmRef.current?.focus(), 50);
     }
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      const wasOpen = scrollCountRef.current > 0;
+      scrollCountRef.current = Math.max(0, (scrollCountRef.current || 0) - 1);
+      if (wasOpen && scrollCountRef.current === 0) {
+        document.body.style.overflow = '';
+      }
+    };
   }, [isOpen]);
 
   useEffect(() => {

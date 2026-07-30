@@ -22,7 +22,7 @@ function TabSkeleton() {
       <div className="h-6 bg-white/10 rounded w-48 mb-6" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="h-24 bg-white/10 rounded-xl" />
+          <div key={`sk-${i}`} className="h-24 bg-white/10 rounded-xl" />
         ))}
       </div>
     </div>
@@ -288,14 +288,14 @@ export default function Dashboard() {
 
         <main className="flex-1 overflow-y-auto p-6 main-content" id="main-content" role="main" aria-label="Contenido principal">
           <div className="max-w-7xl mx-auto space-y-6">
-            <nav className="flex flex-wrap gap-2 mb-6" aria-label="Navegación de pestañas">
+            <nav className="flex flex-wrap gap-2 mb-6 overflow-x-auto pb-1" aria-label="Navegación de pestañas">
               {tabs.map(tab => {
                 const isTabActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`px-4 py-2 rounded-lg transition-all ${
+                    className={`px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
                       isTabActive
                         ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
                         : 'text-gray-400 hover:text-white border border-transparent'

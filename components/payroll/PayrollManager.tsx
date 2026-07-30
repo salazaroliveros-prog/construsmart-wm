@@ -148,7 +148,7 @@ export default function PayrollManager() {
     const aguinaldoRate = 0.0833; // 1/12 of annual salary per month
     const aguinaldo = baseSalary * aguinaldoRate;
     
-    const vacacionesRate = 0.0833; // 1/12 of annual salary per month
+    const vacacionesRate = 0.0417; // 1/24 of annual salary (Guatemala labor law)
     const vacaciones = baseSalary * vacacionesRate;
     
     return {
@@ -446,7 +446,7 @@ export default function PayrollManager() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold text-white flex items-center space-x-2">
           <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-            <span className="text-white text-sm font-bold">👥</span>
+            <Users className="w-5 h-5 text-white" />
           </span>
           <span>Gestión de Nómina</span>
         </h2>
@@ -663,7 +663,7 @@ export default function PayrollManager() {
       {/* Employee Modal */}
       {isEmployeeModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="glass-panel rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="glass-panel rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-8">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-white">
                 {editingEmployee ? 'Editar Empleado' : 'Nuevo Empleado'}
@@ -768,7 +768,7 @@ export default function PayrollManager() {
       {/* Payroll Modal */}
       {isPayrollModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="glass-panel rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="glass-panel rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-8">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-white">
                 {editingPayroll ? 'Editar Registro de Pago' : 'Nuevo Registro de Pago'}
