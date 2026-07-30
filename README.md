@@ -1,192 +1,320 @@
-import os
+# CONSTRUCTORA WM/M&S - Sistema de Control de Seguimiento
 
-# 1. .cursorrules / AGENTS.md
-cursorrules_content = """# REGLAS OBLIGATORIAS DEL PROYECTO - CONSTRUCTORA WM/M&S
-# Slogan: "CONSTRUYENDO EL FUTURO" / "Edificando el Futuro"
+## 🏗️ Descripción
 
-## 1. PILA TECNOLÓGICA & ARQUITECTURA
-- **Framework:** Next.js 14+ (App Router), React 18, TypeScript estricto.
-- **Estilos & UI:** Tailwind CSS, Lucide Icons, Recharts, Framer Motion, Glassmorphism UI (clases `.glass-panel`, `.glass-card`, `backdrop-blur-xl`, transparencias `rgba`, bordes de cristal).
-- **Base de Datos & Auth:** Supabase (PostgreSQL + Auth + Storage).
-- **Modo Offline & PWA:** Progressive Web App 100% funcional sin conexión vía Service Workers y Dexie.js (IndexedDB).
+Sistema ERP de construcción con control de presupuestos, seguimiento de proyectos y gestión financiera. "CONSTRUYENDO EL FUTURO"
 
-## 2. BRANDING & IDENTIDAD VISUAL
-- **Empresa:** CONSTRUCTORA WM/M&S
-- **Slogan:** "CONSTRUYENDO EL FUTURO"
-- **Icono PWA & App:** `/public/assets/branding/logo-constructora-wm.jpg` (Genera favicon, app-icons y splash screens).
-- **Membrete Corporativo:** `/public/assets/branding/letterhead-multiservicios.jpg` (Encabezado oficial para exportación PDF, CSV e informes).
-- **Header Dual (Dashboard):** Desplegar ambos logotipos lado a lado en un contenedor glassmorphic con divisor traslúcido y anillo luminoso en el avatar del usuario (`ring-2 ring-cyan-500/50`).
+Aplicación web progresiva (PWA) que permite la gestión completa de proyectos de construcción, incluyendo cálculo de presupuestos, control de costos, gestión de nómina, inventario y analítica avanzada, con soporte completo para modo offline.
 
-## 3. ESTÁNDARES MONETARIOS Y INGENIERÍA
-- **Moneda:** Quetzales de Guatemala (Q. / GTQ).
-- **Matriz de Costo Residencial por m²:**
-  - Nivel Básico: Q. 3,000.00 – Q. 3,500.00 / m²
-  - Nivel Moderado: Q. 3,500.00 – Q. 4,000.00 / m²
-  - Nivel Premium: Q. 4,000.00 – Q. 5,000.00 / m²
-- **Cálculos Estructurales Localizados:**
-  - Los motores de cálculo en `/lib/calculators/` deben ejecutarse 100% client-side (Zero API roundtrip para cálculo de volumen, insumos y APU).
+## 🚀 Características Principales
 
-## 4. REGLAS DE DESARROLLO EN VS CODE
-- No usar tipo `any`. Especificar interfaces en TypeScript para todas las entidades.
-- Modularizar componentes en `/components/ui/`, `/components/dashboard/`, `/components/budgets/`, `/components/pdf/`.
-- Priorizar cero scroll en el Tablero Principal (*Zero-Scroll Viewport*).
-"""
+### Módulos del Sistema
+- **Dashboard Principal**: Vista general con estadísticas en tiempo real
+- **Gestión de Proyectos**: CRUD completo de proyectos con sincronización offline
+- **Calculadora de Presupuestos**: Generación de APU con cálculos estructurales
+- **Gestión Financiera**: Control de ingresos, gastos y categorías
+- **Nómina**: Gestión de empleados y cálculo de salarios
+- **Almacén**: Control de inventario y alertas de stock bajo
+- **Analytics Dashboard**: Gráficos avanzados (Curva S, Gantt, avances financieros)
 
-with open(".cursorrules", "w", encoding="utf-8") as f:
-    f.write(cursorrules_content)
+### Características Técnicas
+- **PWA Completa**: Instalable como app nativa, funciona offline
+- **Sincronización Offline**: Dexie.js (IndexedDB) + Supabase
+- **Responsive Design**: Optimizado para móvil y desktop
+- **Glassmorphism UI**: Interfaz moderna con efectos de cristal
+- **Real-time Data**: Estadísticas actualizadas desde base de datos local
 
-with open("AGENTS.md", "w", encoding="utf-8") as f:
-    f.write(cursorrules_content)
+## 🛠️ Stack Tecnológico
 
-# 2. docs/DATABASE_SCHEMA.md
-database_schema_content = """# DATABASE SCHEMA & SUPABASE / DEXIE ARCHITECTURE
-## CONSTRUCTORA WM/M&S - "CONSTRUYENDO EL FUTURO"
+### Framework & Core
+- **Next.js 16.2.12** (App Router)
+- **React 19.2.8** 
+- **TypeScript 6.0.3** (Strict mode)
 
-This document defines the complete relational PostgreSQL schema for Supabase and the client-side IndexedDB schema managed via Dexie.js for offline functionality.
+### Estilos & UI
+- **Tailwind CSS 4.3.3**
+- **Lucide React 1.28.0** (Iconos)
+- **Recharts 3.10.1** (Gráficos)
+- **Framer Motion 12.43.0** (Animaciones)
+- **Glassmorphism UI**: Clases personalizadas `.glass-panel`, `.glass-card`
+
+### Base de Datos & Sync
+- **Supabase**: PostgreSQL + Auth + Storage
+- **Dexie.js 4.4.4**: IndexedDB para modo offline
+- **PostgreSQL Client**: pg 8.22.0
+
+### Exportación & Documentos
+- **jsPDF 4.2.1**: Generación de PDFs
+- **html2canvas 1.4.1**: Capturas de pantalla
+
+### Utilidades
+- **dotenv 17.4.2**: Gestión de variables de entorno
+- **react-is 19.2.8**: Utilidades React
+
+## 📁 Estructura del Proyecto
+
+```
+CONTROL_SEGUIMIENTO_APP_VoL_10/
+├── app/                          # Next.js App Router
+│   ├── layout.tsx              # Layout principal con metadatos PWA
+│   ├── page.tsx                # Dashboard principal
+│   └── globals.css             # Estilos globales
+├── components/                  # Componentes React
+│   ├── analytics/              # Dashboard de analítica
+│   │   └── AnalyticsDashboard.tsx
+│   ├── budgets/                # Calculadora de presupuestos
+│   │   └── BudgetCalculator.tsx
+│   ├── dashboard/              # Componentes del dashboard
+│   │   ├── DashboardNav.tsx
+│   │   ├── DashboardStats.tsx
+│   │   ├── DualBrandHeader.tsx
+│   │   ├── ProjectManager.tsx
+│   │   └── ProjectOverview.tsx
+│   ├── finances/               # Gestión financiera
+│   │   └── FinanceManager.tsx
+│   ├── payroll/                # Gestión de nómina
+│   │   └── PayrollManager.tsx
+│   ├── warehouse/              # Gestión de almacén
+│   │   └── WarehouseManager.tsx
+│   ├── pdf/                    # Generación de PDFs
+│   │   └── PDFGenerator.tsx
+│   └── ui/                     # Componentes UI genéricos
+│       └── ServiceWorkerRegistration.tsx
+├── lib/                         # Lógica de negocio
+│   ├── calculators/            # Motores de cálculo client-side
+│   │   ├── slabCalculators.ts
+│   │   └── volumetricCalculators.ts
+│   ├── config/                 # Configuración centralizada
+│   │   └── app.config.ts
+│   ├── db/                     # Base de datos offline
+│   │   └── offlineStore.ts
+│   ├── supabase/               # Cliente Supabase
+│   │   └── client.ts
+│   └── utils/                  # Utilidades
+│       └── offlineSync.ts
+├── public/                      # Archivos estáticos
+│   ├── manifest.json           # Manifiesto PWA
+│   ├── sw.js                   # Service Worker
+│   ├── robots.txt              # SEO
+│   ├── sitemap.xml             # SEO
+│   ├── logo.png                # Icono principal
+│   └── assets/branding/        # Branding corporativo
+├── scripts/                     # Scripts de utilidad
+│   ├── validate-schema.js      # Validación de esquema DB
+│   ├── detailed-schema-check.js # Verificación detallada
+│   └── auto-migrate.js         # Migración automática
+├── supabase/                   # Configuración Supabase
+│   ├── migrations/             # Migraciones de base de datos
+│   │   ├── 20240730000000_initial_schema.sql
+│   │   ├── 20240730000001_schema_corrections.sql
+│   │   └── 20240730000002_add_missing_fields.sql
+│   └── config.toml             # Configuración CLI
+├── doc/                         # Documentación
+│   ├── DATABASE_SCHEMA.md      # Esquema de base de datos
+│   └── PWA_OFFLINE_SYNC.md     # Documentación PWA
+└── .cursorrules/                # Reglas del proyecto
+    └── AGENTS.md
+```
+
+## 🔧 Configuración del Entorno
+
+### Variables de Entorno Requeridas
+
+Crear archivo `.env.local`:
+
+```env
+NEXT_PUBLIC_APP_URL=https://control-constructora-wm.vercel.app
+NEXT_PUBLIC_SUPABASE_URL=tu_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_supabase_anon_key
+```
+
+### Instalación
+
+```bash
+# Instalar dependencias
+npm install
+
+# Ejecutar en desarrollo
+npm run dev
+
+# Build para producción
+npm run build
+
+# Iniciar producción
+npm start
+```
+
+## 🗄️ Base de Datos
+
+### Esquema Supabase (PostgreSQL)
+
+**Tablas principales:**
+- `projects` - Gestión de proyectos
+- `budgets` - Presupuestos y cálculos
+- `budget_items` - Items de presupuesto (estructura jerárquica)
+- `budget_item_breakdowns` - Desglose de recursos
+- `financial_transactions` - Transacciones financieras
+- `payroll_employees` - Empleados
+- `payroll_records` - Registros de nómina
+- `warehouse_stock` - Inventario
+
+### Base de Datos Offline (Dexie.js)
+
+IndexedDB sincronizado con Supabase para modo offline:
+- Todas las tablas con campos `sync_status`
+- Sincronización automática cuando hay conexión
+- Soporte para creación y edición offline
+
+## 📱 PWA & Offline
+
+### Características PWA
+- **Instalable**: Se puede instalar como app nativa
+- **Offline First**: Funciona completamente sin conexión
+- **Service Worker**: Caching inteligente de recursos
+- **Background Sync**: Sincronización cuando se restaura conexión
+
+### Configuración PWA
+- Manifest optimizado para iOS y Android
+- Iconos adaptables (maskable)
+- Tema consistente con branding corporativo
+- Soporte para orientación portrait
+
+## 🎨 Branding
+
+### Identidad Corporativa
+- **Empresa**: CONSTRUCTORA WM/M&S
+- **Slogan**: "CONSTRUYENDO EL FUTURO"
+- **Colores**: Paleta glassmorphism con acentos cyan/violet
+
+### Activos
+- Logo principal: `/public/logo.png`
+- Logo constructora: `/public/assets/branding/logo-constructora-wm.jpg`
+- Membrete: `/public/assets/branding/letterhead-multiservicios.jpg`
+
+## 💰 Estándares Monetarios
+
+### Moneda
+- Quetzales de Guatemala (GTQ)
+- Formato: Q. 1,000.00
+
+### Matriz de Costos Residenciales (por m²)
+- **Nivel Básico**: Q. 3,000.00 – Q. 3,500.00
+- **Nivel Moderado**: Q. 3,500.00 – Q. 4,000.00
+- **Nivel Premium**: Q. 4,000.00 – Q. 5,000.00
+
+## 🚀 Despliegue
+
+### Vercel
+El proyecto está configurado para despliegue automático en Vercel:
+
+```bash
+# Push a GitHub
+git push origin main
+
+# Vercel despliega automáticamente a:
+# https://control-constructora-wm.vercel.app
+```
+
+### Configuración Vercel
+- Framework: Next.js
+- Variables de entorno configuradas
+- Dominio personalizado: `control-constructora-wm.vercel.app`
+
+## 📊 Analytics Dashboard
+
+El dashboard de analítica incluye 4 gráficos integrados:
+1. **Curva S**: Progreso de proyecto vs tiempo
+2. **Gantt**: Cronograma de actividades
+3. **Avance Físico/Financiero**: Comparativa de progreso
+4. **Presupuestado vs Real**: Control de costos
+
+## 🔒 Seguridad
+
+### Autenticación
+- Supabase Auth (preparado para implementación)
+- RLS (Row Level Security) habilitado
+- Políticas de acceso por tabla
+
+### Datos
+- Encriptación en tránsito (HTTPS)
+- Sincronización segura con Supabase
+- Datos sensibles en IndexedDB local
+
+## 📝 Reglas de Desarrollo
+
+Ver `.cursorrules/AGENTS.md` para reglas detalladas del proyecto.
+
+### Estándares de Código
+- TypeScript estricto (sin `any`)
+- Interfaces para todas las entidades
+- Componentes modulares y reutilizables
+- Zero-Scroll Viewport en dashboard principal
+
+## 🧪 Scripts de Validación
+
+### Validación de Esquema
+```bash
+# Validación básica
+node scripts/validate-schema.js
+
+# Validación detallada
+node scripts/detailed-schema-check.js
+```
+
+### Migraciones
+```bash
+# Aplicar migraciones a Supabase
+supabase db push
+
+# Verificar estado de migraciones
+supabase db remote commit
+```
+
+## 📈 Monitoreo y Logs
+
+### Service Worker
+- Logs de registro en consola
+- Detección de actualizaciones
+- Errores de sincronización reportados
+
+### Supabase
+- Logs de consultas en dashboard
+- Monitoreo de conexiones
+- Alertas de rendimiento
+
+## 🐛 Troubleshooting
+
+### Problemas Comunes
+
+**Service Worker no registra:**
+- Verificar que el navegador lo soporte
+- Limpiar cache y recargar
+- Verificar console para errores
+
+**Sincronización falla:**
+- Verificar conexión a Supabase
+- Validar variables de entorno
+- Revisar logs de error en consola
+
+**Build falla:**
+- Limpiar `.next` directory
+- Verificar dependencias
+- Validar TypeScript errors
+
+## 📞 Soporte
+
+Para problemas técnicos o preguntas sobre el proyecto:
+- Revisar documentación en `/doc/`
+- Verificar reglas en `.cursorrules/AGENTS.md`
+- Consultar scripts de validación en `/scripts/`
+
+## 📄 Licencia
+
+Propiedad de CONSTRUCTORA WM/M&S - Todos los derechos reservados.
 
 ---
 
-## 1. SUPABASE (POSTGRESQL) DDL SCRIPT
-
-```sql
--- ENABLE EXTENSIONS
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- 1. ENUMS
-CREATE TYPE user_role AS ENUM ('admin', 'director', 'engineer', 'architect', 'resident', 'warehouse', 'client');
-CREATE TYPE project_status AS ENUM ('planning', 'execution', 'paused', 'completed');
-CREATE TYPE project_typology AS ENUM ('residential', 'commercial', 'industrial', 'civil', 'public');
-CREATE TYPE expense_category AS ENUM (
-    'materiales', 'mano_de_obra', 'herramienta', 'sub_contrato', 
-    'administrativo', 'personal', 'transporte', 'fijos', 'hogar', 'aporte', 'trabajos_extra'
-);
-
--- 2. PROFILES TABLE
-CREATE TABLE profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    full_name TEXT NOT NULL,
-    role user_role DEFAULT 'engineer',
-    company_name TEXT DEFAULT 'CONSTRUCTORA WM/M&S',
-    avatar_url TEXT,
-    phone TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 3. PROJECTS TABLE
-CREATE TABLE projects (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    code VARCHAR(50) UNIQUE NOT NULL,
-    name TEXT NOT NULL,
-    client_name TEXT NOT NULL,
-    client_phone TEXT,
-    client_email TEXT,
-    location TEXT NOT NULL,
-    typology project_typology DEFAULT 'residential',
-    area_m2 NUMERIC(10,2) NOT NULL DEFAULT 0,
-    quality_level VARCHAR(20) CHECK (quality_level IN ('basic', 'moderate', 'premium')),
-    status project_status DEFAULT 'planning',
-    start_date DATE,
-    estimated_end_date DATE,
-    duration_days INT DEFAULT 0,
-    total_budget NUMERIC(14,2) DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 4. STANDARD APU LIBRARY
-CREATE TABLE apu_library (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    code VARCHAR(20) UNIQUE NOT NULL,
-    typology project_typology DEFAULT 'residential',
-    chronological_order INT NOT NULL,
-    description TEXT NOT NULL,
-    unit VARCHAR(20) NOT NULL,
-    default_yield_per_day NUMERIC(10,2) DEFAULT 1.0,
-    category VARCHAR(50) NOT NULL
-);
-
--- 5. BUDGETS & LINE ITEMS (PARENT-CHILD TREE)
-CREATE TABLE budgets (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
-    version INT DEFAULT 1,
-    direct_cost NUMERIC(14,2) DEFAULT 0,
-    indirect_percentage NUMERIC(5,2) DEFAULT 15.0,
-    contingency_percentage NUMERIC(5,2) DEFAULT 5.0,
-    profit_percentage NUMERIC(5,2) DEFAULT 10.0,
-    total_amount NUMERIC(14,2) DEFAULT 0,
-    duration_days INT DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE budget_items (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    budget_id UUID REFERENCES budgets(id) ON DELETE CASCADE,
-    parent_id UUID REFERENCES budget_items(id) ON DELETE CASCADE,
-    item_order INT NOT NULL,
-    code VARCHAR(30) NOT NULL,
-    description TEXT NOT NULL,
-    unit VARCHAR(20) NOT NULL,
-    quantity NUMERIC(12,2) NOT NULL DEFAULT 0,
-    unit_cost NUMERIC(12,2) DEFAULT 0,
-    total_cost NUMERIC(14,2) DEFAULT 0,
-    is_custom BOOLEAN DEFAULT FALSE,
-    length_m NUMERIC(8,2),
-    width_m NUMERIC(8,2),
-    depth_m NUMERIC(8,2),
-    height_m NUMERIC(8,2),
-    slab_type VARCHAR(50),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE budget_item_breakdown (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    budget_item_id UUID REFERENCES budget_items(id) ON DELETE CASCADE,
-    resource_type VARCHAR(20) CHECK (resource_type IN ('material', 'labor', 'equipment', 'subcontract')),
-    code VARCHAR(30),
-    description TEXT NOT NULL,
-    unit VARCHAR(20) NOT NULL,
-    quantity_unitary NUMERIC(10,4) NOT NULL,
-    total_quantity NUMERIC(12,2) NOT NULL,
-    unit_price NUMERIC(12,2) NOT NULL,
-    waste_percentage NUMERIC(5,2) DEFAULT 5.0,
-    total_price NUMERIC(14,2) NOT NULL
-);
-
--- 6. FINANCIAL TRANSACTIONS
-CREATE TABLE financial_transactions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    project_id UUID REFERENCES projects(id) ON DELETE SET NULL,
-    type VARCHAR(10) CHECK (type IN ('income', 'expense')),
-    category expense_category NOT NULL,
-    description TEXT NOT NULL,
-    quantity NUMERIC(10,2) DEFAULT 1,
-    unit VARCHAR(20) DEFAULT 'unid',
-    unit_cost NUMERIC(12,2) NOT NULL,
-    total_cost NUMERIC(14,2) NOT NULL,
-    date DATE NOT NULL DEFAULT CURRENT_DATE,
-    receipt_url TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 7. PAYROLL & WAREHOUSE
-CREATE TABLE payroll_records (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
-    worker_name TEXT NOT NULL,
-    role_title TEXT NOT NULL,
-    daily_rate NUMERIC(10,2) NOT NULL,
-    days_worked NUMERIC(4,1) NOT NULL,
-    total_pay NUMERIC(12,2) NOT NULL,
-    week_ending_date DATE NOT NULL,
-    status VARCHAR(20) DEFAULT 'pending'
-);
-
-CREATE TABLE warehouse_stock (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    item_code VARCHAR(30) UNIQUE NOT NULL,
-    description TEXT NOT NULL,
-    unit VARCHAR(20) NOT NULL,
-    current_stock NUMERIC(12,2) DEFAULT 0,
-    minimum_threshold NUMERIC(12,2) DEFAULT 10,
-    unit_cost NUMERIC(12,2) NOT NULL
-);
+**Versión**: 1.0.0  
+**Última actualización**: 2024-07-30  
+**Framework**: Next.js 16.2.12 + React 19.2.8  
+**Base de datos**: Supabase + Dexie.js

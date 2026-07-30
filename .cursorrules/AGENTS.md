@@ -2,10 +2,10 @@
 # Slogan: "CONSTRUYENDO EL FUTURO" / "Edificando el Futuro"
 
 ## 1. PILA TECNOLÓGICA & ARQUITECTURA
-- **Framework:** Next.js 14+ (App Router), React 18, TypeScript estricto.
-- **Estilos & UI:** Tailwind CSS, Lucide Icons, Recharts, Framer Motion, Glassmorphism UI (clases `.glass-panel`, `.glass-card`, `backdrop-blur-xl`, transparencias `rgba`, bordes de cristal).
-- **Base de Datos & Auth:** Supabase (PostgreSQL + Auth + Storage).
-- **Modo Offline & PWA:** Progressive Web App 100% funcional sin conexión vía Service Workers y Dexie.js (IndexedDB).
+- **Framework:** Next.js 16.2.12 (App Router), React 19.2.8, TypeScript 6.0.3 estricto.
+- **Estilos & UI:** Tailwind CSS 4.3.3, Lucide Icons 1.28.0, Recharts 3.10.1, Framer Motion 12.43.0, Glassmorphism UI (clases `.glass-panel`, `.glass-card`, `backdrop-blur-xl`, transparencias `rgba`, bordes de cristal).
+- **Base de Datos & Auth:** Supabase 2.111.0 (PostgreSQL + Auth + Storage).
+- **Modo Offline & PWA:** Progressive Web App 100% funcional sin conexión vía Service Workers y Dexie.js 4.4.4 (IndexedDB).
 
 ## 2. BRANDING & IDENTIDAD VISUAL
 - **Empresa:** CONSTRUCTORA WM/M&S
