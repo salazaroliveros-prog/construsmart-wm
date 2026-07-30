@@ -5,7 +5,7 @@ export const APP_CONFIG = {
   // The production URL of the application
   // This is set via environment variable NEXT_PUBLIC_APP_URL
   // Falls back to the Vercel default domain
-  url: process.env.NEXT_PUBLIC_APP_URL || 'https://control-constructora-ir8cxwljy-proyectoswm.vercel.app',
+  url: process.env.NEXT_PUBLIC_APP_URL || 'https://control-constructora-wm.vercel.app',
   
   // App metadata
   name: 'CONSTRUCTORA WM/M&S',
