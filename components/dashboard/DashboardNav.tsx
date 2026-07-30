@@ -98,5 +98,3 @@ export default function DashboardNav({ activeTab, onTabChange }: DashboardNavPro
     </nav>
   );
 }
-
-export default React.memo(DashboardNav);

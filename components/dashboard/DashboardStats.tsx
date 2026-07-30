@@ -15,40 +15,38 @@ interface StatCardProps {
 
 function StatCard({ title, value, subtitle, icon, trend, trendUp }: StatCardProps) {
   return (
-    <div 
-      style={{
-        background: 'rgba(255, 255, 255, 0.05)',
-        backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        borderRadius: '1rem',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        padding: '1.5rem'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-        e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.4)';
-        e.currentTarget.style.boxShadow = '0 0 25px rgba(56, 189, 248, 0.2)';
-        e.currentTarget.style.transform = 'translateY(-2px)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-        e.currentTarget.style.boxShadow = 'none';
-        e.currentTarget.style.transform = 'translateY(0)';
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
+    <div style={{
+      background: 'rgba(255, 255, 255, 0.03)',
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
+      border: '1px solid rgba(255, 255, 255, 0.08)',
+      borderRadius: '12px',
+      padding: '1rem',
+      transition: 'all 0.3s ease'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
         <div style={{
-          padding: '0.75rem',
-          borderRadius: '0.75rem',
-          background: 'linear-gradient(to bottom right, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2))',
-          border: '1px solid rgba(6, 182, 212, 0.3)',
-          transition: 'all 0.3s'
+          width: '2.5rem',
+          height: '2.5rem',
+          borderRadius: '8px',
+          background: 'rgba(56, 189, 248, 0.1)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}>
           {icon}
         </div>
         {trend && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 500, color: trendUp ? 'rgb(52, 211, 153)' : 'rgb(248, 113, 113)' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.25rem',
+            fontSize: '0.75rem',
+            color: trendUp ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)',
+            background: trendUp ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+            padding: '0.25rem 0.5rem',
+            borderRadius: '6px'
+          }}>
             <TrendingUp style={{ width: '0.75rem', height: '0.75rem', transform: !trendUp ? 'rotate(180deg)' : 'none' }} />
             <span>{trend}</span>
           </div>
@@ -61,12 +59,12 @@ function StatCard({ title, value, subtitle, icon, trend, trendUp }: StatCardProp
   );
 }
 
-const StatCardComponent = StatCard;
+const MemoizedStatCard = React.memo(StatCard);
 
 export default function DashboardStats() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-      <StatCard
+      <MemoizedStatCard
         title="Proyectos Activos"
         value="12"
         subtitle="3 en ejecución"
@@ -74,31 +72,31 @@ export default function DashboardStats() {
         trend="+2"
         trendUp={true}
       />
-      <StatCard
+      <MemoizedStatCard
         title="Presupuesto Total"
         value="Q. 4.2M"
         subtitle="Este mes"
         icon={<DollarSign className="w-5 h-5 text-emerald-400" />}
-        trend="+15%"
+        trend="+12%"
         trendUp={true}
       />
-      <StatCard
-        title="Progreso Promedio"
-        value="67%"
-        subtitle="Todos los proyectos"
+      <MemoizedStatCard
+        title="Costo Real"
+        value="Q. 3.8M"
+        subtitle="90.5% del presupuesto"
         icon={<TrendingUp className="w-5 h-5 text-violet-400" />}
-        trend="+5%"
+        trend="+8%"
         trendUp={true}
       />
-      <StatCard
-        title="Personal Activo"
-        value="48"
-        subtitle="En obra"
+      <MemoizedStatCard
+        title="Empleados"
+        value="45"
+        subtitle="Operativos activos"
         icon={<Users className="w-5 h-5 text-amber-400" />}
         trend="+3"
         trendUp={true}
       />
-      <StatCard
+      <MemoizedStatCard
         title="Tareas Pendientes"
         value="23"
         subtitle="Esta semana"
@@ -106,7 +104,7 @@ export default function DashboardStats() {
         trend="-5"
         trendUp={false}
       />
-      <StatCard
+      <MemoizedStatCard
         title="Próxima Entrega"
         value="15 días"
         subtitle="Residencial Villa Real"
@@ -115,7 +113,3 @@ export default function DashboardStats() {
     </div>
   );
 }
-
-const StatCardComponent = StatCard;
-
-export default React.memo(DashboardStats);
