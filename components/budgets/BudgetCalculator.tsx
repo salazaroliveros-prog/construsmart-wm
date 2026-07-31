@@ -397,26 +397,30 @@ export default function BudgetCalculator() {
           </div>
         </div>
 
-        <button
-          onClick={addSlabCalculation}
-          className="glass-button w-full px-4 py-2 rounded-lg text-white flex items-center justify-center gap-2"
-        >
-          <Calculator className="w-4 h-4" />
-          Agregar Cálculo de Losa
-        </button>
+        <Tooltip content="Calcular y agregar losa de concreto al presupuesto">
+          <button
+            onClick={addSlabCalculation}
+            className="glass-button w-full px-4 py-2 rounded-lg text-white flex items-center justify-center gap-2"
+          >
+            <Calculator className="w-4 h-4" />
+            Agregar Cálculo de Losa
+          </button>
+        </Tooltip>
       </div>
 
       {/* Budget Items Table */}
       <div className="glass-panel rounded-2xl p-4 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-white">Items del Presupuesto</h2>
-          <button
-            onClick={addItem}
-            className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Agregar Item
-          </button>
+          <Tooltip content="Agregar nuevo item al presupuesto">
+            <button
+              onClick={addItem}
+              className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Agregar Item
+            </button>
+          </Tooltip>
         </div>
 
         {items.length === 0 ? (

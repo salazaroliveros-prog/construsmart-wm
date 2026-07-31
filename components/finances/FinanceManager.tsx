@@ -284,18 +284,22 @@ export default function FinanceManager() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <div className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm ${
-              isOnline ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
-            }`}>
-              {isOnline ? '🟢 En línea' : '🟡 Sin conexión'}
-            </div>
-            <button
-              onClick={() => openModal()}
-              className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Nueva Transacción
-            </button>
+            <Tooltip content={isOnline ? 'Conectado a internet' : 'Trabajando sin conexión'}>
+              <div className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm ${
+                isOnline ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+              }`}>
+                {isOnline ? '🟢 En línea' : '🟡 Sin conexión'}
+              </div>
+            </Tooltip>
+            <Tooltip content="Registrar nueva transacción financiera">
+              <button
+                onClick={() => openModal()}
+                className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Nueva Transacción
+              </button>
+            </Tooltip>
           </div>
         </div>
 
