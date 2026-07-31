@@ -5,6 +5,8 @@ import { ShoppingCart, Plus, Edit, Trash2, FileText, Search, Filter, Package, Do
 import { offlineDB, LocalPurchaseOrder, LocalPurchaseOrderItem, LocalSupplier, LocalProject } from '@/lib/db/offlineStore';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import Tooltip from '@/components/ui/Tooltip';
+import ActionButton from '@/components/ui/ActionButton';
 
 export default function PurchaseOrderManager() {
   const [orders, setOrders] = useState<LocalPurchaseOrder[]>([]);
@@ -262,26 +264,28 @@ export default function PurchaseOrderManager() {
           <h2 className="text-2xl font-bold text-white">Órdenes de Compra</h2>
           <p className="text-white/60 text-sm">Gestión de órdenes de compra a proveedores</p>
         </div>
-        <button
-          onClick={() => {
-            setEditingOrder(null);
-            setFormData({
-              code: `OC-${Date.now()}`,
-              supplier_id: '',
-              project_id: '',
-              order_date: new Date().toISOString().split('T')[0],
-              expected_delivery_date: '',
-              status: 'pending',
-              total_amount: 0,
-              notes: '',
-            });
-            setShowForm(true);
-          }}
-          className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 text-white"
-        >
-          <Plus className="w-4 h-4" />
-          Nueva Orden
-        </button>
+        <Tooltip content="Crear nueva orden de compra">
+          <button
+            onClick={() => {
+              setEditingOrder(null);
+              setFormData({
+                code: `OC-${Date.now()}`,
+                supplier_id: '',
+                project_id: '',
+                order_date: new Date().toISOString().split('T')[0],
+                expected_delivery_date: '',
+                status: 'pending',
+                total_amount: 0,
+                notes: '',
+              });
+              setShowForm(true);
+            }}
+            className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 text-white"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva Orden
+          </button>
+        </Tooltip>
       </div>
 
       {/* Summary Cards */}
