@@ -156,6 +156,18 @@
           "sizes": "96x96"
         }
       ]
+    },
+    {
+      "name": "Ajustes",
+      "short_name": "Ajustes",
+      "description": "Personalizar interfaz y configuración",
+      "url": "/?tab=settings",
+      "icons": [
+        {
+          "src": "/assets/branding/logo-constructora-wm.jpg",
+          "sizes": "96x96"
+        }
+      ]
     }
   ]
 }

@@ -1,8 +1,14 @@
-v1.0.2 - Schema alignment & documentation
-- All Supabase tables verified (9/9 present)
-- 40 APU library items loaded in Supabase
-- Schema corrections applied (budgets columns renamed, categories aligned)
-- docs/DATABASE_SCHEMA.md created with full schema reference
-- docs/CALCULATION_ENGINE_RULES.md created with structural formulas
-- Migration 003 created for remaining fixes (budget_item_breakdown columns)
+v1.0.3 - UI Enhancements & Dashboard Optimization
+- Sidebar colapsable (w-64 ↔ w-16) con iconos visibles
+- Módulo de Settings: 6 paletas de colores, transparencia, blur intensity
+- Gaussian blur en modales (backdrop-filter: blur)
+- Icon animations (float, glow, shake, pulse, bounce, spin)
+- Dashboard responsive con 6 gráficas interactivas
+- Nueva gráfica: Avance Físico vs Financiero
+- Nueva gráfica: Alertas de Stock
+- Zero-scroll viewport design
+- Mobile responsiveness mejorado con orientaciones específicas
+- Dependencias actualizadas: React 19.2.8, Tailwind 3.4.19, PostCSS 8.5.25
+- PWA manifest actualizado con shortcut de Ajustes
+- Service Worker v2 con estrategias de caching optimizadas
 - npm run build: ✅ Zero errors
