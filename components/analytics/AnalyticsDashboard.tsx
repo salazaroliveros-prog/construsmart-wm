@@ -190,12 +190,53 @@ export default function AnalyticsDashboard() {
     if (projects.length === 0) return [];
 
     const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    return months.map((month, index) => ({
-      month,
-      programmed: Math.min(100, (index + 1) * 8.33),
-      real: Math.min(100, Math.max(0, (index + 1) * 8.33 - Math.random() * 5)),
-      projected: Math.min(100, (index + 1) * 8.33 + Math.random() * 3),
-    }));
+    return months.map((month, index) => {
+      // Calculate actual progress based on project status and dates
+      const currentDate = new Date();
+      const year = currentDate.getFullYear();
+      const monthIndex = index + 1; // 1-12
+      const monthDate = new Date(year, monthIndex, 1);
+
+      let totalProgrammed = 0;
+      let totalReal = 0;
+      let totalProjected = 0;
+
+      projects.forEach(project => {
+        if (project.start_date && project.estimated_end_date) {
+          const startDate = new Date(project.start_date);
+          const endDate = new Date(project.estimated_end_date);
+          const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+          const elapsedDays = Math.ceil((monthDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+
+          const projectProgress = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
+
+          if (project.status === 'execution') {
+            totalProgrammed += projectProgress;
+            totalReal += projectProgress * 0.9; // Assume 90% efficiency
+            totalProjected += projectProgress * 1.05; // Slight projection variance
+          } else if (project.status === 'completed') {
+            totalProgrammed += 100;
+            totalReal += 100;
+            totalProjected += 100;
+          } else {
+            totalProgrammed += projectProgress;
+            totalReal += 0;
+            totalProjected += projectProgress;
+          }
+        }
+      });
+
+      const avgProgrammed = projects.length > 0 ? totalProgrammed / projects.length : 0;
+      const avgReal = projects.length > 0 ? totalReal / projects.length : 0;
+      const avgProjected = projects.length > 0 ? totalProjected / projects.length : 0;
+
+      return {
+        month,
+        programmed: Math.min(100, avgProgrammed),
+        real: Math.min(100, avgReal),
+        projected: Math.min(100, avgProjected),
+      };
+    });
   };
 
   const generateGanttData = (projects: LocalProject[]): GanttData[] => {
@@ -231,22 +272,78 @@ export default function AnalyticsDashboard() {
   const generateAdvanceData = (projects: LocalProject[]): AdvanceData[] => {
     if (projects.length === 0) return [];
 
-    return projects.map(project => ({
-      project: project.name,
-      physical: Math.random() * 100,
-      financial: Math.random() * 100,
-    }));
+    return projects.map(project => {
+      let physical = 0;
+      let financial = 0;
+
+      if (project.start_date && project.estimated_end_date) {
+        const startDate = new Date(project.start_date);
+        const endDate = new Date(project.estimated_end_date);
+        const currentDate = new Date();
+        const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        const elapsedDays = Math.ceil((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+
+        const timeProgress = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
+
+        if (project.status === 'execution') {
+          physical = timeProgress * 0.95; // Assume 95% efficiency
+          financial = timeProgress * 0.9; // Financial typically lags slightly
+        } else if (project.status === 'completed') {
+          physical = 100;
+          financial = 100;
+        } else {
+          physical = 0;
+          financial = 0;
+        }
+      }
+
+      return {
+        project: project.name,
+        physical,
+        financial,
+      };
+    });
   };
 
   const generateBudgetComparison = (projects: LocalProject[]): BudgetComparison[] => {
     if (projects.length === 0) return [];
 
     const categories = ['Materiales', 'Mano de Obra', 'Equipo', 'Subcontratos', 'Otros'];
-    return categories.map(category => ({
-      category,
-      budgeted: Math.random() * 1000000,
-      actual: Math.random() * 1000000,
-    }));
+    return categories.map(category => {
+      let totalBudgeted = 0;
+      let totalActual = 0;
+
+      projects.forEach(project => {
+        if (project.budget_total) {
+          // Simple distribution by category (in real app, this would come from budget breakdown)
+          const categoryFactor = {
+            'Materiales': 0.4,
+            'Mano de Obra': 0.3,
+            'Equipo': 0.15,
+            'Subcontratos': 0.1,
+            'Otros': 0.05,
+          };
+
+          const categoryBudgeted = project.budget_total * categoryFactor[category as keyof typeof categoryFactor];
+          totalBudgeted += categoryBudgeted;
+
+          // Actual is based on execution status
+          if (project.status === 'execution') {
+            totalActual += categoryBudgeted * 0.85; // 85% spent on average
+          } else if (project.status === 'completed') {
+            totalActual += categoryBudgeted;
+          } else {
+            totalActual += 0;
+          }
+        }
+      });
+
+      return {
+        category,
+        budgeted: totalBudgeted,
+        actual: totalActual,
+      };
+    });
   };
 
   const calculateSummaryMetrics = (projects: LocalProject[]): SummaryMetrics => {
@@ -263,9 +360,34 @@ export default function AnalyticsDashboard() {
     }
 
     const activeProjects = projects.filter(p => p.status === 'execution').length;
-    const totalBudget = projects.reduce((sum, p) => sum + p.total_budget, 0);
-    const avgPhysicalAdvance = Math.random() * 100;
-    const avgFinancialAdvance = Math.random() * 100;
+    const totalBudget = projects.reduce((sum, p) => sum + (p.budget_total || p.total_budget), 0);
+
+    // Calculate actual advances based on dates and status
+    let totalPhysical = 0;
+    let totalFinancial = 0;
+
+    projects.forEach(project => {
+      if (project.start_date && project.estimated_end_date) {
+        const startDate = new Date(project.start_date);
+        const endDate = new Date(project.estimated_end_date);
+        const currentDate = new Date();
+        const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        const elapsedDays = Math.ceil((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+
+        const timeProgress = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
+
+        if (project.status === 'execution') {
+          totalPhysical += timeProgress * 0.95;
+          totalFinancial += timeProgress * 0.9;
+        } else if (project.status === 'completed') {
+          totalPhysical += 100;
+          totalFinancial += 100;
+        }
+      }
+    });
+
+    const avgPhysicalAdvance = projects.length > 0 ? totalPhysical / projects.length : 0;
+    const avgFinancialAdvance = projects.length > 0 ? totalFinancial / projects.length : 0;
     const totalExecuted = totalBudget * (avgFinancialAdvance / 100);
     const budgetVariance = totalBudget - totalExecuted;
 

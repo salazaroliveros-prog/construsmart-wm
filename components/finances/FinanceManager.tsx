@@ -126,7 +126,8 @@ export default function FinanceManager() {
   const loadProjects = async () => {
     try {
       const projects = await offlineDB.projects.toArray();
-      setAvailableProjects(projects);
+      const executionProjects = projects.filter(p => p.status === 'execution');
+      setAvailableProjects(executionProjects);
     } catch (error) {
       console.error('Error loading projects:', error);
     }

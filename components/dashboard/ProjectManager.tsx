@@ -23,6 +23,8 @@ interface ProjectFormData {
   estimated_end_date?: string;
   duration_days: number;
   total_budget: number;
+  budget_total?: number;
+  calculated_duration?: number;
 }
 
 const statusColors = {
@@ -78,7 +80,9 @@ export default function ProjectManager() {
     start_date: '',
     estimated_end_date: '',
     duration_days: 0,
-    total_budget: 0
+    total_budget: 0,
+    budget_total: undefined,
+    calculated_duration: undefined
   });
 
   useEffect(() => {
@@ -121,14 +125,47 @@ export default function ProjectManager() {
       start_date: '',
       estimated_end_date: '',
       duration_days: 0,
-      total_budget: 0
+      total_budget: 0,
+      budget_total: undefined,
+      calculated_duration: undefined
     });
     setEditingProject(null);
+  };
+
+  const calculateEndDate = (startDate: string, durationDays: number): string => {
+    if (!startDate || !durationDays) return '';
+    const start = new Date(startDate);
+    const end = new Date(start);
+    end.setDate(end.getDate() + durationDays);
+    return end.toISOString().split('T')[0];
+  };
+
+  const handleStartDateChange = (startDate: string) => {
+    setFormData(prev => {
+      const duration = prev.duration_days || prev.calculated_duration || 0;
+      return {
+        ...prev,
+        start_date: startDate,
+        estimated_end_date: calculateEndDate(startDate, duration)
+      };
+    });
+  };
+
+  const handleDurationChange = (durationDays: number) => {
+    setFormData(prev => ({
+      ...prev,
+      duration_days: durationDays,
+      estimated_end_date: calculateEndDate(prev.start_date || '', durationDays)
+    }));
   };
 
   const openModal = (project?: LocalProject) => {
     if (project) {
       setEditingProject(project);
+      // If project has budget_total and calculated_duration from budget, use them
+      const duration = project.duration_days || project.calculated_duration || 0;
+      const budget = project.total_budget || project.budget_total || 0;
+
       setFormData({
         code: project.code,
         name: project.name,
@@ -141,9 +178,11 @@ export default function ProjectManager() {
         quality_level: project.quality_level || 'moderate',
         status: project.status,
         start_date: project.start_date || '',
-        estimated_end_date: project.estimated_end_date || '',
-        duration_days: project.duration_days,
-        total_budget: project.total_budget
+        estimated_end_date: project.estimated_end_date || calculateEndDate(project.start_date || '', duration),
+        duration_days: duration,
+        total_budget: budget,
+        budget_total: project.budget_total,
+        calculated_duration: project.calculated_duration
       });
     } else {
       resetForm();
@@ -497,7 +536,7 @@ export default function ProjectManager() {
                   <input
                     type="date"
                     value={formData.start_date}
-                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    onChange={(e) => handleStartDateChange(e.target.value)}
                     className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
                   />
                 </div>
@@ -506,8 +545,8 @@ export default function ProjectManager() {
                   <input
                     type="date"
                     value={formData.estimated_end_date}
-                    onChange={(e) => setFormData({ ...formData, estimated_end_date: e.target.value })}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                    readOnly
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white/60 text-sm cursor-not-allowed"
                   />
                 </div>
                 <div>
@@ -515,7 +554,7 @@ export default function ProjectManager() {
                   <input
                     type="number"
                     value={formData.duration_days}
-                    onChange={(e) => setFormData({ ...formData, duration_days: Number(e.target.value) })}
+                    onChange={(e) => handleDurationChange(Number(e.target.value))}
                     className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
                   />
                 </div>
@@ -530,6 +569,28 @@ export default function ProjectManager() {
                     required
                   />
                 </div>
+                {formData.budget_total && (
+                  <div>
+                    <label className="block text-white/60 text-sm mb-1">Presupuesto Calculado (GTQ)</label>
+                    <input
+                      type="text"
+                      value={formatCurrency(formData.budget_total)}
+                      readOnly
+                      className="w-full bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2 text-emerald-400 text-sm cursor-not-allowed"
+                    />
+                  </div>
+                )}
+                {formData.calculated_duration && (
+                  <div>
+                    <label className="block text-white/60 text-sm mb-1">Duración Calculada (días)</label>
+                    <input
+                      type="text"
+                      value={formData.calculated_duration}
+                      readOnly
+                      className="w-full bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2 text-emerald-400 text-sm cursor-not-allowed"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3 pt-4">

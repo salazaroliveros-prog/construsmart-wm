@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Calculator, Plus, Trash2, Save, Download } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Calculator, Plus, Trash2, Save, Download, FolderOpen } from 'lucide-react';
 import { calculateSlab, SlabDimensions, calculateSlabCost, SlabCostParams } from '@/lib/calculators/slabCalculators';
-import { offlineDB } from '@/lib/db/offlineStore';
+import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
@@ -38,6 +38,33 @@ export default function BudgetCalculator() {
   const [clientName, setClientName] = useState('Cliente Sample');
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; desc: string } | null>(null);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [projects, setProjects] = useState<LocalProject[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string>('');
+  const [durationDays, setDurationDays] = useState(180);
+
+  // Load projects in planning status
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  const loadProjects = async () => {
+    try {
+      const allProjects = await offlineDB.projects.toArray();
+      const planningProjects = allProjects.filter(p => p.status === 'planning');
+      setProjects(planningProjects);
+    } catch (error) {
+      console.error('Error loading projects:', error);
+    }
+  };
+
+  const handleProjectChange = (projectId: string) => {
+    setSelectedProject(projectId);
+    const project = projects.find(p => p.id === projectId);
+    if (project) {
+      setProjectName(project.name);
+      setClientName(project.client_name);
+    }
+  };
 
   // Slab calculator state
   const [slabDimensions, setSlabDimensions] = useState<SlabDimensions>({
@@ -136,11 +163,81 @@ export default function BudgetCalculator() {
   };
 
   const saveBudget = async () => {
+    if (!selectedProject) {
+      showToast('error', 'Seleccione un proyecto para calcular el presupuesto');
+      return;
+    }
+
     setSaveLoading(true);
     try {
-      // Implementation for saving to database
-      showToast('success', 'Presupuesto guardado exitosamente');
+      const summary = calculateSummary();
+
+      // Save budget to database
+      const budgetId = await offlineDB.budgets.add({
+        project_id: selectedProject,
+        version: 1,
+        direct_cost: summary.directCost,
+        indirect_percentage: indirectPercentage,
+        contingency_percentage: contingencyPercentage,
+        profit_percentage: profitPercentage,
+        total_amount: summary.total,
+        duration_days: durationDays,
+        sync_status: 'created_offline',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+
+      // Save budget items
+      for (const item of items) {
+        await offlineDB.budgetItems.add({
+          budget_id: budgetId as string,
+          code: item.code,
+          description: item.description,
+          unit: item.unit,
+          quantity: item.quantity,
+          unit_cost: item.unitCost,
+          total_cost: item.totalCost,
+          item_order: 0,
+          is_custom: true,
+          sync_status: 'created_offline',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+        // Add material to warehouse if it doesn't exist
+        const existingStock = await offlineDB.warehouseStock
+          .where('item_code')
+          .equals(item.code)
+          .and(stock => stock.project_id === selectedProject)
+          .first();
+
+        if (!existingStock) {
+          await offlineDB.warehouseStock.add({
+            project_id: selectedProject,
+            item_code: item.code,
+            description: item.description,
+            unit: item.unit,
+            current_stock: 0,
+            minimum_threshold: Math.max(1, Math.floor(item.quantity * 0.1)),
+            unit_cost: item.unitCost,
+            sync_status: 'created_offline',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+        }
+      }
+
+      // Update project with budget data
+      await offlineDB.projects.update(selectedProject, {
+        budget_total: summary.total,
+        calculated_duration: durationDays,
+        sync_status: 'updated_offline',
+        updated_at: new Date().toISOString(),
+      });
+
+      showToast('success', 'Presupuesto guardado, proyecto actualizado y materiales agregados al almacén');
     } catch (error) {
+      console.error('Error saving budget:', error);
       showToast('error', 'Error al guardar el presupuesto');
     } finally {
       setSaveLoading(false);
@@ -157,11 +254,16 @@ export default function BudgetCalculator() {
     <div className="space-y-6">
       {/* Header Section */}
       <div className="glass-panel rounded-2xl p-4 sm:p-6">
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
-            <Calculator className="w-6 h-6 sm:w-8 sm:h-8 text-cyan-400" />
-            Calculadora de Presupuestos
-          </h1>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+              <Calculator className="w-6 h-6 sm:w-8 sm:h-8 text-cyan-400" />
+              Calculadora de Presupuestos
+            </h1>
+            <p className="text-white/60 text-sm mt-1">
+              Seleccione un proyecto en planificación para calcular su presupuesto
+            </p>
+          </div>
           <div className="flex gap-2">
             <button
               onClick={saveBudget}
@@ -181,7 +283,34 @@ export default function BudgetCalculator() {
           </div>
         </div>
 
-        {/* Project Info */}
+        {/* Project Selector */}
+        <div className="flex items-center gap-3">
+          <FolderOpen className="w-5 h-5 text-cyan-400" />
+          <select
+            value={selectedProject}
+            onChange={(e) => handleProjectChange(e.target.value)}
+            className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-cyan-500/50"
+          >
+            <option value="">Seleccione un proyecto en planificación...</option>
+            {projects.map(project => (
+              <option key={project.id} value={project.id}>
+                {project.code} - {project.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {projects.length === 0 && (
+          <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+            <p className="text-amber-400 text-sm">
+              No hay proyectos en planificación. Cree un proyecto en el módulo de Proyectos y seleccione el estado "Planificación".
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Project Info */}
+      <div className="glass-panel rounded-2xl p-4 sm:p-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
             <label className="block text-white/60 text-xs sm:text-sm mb-1">Nombre del Proyecto</label>
@@ -203,6 +332,17 @@ export default function BudgetCalculator() {
               placeholder="Nombre del cliente"
             />
           </div>
+        </div>
+        <div>
+          <label className="block text-white/60 text-xs sm:text-sm mb-1">Duración Estimada (días)</label>
+          <input
+            type="number"
+            value={durationDays}
+            onChange={(e) => setDurationDays(Number(e.target.value))}
+            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+            placeholder="Duración en días"
+          />
+          <p className="text-white/40 text-xs mt-1">Este valor se usará para calcular la fecha fin del proyecto</p>
         </div>
       </div>
 

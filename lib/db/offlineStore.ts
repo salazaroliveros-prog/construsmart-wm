@@ -20,6 +20,9 @@ export interface LocalProject {
   sync_status: 'synced' | 'created_offline' | 'updated_offline';
   created_at?: string;
   updated_at?: string;
+  // Fields populated from budget
+  budget_total?: number;
+  calculated_duration?: number;
 }
 
 export interface LocalBudget {
@@ -95,6 +98,7 @@ export interface LocalFinancialTransaction {
 
 export interface LocalPayrollRecord {
   id?: string;
+  project_id?: string;
   employee_id: string;
   period_start: string;
   period_end: string;
@@ -131,6 +135,7 @@ export interface LocalPayrollEmployee {
 
 export interface LocalWarehouseStock {
   id?: string;
+  project_id?: string;
   item_code: string;
   description: string;
   unit: string;
@@ -154,15 +159,15 @@ export class WMDatabase extends Dexie {
 
   constructor() {
     super('ConstructoraWM_OfflineDB');
-    this.version(2).stores({
-      projects: 'id, code, name, sync_status, status, typology, created_at, updated_at',
+    this.version(4).stores({
+      projects: 'id, code, name, sync_status, status, typology, created_at, updated_at, budget_total, calculated_duration',
       budgets: 'id, project_id, version, sync_status, created_at, updated_at',
       budgetItems: 'id, budget_id, parent_id, code, sync_status, item_order, created_at, updated_at',
       budgetItemBreakdowns: 'id, budget_item_id, resource_type, sync_status, created_at',
       financialTransactions: 'id, project_id, type, category, date, sync_status, created_at, updated_at',
       payrollEmployees: 'id, name, position, category, department, sync_status, created_at, updated_at',
-      payrollRecords: 'id, employee_id, period_start, period_end, sync_status, created_at, updated_at',
-      warehouseStock: 'id, item_code, sync_status, created_at, updated_at'
+      payrollRecords: 'id, project_id, employee_id, period_start, period_end, sync_status, created_at, updated_at',
+      warehouseStock: 'id, project_id, item_code, sync_status, created_at, updated_at'
     });
   }
 }

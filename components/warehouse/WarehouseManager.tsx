@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Package, AlertTriangle, TrendingUp, X, Save, ArrowDown, ArrowUp, PackagePlus, Warehouse } from 'lucide-react';
-import { offlineDB, LocalWarehouseStock } from '@/lib/db/offlineStore';
+import { Plus, Edit, Trash2, Search, Package, AlertTriangle, TrendingUp, X, Save, ArrowDown, ArrowUp, PackagePlus, Warehouse, FolderOpen } from 'lucide-react';
+import { offlineDB, LocalWarehouseStock, LocalProject } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -13,6 +13,7 @@ import EmptyState from '@/components/ui/EmptyState';
 // ============================================================================
 
 interface StockFormData {
+  project_id?: string;
   item_code: string;
   description: string;
   unit: string;
@@ -67,8 +68,11 @@ export default function WarehouseManager() {
   const [isOnline, setIsOnline] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState<LocalWarehouseStock | null>(null);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<string>('all');
+  const [availableProjects, setAvailableProjects] = useState<LocalProject[]>([]);
 
   const [formData, setFormData] = useState<StockFormData>({
+    project_id: undefined,
     item_code: '',
     description: '',
     unit: 'unid',
@@ -83,6 +87,7 @@ export default function WarehouseManager() {
 
   useEffect(() => {
     loadStockItems();
+    loadProjects();
     checkOnlineStatus();
 
     const handleOnline = () => setIsOnline(true);
@@ -159,12 +164,22 @@ export default function WarehouseManager() {
     }
   };
 
+  const loadProjects = async () => {
+    try {
+      const projects = await offlineDB.projects.toArray();
+      setAvailableProjects(projects);
+    } catch (error) {
+      console.error('Error loading projects:', error);
+    }
+  };
+
   // ---------------------------------------------------------------------------
   // FORM MANAGEMENT
   // ---------------------------------------------------------------------------
 
   const resetForm = () => {
     setFormData({
+      project_id: selectedProject === 'all' ? undefined : selectedProject,
       item_code: '',
       description: '',
       unit: 'unid',
@@ -179,6 +194,7 @@ export default function WarehouseManager() {
     if (item) {
       setEditingItem(item);
       setFormData({
+        project_id: item.project_id,
         item_code: item.item_code,
         description: item.description,
         unit: item.unit,
@@ -336,10 +352,12 @@ export default function WarehouseManager() {
   // FILTERING
   // ---------------------------------------------------------------------------
 
-  const filteredItems = stockItems.filter(item =>
-    item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.item_code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredItems = stockItems.filter(item => {
+    const matchesSearch = item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          item.item_code.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesProject = selectedProject === 'all' || item.project_id === selectedProject;
+    return matchesSearch && matchesProject;
+  });
 
   const lowStockItems = stockItems.filter(item => item.current_stock <= item.minimum_threshold);
   const summary = calculateSummary();
@@ -444,6 +462,16 @@ export default function WarehouseManager() {
               />
             </div>
           </div>
+          <select
+            value={selectedProject}
+            onChange={(e) => setSelectedProject(e.target.value)}
+            className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white text-sm"
+          >
+            <option value="all">Todos los proyectos</option>
+            {availableProjects.map(project => (
+              <option key={project.id} value={project.id}>{project.name}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -586,6 +614,19 @@ export default function WarehouseManager() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-white/60 text-sm mb-1">Proyecto</label>
+                <select
+                  value={formData.project_id || ''}
+                  onChange={(e) => setFormData({ ...formData, project_id: e.target.value || undefined })}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                >
+                  <option value="">Sin proyecto</option>
+                  {availableProjects.map(project => (
+                    <option key={project.id} value={project.id}>{project.name}</option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className="block text-white/60 text-sm mb-1">Código del Item</label>
                 <input

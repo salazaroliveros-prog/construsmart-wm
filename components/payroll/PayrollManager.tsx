@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Users, DollarSign, Calendar, BadgeCheck, X, Save, UserPlus, Wallet } from 'lucide-react';
-import { offlineDB, LocalPayrollEmployee, LocalPayrollRecord } from '@/lib/db/offlineStore';
+import { Plus, Edit, Trash2, Search, Users, DollarSign, Calendar, BadgeCheck, X, Save, UserPlus, Wallet, FolderOpen } from 'lucide-react';
+import { offlineDB, LocalPayrollEmployee, LocalPayrollRecord, LocalProject } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -23,6 +23,7 @@ interface EmployeeFormData {
 }
 
 interface PayrollFormData {
+  project_id?: string;
   employee_id: string;
   period_start: string;
   period_end: string;
@@ -69,6 +70,8 @@ export default function PayrollManager() {
   const [activeTab, setActiveTab] = useState<'employees' | 'records'>('employees');
   const [deleteConfirm, setDeleteConfirm] = useState<LocalPayrollEmployee | null>(null);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<string>('all');
+  const [availableProjects, setAvailableProjects] = useState<LocalProject[]>([]);
 
   const [employeeFormData, setEmployeeFormData] = useState<EmployeeFormData>({
     name: '',
@@ -81,6 +84,7 @@ export default function PayrollManager() {
   });
 
   const [payrollFormData, setPayrollFormData] = useState<PayrollFormData>({
+    project_id: undefined,
     employee_id: '',
     period_start: new Date().toISOString().split('T')[0],
     period_end: new Date().toISOString().split('T')[0],
@@ -98,6 +102,7 @@ export default function PayrollManager() {
   useEffect(() => {
     loadEmployees();
     loadPayrollRecords();
+    loadProjects();
     checkOnlineStatus();
 
     const handleOnline = () => setIsOnline(true);
@@ -221,6 +226,15 @@ export default function PayrollManager() {
       }
     } catch (error) {
       console.error('Error loading payroll records:', error);
+    }
+  };
+
+  const loadProjects = async () => {
+    try {
+      const projects = await offlineDB.projects.toArray();
+      setAvailableProjects(projects);
+    } catch (error) {
+      console.error('Error loading projects:', error);
     }
   };
 
@@ -373,6 +387,7 @@ export default function PayrollManager() {
 
   const resetPayrollForm = () => {
     setPayrollFormData({
+      project_id: selectedProject === 'all' ? undefined : selectedProject,
       employee_id: '',
       period_start: new Date().toISOString().split('T')[0],
       period_end: new Date().toISOString().split('T')[0],
@@ -389,6 +404,7 @@ export default function PayrollManager() {
     if (record) {
       setEditingPayroll(record);
       setPayrollFormData({
+        project_id: record.project_id,
         employee_id: record.employee_id,
         period_start: record.period_start,
         period_end: record.period_end,
@@ -423,7 +439,15 @@ export default function PayrollManager() {
       const netSalary = grossSalary - benefits.igss - payrollFormData.deductions;
 
       const payrollData: LocalPayrollRecord = {
-        ...payrollFormData,
+        project_id: payrollFormData.project_id,
+        employee_id: payrollFormData.employee_id,
+        period_start: payrollFormData.period_start,
+        period_end: payrollFormData.period_end,
+        days_worked: payrollFormData.days_worked,
+        overtime_hours: payrollFormData.overtime_hours,
+        overtime_rate: payrollFormData.overtime_rate,
+        bonuses: payrollFormData.bonuses,
+        deductions: payrollFormData.deductions,
         base_salary: baseSalary,
         overtime_pay: overtimePay,
         gross_salary: grossSalary,
@@ -487,6 +511,11 @@ export default function PayrollManager() {
     employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     employee.position.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const filteredPayrollRecords = payrollRecords.filter(record => {
+    const matchesProject = selectedProject === 'all' || record.project_id === selectedProject;
+    return matchesProject;
+  });
 
   const summary = calculateSummary();
 
@@ -573,6 +602,16 @@ export default function PayrollManager() {
               />
             </div>
           </div>
+          <select
+            value={selectedProject}
+            onChange={(e) => setSelectedProject(e.target.value)}
+            className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white text-sm"
+          >
+            <option value="all">Todos los proyectos</option>
+            {availableProjects.map(project => (
+              <option key={project.id} value={project.id}>{project.name}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -683,11 +722,11 @@ export default function PayrollManager() {
             </div>
           )
         ) : (
-          payrollRecords.length === 0 ? (
+          filteredPayrollRecords.length === 0 ? (
             <EmptyState
               icon={<DollarSign className="w-8 h-8 text-white/30" />}
               title="No hay registros de pago"
-              description="Genere registros de nómina para los empleados registrados."
+              description={selectedProject !== 'all' ? 'No hay registros de nómina para el proyecto seleccionado.' : 'Genere registros de nómina para los empleados registrados.'}
               action={
                 <button
                   onClick={() => handleOpenPayrollModal()}
@@ -723,7 +762,7 @@ export default function PayrollManager() {
                     </tr>
                   </thead>
                   <tbody>
-                    {payrollRecords.map((record) => {
+                    {filteredPayrollRecords.map((record) => {
                       const employee = employees.find(e => e.id === record.employee_id);
                       return (
                         <tr key={record.id} className="border-b border-white/10 hover:bg-white/5">
@@ -874,6 +913,19 @@ export default function PayrollManager() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="sm:col-span-2">
+                <label className="block text-white/60 text-sm mb-1">Proyecto</label>
+                <select
+                  value={payrollFormData.project_id || ''}
+                  onChange={(e) => setPayrollFormData({ ...payrollFormData, project_id: e.target.value || undefined })}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                >
+                  <option value="">Sin proyecto</option>
+                  {availableProjects.map(project => (
+                    <option key={project.id} value={project.id}>{project.name}</option>
+                  ))}
+                </select>
+              </div>
               <div className="sm:col-span-2">
                 <label className="block text-white/60 text-sm mb-1">Empleado</label>
                 <select
