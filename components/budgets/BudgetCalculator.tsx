@@ -1,8 +1,17 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Calculator, Plus, Trash2, Save, Download, FolderOpen } from 'lucide-react';
+import { Calculator, Plus, Trash2, Save, Download, FolderOpen, Building2, TrendingUp } from 'lucide-react';
 import { calculateSlab, SlabDimensions, calculateSlabCost, SlabCostParams } from '@/lib/calculators/slabCalculators';
+import { 
+  calculateAPU, 
+  calculateBudgetSummary, 
+  formatQuetzales, 
+  getResidentialCostLevel,
+  getCostLevelLabel 
+} from '@/lib/calculators/apuCalculator';
+import { RENGLONES_BY_TYPOLOGY } from '@/lib/data/apuRenglones';
+import { ProjectTypology, APUFormulaParams, APUResult, TYPOLOGY_LABELS } from '@/lib/types/apu';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -20,6 +29,7 @@ interface BudgetItem {
   unitCost: number;
   totalCost: number;
   category: string;
+  apuResult?: APUResult; // Store APU calculation results
 }
 
 interface BudgetSummary {
@@ -43,6 +53,20 @@ export default function BudgetCalculator() {
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [durationDays, setDurationDays] = useState(180);
+  
+  // APU Integration State
+  const [selectedTypology, setSelectedTypology] = useState<ProjectTypology>('residencial');
+  const [showAPUCalculator, setShowAPUCalculator] = useState(false);
+  const [apuParams, setApuParams] = useState<APUFormulaParams>({
+    theoreticalQuantity: 100,
+    wastePercentage: 5,
+    volumetricFactor: 1.05,
+    crewDailySalary: 350,
+    dailyPerformance: 25,
+    indirectPercentage: 15,
+    materialUnitCost: 45,
+    machineryCost: 0,
+  });
 
   // Load projects in planning status
   useEffect(() => {
@@ -118,6 +142,44 @@ export default function BudgetCalculator() {
 
     setItems([...items, newItem]);
     showToast('success', 'Cálculo de losa agregado al presupuesto');
+  };
+
+  // APU Calculation Function
+  const addAPUCalculation = () => {
+    const apuResult = calculateAPU(apuParams);
+    
+    const newItem: BudgetItem = {
+      id: Date.now().toString(),
+      code: `APU-${selectedTypology.toUpperCase()}-${Date.now().toString().slice(-4)}`,
+      description: `APU ${TYPOLOGY_LABELS[selectedTypology]} - Renglón Personalizado`,
+      unit: 'unid',
+      quantity: apuParams.theoreticalQuantity,
+      unitCost: apuResult.totalCost / apuParams.theoreticalQuantity,
+      totalCost: apuResult.totalCost,
+      category: 'APU',
+      apuResult,
+    };
+
+    setItems([...items, newItem]);
+    setShowAPUCalculator(false);
+    showToast('success', 'Cálculo APU agregado al presupuesto');
+  };
+
+  // Add renglon from typology catalog
+  const addRenglonFromCatalog = (renglon: any) => {
+    const newItem: BudgetItem = {
+      id: Date.now().toString(),
+      code: renglon.code,
+      description: renglon.description,
+      unit: renglon.unit,
+      quantity: 0,
+      unitCost: 0,
+      totalCost: 0,
+      category: renglon.category,
+    };
+
+    setItems([...items, newItem]);
+    showToast('success', `Renglón "${renglon.description}" agregado al presupuesto`);
   };
 
   const addItem = () => {
