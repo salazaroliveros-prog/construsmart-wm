@@ -540,19 +540,23 @@ export default function PayrollManager() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <div className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm ${
-              isOnline ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
-            }`}>
-              {isOnline ? '🟢 En línea' : '🟡 Sin conexión'}
-            </div>
-            <button
-              onClick={() => handleOpenEmployeeModal()}
-              className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Nuevo Empleado</span>
-              <span className="sm:hidden">Nuevo</span>
-            </button>
+            <Tooltip content={isOnline ? 'Conectado a internet' : 'Trabajando sin conexión'}>
+              <div className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm ${
+                isOnline ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+              }`}>
+                {isOnline ? '🟢 En línea' : '🟡 Sin conexión'}
+              </div>
+            </Tooltip>
+            <Tooltip content="Agregar nuevo empleado a la nómina">
+              <button
+                onClick={() => handleOpenEmployeeModal()}
+                className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Nuevo Empleado</span>
+                <span className="sm:hidden">Nuevo</span>
+              </button>
+            </Tooltip>
           </div>
         </div>
 
