@@ -1,6 +1,6 @@
 'use client';
 
-import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp, Database } from 'lucide-react';
 
 interface NavItem {
   id: string;
@@ -82,6 +82,17 @@ export default function DashboardNav({ activeTab, onTabChange }: DashboardNavPro
             );
           })}
         </div>
+      </div>
+
+      {/* Admin Section */}
+      <div className="px-3 sm:px-4 py-3 sm:py-4 border-t border-white/10">
+        <a
+          href="/admin/database-cleaner"
+          className="flex items-center gap-2 sm:gap-3 text-white/60 hover:text-white transition-colors group"
+        >
+          <Database className="w-4 h-4 sm:w-5 sm:h-5 group-hover:text-red-400 transition-colors" />
+          <span className="text-[10px] sm:text-xs">Limpiar BD</span>
+        </a>
       </div>
 
       {/* User Info Section */}
