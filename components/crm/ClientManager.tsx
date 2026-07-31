@@ -5,6 +5,8 @@ import { Users, Plus, Edit, Trash2, Phone, Mail, MapPin, Building2, Search, Filt
 import { offlineDB, LocalClient } from '@/lib/db/offlineStore';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import Tooltip from '@/components/ui/Tooltip';
+import ActionButton from '@/components/ui/ActionButton';
 
 export default function ClientManager() {
   const [clients, setClients] = useState<LocalClient[]>([]);
@@ -137,27 +139,29 @@ export default function ClientManager() {
           <h2 className="text-2xl font-bold text-white">Gestión de Clientes</h2>
           <p className="text-white/60 text-sm">CRM - Registro de datos de clientes</p>
         </div>
-        <button
-          onClick={() => {
-            setEditingClient(null);
-            setFormData({
-              code: generateClientCode(),
-              name: '',
-              company_name: '',
-              phone: '',
-              email: '',
-              address: '',
-              city: '',
-              client_type: 'individual',
-              notes: '',
-            });
-            setShowForm(true);
-          }}
-          className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 text-white"
-        >
-          <Plus className="w-4 h-4" />
-          Nuevo Cliente
-        </button>
+        <Tooltip content="Agregar nuevo cliente al sistema">
+          <button
+            onClick={() => {
+              setEditingClient(null);
+              setFormData({
+                code: generateClientCode(),
+                name: '',
+                company_name: '',
+                phone: '',
+                email: '',
+                address: '',
+                city: '',
+                client_type: 'individual',
+                notes: '',
+              });
+              setShowForm(true);
+            }}
+            className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 text-white"
+          >
+            <Plus className="w-4 h-4" />
+            Nuevo Cliente
+          </button>
+        </Tooltip>
       </div>
 
       {/* Summary Cards */}

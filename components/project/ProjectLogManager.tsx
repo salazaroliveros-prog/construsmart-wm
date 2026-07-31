@@ -5,6 +5,8 @@ import { BookOpen, Plus, Edit, Trash2, Calendar, TrendingUp, AlertTriangle, Flag
 import { offlineDB, LocalProject, LocalProjectLog } from '@/lib/db/offlineStore';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import Tooltip from '@/components/ui/Tooltip';
+import ActionButton from '@/components/ui/ActionButton';
 
 export default function ProjectLogManager() {
   const [projects, setProjects] = useState<LocalProject[]>([]);
@@ -176,29 +178,31 @@ export default function ProjectLogManager() {
           <h2 className="text-2xl font-bold text-white">Bitácora de Proyectos</h2>
           <p className="text-white/60 text-sm">Registro de avance, incidencias y notas</p>
         </div>
-        <button
-          onClick={() => {
-            if (!selectedProject) {
-              alert('Por favor selecciona un proyecto primero');
-              return;
-            }
-            setEditingLog(null);
-            setFormData({
-              project_id: selectedProject,
-              log_date: new Date().toISOString().split('T')[0],
-              activity_type: 'progress',
-              description: '',
-              physical_progress: 0,
-              financial_progress: 0,
-              created_by: '',
-            });
-            setShowForm(true);
-          }}
-          className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 text-white"
-        >
-          <Plus className="w-4 h-4" />
-          Nueva Entrada
-        </button>
+        <Tooltip content="Agregar nueva entrada a la bitácora">
+          <button
+            onClick={() => {
+              if (!selectedProject) {
+                alert('Por favor selecciona un proyecto primero');
+                return;
+              }
+              setEditingLog(null);
+              setFormData({
+                project_id: selectedProject,
+                log_date: new Date().toISOString().split('T')[0],
+                activity_type: 'progress',
+                description: '',
+                physical_progress: 0,
+                financial_progress: 0,
+                created_by: '',
+              });
+              setShowForm(true);
+            }}
+            className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 text-white"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva Entrada
+          </button>
+        </Tooltip>
       </div>
 
       {/* Filters */}
