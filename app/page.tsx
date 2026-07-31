@@ -190,7 +190,7 @@ export default function Dashboard() {
         <DualBrandHeader />
 
         {/* Tab navigation - right below header, centered */}
-        <nav className="flex-shrink-0 bg-slate-900/60 border-b border-white/5 overflow-x-auto">
+        <nav className="flex-shrink-0 bg-slate-900/60 border-b border-white-5 overflow-x-auto overflow-anchor-none">
           <div className="flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5">
             {NAVIGATION_TABS.map(tab => {
               const isTabActive = activeTab === tab.id;
