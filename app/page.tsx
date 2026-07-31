@@ -18,6 +18,8 @@ const FinanceManager = dynamic(() => import('@/components/finances/FinanceManage
 const PayrollManager = dynamic(() => import('@/components/payroll/PayrollManager'), { ssr: false });
 const WarehouseManager = dynamic(() => import('@/components/warehouse/WarehouseManager'), { ssr: false });
 const AnalyticsDashboard = dynamic(() => import('@/components/analytics/AnalyticsDashboard'), { ssr: false });
+const ClientManager = dynamic(() => import('@/components/crm/ClientManager'), { ssr: false });
+const ProjectLogManager = dynamic(() => import('@/components/project/ProjectLogManager'), { ssr: false });
 
 // Navigation tabs configuration
 const NAVIGATION_TABS = [
@@ -28,6 +30,8 @@ const NAVIGATION_TABS = [
   { id: 'payroll', label: 'Nómina', icon: 'Users' },
   { id: 'warehouse', label: 'Almacén', icon: 'Warehouse' },
   { id: 'analytics', label: 'Analytics', icon: 'TrendingUp' },
+  { id: 'clients', label: 'Clientes', icon: 'Users' },
+  { id: 'logs', label: 'Bitácora', icon: 'BookOpen' },
 ] as const;
 
 interface RecentActivity {
@@ -151,6 +155,10 @@ export default function Dashboard() {
         return <WarehouseManager />;
       case 'analytics':
         return <AnalyticsDashboard />;
+      case 'clients':
+        return <ClientManager />;
+      case 'logs':
+        return <ProjectLogManager />;
       default:
         return null;
     }

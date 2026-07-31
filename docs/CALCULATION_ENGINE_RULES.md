@@ -78,6 +78,63 @@ Volumen = (Altura/3) × (Área_base + Área_superior + √(Área_base × Área_s
 Volumen = Largo × Ancho × Altura
 ```
 
+#### 2.2.5 Excavación con factor de expansión
+```
+Volumen = Largo × Ancho × Profundidad × Factor_Expansión (default 1.2)
+```
+
+#### 2.2.6 Área de Muro para mampostería
+```
+Área = Largo × Altura
+Perímetro = Largo × 2 (ambos lados)
+```
+
+#### 2.2.7 Área de Pintura/Recubrimiento
+```
+Área_Total = Área_Base × Capas × Factor_Desperdicio (default 1.1)
+```
+
+#### 2.2.8 Área de Piso
+```
+Área = Largo × Ancho × Factor_Desperdicio (default 1.1)
+```
+
+#### 2.2.9 Escaleras
+```
+Número_Escalones = Altura_Total / Altura_Riser
+Altura_Actual = Número_Escalones × Altura_Riser
+Largo_Actual = Número_Escalones × Profundión_Tread
+Volumen ≈ (Largo_Actual × Ancho × Altura_Actual) / 2
+```
+
+#### 2.2.10 Mezclas de Concreto (Estándar Guatemalteco)
+```
+1500 PSI: 5.5 sacos cemento, 0.45 m³ arena, 0.65 m³ grava, 140L agua por m³
+2000 PSI: 6.5 sacos cemento, 0.42 m³ arena, 0.62 m³ grava, 145L agua por m³
+2500 PSI: 7.5 sacos cemento, 0.40 m³ arena, 0.60 m³ grava, 150L agua por m³
+3000 PSI: 8.5 sacos cemento, 0.38 m³ arena, 0.58 m³ grava, 155L agua por m³
+```
+
+#### 2.2.11 Mezcla de Mortero
+```
+Proporción: 1:4 (cemento:arena)
+Cemento: ~250 kg por m³
+Arena: 0.8 m³ por m³
+Agua: 100L por m³
+```
+
+#### 2.2.12 Peso de Acero (Varillas)
+```
+Peso = Área_Sección_Transversal × Densidad_Acero (7850 kg/m³) × Longitud × Cantidad
+Área_Sección = π × (Diámetro/2000)²
+```
+
+#### 2.2.13 Encofrado
+```
+Láminas_Plywood = Área_Superficial / 2.98 m² (1.22m × 2.44m)
+Madera_Soportes = Área_Superficial × 0.1 metros lineales por m²
+```
+
 ---
 
 ## 3. MOTOR DE PRESUPUESTOS (APU)

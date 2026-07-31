@@ -1,6 +1,6 @@
 'use client';
 
-import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp, Database, User, LogOut, AlertCircle } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp, Database, User, LogOut, AlertCircle, BookOpen } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ChangeEvent } from 'react';
@@ -15,7 +15,7 @@ interface NavItem {
   badgeColor?: 'cyan' | 'amber' | 'red';
 }
 
-// Navigation items configuration matching the 7 main screens
+// Navigation items configuration matching the 9 main screens
 const NAV_ITEMS_BASE: NavItem[] = [
   { id: 'dashboard', label: 'Tablero Principal', icon: 'LayoutDashboard' },
   { id: 'projects', label: 'Proyectos', icon: 'FolderKanban' },
@@ -24,6 +24,8 @@ const NAV_ITEMS_BASE: NavItem[] = [
   { id: 'payroll', label: 'Nómina', icon: 'Users' },
   { id: 'warehouse', label: 'Almacén', icon: 'Warehouse' },
   { id: 'analytics', label: 'Analytics', icon: 'TrendingUp' },
+  { id: 'clients', label: 'Clientes', icon: 'Users' },
+  { id: 'logs', label: 'Bitácora', icon: 'BookOpen' },
 ];
 
 interface DashboardNavProps {
@@ -39,6 +41,7 @@ const ICONS: Record<string, React.ReactNode> = {
   Users: <Users className="w-5 h-5" />,
   Warehouse: <Warehouse className="w-5 h-5" />,
   TrendingUp: <TrendingUp className="w-5 h-5" />,
+  BookOpen: <BookOpen className="w-5 h-5" />,
 };
 
 // User Avatar Component

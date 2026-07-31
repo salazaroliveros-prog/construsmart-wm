@@ -147,6 +147,83 @@ export interface LocalWarehouseStock {
   updated_at?: string;
 }
 
+export interface LocalClient {
+  id?: string;
+  code: string;
+  name: string;
+  company_name?: string;
+  phone: string;
+  email?: string;
+  address: string;
+  city: string;
+  client_type: 'individual' | 'corporate';
+  notes?: string;
+  sync_status: 'synced' | 'created_offline' | 'updated_offline' | 'pending';
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface LocalProjectLog {
+  id?: string;
+  project_id: string;
+  log_date: string;
+  activity_type: 'progress' | 'issue' | 'milestone' | 'note';
+  description: string;
+  physical_progress?: number;
+  financial_progress?: number;
+  photos?: string[];
+  created_by: string;
+  sync_status: 'synced' | 'created_offline' | 'updated_offline' | 'pending';
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface LocalSupplier {
+  id?: string;
+  code: string;
+  name: string;
+  contact_person: string;
+  phone: string;
+  email?: string;
+  address: string;
+  city: string;
+  payment_terms: string;
+  notes?: string;
+  sync_status: 'synced' | 'created_offline' | 'updated_offline' | 'pending';
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface LocalPurchaseOrder {
+  id?: string;
+  code: string;
+  supplier_id: string;
+  project_id?: string;
+  order_date: string;
+  expected_delivery_date?: string;
+  status: 'pending' | 'approved' | 'ordered' | 'received' | 'cancelled';
+  total_amount: number;
+  notes?: string;
+  sync_status: 'synced' | 'created_offline' | 'updated_offline' | 'pending';
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface LocalPurchaseOrderItem {
+  id?: string;
+  purchase_order_id: string;
+  item_code: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+  total_price: number;
+  received_quantity?: number;
+  sync_status: 'synced' | 'created_offline' | 'updated_offline' | 'pending';
+  created_at: string;
+  updated_at?: string;
+}
+
 export class WMDatabase extends Dexie {
   projects!: Table<LocalProject>;
   budgets!: Table<LocalBudget>;
@@ -156,10 +233,15 @@ export class WMDatabase extends Dexie {
   payrollEmployees!: Table<LocalPayrollEmployee>;
   payrollRecords!: Table<LocalPayrollRecord>;
   warehouseStock!: Table<LocalWarehouseStock>;
+  clients!: Table<LocalClient>;
+  projectLogs!: Table<LocalProjectLog>;
+  suppliers!: Table<LocalSupplier>;
+  purchaseOrders!: Table<LocalPurchaseOrder>;
+  purchaseOrderItems!: Table<LocalPurchaseOrderItem>;
 
   constructor() {
     super('ConstructoraWM_OfflineDB');
-    this.version(4).stores({
+    this.version(5).stores({
       projects: 'id, code, name, sync_status, status, typology, created_at, updated_at, budget_total, calculated_duration',
       budgets: 'id, project_id, version, sync_status, created_at, updated_at',
       budgetItems: 'id, budget_id, parent_id, code, sync_status, item_order, created_at, updated_at',
@@ -167,7 +249,12 @@ export class WMDatabase extends Dexie {
       financialTransactions: 'id, project_id, type, category, date, sync_status, created_at, updated_at',
       payrollEmployees: 'id, name, position, category, department, sync_status, created_at, updated_at',
       payrollRecords: 'id, project_id, employee_id, period_start, period_end, sync_status, created_at, updated_at',
-      warehouseStock: 'id, project_id, item_code, sync_status, created_at, updated_at'
+      warehouseStock: 'id, project_id, item_code, sync_status, created_at, updated_at',
+      clients: 'id, code, name, client_type, sync_status, created_at, updated_at',
+      projectLogs: 'id, project_id, log_date, activity_type, sync_status, created_at, updated_at',
+      suppliers: 'id, code, name, sync_status, created_at, updated_at',
+      purchaseOrders: 'id, code, supplier_id, project_id, status, order_date, sync_status, created_at, updated_at',
+      purchaseOrderItems: 'id, purchase_order_id, item_code, sync_status, created_at, updated_at'
     });
   }
 }
