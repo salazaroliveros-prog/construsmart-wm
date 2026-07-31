@@ -110,45 +110,45 @@ export default function Dashboard() {
       case 'dashboard':
         return (
           <>
-            <div className="mb-6">
-              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+            <div className="mb-4">
+              <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">
                 Bienvenido al Sistema de Control
               </h1>
-              <p className="text-white/60 text-sm sm:text-base">
+              <p className="text-white/60 text-xs sm:text-sm">
                 Gestione proyectos, presupuestos y seguimiento en tiempo real
               </p>
             </div>
 
             <DashboardStats />
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
               <ProjectOverview />
               
               <InteractiveCalendar />
               
-              <div className="glass-panel rounded-2xl p-4 sm:p-6 xl:col-span-2">
-                <h2 className="text-base sm:text-lg font-semibold text-white mb-4 sm:mb-6">
+              <div className="glass-panel rounded-2xl p-3 sm:p-4">
+                <h2 className="text-sm sm:text-base font-semibold text-white mb-3 sm:mb-4">
                   Matriz de Costos Residenciales (GTQ)
                 </h2>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                  <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-blue-500">
-                    <h3 className="text-blue-400 font-semibold mb-1 sm:mb-2 text-sm sm:text-base">Nivel Básico</h3>
-                    <p className="text-xl sm:text-2xl font-bold text-white mb-1">Q. 3,000 - Q. 3,500</p>
-                    <p className="text-xs sm:text-sm text-white/60">por m²</p>
-                    <p className="text-[10px] sm:text-xs text-white/40 mt-1 sm:mt-2">Acabados económicos estándar</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+                  <div className="glass-card p-2 sm:p-3 rounded-xl border-l-4 border-l-blue-500">
+                    <h3 className="text-blue-400 font-semibold mb-1 text-xs sm:text-sm">Nivel Básico</h3>
+                    <p className="text-base sm:text-xl font-bold text-white mb-0.5">Q. 3,000 - Q. 3,500</p>
+                    <p className="text-[10px] sm:text-xs text-white/60">por m²</p>
+                    <p className="text-[9px] sm:text-[10px] text-white/40 mt-1">Acabados económicos</p>
                   </div>
-                  <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-emerald-500">
-                    <h3 className="text-emerald-400 font-semibold mb-1 sm:mb-2 text-sm sm:text-base">Nivel Moderado</h3>
-                    <p className="text-xl sm:text-2xl font-bold text-white mb-1">Q. 3,500 - Q. 4,000</p>
-                    <p className="text-xs sm:text-sm text-white/60">por m²</p>
-                    <p className="text-[10px] sm:text-xs text-white/40 mt-1 sm:mt-2">Acabados de calidad media</p>
+                  <div className="glass-card p-2 sm:p-3 rounded-xl border-l-4 border-l-emerald-500">
+                    <h3 className="text-emerald-400 font-semibold mb-1 text-xs sm:text-sm">Nivel Moderado</h3>
+                    <p className="text-base sm:text-xl font-bold text-white mb-0.5">Q. 3,500 - Q. 4,000</p>
+                    <p className="text-[10px] sm:text-xs text-white/60">por m²</p>
+                    <p className="text-[9px] sm:text-[10px] text-white/40 mt-1">Calidad media</p>
                   </div>
-                  <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-violet-500">
-                    <h3 className="text-violet-400 font-semibold mb-1 sm:mb-2 text-sm sm:text-base">Nivel Premium</h3>
-                    <p className="text-xl sm:text-2xl font-bold text-white mb-1">Q. 4,000 - Q. 5,000</p>
-                    <p className="text-xs sm:text-sm text-white/60">por m²</p>
-                    <p className="text-[10px] sm:text-xs text-white/40 mt-1 sm:mt-2">Acabados de alta gama</p>
+                  <div className="glass-card p-2 sm:p-3 rounded-xl border-l-4 border-l-violet-500">
+                    <h3 className="text-violet-400 font-semibold mb-1 text-xs sm:text-sm">Nivel Premium</h3>
+                    <p className="text-base sm:text-xl font-bold text-white mb-0.5">Q. 4,000 - Q. 5,000</p>
+                    <p className="text-[10px] sm:text-xs text-white/60">por m²</p>
+                    <p className="text-[9px] sm:text-[10px] text-white/40 mt-1">Alta gama</p>
                   </div>
                 </div>
               </div>
@@ -203,7 +203,7 @@ export default function Dashboard() {
         {isMounted && !isMobile && (
           <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="hidden lg:flex fixed top-20 left-3 z-[45] p-2.5 rounded-lg glass-button transition-all hover:scale-105"
+            className="hidden lg:flex fixed top-24 left-4 z-[45] w-8 h-8 rounded-lg glass-button items-center justify-center transition-all hover:scale-110"
             aria-label={isSidebarCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
             aria-expanded={!isSidebarCollapsed}
           >

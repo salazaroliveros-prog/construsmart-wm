@@ -131,7 +131,7 @@ export default function DashboardStats() {
   const COLORS = ['#06b6d4', '#10b981', '#f59e0b', '#8b5cf6', '#6366f1'];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-4">
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-3 lg:gap-4">
         {!isLoading ? (
@@ -201,14 +201,14 @@ export default function DashboardStats() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
         {/* Project Status Pie Chart */}
-        <div className="glass-panel rounded-2xl p-4 sm:p-6">
-          <h3 className="text-sm sm:text-base font-semibold text-white mb-4 flex items-center gap-2">
-            <PieChartIcon className="w-4 h-4 text-cyan-400" />
+        <div className="glass-panel rounded-2xl p-3 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
+            <PieChartIcon className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-400" />
             Estado de Proyectos
           </h3>
-          <div className="h-48 sm:h-56">
+          <div className="h-40 sm:h-48">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -235,12 +235,12 @@ export default function DashboardStats() {
         </div>
 
         {/* Expense Category Bar Chart */}
-        <div className="glass-panel rounded-2xl p-4 sm:p-6">
-          <h3 className="text-sm sm:text-base font-semibold text-white mb-4 flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-emerald-400" />
+        <div className="glass-panel rounded-2xl p-3 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
+            <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
             Distribución de Gastos
           </h3>
-          <div className="h-48 sm:h-56">
+          <div className="h-40 sm:h-48">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={categoryData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -258,12 +258,12 @@ export default function DashboardStats() {
         </div>
 
         {/* Employee Department Bar Chart */}
-        <div className="glass-panel rounded-2xl p-4 sm:p-6">
-          <h3 className="text-sm sm:text-base font-semibold text-white mb-4 flex items-center gap-2">
-            <Users className="w-4 h-4 text-amber-400" />
+        <div className="glass-panel rounded-2xl p-3 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
+            <Users className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400" />
             Empleados por Departamento
           </h3>
-          <div className="h-48 sm:h-56">
+          <div className="h-40 sm:h-48">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={employeeDepartmentData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -281,12 +281,12 @@ export default function DashboardStats() {
       </div>
 
       {/* Financial Overview Line Chart */}
-      <div className="glass-panel rounded-2xl p-4 sm:p-6">
-        <h3 className="text-sm sm:text-base font-semibold text-white mb-4 flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-violet-400" />
+      <div className="glass-panel rounded-2xl p-3 sm:p-4">
+        <h3 className="text-xs sm:text-sm font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
+          <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-violet-400" />
           Flujo Financiero (Últimos 6 meses)
         </h3>
-        <div className="h-48 sm:h-56">
+        <div className="h-40 sm:h-48">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={[
               { month: 'Ene', income: totalIncome * 0.15, expense: totalSpent * 0.15 },
