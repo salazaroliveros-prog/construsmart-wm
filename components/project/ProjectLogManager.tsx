@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { BookOpen, Plus, Edit, Trash2, Calendar, TrendingUp, AlertTriangle, Flag, MessageSquare, Filter, Search, DollarSign } from 'lucide-react';
 import { offlineDB, LocalProject, LocalProjectLog } from '@/lib/db/offlineStore';
+import { queueDelete } from '@/lib/utils/offlineSync';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
@@ -127,6 +128,7 @@ export default function ProjectLogManager() {
 
   const handleDelete = async (log: LocalProjectLog) => {
     try {
+      await queueDelete('project_logs', log);
       await offlineDB.projectLogs.delete(log.id!);
       setDeleteDialog({ show: false, log: null });
       loadLogs();

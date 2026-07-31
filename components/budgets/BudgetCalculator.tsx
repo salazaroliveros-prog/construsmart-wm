@@ -17,6 +17,7 @@ import { RENGLONES_BY_TYPOLOGY_DETAILED } from '@/lib/data/apuRenglonesDetailed'
 import { ProjectTypology, APUFormulaParams, APUResult, TYPOLOGY_LABELS, MATERIAL_FACTORS } from '@/lib/types/apu';
 import type { APURenglon } from '@/lib/types/apu';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
+import { queueDelete } from '@/lib/utils/offlineSync';
 import { budgetState, ActiveBudgetState } from '@/lib/state/budgetState';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -263,20 +264,50 @@ export default function BudgetCalculator() {
     try {
       const summary = calculateSummary();
 
-      // Save budget to database
-      const budgetId = await offlineDB.budgets.add({
-        project_id: selectedProject,
-        version: 1,
-        direct_cost: summary.directCost,
-        indirect_percentage: indirectPercentage,
-        contingency_percentage: contingencyPercentage,
-        profit_percentage: profitPercentage,
-        total_amount: summary.total,
-        duration_days: durationDays,
-        sync_status: 'created_offline',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
+      // Look up an existing budget for this project so saves are idempotent
+      const existingBudget = await offlineDB.budgets
+        .where('project_id')
+        .equals(selectedProject)
+        .reverse()
+        .first();
+
+      const isFirstSave = !existingBudget;
+      let budgetId: string;
+
+      if (existingBudget) {
+        budgetId = existingBudget.id as string;
+        await offlineDB.budgets.update(budgetId, {
+          direct_cost: summary.directCost,
+          indirect_percentage: indirectPercentage,
+          contingency_percentage: contingencyPercentage,
+          profit_percentage: profitPercentage,
+          total_amount: summary.total,
+          duration_days: durationDays,
+          sync_status: existingBudget.sync_status === 'synced' ? 'updated_offline' : existingBudget.sync_status,
+          updated_at: new Date().toISOString(),
+        });
+
+        // Replace existing budget items (queue server deletions for synced items)
+        const oldItems = await offlineDB.budgetItems.where('budget_id').equals(budgetId).toArray();
+        for (const oldItem of oldItems) {
+          await queueDelete('budget_items', oldItem);
+          await offlineDB.budgetItems.delete(oldItem.id!);
+        }
+      } else {
+        budgetId = (await offlineDB.budgets.add({
+          project_id: selectedProject,
+          version: 1,
+          direct_cost: summary.directCost,
+          indirect_percentage: indirectPercentage,
+          contingency_percentage: contingencyPercentage,
+          profit_percentage: profitPercentage,
+          total_amount: summary.total,
+          duration_days: durationDays,
+          sync_status: 'created_offline',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })) as string;
+      }
 
       // Save budget items
       for (const item of items) {
@@ -303,6 +334,8 @@ export default function BudgetCalculator() {
 
         await offlineDB.budgetItems.add(budgetItemData);
 
+        // Materials are only added to warehouse on first save to avoid stock inflation
+        if (isFirstSave) {
         // Add detailed material breakdown to warehouse
         const catalogRenglon = RENGLONES_BY_TYPOLOGY_DETAILED[selectedTypology]?.find(
           r => r.code === item.code
@@ -367,8 +400,9 @@ export default function BudgetCalculator() {
               unit_cost: item.unitCost,
               sync_status: 'created_offline',
               created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            });
+                updated_at: new Date().toISOString(),
+              });
+            }
           }
         }
       }
@@ -427,7 +461,9 @@ export default function BudgetCalculator() {
       };
       budgetState.set(activeBudget);
 
-      showToast('success', 'Presupuesto guardado, proyecto actualizado y materiales agregados al almacén');
+      showToast('success', isFirstSave
+        ? 'Presupuesto guardado, proyecto actualizado y materiales agregados al almacén'
+        : 'Presupuesto actualizado y proyecto actualizado');
     } catch (error) {
       console.error('Error saving budget:', error);
       showToast('error', 'Error al guardar el presupuesto');

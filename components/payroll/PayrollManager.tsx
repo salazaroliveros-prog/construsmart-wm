@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Users, DollarSign, Calendar, BadgeCheck, X, Save, UserPlus, Wallet, FolderOpen } from 'lucide-react';
 import { offlineDB, LocalPayrollEmployee, LocalPayrollRecord, LocalProject } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
+import { queueDelete, PENDING_STATUSES } from '@/lib/utils/offlineSync';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
@@ -188,6 +189,8 @@ export default function PayrollManager() {
 
         if (supabaseEmployees) {
           for (const employee of supabaseEmployees) {
+            const existing = await offlineDB.payrollEmployees.get(employee.id);
+            if (existing && PENDING_STATUSES.includes(existing.sync_status || '')) continue;
             await offlineDB.payrollEmployees.put({
               ...employee,
               sync_status: 'synced',
@@ -216,6 +219,8 @@ export default function PayrollManager() {
 
         if (supabaseRecords) {
           for (const record of supabaseRecords) {
+            const existing = await offlineDB.payrollRecords.get(record.id);
+            if (existing && PENDING_STATUSES.includes(existing.sync_status || '')) continue;
             await offlineDB.payrollRecords.put({
               ...record,
               sync_status: 'synced',
@@ -286,19 +291,21 @@ export default function PayrollManager() {
     try {
       const employeeData: LocalPayrollEmployee = {
         ...employeeFormData,
-        sync_status: isOnline ? 'synced' : 'created_offline',
+        sync_status: 'created_offline',
         created_at: new Date().toISOString(),
       };
 
       if (editingEmployee) {
+        const wasSynced = editingEmployee.sync_status === 'synced';
+
         // Update in localStorage
         await offlineDB.payrollEmployees.update(editingEmployee.id!, {
           ...employeeData,
-          sync_status: isOnline ? 'synced' : 'updated_offline',
+          sync_status: wasSynced ? (isOnline ? 'synced' : 'updated_offline') : 'created_offline',
         });
 
         // Update in Supabase if online
-        if (isOnline && editingEmployee.id && supabase) {
+        if (isOnline && wasSynced && supabase) {
           const { error } = await supabase
             .from('payroll_employees')
             .update({
@@ -341,6 +348,9 @@ export default function PayrollManager() {
 
           if (error) {
             console.error('Error creating employee in Supabase:', error);
+            await offlineDB.payrollEmployees.update(id, {
+              sync_status: 'created_offline',
+            });
           } else if (data) {
             await offlineDB.payrollEmployees.update(id, {
               id: data.id,
@@ -368,12 +378,8 @@ export default function PayrollManager() {
 
   const handleDeleteEmployee = async (employee: LocalPayrollEmployee) => {
     try {
+      await queueDelete('payroll_employees', employee);
       await offlineDB.payrollEmployees.delete(employee.id!);
-
-      if (isOnline && employee.id && supabase) {
-        const { error } = await supabase.from('payroll_employees').delete().eq('id', employee.id);
-        if (error) console.error('Error deleting employee from Supabase:', error);
-      }
 
       await loadEmployees();
       showToast('info', `Empleado "${employee.name}" eliminado`);
@@ -457,33 +463,47 @@ export default function PayrollManager() {
         aguinaldo_provision: benefits.aguinaldo,
         vacaciones_provision: benefits.vacaciones,
         net_salary: netSalary,
-        sync_status: isOnline ? 'synced' : 'created_offline',
+        sync_status: editingPayroll
+          ? (editingPayroll.sync_status === 'synced' ? (isOnline ? 'synced' : 'updated_offline') : 'created_offline')
+          : (isOnline ? 'synced' : 'created_offline'),
         created_at: new Date().toISOString(),
       };
 
       if (editingPayroll) {
+        const wasSynced = editingPayroll.sync_status === 'synced';
+
         await offlineDB.payrollRecords.update(editingPayroll.id!, {
           ...payrollData,
-          sync_status: isOnline ? 'synced' : 'updated_offline',
+          sync_status: wasSynced ? (isOnline ? 'synced' : 'updated_offline') : 'created_offline',
         });
 
-        if (isOnline && editingPayroll.id && supabase) {
-          await supabase
+        if (isOnline && wasSynced && supabase) {
+          const { error } = await supabase
             .from('payroll_records')
             .update(payrollData)
             .eq('id', editingPayroll.id);
+
+          if (error) {
+            console.error('Error updating payroll record in Supabase:', error);
+            await offlineDB.payrollRecords.update(editingPayroll.id!, {
+              sync_status: 'updated_offline',
+            });
+          }
         }
       } else {
         const id = await offlineDB.payrollRecords.add(payrollData);
 
         if (isOnline && supabase) {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('payroll_records')
             .insert(payrollData)
             .select()
             .single();
 
-          if (data) {
+          if (error) {
+            console.error('Error creating payroll record in Supabase:', error);
+            await offlineDB.payrollRecords.update(id, { sync_status: 'created_offline' });
+          } else if (data) {
             await offlineDB.payrollRecords.update(id, { id: data.id, sync_status: 'synced' });
           }
         }

@@ -3,6 +3,8 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { APP_CONFIG } from '@/lib/config/app.config';
 import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration';
+import SyncProvider from '@/components/ui/SyncProvider';
+import RealtimeProvider from '@/components/ui/RealtimeProvider';
 import { ToastProvider } from '@/components/ui/Toast';
 import { AuthProvider } from '@/lib/auth/auth-context';
 import { UISettingsProvider } from '@/lib/hooks/useUISettings';
@@ -63,6 +65,8 @@ export default function RootLayout({
           <UISettingsProvider>
             <ToastProvider>
               <ServiceWorkerRegistration />
+              <SyncProvider />
+              <RealtimeProvider />
               {children}
             </ToastProvider>
           </UISettingsProvider>

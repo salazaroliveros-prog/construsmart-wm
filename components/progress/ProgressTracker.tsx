@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, BarChart3, Activity, DollarSign, Target, Clock, AlertTriangle } from 'lucide-react';
 import { offlineDB, LocalProject, LocalFinancialTransaction } from '@/lib/db/offlineStore';
+import { queueDelete } from '@/lib/utils/offlineSync';
 import { budgetState, ActiveBudgetState } from '@/lib/state/budgetState';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -139,6 +140,7 @@ export default function ProgressTracker() {
     if (!deleteConfirm) return;
 
     try {
+      await queueDelete('financial_transactions', deleteConfirm);
       await offlineDB.financialTransactions.delete(deleteConfirm.id);
       showToast('success', 'Transacción eliminada exitosamente del control de avance');
       loadTransactions();

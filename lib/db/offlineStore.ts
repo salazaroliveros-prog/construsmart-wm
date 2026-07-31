@@ -85,22 +85,6 @@ export interface LocalBudgetItem {
   updated_at?: string;
 }
 
-export interface LocalBudgetItemBreakdown {
-  id?: string;
-  budget_item_id: string;
-  resource_type: 'material' | 'labor' | 'equipment' | 'subcontract';
-  code?: string;
-  description: string;
-  unit: string;
-  quantity_unitary: number;
-  total_quantity: number;
-  unit_price: number;
-  waste_percentage: number;
-  total_price: number;
-  sync_status: 'synced' | 'created_offline' | 'updated_offline';
-  created_at?: string;
-}
-
 export interface LocalFinancialTransaction {
   id?: string;
   project_id?: string;
@@ -247,11 +231,20 @@ export interface LocalPurchaseOrderItem {
   updated_at?: string;
 }
 
+// Tombstone de borrado: registra que una fila ya sincronizada debe eliminarse
+// en Supabase. Se crea al borrar un registro sin conexión y el motor de sync
+// la procesa (DELETE en servidor + limpieza local) al volver online.
+export interface LocalPendingDelete {
+  id?: number;
+  table: string;
+  serverId: string;
+  created_at: number;
+}
+
 export class WMDatabase extends Dexie {
   projects!: Table<LocalProject>;
   budgets!: Table<LocalBudget>;
   budgetItems!: Table<LocalBudgetItem>;
-  budgetItemBreakdowns!: Table<LocalBudgetItemBreakdown>;
   financialTransactions!: Table<LocalFinancialTransaction>;
   payrollEmployees!: Table<LocalPayrollEmployee>;
   payrollRecords!: Table<LocalPayrollRecord>;
@@ -261,14 +254,14 @@ export class WMDatabase extends Dexie {
   suppliers!: Table<LocalSupplier>;
   purchaseOrders!: Table<LocalPurchaseOrder>;
   purchaseOrderItems!: Table<LocalPurchaseOrderItem>;
+  pendingDeletes!: Table<LocalPendingDelete>;
 
   constructor() {
     super('ConstructoraWM_OfflineDB');
-    this.version(5).stores({
+    this.version(6).stores({
       projects: 'id, code, name, sync_status, status, typology, created_at, updated_at, budget_total, calculated_duration',
       budgets: 'id, project_id, version, sync_status, created_at, updated_at',
       budgetItems: 'id, budget_id, parent_id, code, sync_status, item_order, created_at, updated_at',
-      budgetItemBreakdowns: 'id, budget_item_id, resource_type, sync_status, created_at',
       financialTransactions: 'id, project_id, type, category, date, sync_status, created_at, updated_at',
       payrollEmployees: 'id, name, position, category, department, sync_status, created_at, updated_at',
       payrollRecords: 'id, project_id, employee_id, period_start, period_end, sync_status, created_at, updated_at',
@@ -277,7 +270,8 @@ export class WMDatabase extends Dexie {
       projectLogs: 'id, project_id, log_date, activity_type, sync_status, created_at, updated_at',
       suppliers: 'id, code, name, sync_status, created_at, updated_at',
       purchaseOrders: 'id, code, supplier_id, project_id, status, order_date, sync_status, created_at, updated_at',
-      purchaseOrderItems: 'id, purchase_order_id, item_code, sync_status, created_at, updated_at'
+      purchaseOrderItems: 'id, purchase_order_id, item_code, sync_status, created_at, updated_at',
+      pendingDeletes: '++id, table, serverId, created_at'
     });
   }
 }

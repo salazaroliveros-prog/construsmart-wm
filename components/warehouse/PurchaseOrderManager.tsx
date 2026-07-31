@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ShoppingCart, Plus, Edit, Trash2, FileText, Search, Filter, Package, DollarSign, Calendar, CheckCircle, Clock, XCircle, Building2, X } from 'lucide-react';
 import { offlineDB, LocalPurchaseOrder, LocalPurchaseOrderItem, LocalSupplier, LocalProject } from '@/lib/db/offlineStore';
+import { queueDelete } from '@/lib/utils/offlineSync';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
@@ -183,8 +184,9 @@ export default function PurchaseOrderManager() {
 
   const handleDelete = async (order: LocalPurchaseOrder) => {
     try {
+      await queueDelete('purchase_orders', order);
       await offlineDB.purchaseOrders.delete(order.id!);
-      // Delete associated items
+      // Delete associated items (el DELETE del servidor hace cascade de los items)
       const itemsToDelete = orderItems.filter((oi) => oi.purchase_order_id === order.id);
       for (const item of itemsToDelete) {
         await offlineDB.purchaseOrderItems.delete(item.id!);

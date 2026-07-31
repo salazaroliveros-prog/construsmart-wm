@@ -198,7 +198,7 @@ La librería APU residencial contiene 40 items organizados en 8 categorías:
 | 7.x    | Carpintería y Herrería  | 4     |
 | 8.x    | Instalaciones           | 2     |
 
-Ver implementación completa en `lib/apu/apuLibrary.ts`.
+Ver implementación completa en `lib/data/apuRenglones.ts` y `lib/calculators/apuCalculator.ts`.
 
 ---
 
@@ -232,7 +232,7 @@ Salario_Neto = Salario_Bruto - IGSS - Deducciones
 │   ├───────────────────────────┤     │
 │   │  volumetricCalculators.ts │     │  ← Cálculos volumétricos
 │   ├───────────────────────────┤     │
-│   │  apuLibrary.ts            │     │  ← Librería APU + estimaciones
+│   │  apuRenglones.ts         │     │  ← Catálogo APU (125 renglones)
 │   ├───────────────────────────┤     │
 │   │  offlineStore.ts          │     │  ← Dexie (IndexedDB local)
 │   └───────────────────────────┘     │

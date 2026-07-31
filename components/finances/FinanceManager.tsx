@@ -5,6 +5,7 @@ import { Plus, Edit, Trash2, Search, TrendingUp, TrendingDown, DollarSign, Walle
 import { offlineDB, LocalFinancialTransaction, LocalProject, LocalBudget, LocalBudgetItem } from '@/lib/db/offlineStore';
 import { budgetState } from '@/lib/state/budgetState';
 import { supabase } from '@/lib/supabase/client';
+import { queueDelete, PENDING_STATUSES } from '@/lib/utils/offlineSync';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
@@ -130,6 +131,8 @@ export default function FinanceManager() {
 
         if (supabaseTransactions) {
           for (const transaction of supabaseTransactions) {
+            const existing = await offlineDB.financialTransactions.get(transaction.id);
+            if (existing && PENDING_STATUSES.includes(existing.sync_status || '')) continue;
             await offlineDB.financialTransactions.put({
               ...transaction,
               sync_status: 'synced',
@@ -301,7 +304,9 @@ export default function FinanceManager() {
         total_cost: totalCost,
         date: formData.date,
         receipt_url: formData.receipt_url,
-        sync_status: isOnline ? 'synced' : 'created_offline',
+        sync_status: editingTransaction
+          ? (editingTransaction.sync_status === 'synced' ? (isOnline ? 'synced' : 'updated_offline') : 'created_offline')
+          : (isOnline ? 'synced' : 'created_offline'),
         created_at: editingTransaction?.created_at || new Date().toISOString()
       };
 
@@ -318,7 +323,11 @@ export default function FinanceManager() {
 
       if (isOnline && supabase) {
         const { error } = await supabase.from('financial_transactions').upsert([transactionData]);
-        if (error) throw error;
+        if (error) {
+          await offlineDB.financialTransactions.update(transactionData.id!, { sync_status: 'created_offline' });
+          throw error;
+        }
+        await offlineDB.financialTransactions.update(transactionData.id!, { sync_status: 'synced' });
       }
     } catch (error) {
       console.error('Error saving transaction:', error);
@@ -336,13 +345,10 @@ export default function FinanceManager() {
     if (!deleteConfirm) return;
 
     try {
+      await queueDelete('financial_transactions', deleteConfirm);
       await offlineDB.financialTransactions.delete(deleteConfirm.id);
       showToast('success', 'Transacción eliminada exitosamente');
       loadTransactions();
-
-      if (isOnline && supabase) {
-        await supabase.from('financial_transactions').delete().eq('id', deleteConfirm.id);
-      }
     } catch (error) {
       console.error('Error deleting transaction:', error);
       showToast('error', 'Error al eliminar la transacción');

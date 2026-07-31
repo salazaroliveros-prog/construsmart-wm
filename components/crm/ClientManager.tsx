@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Users, Plus, Edit, Trash2, Phone, Mail, MapPin, Building2, Search, Filter } from 'lucide-react';
 import { offlineDB, LocalClient } from '@/lib/db/offlineStore';
+import { queueDelete } from '@/lib/utils/offlineSync';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
@@ -118,6 +119,7 @@ export default function ClientManager() {
 
   const handleDelete = async (client: LocalClient) => {
     try {
+      await queueDelete('clients', client);
       await offlineDB.clients.delete(client.id!);
       setDeleteDialog({ show: false, client: null });
       loadClients();

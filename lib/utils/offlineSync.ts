@@ -3,9 +3,14 @@
  * Slogan: "CONSTRUYENDO EL FUTURO"
  * 
  * Bidirectional synchronization between Supabase (PostgreSQL) and Dexie (IndexedDB)
- * Full offline-first architecture with conflict resolution
+ * Full offline-first architecture with conflict resolution.
+ * 
+ * Covers: projects, budgets, budget_items, financial_transactions, payroll_employees,
+ * payroll_records, warehouse_stock, clients, project_logs, suppliers,
+ * purchase_orders and purchase_order_items.
  */
 
+import { Table } from 'dexie';
 import { offlineDB } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
 
@@ -24,7 +29,126 @@ export interface SyncStats {
   pendingTransactions: number;
   pendingPayroll: number;
   pendingWarehouse: number;
+  pendingClients: number;
+  pendingProjectLogs: number;
+  pendingSuppliers: number;
+  pendingPurchaseOrders: number;
+  pendingPurchaseOrderItems: number;
+  pendingDeletes: number;
   lastSync: number | null;
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// A row is considered "server-owned" (safe to UPDATE) only when it already has a
+// real Supabase UUID. Local auto-increment ids (numbers) mean the row was never
+// pushed and must be INSERTed even if marked updated_offline.
+export function isServerId(id?: string): boolean {
+  return typeof id === 'string' && UUID_RE.test(id);
+}
+
+// Statuses that mark a row as pending to be pushed to Supabase.
+export const PENDING_STATUSES = ['created_offline', 'updated_offline', 'pending'];
+
+// Prevents concurrent sync runs (interval + online event + manual calls).
+let syncInProgress = false;
+
+// Remaps a foreign key that was stored as a local id to the server id assigned
+// during this sync run. Unknown/local-only ids are kept as-is.
+function remap(map: Map<string, string>, id?: string): string | undefined {
+  if (!id) return id;
+  return map.get(String(id)) ?? id;
+}
+
+// After a parent is inserted, point all local children (stored with the old
+// local id) at the new server id so the offline database stays consistent.
+async function remapProjectFks(localId: string, serverId: string): Promise<void> {
+  await Promise.all([
+    offlineDB.budgets.where('project_id').equals(localId).modify({ project_id: serverId }),
+    offlineDB.financialTransactions.where('project_id').equals(localId).modify({ project_id: serverId }),
+    offlineDB.payrollRecords.where('project_id').equals(localId).modify({ project_id: serverId }),
+    offlineDB.warehouseStock.where('project_id').equals(localId).modify({ project_id: serverId }),
+    offlineDB.projectLogs.where('project_id').equals(localId).modify({ project_id: serverId }),
+    offlineDB.purchaseOrders.where('project_id').equals(localId).modify({ project_id: serverId }),
+  ]);
+}
+
+async function remapBudgetFks(localId: string, serverId: string): Promise<void> {
+  await offlineDB.budgetItems
+    .where('budget_id')
+    .equals(localId)
+    .modify({ budget_id: serverId });
+}
+
+async function remapEmployeeFks(localId: string, serverId: string): Promise<void> {
+  await offlineDB.payrollRecords
+    .where('employee_id')
+    .equals(localId)
+    .modify({ employee_id: serverId });
+}
+
+async function remapSupplierFks(localId: string, serverId: string): Promise<void> {
+  await offlineDB.purchaseOrders
+    .where('supplier_id')
+    .equals(localId)
+    .modify({ supplier_id: serverId });
+}
+
+async function remapOrderFks(localId: string, serverId: string): Promise<void> {
+  await offlineDB.purchaseOrderItems
+    .where('purchase_order_id')
+    .equals(localId)
+    .modify({ purchase_order_id: serverId });
+}
+
+type Syncable = { id?: string; sync_status?: string };
+
+// Generic push loop: INSERTs rows that were never pushed (created_offline/pending,
+// or updated_offline without a server id) and UPDATEs server-owned rows.
+// Returns a map of local id -> server id for the rows it inserted.
+async function syncRows<T extends Syncable>(
+  supabaseTable: string,
+  rows: T[],
+  describe: (row: T) => string,
+  buildInsert: (row: T) => Record<string, unknown>,
+  buildUpdate: (row: T) => Record<string, unknown>,
+  markInserted: (row: T, localId: string, serverId: string) => Promise<void>,
+  markUpdated: (row: T) => Promise<void>,
+  result: SyncResult,
+): Promise<Map<string, string>> {
+  const idMap = new Map<string, string>();
+
+  for (const row of rows) {
+    const localId = String(row.id);
+    try {
+      const isUpdate = row.sync_status === 'updated_offline' && isServerId(row.id);
+
+      if (isUpdate) {
+        const { error } = await supabase!
+          .from(supabaseTable)
+          .update(buildUpdate(row))
+          .eq('id', row.id!);
+        if (error) throw error;
+        await markUpdated(row);
+      } else {
+        const { data, error } = await supabase!
+          .from(supabaseTable)
+          .insert(buildInsert(row))
+          .select()
+          .single();
+        if (error) throw error;
+        if (row.id) idMap.set(localId, data.id);
+        await markInserted(row, localId, data.id);
+      }
+
+      result.synced++;
+    } catch (error) {
+      result.failed++;
+      result.errors.push(`Failed to sync ${supabaseTable} ${describe(row)}: ${error}`);
+    }
+  }
+
+  return idMap;
 }
 
 export async function syncOfflineData(): Promise<SyncResult> {
@@ -42,374 +166,557 @@ export async function syncOfflineData(): Promise<SyncResult> {
     return result;
   }
 
+  if (syncInProgress) {
+    result.errors.push('Sync already in progress, run skipped.');
+    return result;
+  }
+  syncInProgress = true;
+
   try {
-    // Sync projects created offline
-    const offlineProjects = await offlineDB.projects
+    // 1. PROJECTS (parents of budgets, transactions, payroll, stock, logs, POs)
+    const projectRows = await offlineDB.projects
       .where('sync_status')
-      .equals('created_offline')
+      .anyOf(PENDING_STATUSES)
       .toArray();
+    const projectIdMap = await syncRows(
+      'projects',
+      projectRows,
+      (p) => p.code,
+      (p) => ({
+        code: p.code,
+        name: p.name,
+        client_name: p.client_name,
+        client_phone: p.client_phone,
+        client_email: p.client_email,
+        location: p.location,
+        typology: p.typology,
+        area_m2: p.area_m2,
+        quality_level: p.quality_level,
+        status: p.status,
+        start_date: p.start_date,
+        estimated_end_date: p.estimated_end_date,
+        duration_days: p.duration_days,
+        total_budget: p.total_budget,
+        budget_total: p.budget_total,
+        calculated_duration: p.calculated_duration,
+        sync_status: p.sync_status,
+      }),
+      (p) => ({
+        name: p.name,
+        client_name: p.client_name,
+        client_phone: p.client_phone,
+        client_email: p.client_email,
+        location: p.location,
+        typology: p.typology,
+        area_m2: p.area_m2,
+        quality_level: p.quality_level,
+        status: p.status,
+        start_date: p.start_date,
+        estimated_end_date: p.estimated_end_date,
+        duration_days: p.duration_days,
+        total_budget: p.total_budget,
+        budget_total: p.budget_total,
+        calculated_duration: p.calculated_duration,
+      }),
+      async (p, localId, serverId) => {
+        await offlineDB.projects.update(localId, { id: serverId, sync_status: 'synced' });
+        await remapProjectFks(localId, serverId);
+      },
+      async (p) => {
+        await offlineDB.projects.update(p.id!, { sync_status: 'synced' });
+      },
+      result,
+    );
 
-    for (const project of offlineProjects) {
+    // 2. SUPPLIERS (parents of purchase_orders)
+    const supplierRows = await offlineDB.suppliers
+      .where('sync_status')
+      .anyOf(PENDING_STATUSES)
+      .toArray();
+    const supplierIdMap = await syncRows(
+      'suppliers',
+      supplierRows,
+      (s) => s.code,
+      (s) => ({
+        code: s.code,
+        name: s.name,
+        contact_person: s.contact_person,
+        phone: s.phone,
+        email: s.email,
+        address: s.address,
+        city: s.city,
+        payment_terms: s.payment_terms,
+        notes: s.notes,
+        sync_status: s.sync_status,
+      }),
+      (s) => ({
+        name: s.name,
+        contact_person: s.contact_person,
+        phone: s.phone,
+        email: s.email,
+        address: s.address,
+        city: s.city,
+        payment_terms: s.payment_terms,
+        notes: s.notes,
+      }),
+      async (s, localId, serverId) => {
+        await offlineDB.suppliers.update(localId, { id: serverId, sync_status: 'synced' });
+        await remapSupplierFks(localId, serverId);
+      },
+      async (s) => {
+        await offlineDB.suppliers.update(s.id!, { sync_status: 'synced' });
+      },
+      result,
+    );
+
+    // 3. CLIENTS (independent)
+    const clientRows = await offlineDB.clients
+      .where('sync_status')
+      .anyOf(PENDING_STATUSES)
+      .toArray();
+    await syncRows(
+      'clients',
+      clientRows,
+      (c) => c.code,
+      (c) => ({
+        code: c.code,
+        name: c.name,
+        client_type: c.client_type,
+        phone: c.phone,
+        email: c.email,
+        address: c.address,
+        city: c.city,
+        notes: c.notes,
+        company_name: c.company_name,
+        sync_status: c.sync_status,
+      }),
+      (c) => ({
+        name: c.name,
+        client_type: c.client_type,
+        phone: c.phone,
+        email: c.email,
+        address: c.address,
+        city: c.city,
+        notes: c.notes,
+        company_name: c.company_name,
+      }),
+      async (c, localId, serverId) => {
+        await offlineDB.clients.update(localId, { id: serverId, sync_status: 'synced' });
+      },
+      async (c) => {
+        await offlineDB.clients.update(c.id!, { sync_status: 'synced' });
+      },
+      result,
+    );
+
+    // 4. PAYROLL EMPLOYEES (parents of payroll_records)
+    const employeeRows = await offlineDB.payrollEmployees
+      .where('sync_status')
+      .anyOf(PENDING_STATUSES)
+      .toArray();
+    const employeeIdMap = await syncRows(
+      'payroll_employees',
+      employeeRows,
+      (e) => e.name,
+      (e) => ({
+        name: e.name,
+        position: e.position,
+        daily_rate: e.daily_rate,
+        category: e.category,
+        department: e.department,
+        hire_date: e.hire_date,
+        active: e.active,
+        sync_status: e.sync_status,
+      }),
+      (e) => ({
+        name: e.name,
+        position: e.position,
+        daily_rate: e.daily_rate,
+        category: e.category,
+        department: e.department,
+        hire_date: e.hire_date,
+        active: e.active,
+      }),
+      async (e, localId, serverId) => {
+        await offlineDB.payrollEmployees.update(localId, { id: serverId, sync_status: 'synced' });
+        await remapEmployeeFks(localId, serverId);
+      },
+      async (e) => {
+        await offlineDB.payrollEmployees.update(e.id!, { sync_status: 'synced' });
+      },
+      result,
+    );
+
+    // 5. BUDGETS (children of projects, parents of budget_items)
+    const budgetRows = await offlineDB.budgets
+      .where('sync_status')
+      .anyOf(PENDING_STATUSES)
+      .toArray();
+    const budgetIdMap = await syncRows(
+      'budgets',
+      budgetRows,
+      (b) => `budget ${b.id}`,
+      (b) => ({
+        project_id: remap(projectIdMap, b.project_id),
+        version: b.version,
+        direct_cost: b.direct_cost,
+        indirect_percentage: b.indirect_percentage,
+        contingency_percentage: b.contingency_percentage,
+        profit_percentage: b.profit_percentage,
+        total_amount: b.total_amount,
+        duration_days: b.duration_days,
+        sync_status: b.sync_status,
+      }),
+      (b) => ({
+        project_id: remap(projectIdMap, b.project_id),
+        version: b.version,
+        direct_cost: b.direct_cost,
+        indirect_percentage: b.indirect_percentage,
+        contingency_percentage: b.contingency_percentage,
+        profit_percentage: b.profit_percentage,
+        total_amount: b.total_amount,
+        duration_days: b.duration_days,
+      }),
+      async (b, localId, serverId) => {
+        await offlineDB.budgets.update(localId, { id: serverId, sync_status: 'synced' });
+        await remapBudgetFks(localId, serverId);
+      },
+      async (b) => {
+        await offlineDB.budgets.update(b.id!, { sync_status: 'synced' });
+      },
+      result,
+    );
+
+    // 6. BUDGET ITEMS (children of budgets)
+    const itemRows = await offlineDB.budgetItems
+      .where('sync_status')
+      .anyOf(PENDING_STATUSES)
+      .toArray();
+    let budgetItemIdMap: Map<string, string> = new Map();
+    budgetItemIdMap = await syncRows(
+      'budget_items',
+      itemRows,
+      (i) => i.code || i.description.slice(0, 24),
+      (i) => ({
+        budget_id: remap(budgetIdMap, i.budget_id),
+        parent_id: remap(budgetItemIdMap, i.parent_id),
+        item_order: i.item_order,
+        code: i.code,
+        description: i.description,
+        unit: i.unit,
+        quantity: i.quantity,
+        unit_cost: i.unit_cost,
+        total_cost: i.total_cost,
+        is_custom: i.is_custom,
+        length_m: i.length_m,
+        width_m: i.width_m,
+        depth_m: i.depth_m,
+        height_m: i.height_m,
+        slab_type: i.slab_type,
+        apu_result: i.apu_result,
+        apu_params: i.apu_params,
+        sync_status: i.sync_status,
+      }),
+      (i) => ({
+        budget_id: remap(budgetIdMap, i.budget_id),
+        parent_id: remap(budgetItemIdMap, i.parent_id),
+        item_order: i.item_order,
+        code: i.code,
+        description: i.description,
+        unit: i.unit,
+        quantity: i.quantity,
+        unit_cost: i.unit_cost,
+        total_cost: i.total_cost,
+        is_custom: i.is_custom,
+        length_m: i.length_m,
+        width_m: i.width_m,
+        depth_m: i.depth_m,
+        height_m: i.height_m,
+        slab_type: i.slab_type,
+        apu_result: i.apu_result,
+        apu_params: i.apu_params,
+      }),
+      async (i, localId, serverId) => {
+        await offlineDB.budgetItems.update(localId, { id: serverId, sync_status: 'synced' });
+      },
+      async (i) => {
+        await offlineDB.budgetItems.update(i.id!, { sync_status: 'synced' });
+      },
+      result,
+    );
+
+    // 7. FINANCIAL TRANSACTIONS (children of projects)
+    const transactionRows = await offlineDB.financialTransactions
+      .where('sync_status')
+      .anyOf(PENDING_STATUSES)
+      .toArray();
+    await syncRows(
+      'financial_transactions',
+      transactionRows,
+      (t) => t.description,
+      (t) => ({
+        project_id: remap(projectIdMap, t.project_id),
+        type: t.type,
+        category: t.category,
+        description: t.description,
+        quantity: t.quantity,
+        unit: t.unit,
+        unit_cost: t.unit_cost,
+        total_cost: t.total_cost,
+        date: t.date,
+        receipt_url: t.receipt_url,
+        sync_status: t.sync_status,
+      }),
+      (t) => ({
+        project_id: remap(projectIdMap, t.project_id),
+        type: t.type,
+        category: t.category,
+        description: t.description,
+        quantity: t.quantity,
+        unit: t.unit,
+        unit_cost: t.unit_cost,
+        total_cost: t.total_cost,
+        date: t.date,
+        receipt_url: t.receipt_url,
+      }),
+      async (t, localId, serverId) => {
+        await offlineDB.financialTransactions.update(localId, { id: serverId, sync_status: 'synced' });
+      },
+      async (t) => {
+        await offlineDB.financialTransactions.update(t.id!, { sync_status: 'synced' });
+      },
+      result,
+    );
+
+    // 8. PAYROLL RECORDS (children of projects and employees)
+    const recordRows = await offlineDB.payrollRecords
+      .where('sync_status')
+      .anyOf(PENDING_STATUSES)
+      .toArray();
+    await syncRows(
+      'payroll_records',
+      recordRows,
+      (r) => `record ${r.id}`,
+      (r) => ({
+        project_id: remap(projectIdMap, r.project_id),
+        employee_id: remap(employeeIdMap, r.employee_id),
+        period_start: r.period_start,
+        period_end: r.period_end,
+        days_worked: r.days_worked,
+        overtime_hours: r.overtime_hours,
+        overtime_rate: r.overtime_rate,
+        bonuses: r.bonuses,
+        deductions: r.deductions,
+        base_salary: r.base_salary,
+        overtime_pay: r.overtime_pay,
+        gross_salary: r.gross_salary,
+        igss_deduction: r.igss_deduction,
+        aguinaldo_provision: r.aguinaldo_provision,
+        vacaciones_provision: r.vacaciones_provision,
+        net_salary: r.net_salary,
+        sync_status: r.sync_status,
+      }),
+      (r) => ({
+        project_id: remap(projectIdMap, r.project_id),
+        employee_id: remap(employeeIdMap, r.employee_id),
+        period_start: r.period_start,
+        period_end: r.period_end,
+        days_worked: r.days_worked,
+        overtime_hours: r.overtime_hours,
+        overtime_rate: r.overtime_rate,
+        bonuses: r.bonuses,
+        deductions: r.deductions,
+        base_salary: r.base_salary,
+        overtime_pay: r.overtime_pay,
+        gross_salary: r.gross_salary,
+        igss_deduction: r.igss_deduction,
+        aguinaldo_provision: r.aguinaldo_provision,
+        vacaciones_provision: r.vacaciones_provision,
+        net_salary: r.net_salary,
+      }),
+      async (r, localId, serverId) => {
+        await offlineDB.payrollRecords.update(localId, { id: serverId, sync_status: 'synced' });
+      },
+      async (r) => {
+        await offlineDB.payrollRecords.update(r.id!, { sync_status: 'synced' });
+      },
+      result,
+    );
+
+    // 9. WAREHOUSE STOCK (children of projects)
+    const stockRows = await offlineDB.warehouseStock
+      .where('sync_status')
+      .anyOf(PENDING_STATUSES)
+      .toArray();
+    await syncRows(
+      'warehouse_stock',
+      stockRows,
+      (s) => s.item_code,
+      (s) => ({
+        project_id: remap(projectIdMap, s.project_id),
+        item_code: s.item_code,
+        description: s.description,
+        unit: s.unit,
+        current_stock: s.current_stock,
+        minimum_threshold: s.minimum_threshold,
+        unit_cost: s.unit_cost,
+        sync_status: s.sync_status,
+      }),
+      (s) => ({
+        project_id: remap(projectIdMap, s.project_id),
+        item_code: s.item_code,
+        description: s.description,
+        unit: s.unit,
+        current_stock: s.current_stock,
+        minimum_threshold: s.minimum_threshold,
+        unit_cost: s.unit_cost,
+      }),
+      async (s, localId, serverId) => {
+        await offlineDB.warehouseStock.update(localId, { id: serverId, sync_status: 'synced' });
+      },
+      async (s) => {
+        await offlineDB.warehouseStock.update(s.id!, { sync_status: 'synced' });
+      },
+      result,
+    );
+
+    // 10. PURCHASE ORDERS (children of suppliers and projects)
+    const orderRows = await offlineDB.purchaseOrders
+      .where('sync_status')
+      .anyOf(PENDING_STATUSES)
+      .toArray();
+    const orderIdMap = await syncRows(
+      'purchase_orders',
+      orderRows,
+      (o) => o.code,
+      (o) => ({
+        code: o.code,
+        supplier_id: remap(supplierIdMap, o.supplier_id),
+        project_id: remap(projectIdMap, o.project_id),
+        order_date: o.order_date,
+        expected_delivery_date: o.expected_delivery_date,
+        status: o.status,
+        total_amount: o.total_amount,
+        notes: o.notes,
+        sync_status: o.sync_status,
+      }),
+      (o) => ({
+        supplier_id: remap(supplierIdMap, o.supplier_id),
+        project_id: remap(projectIdMap, o.project_id),
+        order_date: o.order_date,
+        expected_delivery_date: o.expected_delivery_date,
+        status: o.status,
+        total_amount: o.total_amount,
+        notes: o.notes,
+      }),
+      async (o, localId, serverId) => {
+        await offlineDB.purchaseOrders.update(localId, { id: serverId, sync_status: 'synced' });
+        await remapOrderFks(localId, serverId);
+      },
+      async (o) => {
+        await offlineDB.purchaseOrders.update(o.id!, { sync_status: 'synced' });
+      },
+      result,
+    );
+
+    // 11. PURCHASE ORDER ITEMS (children of purchase_orders)
+    const orderItemRows = await offlineDB.purchaseOrderItems
+      .where('sync_status')
+      .anyOf(PENDING_STATUSES)
+      .toArray();
+    await syncRows(
+      'purchase_order_items',
+      orderItemRows,
+      (i) => i.item_code || i.description.slice(0, 24),
+      (i) => ({
+        purchase_order_id: remap(orderIdMap, i.purchase_order_id),
+        item_code: i.item_code,
+        description: i.description,
+        quantity: i.quantity,
+        unit: i.unit,
+        unit_price: i.unit_price,
+        total_price: i.total_price,
+        received_quantity: i.received_quantity,
+        sync_status: i.sync_status,
+      }),
+      (i) => ({
+        purchase_order_id: remap(orderIdMap, i.purchase_order_id),
+        item_code: i.item_code,
+        description: i.description,
+        quantity: i.quantity,
+        unit: i.unit,
+        unit_price: i.unit_price,
+        total_price: i.total_price,
+        received_quantity: i.received_quantity,
+      }),
+      async (i, localId, serverId) => {
+        await offlineDB.purchaseOrderItems.update(localId, { id: serverId, sync_status: 'synced' });
+      },
+      async (i) => {
+        await offlineDB.purchaseOrderItems.update(i.id!, { sync_status: 'synced' });
+      },
+      result,
+    );
+
+    // 12. PROJECT LOGS (children of projects)
+    const logRows = await offlineDB.projectLogs
+      .where('sync_status')
+      .anyOf(PENDING_STATUSES)
+      .toArray();
+    await syncRows(
+      'project_logs',
+      logRows,
+      (l) => l.description.slice(0, 24),
+      (l) => ({
+        project_id: remap(projectIdMap, l.project_id),
+        activity_type: l.activity_type,
+        description: l.description,
+        physical_progress: l.physical_progress,
+        financial_progress: l.financial_progress,
+        log_date: l.log_date,
+        created_by: l.created_by,
+        photos: l.photos,
+        sync_status: l.sync_status,
+      }),
+      (l) => ({
+        project_id: remap(projectIdMap, l.project_id),
+        activity_type: l.activity_type,
+        description: l.description,
+        physical_progress: l.physical_progress,
+        financial_progress: l.financial_progress,
+        log_date: l.log_date,
+        created_by: l.created_by,
+        photos: l.photos,
+      }),
+      async (l, localId, serverId) => {
+        await offlineDB.projectLogs.update(localId, { id: serverId, sync_status: 'synced' });
+      },
+      async (l) => {
+        await offlineDB.projectLogs.update(l.id!, { sync_status: 'synced' });
+      },
+      result,
+    );
+
+    // 13. PENDING DELETES (registros eliminados sin conexión)
+    // Borra primero en servidor (hijos antes que padres para respetar FKs;
+    // suppliers usa RESTRICT hacia purchase_orders, así que se eliminan las OC primero).
+    const pendingDeletes = await offlineDB.pendingDeletes.toArray();
+    for (const pd of pendingDeletes) {
       try {
-        const { data, error } = await supabase
-          .from('projects')
-          .insert({
-            code: project.code,
-            name: project.name,
-            client_name: project.client_name,
-            client_phone: project.client_phone,
-            client_email: project.client_email,
-            location: project.location,
-            typology: project.typology,
-            area_m2: project.area_m2,
-            quality_level: project.quality_level,
-            status: project.status,
-            start_date: project.start_date,
-            estimated_end_date: project.estimated_end_date,
-            duration_days: project.duration_days,
-            total_budget: project.total_budget,
-            budget_total: project.budget_total,
-            calculated_duration: project.calculated_duration,
-            sync_status: project.sync_status,
-          })
-          .select()
-          .single();
-
+        if (pd.table === 'suppliers') {
+          const { error: poError } = await supabase
+            .from('purchase_orders')
+            .delete()
+            .eq('supplier_id', pd.serverId);
+          if (poError) throw poError;
+        }
+        const { error } = await supabase.from(pd.table).delete().eq('id', pd.serverId);
         if (error) throw error;
-
-        // Update local record with server ID and sync status
-        await offlineDB.projects.update(project.id!, {
-          id: data.id,
-          sync_status: 'synced',
-        });
-
+        await offlineDB.pendingDeletes.delete(pd.id!);
         result.synced++;
       } catch (error) {
         result.failed++;
-        result.errors.push(`Failed to sync project ${project.code}: ${error}`);
-      }
-    }
-
-    // Sync projects updated offline
-    const updatedProjects = await offlineDB.projects
-      .where('sync_status')
-      .equals('updated_offline')
-      .toArray();
-
-    for (const project of updatedProjects) {
-      try {
-        const { error } = await supabase
-          .from('projects')
-          .update({
-            name: project.name,
-            client_name: project.client_name,
-            client_phone: project.client_phone,
-            client_email: project.client_email,
-            location: project.location,
-            typology: project.typology,
-            area_m2: project.area_m2,
-            quality_level: project.quality_level,
-            status: project.status,
-            start_date: project.start_date,
-            estimated_end_date: project.estimated_end_date,
-            duration_days: project.duration_days,
-            total_budget: project.total_budget,
-            budget_total: project.budget_total,
-            calculated_duration: project.calculated_duration,
-            sync_status: project.sync_status,
-          })
-          .eq('id', project.id);
-
-        if (error) throw error;
-
-        await offlineDB.projects.update(project.id!, {
-          sync_status: 'synced',
-        });
-
-        result.synced++;
-      } catch (error) {
-        result.failed++;
-        result.errors.push(`Failed to sync project update ${project.code}: ${error}`);
-      }
-    }
-
-    // Sync financial transactions created offline
-    const offlineTransactions = await offlineDB.financialTransactions
-      .where('sync_status')
-      .equals('created_offline')
-      .toArray();
-
-    for (const transaction of offlineTransactions) {
-      try {
-        const { data, error } = await supabase
-          .from('financial_transactions')
-          .insert({
-            project_id: transaction.project_id,
-            type: transaction.type,
-            category: transaction.category,
-            description: transaction.description,
-            quantity: transaction.quantity,
-            unit: transaction.unit,
-            unit_cost: transaction.unit_cost,
-            total_cost: transaction.total_cost,
-            date: transaction.date,
-            receipt_url: transaction.receipt_url,
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        // Update local record with server ID and sync status
-        await offlineDB.financialTransactions.update(transaction.id!, {
-          id: data.id,
-          sync_status: 'synced',
-        });
-
-        result.synced++;
-      } catch (error) {
-        result.failed++;
-        result.errors.push(`Failed to sync transaction ${transaction.description}: ${error}`);
-      }
-    }
-
-    // Sync financial transactions updated offline
-    const updatedTransactions = await offlineDB.financialTransactions
-      .where('sync_status')
-      .equals('updated_offline')
-      .toArray();
-
-    for (const transaction of updatedTransactions) {
-      try {
-        const { error } = await supabase
-          .from('financial_transactions')
-          .update({
-            project_id: transaction.project_id,
-            type: transaction.type,
-            category: transaction.category,
-            description: transaction.description,
-            quantity: transaction.quantity,
-            unit: transaction.unit,
-            unit_cost: transaction.unit_cost,
-            total_cost: transaction.total_cost,
-            date: transaction.date,
-            receipt_url: transaction.receipt_url,
-          })
-          .eq('id', transaction.id);
-
-        if (error) throw error;
-
-        await offlineDB.financialTransactions.update(transaction.id!, {
-          sync_status: 'synced',
-        });
-
-        result.synced++;
-      } catch (error) {
-        result.failed++;
-        result.errors.push(`Failed to sync transaction update ${transaction.description}: ${error}`);
-      }
-    }
-
-    // Sync budgets created offline
-    const offlineBudgets = await offlineDB.budgets
-      .where('sync_status')
-      .equals('created_offline')
-      .toArray();
-
-    for (const budget of offlineBudgets) {
-      try {
-        const { data, error } = await supabase
-          .from('budgets')
-          .insert({
-            project_id: budget.project_id,
-            version: budget.version.toString(),
-            direct_cost: budget.direct_cost,
-            indirect_percentage: budget.indirect_percentage,
-            contingency_percentage: budget.contingency_percentage,
-            profit_percentage: budget.profit_percentage,
-            total_amount: budget.total_amount,
-            duration_days: budget.duration_days,
-            sync_status: budget.sync_status,
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        await offlineDB.budgets.update(budget.id!, {
-          id: data.id,
-          sync_status: 'synced',
-        });
-
-        result.synced++;
-      } catch (error) {
-        result.failed++;
-        result.errors.push(`Failed to sync budget: ${error}`);
-      }
-    }
-
-    // Sync budget items created offline
-    const offlineBudgetItems = await offlineDB.budgetItems
-      .where('sync_status')
-      .equals('created_offline')
-      .toArray();
-
-    for (const item of offlineBudgetItems) {
-      try {
-        const { data, error } = await supabase
-          .from('budget_items')
-          .insert({
-            budget_id: item.budget_id,
-            parent_id: item.parent_id,
-            item_order: item.item_order,
-            code: item.code,
-            description: item.description,
-            unit: item.unit,
-            quantity: item.quantity,
-            unit_cost: item.unit_cost,
-            total_cost: item.total_cost,
-            is_custom: item.is_custom,
-            length_m: item.length_m,
-            width_m: item.width_m,
-            depth_m: item.depth_m,
-            height_m: item.height_m,
-            slab_type: item.slab_type,
-            apu_result: item.apu_result,
-            apu_params: item.apu_params,
-            sync_status: item.sync_status,
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        await offlineDB.budgetItems.update(item.id!, {
-          id: data.id,
-          sync_status: 'synced',
-        });
-
-        result.synced++;
-      } catch (error) {
-        result.failed++;
-        result.errors.push(`Failed to sync budget item ${item.code}: ${error}`);
-      }
-    }
-
-    // Sync budget items updated offline
-    const updatedBudgetItems = await offlineDB.budgetItems
-      .where('sync_status')
-      .equals('updated_offline')
-      .toArray();
-
-    for (const item of updatedBudgetItems) {
-      try {
-        const { error } = await supabase
-          .from('budget_items')
-          .update({
-            budget_id: item.budget_id,
-            parent_id: item.parent_id,
-            item_order: item.item_order,
-            code: item.code,
-            description: item.description,
-            unit: item.unit,
-            quantity: item.quantity,
-            unit_cost: item.unit_cost,
-            total_cost: item.total_cost,
-            is_custom: item.is_custom,
-            length_m: item.length_m,
-            width_m: item.width_m,
-            depth_m: item.depth_m,
-            height_m: item.height_m,
-            slab_type: item.slab_type,
-            apu_result: item.apu_result,
-            apu_params: item.apu_params,
-            sync_status: item.sync_status,
-          })
-          .eq('id', item.id);
-
-        if (error) throw error;
-
-        await offlineDB.budgetItems.update(item.id!, {
-          sync_status: 'synced',
-        });
-
-        result.synced++;
-      } catch (error) {
-        result.failed++;
-        result.errors.push(`Failed to sync budget item update ${item.code}: ${error}`);
-      }
-    }
-
-    // Sync payroll employees created offline
-    const offlineEmployees = await offlineDB.payrollEmployees
-      .where('sync_status')
-      .equals('created_offline')
-      .toArray();
-
-    for (const employee of offlineEmployees) {
-      try {
-        const { data, error } = await supabase
-          .from('payroll_employees')
-          .insert({
-            name: employee.name,
-            position: employee.position,
-            daily_rate: employee.daily_rate,
-            category: employee.category,
-            department: employee.department,
-            hire_date: employee.hire_date,
-            active: employee.active,
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        await offlineDB.payrollEmployees.update(employee.id!, {
-          id: data.id,
-          sync_status: 'synced',
-        });
-
-        result.synced++;
-      } catch (error) {
-        result.failed++;
-        result.errors.push(`Failed to sync employee ${employee.name}: ${error}`);
-      }
-    }
-
-    // Sync warehouse stock created offline
-    const offlineStock = await offlineDB.warehouseStock
-      .where('sync_status')
-      .equals('created_offline')
-      .toArray();
-
-    for (const stock of offlineStock) {
-      try {
-        const { data, error } = await supabase
-          .from('warehouse_stock')
-          .insert({
-            project_id: stock.project_id,
-            item_code: stock.item_code,
-            description: stock.description,
-            unit: stock.unit,
-            current_stock: stock.current_stock,
-            minimum_threshold: stock.minimum_threshold,
-            unit_cost: stock.unit_cost,
-            sync_status: stock.sync_status,
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        await offlineDB.warehouseStock.update(stock.id!, {
-          id: data.id,
-          sync_status: 'synced',
-        });
-
-        result.synced++;
-      } catch (error) {
-        result.failed++;
-        result.errors.push(`Failed to sync stock ${stock.item_code}: ${error}`);
+        result.errors.push(`Failed to delete ${pd.table} ${pd.serverId}: ${error}`);
       }
     }
 
@@ -418,6 +725,8 @@ export async function syncOfflineData(): Promise<SyncResult> {
     result.success = false;
     result.errors.push(`Sync failed: ${error}`);
     return result;
+  } finally {
+    syncInProgress = false;
   }
 }
 
@@ -481,6 +790,12 @@ export async function getSyncStats(): Promise<SyncStats> {
     pendingTransactions: 0,
     pendingPayroll: 0,
     pendingWarehouse: 0,
+    pendingClients: 0,
+    pendingProjectLogs: 0,
+    pendingSuppliers: 0,
+    pendingPurchaseOrders: 0,
+    pendingPurchaseOrderItems: 0,
+    pendingDeletes: 0,
     lastSync: null,
   };
 
@@ -488,37 +803,59 @@ export async function getSyncStats(): Promise<SyncStats> {
     // Count pending items across all tables
     stats.pendingProjects = await offlineDB.projects
       .where('sync_status')
-      .anyOf(['created_offline', 'updated_offline'])
+      .anyOf(PENDING_STATUSES)
       .count();
 
     stats.pendingBudgets = await offlineDB.budgets
       .where('sync_status')
-      .anyOf(['created_offline', 'updated_offline'])
+      .anyOf(PENDING_STATUSES)
       .count();
 
     stats.pendingBudgetItems = await offlineDB.budgetItems
       .where('sync_status')
-      .anyOf(['created_offline', 'updated_offline'])
+      .anyOf(PENDING_STATUSES)
       .count();
 
     stats.pendingTransactions = await offlineDB.financialTransactions
       .where('sync_status')
-      .anyOf(['created_offline', 'updated_offline'])
+      .anyOf(PENDING_STATUSES)
       .count();
 
-    stats.pendingPayroll = await offlineDB.payrollEmployees
-      .where('sync_status')
-      .anyOf(['created_offline', 'updated_offline'])
-      .count() +
-      await offlineDB.payrollRecords
-      .where('sync_status')
-      .anyOf(['created_offline', 'updated_offline'])
-      .count();
+    stats.pendingPayroll =
+      (await offlineDB.payrollEmployees.where('sync_status').anyOf(PENDING_STATUSES).count()) +
+      (await offlineDB.payrollRecords.where('sync_status').anyOf(PENDING_STATUSES).count());
 
     stats.pendingWarehouse = await offlineDB.warehouseStock
       .where('sync_status')
-      .anyOf(['created_offline', 'updated_offline'])
+      .anyOf(PENDING_STATUSES)
       .count();
+
+    stats.pendingClients = await offlineDB.clients
+      .where('sync_status')
+      .anyOf(PENDING_STATUSES)
+      .count();
+
+    stats.pendingProjectLogs = await offlineDB.projectLogs
+      .where('sync_status')
+      .anyOf(PENDING_STATUSES)
+      .count();
+
+    stats.pendingSuppliers = await offlineDB.suppliers
+      .where('sync_status')
+      .anyOf(PENDING_STATUSES)
+      .count();
+
+    stats.pendingPurchaseOrders = await offlineDB.purchaseOrders
+      .where('sync_status')
+      .anyOf(PENDING_STATUSES)
+      .count();
+
+    stats.pendingPurchaseOrderItems = await offlineDB.purchaseOrderItems
+      .where('sync_status')
+      .anyOf(PENDING_STATUSES)
+      .count();
+
+    stats.pendingDeletes = await offlineDB.pendingDeletes.count();
 
     // Get last sync timestamp from localStorage
     const lastSync = localStorage.getItem('lastSyncTimestamp');
@@ -533,6 +870,25 @@ export async function getSyncStats(): Promise<SyncStats> {
 }
 
 /**
+ * Marca un registro ya sincronizado para su borrado en Supabase. El llamador
+ * elimina la fila de la base local de inmediato; esta entrada garantiza que el
+ * motor de sync borre la fila del servidor (ahora mismo si hay conexión, o en
+ * la siguiente ejecución). Devuelve true si se encoló el borrado remoto.
+ */
+export async function queueDelete(remoteTable: string, row: { id?: string }): Promise<boolean> {
+  if (!isServerId(row.id)) return false;
+  await offlineDB.pendingDeletes.add({
+    table: remoteTable,
+    serverId: row.id!,
+    created_at: Date.now(),
+  });
+  if (isOnline() && supabase) {
+    syncOfflineData();
+  }
+  return true;
+}
+
+/**
  * Update last sync timestamp
  */
 export function updateLastSyncTimestamp() {
@@ -540,7 +896,11 @@ export function updateLastSyncTimestamp() {
 }
 
 /**
- * Force full sync from server to client (refresh local data)
+ * Force full sync from server to client (refresh local data).
+ *
+ * Safe version: server rows are upserted but NEVER overwrite local records that
+ * still have pending changes (created_offline/updated_offline/pending). Local
+ * tables are not cleared, so offline data is never lost.
  */
 export async function forceFullSync(): Promise<SyncResult> {
   const result: SyncResult = {
@@ -557,51 +917,55 @@ export async function forceFullSync(): Promise<SyncResult> {
     return result;
   }
 
+  if (syncInProgress) {
+    result.errors.push('Sync already in progress, run skipped.');
+    return result;
+  }
+  syncInProgress = true;
+
+  const tables: { local: Table<any, any>; remote: string }[] = [
+    { local: offlineDB.projects, remote: 'projects' },
+    { local: offlineDB.budgets, remote: 'budgets' },
+    { local: offlineDB.budgetItems, remote: 'budget_items' },
+    { local: offlineDB.financialTransactions, remote: 'financial_transactions' },
+    { local: offlineDB.payrollEmployees, remote: 'payroll_employees' },
+    { local: offlineDB.payrollRecords, remote: 'payroll_records' },
+    { local: offlineDB.warehouseStock, remote: 'warehouse_stock' },
+    { local: offlineDB.clients, remote: 'clients' },
+    { local: offlineDB.projectLogs, remote: 'project_logs' },
+    { local: offlineDB.suppliers, remote: 'suppliers' },
+    { local: offlineDB.purchaseOrders, remote: 'purchase_orders' },
+    { local: offlineDB.purchaseOrderItems, remote: 'purchase_order_items' },
+  ];
+
   try {
-    // Fetch all projects from server
-    const { data: projects, error: projectsError } = await supabase
-      .from('projects')
-      .select('*')
-      .order('created_at', { ascending: false });
+    for (const { local, remote } of tables) {
+      try {
+        const { data, error } = await supabase.from(remote).select('*');
+        if (error) throw error;
 
-    if (projectsError) throw projectsError;
+        for (const row of data || []) {
+          const existing = await (local as { get: (id: string) => Promise<{ sync_status?: string } | undefined> }).get(row.id);
+          if (existing && PENDING_STATUSES.includes(existing.sync_status || '')) {
+            continue; // Preserve local pending changes
+          }
+          await local.put({ ...row, sync_status: 'synced' });
+        }
 
-    // Clear local projects and repopulate
-    await offlineDB.projects.clear();
-    for (const project of projects || []) {
-      await offlineDB.projects.put({
-        ...project,
-        sync_status: 'synced',
-      });
+        result.synced += (data || []).length;
+      } catch (error) {
+        result.failed++;
+        result.errors.push(`Failed to pull ${remote}: ${error}`);
+      }
     }
 
-    result.synced += projects?.length || 0;
-
-    // Fetch all financial transactions
-    const { data: transactions, error: transactionsError } = await supabase
-      .from('financial_transactions')
-      .select('*')
-      .order('date', { ascending: false });
-
-    if (transactionsError) throw transactionsError;
-
-    await offlineDB.financialTransactions.clear();
-    for (const transaction of transactions || []) {
-      await offlineDB.financialTransactions.put({
-        ...transaction,
-        sync_status: 'synced',
-      });
-    }
-
-    result.synced += transactions?.length || 0;
-
-    // Update last sync timestamp
     updateLastSyncTimestamp();
-
     return result;
   } catch (error) {
     result.success = false;
     result.errors.push(`Full sync failed: ${error}`);
     return result;
+  } finally {
+    syncInProgress = false;
   }
 }

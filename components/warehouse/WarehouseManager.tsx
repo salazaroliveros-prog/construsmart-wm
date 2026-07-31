@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Package, AlertTriangle, TrendingUp, X, Save, ArrowDown, ArrowUp, PackagePlus, Warehouse, FolderOpen } from 'lucide-react';
 import { offlineDB, LocalWarehouseStock, LocalProject } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
+import { queueDelete, PENDING_STATUSES } from '@/lib/utils/offlineSync';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
@@ -151,6 +152,8 @@ export default function WarehouseManager() {
 
         if (supabaseItems) {
           for (const item of supabaseItems) {
+            const existing = await offlineDB.warehouseStock.get(item.id);
+            if (existing && PENDING_STATUSES.includes(existing.sync_status || '')) continue;
             await offlineDB.warehouseStock.put({
               ...item,
               sync_status: 'synced',
@@ -225,21 +228,24 @@ export default function WarehouseManager() {
     try {
       const itemData: LocalWarehouseStock = {
         ...formData,
-        sync_status: isOnline ? 'synced' : 'created_offline',
+        sync_status: 'created_offline',
       };
 
       if (editingItem) {
+        const wasSynced = editingItem.sync_status === 'synced';
+
         // Update in localStorage
         await offlineDB.warehouseStock.update(editingItem.id!, {
           ...itemData,
-          sync_status: isOnline ? 'synced' : 'updated_offline',
+          sync_status: wasSynced ? (isOnline ? 'synced' : 'updated_offline') : 'created_offline',
         });
 
         // Update in Supabase if online
-        if (isOnline && editingItem.id && supabase) {
+        if (isOnline && wasSynced && supabase) {
           const { error } = await supabase
             .from('warehouse_stock')
             .update({
+              project_id: itemData.project_id,
               item_code: itemData.item_code,
               description: itemData.description,
               unit: itemData.unit,
@@ -265,6 +271,7 @@ export default function WarehouseManager() {
           const { data, error } = await supabase
             .from('warehouse_stock')
             .insert({
+              project_id: itemData.project_id,
               item_code: itemData.item_code,
               description: itemData.description,
               unit: itemData.unit,
@@ -277,6 +284,9 @@ export default function WarehouseManager() {
 
           if (error) {
             console.error('Error creating stock in Supabase:', error);
+            await offlineDB.warehouseStock.update(id, {
+              sync_status: 'created_offline',
+            });
           } else if (data) {
             await offlineDB.warehouseStock.update(id, {
               id: data.id,
@@ -304,12 +314,8 @@ export default function WarehouseManager() {
 
   const handleDeleteItem = async (item: LocalWarehouseStock) => {
     try {
+      await queueDelete('warehouse_stock', item);
       await offlineDB.warehouseStock.delete(item.id!);
-
-      if (isOnline && item.id && supabase) {
-        const { error } = await supabase.from('warehouse_stock').delete().eq('id', item.id);
-        if (error) console.error('Error deleting stock from Supabase:', error);
-      }
 
       await loadStockItems();
       showToast('info', `Material "${item.description}" eliminado del inventario`);
@@ -327,12 +333,14 @@ export default function WarehouseManager() {
         return;
       }
 
+      const wasSynced = item.sync_status === 'synced';
+
       await offlineDB.warehouseStock.update(item.id!, {
         current_stock: newStock,
-        sync_status: isOnline ? 'synced' : 'updated_offline',
+        sync_status: wasSynced ? (isOnline ? 'synced' : 'updated_offline') : 'created_offline',
       });
 
-      if (isOnline && item.id && supabase) {
+      if (isOnline && wasSynced && supabase) {
         await supabase
           .from('warehouse_stock')
           .update({ current_stock: newStock })

@@ -24,7 +24,7 @@
 - ✅ Todas las 12 tablas existentes
 - ✅ Columnas APU agregadas (`apu_result`, `apu_params`)
 - ✅ Índices creados
-- ✅ Verificado con `node scripts/sync-database.js`
+- ✅ Verificado con `supabase migration list`
 
 ## Vercel Deploy Status ⏳
 
@@ -89,7 +89,7 @@
 - `lib/data/apuRenglones.ts` - Catálogo de 125 renglones
 - `lib/types/apu.ts` - Tipos APU
 - `supabase/migrations/add_apu_integration.sql` - Migración APU
-- `scripts/sync-database.js` - Verificador de DB
+- `supabase/migrations/` - Migraciones de base de datos (aplicadas con `supabase db push`)
 
 ## Notas Importantes
 

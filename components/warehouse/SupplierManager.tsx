@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Truck, Plus, Edit, Trash2, Phone, Mail, MapPin, Building2, Search, Filter } from 'lucide-react';
 import { offlineDB, LocalSupplier } from '@/lib/db/offlineStore';
+import { queueDelete } from '@/lib/utils/offlineSync';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
@@ -111,6 +112,7 @@ export default function SupplierManager() {
 
   const handleDelete = async (supplier: LocalSupplier) => {
     try {
+      await queueDelete('suppliers', supplier);
       await offlineDB.suppliers.delete(supplier.id!);
       setDeleteDialog({ show: false, supplier: null });
       loadSuppliers();

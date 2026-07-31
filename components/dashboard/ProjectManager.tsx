@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Save, X, FolderOpen } from 'lucide-react';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
+import { queueDelete } from '@/lib/utils/offlineSync';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
@@ -205,7 +206,9 @@ export default function ProjectManager() {
       const projectData: LocalProject = {
         id: editingProject?.id || crypto.randomUUID(),
         ...formData,
-        sync_status: isOnline ? 'synced' : 'created_offline',
+        sync_status: editingProject
+          ? (editingProject.sync_status === 'synced' ? (isOnline ? 'synced' : 'updated_offline') : 'created_offline')
+          : (isOnline ? 'synced' : 'created_offline'),
         created_at: editingProject?.created_at || new Date().toISOString()
       };
 
@@ -243,7 +246,11 @@ export default function ProjectManager() {
           sync_status: projectData.sync_status,
         };
         const { error } = await supabase.from('projects').upsert([supabaseProjectData]);
-        if (error) throw error;
+        if (error) {
+          await offlineDB.projects.update(projectData.id, { sync_status: 'created_offline' });
+          throw error;
+        }
+        await offlineDB.projects.update(projectData.id, { sync_status: 'synced' });
       }
     } catch (error) {
       console.error('Error saving project:', error);
@@ -261,13 +268,10 @@ export default function ProjectManager() {
     if (!deleteConfirm) return;
 
     try {
+      await queueDelete('projects', deleteConfirm);
       await offlineDB.projects.delete(deleteConfirm.id);
       showToast('success', 'Proyecto eliminado exitosamente');
       loadProjects();
-
-      if (isOnline && supabase) {
-        await supabase.from('projects').delete().eq('id', deleteConfirm.id);
-      }
     } catch (error) {
       console.error('Error deleting project:', error);
       showToast('error', 'Error al eliminar el proyecto');

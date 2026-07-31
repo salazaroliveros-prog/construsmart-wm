@@ -260,15 +260,11 @@ Ver `.cursorrules/AGENTS.md` para reglas detalladas del proyecto.
 - Componentes modulares y reutilizables
 - Zero-Scroll Viewport en dashboard principal
 
-## 🧪 Scripts de Validación
+## 🧪 Validación
 
-### Validación de Esquema
+### TypeScript
 ```bash
-# Validación básica
-node scripts/validate-schema.js
-
-# Validación detallada
-node scripts/detailed-schema-check.js
+npm run type-check
 ```
 
 ### Migraciones
@@ -277,7 +273,7 @@ node scripts/detailed-schema-check.js
 supabase db push
 
 # Verificar estado de migraciones
-supabase db remote commit
+supabase migration list
 ```
 
 ## 📈 Monitoreo y Logs

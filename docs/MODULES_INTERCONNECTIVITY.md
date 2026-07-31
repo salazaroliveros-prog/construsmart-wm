@@ -54,23 +54,23 @@ const NAVIGATION_TABS = [
 ### 2.1 Base de Datos Centralizada
 **Archivo:** `lib/db/offlineStore.ts`
 
-**Versión:** 5
+**Versión:** 6
 **Nombre:** `ConstructoraWM_OfflineDB`
 
 **Tablas Disponibles:**
 1. `projects` - Proyectos de construcción
 2. `budgets` - Presupuestos
 3. `budgetItems` - Items de presupuesto
-4. `budgetItemBreakdowns` - Desglose de recursos
-5. `financialTransactions` - Transacciones financieras
-6. `payrollEmployees` - Empleados de nómina
-7. **`payrollRecords`** - Registros de nómina
-8. `warehouseStock` - Inventario de almacén
-9. **`clients`** - **NUEVO** - Clientes (CRM)
-10. **`projectLogs`** - **NUEVO** - Bitácora de proyectos
-11. **`suppliers`** - **NUEVO** - Proveedores
-12. **`purchaseOrders`** - **NUEVO** - Órdenes de compra
-13. **`purchaseOrderItems`** - **NUEVO** - Items de órdenes de compra
+4. `financialTransactions` - Transacciones financieras
+5. `payrollEmployees` - Empleados de nómina
+6. **`payrollRecords`** - Registros de nómina
+7. `warehouseStock` - Inventario de almacén
+8. **`clients`** - **NUEVO** - Clientes (CRM)
+9. **`projectLogs`** - **NUEVO** - Bitácora de proyectos
+10. **`suppliers`** - **NUEVO** - Proveedores
+11. **`purchaseOrders`** - **NUEVO** - Órdenes de compra
+12. **`purchaseOrderItems`** - **NUEVO** - Items de órdenes de compra
+13. **`pendingDeletes`** - Tombstones de borrado (borrado diferido para sync)
 
 **Estado:** ✅ Todas las tablas están definidas y conectadas a Dexie.js.
 
@@ -105,7 +105,6 @@ const NAVIGATION_TABS = [
 
 **Conexiones Salientes:**
 - ✅ → `budgetItems` (items del presupuesto)
-- ✅ → `budgetItemBreakdowns` (desglose de recursos)
 
 **Estado:** ✅ Conectado correctamente con proyectos.
 
@@ -336,7 +335,7 @@ const NAVIGATION_TABS = [
 |--------|------------|---------------|-----------|--------|
 | Dashboard | ✅ | N/A | N/A | ✅ |
 | Proyectos | ✅ | ✅ projects | ✅ | ✅ |
-| Presupuestos | ✅ | ✅ budgets, budgetItems, budgetItemBreakdowns | ✅ | ✅ |
+| Presupuestos | ✅ | ✅ budgets, budgetItems | ✅ | ✅ |
 | Finanzas | ✅ | ✅ financialTransactions | ✅ | ✅ |
 | Nómina | ✅ | ✅ payrollEmployees, payrollRecords | ✅ | ✅ |
 | Almacén | ✅ | ✅ warehouseStock | ✅ | ✅ |
