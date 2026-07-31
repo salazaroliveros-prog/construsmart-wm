@@ -20,6 +20,7 @@ const WarehouseManager = dynamic(() => import('@/components/warehouse/WarehouseM
 const AnalyticsDashboard = dynamic(() => import('@/components/analytics/AnalyticsDashboard'), { ssr: false });
 const ClientManager = dynamic(() => import('@/components/crm/ClientManager'), { ssr: false });
 const ProjectLogManager = dynamic(() => import('@/components/project/ProjectLogManager'), { ssr: false });
+const InteractiveCalendar = dynamic(() => import('@/components/dashboard/InteractiveCalendar'), { ssr: false });
 
 // Navigation tabs configuration
 const NAVIGATION_TABS = [
@@ -114,7 +115,9 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
               <ProjectOverview />
               
-              <div className="glass-panel rounded-2xl p-4 sm:p-6">
+              <InteractiveCalendar />
+              
+              <div className="glass-panel rounded-2xl p-4 sm:p-6 xl:col-span-2">
                 <h2 className="text-base sm:text-lg font-semibold text-white mb-4 sm:mb-6">
                   Matriz de Costos Residenciales (GTQ)
                 </h2>

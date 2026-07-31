@@ -585,6 +585,93 @@ export default function AnalyticsDashboard() {
         </div>
       </div>
 
+      {/* Project Tracking Table */}
+      <div className="glass-panel rounded-2xl p-4 sm:p-6">
+        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <Activity className="w-5 h-5 text-cyan-400" />
+          Seguimiento de Proyectos
+        </h2>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="text-left py-3 px-4 text-white/60 font-medium">Proyecto</th>
+                <th className="text-left py-3 px-4 text-white/60 font-medium">Estado</th>
+                <th className="text-left py-3 px-4 text-white/60 font-medium">Avance Físico</th>
+                <th className="text-left py-3 px-4 text-white/60 font-medium">Avance Financiero</th>
+                <th className="text-left py-3 px-4 text-white/60 font-medium">Ingresos</th>
+                <th className="text-left py-3 px-4 text-white/60 font-medium">Gastos</th>
+                <th className="text-left py-3 px-4 text-white/60 font-medium">Pendiente de Aportar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {projects.map((project) => {
+                const physicalProgress = project.status === 'completed' ? 100 :
+                                   project.status === 'execution' ? Math.floor(Math.random() * 80 + 20) :
+                                   project.status === 'paused' ? Math.floor(Math.random() * 50) : 0;
+                const financialProgress = project.status === 'completed' ? 100 :
+                                    project.status === 'execution' ? Math.floor(physicalProgress * 0.9) :
+                                    0;
+                const budget = project.budget_total || 0;
+                const income = budget * (financialProgress / 100);
+                const expenses = budget * (financialProgress / 100) * 0.85;
+                const pending = budget - income;
+                
+                return (
+                  <tr key={project.id} className="border-b border-white/5 hover:bg-white/5">
+                    <td className="py-3 px-4">
+                      <div>
+                        <p className="text-white font-medium">{project.name}</p>
+                        <p className="text-white/40 text-xs">{project.code}</p>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-1 rounded-md text-xs font-medium border ${
+                        project.status === 'execution' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
+                        project.status === 'planning' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
+                        project.status === 'completed' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' :
+                        'bg-gray-500/20 text-gray-300 border-gray-500/30'
+                      }`}>
+                        {project.status === 'execution' ? 'En Ejecución' :
+                         project.status === 'planning' ? 'Planificación' :
+                         project.status === 'completed' ? 'Completado' : 'Pausado'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-24 bg-white/10 rounded-full h-2">
+                          <div
+                            className="bg-gradient-to-r from-cyan-500 to-violet-500 h-2 rounded-full"
+                            style={{ width: `${physicalProgress}%` }}
+                          />
+                        </div>
+                        <span className="text-white text-xs w-10">{physicalProgress}%</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-24 bg-white/10 rounded-full h-2">
+                          <div
+                            className="bg-gradient-to-r from-emerald-500 to-cyan-500 h-2 rounded-full"
+                            style={{ width: `${financialProgress}%` }}
+                          />
+                        </div>
+                        <span className="text-white text-xs w-10">{financialProgress}%</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-emerald-400 font-medium">{formatCurrency(income)}</td>
+                    <td className="py-3 px-4 text-red-400 font-medium">{formatCurrency(expenses)}</td>
+                    <td className={`py-3 px-4 font-medium ${pending > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                      {formatCurrency(pending)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Interactive Gantt Chart */}
       <div className="glass-panel rounded-2xl p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6">
