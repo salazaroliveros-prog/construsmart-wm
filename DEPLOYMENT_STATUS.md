@@ -40,6 +40,7 @@
 5. **Scroll bloqueado por `overflow-anchor`** — Se agregó `overflow-anchor-none` a todos los contenedores scrollables de la suite para evitar que el navegador bloquee el scroll cuando hay elementos flotantes o modales.
 6. **Reordenamiento de tarjetas en dashboard** — Se intercambiaron las posiciones de las tarjetas de nivel (Básico/Moderado/Premium) y los paneles de gráficas (Estado de Proyectos/Distribución de Gastos/Flujo Financiero). Las tarjetas de nivel ahora están en el área de gráficas y las gráficas están en la columna derecha donde estaban las tarjetas.
 7. **Plugin PWA sobrescribiendo `sw.js`** — El plugin `@ducanh2912/next-pwa` regeneraba `public/sw.js` durante el build de Vercel, sobrescribiendo los nombres de caché personalizados (`v3`). Se eliminó el plugin de `next.config.ts` para preservar el `sw.js` personalizado y los nombres de caché `v3`.
+8. **Políticas RLS excesivamente permisivas** — Todas las tablas tenían políticas `USING (true) WITH CHECK (true)` que permitían acceso completo (lectura + escritura) a cualquier persona con la anon key. Se creó migración `20250201000000_fix_security_rls_policies.sql` que reemplaza las políticas con SELECT-only para anon y INSERT/UPDATE/DELETE solo para usuarios autenticados.
 
 ### Pasos para Verificar el Deploy
 
