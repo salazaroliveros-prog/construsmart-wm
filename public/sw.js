@@ -173,14 +173,43 @@ if (isDevelopment) {
     const cache = await caches.open(STATIC_CACHE);
     const cachedResponse = await cache.match(request);
 
-    const fetchPromise = fetch(request).then((networkResponse) => {
-      if (networkResponse.ok) {
-        cache.put(request, networkResponse.clone());
-      }
-      return networkResponse;
-    });
+    const fetchPromise = fetch(request)
+      .then((networkResponse) => {
+        if (networkResponse.ok) {
+          cache.put(request, networkResponse.clone());
+        }
+        return networkResponse;
+      })
+      .catch((error) => {
+        console.log('[SW] Stale-While-Revalidate fetch failed, using cache:', request.url);
+        return null;
+      });
 
-    return cachedResponse || fetchPromise;
+    // Return cached response immediately if available
+    if (cachedResponse) {
+      // Still try to fetch in background for next time
+      fetchPromise.catch(() => {});
+      return cachedResponse;
+    }
+
+    // If no cache, wait for network or fail gracefully
+    try {
+      const networkResponse = await fetchPromise;
+      if (networkResponse) {
+        return networkResponse;
+      }
+    } catch (error) {
+      console.log('[SW] Stale-While-Revalidate failed completely:', request.url);
+    }
+
+    // Return a fallback response
+    return new Response('Offline - No cached data available', {
+      status: 503,
+      statusText: 'Service Unavailable',
+      headers: new Headers({
+        'Content-Type': 'text/plain',
+      }),
+    });
   }
 
   // Strategy: Network-Only
