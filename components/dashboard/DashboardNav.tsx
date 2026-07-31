@@ -46,7 +46,13 @@ function UserAvatar() {
   const [showUpload, setShowUpload] = useState(false);
 
   useEffect(() => {
-    setAvatarUrl(getUserAvatar());
+    // Check localStorage for custom avatar first
+    const customAvatar = localStorage.getItem('userAvatar');
+    if (customAvatar) {
+      setAvatarUrl(customAvatar);
+    } else {
+      setAvatarUrl(getUserAvatar());
+    }
   }, [user, getUserAvatar]);
 
   const handleAvatarUpload = (event: ChangeEvent<HTMLInputElement>) => {
@@ -93,7 +99,7 @@ function UserAvatar() {
       >
         <img
           src={avatarUrl}
-          alt={user?.user_metadata?.full_name || 'Usuario'}
+          alt={user?.name || 'Usuario'}
           className="w-full h-full object-cover"
         />
       </div>
@@ -108,8 +114,8 @@ export default function DashboardNav({ activeTab, onTabChange }: DashboardNavPro
   const { user, signOut } = useAuth();
   const router = useRouter();
 
-  const handleSignOut = async () => {
-    await signOut();
+  const handleSignOut = () => {
+    signOut();
     router.push('/login');
   };
 
@@ -178,7 +184,7 @@ export default function DashboardNav({ activeTab, onTabChange }: DashboardNavPro
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white font-medium text-xs sm:text-sm truncate">
-              {user?.user_metadata?.full_name || user?.email || 'Usuario'}
+              {user?.name || user?.email || 'Usuario'}
             </p>
             <p className="text-cyan-400 text-[10px] sm:text-xs truncate">
               {user?.email || ''}

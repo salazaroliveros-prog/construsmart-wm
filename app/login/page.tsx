@@ -54,6 +54,14 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {/* Info Message */}
+        <div className="flex items-center gap-2 p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg mb-6">
+          <AlertCircle className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+          <p className="text-cyan-400 text-sm">
+            Login local. Las credenciales se guardarán en su navegador.
+          </p>
+        </div>
+
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Email */}

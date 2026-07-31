@@ -1,79 +1,71 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User as SupabaseUser } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase/client';
+
+interface LocalUser {
+  email: string;
+  name: string;
+}
 
 interface AuthContextType {
-  user: SupabaseUser | null;
+  user: LocalUser | null;
   loading: boolean;
-  isSupabaseConfigured: boolean;
+  isAuthenticated: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
+  signOut: () => void;
   getUserAvatar: () => string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [user, setUser] = useState<LocalUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const isSupabaseConfigured = supabase !== null;
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
-      // If Supabase is not configured, allow offline mode
-      setLoading(false);
-      return;
+    // Check if user is logged in from localStorage
+    const storedUser = localStorage.getItem('localUser');
+    const storedAuth = localStorage.getItem('isAuthenticated');
+
+    if (storedUser && storedAuth === 'true') {
+      setUser(JSON.parse(storedUser));
+      setIsAuthenticated(true);
     }
 
-    // Supabase is configured, we can safely use it
-    const client = supabase!;
-
-    // Check active session
-    client.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = client.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [isSupabaseConfigured]);
+    setLoading(false);
+  }, []);
 
   const signIn = async (email: string, password: string) => {
-    if (!supabase) {
-      throw new Error('Supabase no está configurado. Configure las variables de entorno.');
-    }
-    const { error } = await supabase.auth.signInWithPassword({
+    // Save credentials to localStorage (for demo purposes - in production, never store passwords in localStorage)
+    localStorage.setItem('userEmail', email);
+    localStorage.setItem('userPassword', password);
+
+    // Create user object
+    const newUser: LocalUser = {
       email,
-      password,
-    });
-    if (error) throw error;
+      name: email.split('@')[0], // Use email prefix as name
+    };
+
+    // Save user to localStorage
+    localStorage.setItem('localUser', JSON.stringify(newUser));
+    localStorage.setItem('isAuthenticated', 'true');
+
+    setUser(newUser);
+    setIsAuthenticated(true);
   };
 
-  const signOut = async () => {
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
+  const signOut = () => {
+    localStorage.removeItem('localUser');
+    localStorage.removeItem('isAuthenticated');
     setUser(null);
+    setIsAuthenticated(false);
   };
 
   const getUserAvatar = () => {
     if (!user) {
-      // Fallback to generated avatar based on email
       return 'https://ui-avatars.com/api/?name=User&background=0D8BC&color=fff&size=128';
     }
-
-    // Try to get avatar from user metadata
-    const avatarUrl = user.user_metadata?.avatar_url;
-    if (avatarUrl) return avatarUrl;
 
     // Try Gravatar based on email
     const email = user.email;
@@ -88,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, isSupabaseConfigured, signIn, signOut, getUserAvatar }}>
+    <AuthContext.Provider value={{ user, loading, isAuthenticated, signIn, signOut, getUserAvatar }}>
       {children}
     </AuthContext.Provider>
   );

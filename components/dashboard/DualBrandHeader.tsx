@@ -13,7 +13,13 @@ function UserAvatar() {
   const [showUpload, setShowUpload] = useState(false);
 
   useEffect(() => {
-    setAvatarUrl(getUserAvatar());
+    // Check localStorage for custom avatar first
+    const customAvatar = localStorage.getItem('userAvatar');
+    if (customAvatar) {
+      setAvatarUrl(customAvatar);
+    } else {
+      setAvatarUrl(getUserAvatar());
+    }
   }, [user, getUserAvatar]);
 
   const handleAvatarUpload = (event: ChangeEvent<HTMLInputElement>) => {
@@ -60,7 +66,7 @@ function UserAvatar() {
       >
         <img
           src={avatarUrl}
-          alt={user?.user_metadata?.full_name || 'Usuario'}
+          alt={user?.name || 'Usuario'}
           className="w-full h-full object-cover"
         />
       </div>
@@ -183,7 +189,7 @@ export default function DualBrandHeader() {
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="hidden sm:block text-right">
             <p className="text-sm font-medium text-white">
-              {user?.user_metadata?.full_name || user?.email || 'Usuario'}
+              {user?.name || user?.email || 'Usuario'}
             </p>
             <p className="text-xs text-cyan-400">
               {user?.email || ''}

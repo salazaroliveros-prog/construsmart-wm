@@ -5,20 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, loading, isSupabaseConfigured } = useAuth();
+  const { user, loading, isAuthenticated } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    // If Supabase is not configured, allow access (offline mode)
-    if (!isSupabaseConfigured) {
-      return;
-    }
-
-    // If Supabase is configured but user is not logged in, redirect to login
-    if (!loading && !user) {
+    // If user is not authenticated, redirect to login
+    if (!loading && !isAuthenticated) {
       router.push('/login');
     }
-  }, [user, loading, isSupabaseConfigured, router]);
+  }, [isAuthenticated, loading, router]);
 
   if (loading) {
     return (
@@ -28,13 +23,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Allow access if Supabase is not configured (offline mode)
-  if (!isSupabaseConfigured) {
-    return <>{children}</>;
-  }
-
-  // Require login if Supabase is configured
-  if (!user) {
+  // Require login
+  if (!isAuthenticated) {
     return null;
   }
 
