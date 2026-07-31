@@ -1,6 +1,8 @@
 'use client';
 
-import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp, Database } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp, Database, User } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import type { ChangeEvent } from 'react';
 
 interface NavItem {
   id: string;
@@ -34,6 +36,76 @@ const ICONS: Record<string, React.ReactNode> = {
   Warehouse: <Warehouse className="w-5 h-5" />,
   TrendingUp: <TrendingUp className="w-5 h-5" />,
 };
+
+// User Avatar Component
+function UserAvatar() {
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [showUpload, setShowUpload] = useState(false);
+
+  useEffect(() => {
+    // Load avatar from localStorage
+    const savedAvatar = localStorage.getItem('userAvatar');
+    if (savedAvatar) {
+      setAvatarUrl(savedAvatar);
+    } else {
+      // Fallback to generated avatar
+      setAvatarUrl('https://ui-avatars.com/api/?name=Wilson+Salazar&background=0D8BC&color=fff&size=128&font-size=0.33');
+    }
+  }, []);
+
+  const handleAvatarUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setAvatarUrl(base64String);
+        localStorage.setItem('userAvatar', base64String);
+        setShowUpload(false);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAvatarClick = () => {
+    setShowUpload(true);
+  };
+
+  if (showUpload) {
+    return (
+      <div className="relative w-full h-full">
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleAvatarUpload}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          title="Cambiar foto de perfil"
+        />
+        <div className="w-full h-full flex items-center justify-center bg-white/10">
+          <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+        </div>
+      </div>
+    );
+  }
+
+  if (avatarUrl) {
+    return (
+      <div
+        onClick={handleAvatarClick}
+        className="w-full h-full cursor-pointer"
+        title="Click para cambiar foto de perfil"
+      >
+        <img
+          src={avatarUrl}
+          alt="Arq. Wilson Salazar"
+          className="w-full h-full object-cover"
+        />
+      </div>
+    );
+  }
+
+  return <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />;
+}
 
 export default function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
   const isActive = (id: string) => activeTab === id;
@@ -98,11 +170,11 @@ export default function DashboardNav({ activeTab, onTabChange }: DashboardNavPro
       {/* User Info Section */}
       <div className="px-3 sm:px-4 py-3 sm:py-4 border-t border-white/10">
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center">
-            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center overflow-hidden">
+            <UserAvatar />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white font-medium text-xs sm:text-sm truncate">Ing. Carlos Martínez</p>
+            <p className="text-white font-medium text-xs sm:text-sm truncate">Arq. Wilson Salazar</p>
             <p className="text-cyan-400 text-[10px] sm:text-xs truncate">Director de Proyectos</p>
           </div>
         </div>

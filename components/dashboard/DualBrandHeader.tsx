@@ -2,6 +2,77 @@
 
 import { useState, useEffect } from 'react';
 import { Building2, Calendar, Clock, User, Wifi, WifiOff } from 'lucide-react';
+import type { ChangeEvent } from 'react';
+
+// User Avatar Component
+function UserAvatar() {
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [showUpload, setShowUpload] = useState(false);
+
+  useEffect(() => {
+    // Load avatar from localStorage
+    const savedAvatar = localStorage.getItem('userAvatar');
+    if (savedAvatar) {
+      setAvatarUrl(savedAvatar);
+    } else {
+      // Fallback to generated avatar
+      setAvatarUrl('https://ui-avatars.com/api/?name=Wilson+Salazar&background=0D8BC&color=fff&size=128&font-size=0.33');
+    }
+  }, []);
+
+  const handleAvatarUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setAvatarUrl(base64String);
+        localStorage.setItem('userAvatar', base64String);
+        setShowUpload(false);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAvatarClick = () => {
+    setShowUpload(true);
+  };
+
+  if (showUpload) {
+    return (
+      <div className="relative w-full h-full">
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleAvatarUpload}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          title="Cambiar foto de perfil"
+        />
+        <div className="w-full h-full flex items-center justify-center bg-white/10">
+          <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+        </div>
+      </div>
+    );
+  }
+
+  if (avatarUrl) {
+    return (
+      <div
+        onClick={handleAvatarClick}
+        className="w-full h-full cursor-pointer"
+        title="Click para cambiar foto de perfil"
+      >
+        <img
+          src={avatarUrl}
+          alt="Arq. Wilson Salazar"
+          className="w-full h-full object-cover"
+        />
+      </div>
+    );
+  }
+
+  return <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />;
+}
 
 export default function DualBrandHeader() {
   const [isOnline, setIsOnline] = useState(true);
@@ -114,12 +185,12 @@ export default function DualBrandHeader() {
 
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="hidden sm:block text-right">
-            <p className="text-sm font-medium text-white">Ing. Carlos Martínez</p>
+            <p className="text-sm font-medium text-white">Arq. Wilson Salazar</p>
             <p className="text-xs text-cyan-400">Director de Proyectos</p>
           </div>
           <div className="relative">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 border-2 border-cyan-500/50">
-              <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 border-2 border-cyan-500/50 overflow-hidden">
+              <UserAvatar />
             </div>
             <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-emerald-500 rounded-full border-2 border-slate-900" />
           </div>
