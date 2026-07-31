@@ -95,3 +95,4 @@ Si el proyecto está configurado con GitHub auto-deploy en Vercel, el deploy deb
 2. Hacer hard-refresh en el sitio: Ctrl+Shift+R
 3. Verificar que el dashboard refactorizado se muestra correctamente
 4. Probar el auto-deploy haciendo un cambio pequeño y haciendo push a `main`
+# Auto-deploy test 
