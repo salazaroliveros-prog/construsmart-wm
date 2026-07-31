@@ -11,13 +11,15 @@ import {
   getCostLevelLabel 
 } from '@/lib/calculators/apuCalculator';
 import { RENGLONES_BY_TYPOLOGY } from '@/lib/data/apuRenglones';
-import { ProjectTypology, APUFormulaParams, APUResult, TYPOLOGY_LABELS, APURenglon } from '@/lib/types/apu';
+import { ProjectTypology, APUFormulaParams, APUResult, TYPOLOGY_LABELS } from '@/lib/types/apu';
+import type { APURenglon } from '@/lib/types/apu';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
+import PDFGenerator from '@/components/pdf/PDFGenerator';
 
 // Interfaces for budget calculation
 interface BudgetItem {
@@ -53,6 +55,7 @@ export default function BudgetCalculator() {
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [durationDays, setDurationDays] = useState(180);
+  const [showPDFModal, setShowPDFModal] = useState(false);
   
   // APU Integration State
   const [selectedTypology, setSelectedTypology] = useState<ProjectTypology>('residencial');
@@ -309,7 +312,11 @@ export default function BudgetCalculator() {
   };
 
   const generatePDF = () => {
-    showToast('success', 'Función de PDF en desarrollo');
+    if (items.length === 0) {
+      showToast('error', 'No hay items en el presupuesto para exportar');
+      return;
+    }
+    setShowPDFModal(true);
   };
 
   const summary = calculateSummary();
@@ -579,23 +586,26 @@ export default function BudgetCalculator() {
                   </tr>
                 </thead>
                 <tbody>
-                  {RENGLOONES_BY_TYPOLOGY[selectedTypology].map((renglon) => (
-                    <tr key={renglon.id} className="border-b border-white/10 hover:bg-white/5">
-                      <td className="py-2 px-3 text-white/60">{renglon.number}</td>
-                      <td className="py-2 px-3 text-white">{renglon.code}</td>
-                      <td className="py-2 px-3 text-white">{renglon.description}</td>
-                      <td className="py-2 px-3 text-white">{renglon.unit}</td>
-                      <td className="py-2 px-3 text-white/60">{renglon.category}</td>
-                      <td className="py-2 px-3 text-right">
-                        <button
-                          onClick={() => addRenglonFromCatalog(renglon)}
-                          className="text-cyan-400 hover:text-cyan-300 text-xs"
-                        >
-                          + Agregar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {(() => {
+                    const catalog = RENGLONES_BY_TYPOLOGY[selectedTypology];
+                    return catalog.map((renglon) => (
+                      <tr key={renglon.id} className="border-b border-white/10 hover:bg-white/5">
+                        <td className="py-2 px-3 text-white/60">{renglon.number}</td>
+                        <td className="py-2 px-3 text-white">{renglon.code}</td>
+                        <td className="py-2 px-3 text-white">{renglon.description}</td>
+                        <td className="py-2 px-3 text-white">{renglon.unit}</td>
+                        <td className="py-2 px-3 text-white/60">{renglon.category}</td>
+                        <td className="py-2 px-3 text-right">
+                          <button
+                            onClick={() => addRenglonFromCatalog(renglon)}
+                            className="text-cyan-400 hover:text-cyan-300 text-xs"
+                          >
+                            + Agregar
+                          </button>
+                        </td>
+                      </tr>
+                    ));
+                  })()}
                 </tbody>
               </table>
             </div>
@@ -816,6 +826,46 @@ export default function BudgetCalculator() {
         onCancel={() => setDeleteConfirm(null)}
         variant="danger"
       />
+
+      {/* PDF Export Modal */}
+      {showPDFModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="glass-panel rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white">Exportar Presupuesto a PDF</h2>
+              <button
+                onClick={() => setShowPDFModal(false)}
+                className="text-white/60 hover:text-white"
+              >
+                <Download className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <PDFGenerator
+              projectName={projectName}
+              clientName={clientName}
+              items={items.map(item => ({
+                code: item.code,
+                description: item.description,
+                unit: item.unit,
+                quantity: item.quantity,
+                unitCost: item.unitCost,
+                totalCost: item.totalCost,
+              }))}
+              summary={{
+                directCost: summary.directCost,
+                indirectCost: summary.indirectCost,
+                contingency: summary.contingency,
+                profit: summary.profit,
+                total: summary.total,
+              }}
+              indirectPercentage={indirectPercentage}
+              contingencyPercentage={contingencyPercentage}
+              profitPercentage={profitPercentage}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
