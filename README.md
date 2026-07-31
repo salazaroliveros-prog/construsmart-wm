@@ -9,13 +9,22 @@ Aplicación web progresiva (PWA) que permite la gestión completa de proyectos d
 ## 🚀 Características Principales
 
 ### Módulos del Sistema
-- **Dashboard Principal**: Vista general con estadísticas en tiempo real
+- **Dashboard Principal**: Vista general con estadísticas en tiempo real, 6 gráficas interactivas
 - **Gestión de Proyectos**: CRUD completo de proyectos con sincronización offline
 - **Calculadora de Presupuestos**: Generación de APU con cálculos estructurales
 - **Gestión Financiera**: Control de ingresos, gastos y categorías
 - **Nómina**: Gestión de empleados y cálculo de salarios
 - **Almacén**: Control de inventario y alertas de stock bajo
 - **Analytics Dashboard**: Gráficos avanzados (Curva S, Gantt, avances financieros)
+- **Ajustes de UI**: Personalización completa de la interfaz (colores, efectos, accesibilidad)
+
+### Características Recientes
+- **Sidebar Colapsable**: Toggle entre vista expandida (64px) y colapsada (16px) con iconos visibles
+- **Módulo de Settings**: 6 paletas de colores, control de transparencia, blur intensity, efectos glass
+- **Gaussian Blur en Modales**: Efecto blur de fondo en todos los diálogos modales
+- **Icon Animations**: Animaciones personalizadas (float, glow, shake, pulse, bounce, spin)
+- **Responsive Dashboard**: Grid adaptable que se ajusta automáticamente al estado del sidebar
+- **Zero-Scroll Viewport**: Diseño optimizado para minimizar scroll en vista principal
 
 ### Características Técnicas
 - **PWA Completa**: Instalable como app nativa, funciona offline
@@ -32,11 +41,12 @@ Aplicación web progresiva (PWA) que permite la gestión completa de proyectos d
 - **TypeScript 6.0.3** (Strict mode)
 
 ### Estilos & UI
-- **Tailwind CSS 4.3.3**
+- **Tailwind CSS 3.4.19**
 - **Lucide React 1.28.0** (Iconos)
 - **Recharts 3.10.1** (Gráficos)
 - **Framer Motion 12.43.0** (Animaciones)
 - **Glassmorphism UI**: Clases personalizadas `.glass-panel`, `.glass-card`
+- **UI Settings Module**: Personalización de colores, transparencia y efectos glass
 
 ### Base de Datos & Sync
 - **Supabase**: PostgreSQL + Auth + Storage
