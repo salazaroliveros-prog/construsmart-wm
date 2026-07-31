@@ -7,6 +7,8 @@ import { supabase } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
+import Tooltip from '@/components/ui/Tooltip';
+import ActionButton from '@/components/ui/ActionButton';
 
 interface ProjectFormData {
   code: string;
@@ -286,18 +288,22 @@ export default function ProjectManager() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <div className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm ${
-              isOnline ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
-            }`}>
-              {isOnline ? '🟢 En línea' : '🟡 Sin conexión'}
-            </div>
-            <button
-              onClick={() => openModal()}
-              className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Nuevo Proyecto
-            </button>
+            <Tooltip content={isOnline ? 'Conectado a internet' : 'Trabajando sin conexión'}>
+              <div className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm ${
+                isOnline ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+              }`}>
+                {isOnline ? '🟢 En línea' : '🟡 Sin conexión'}
+              </div>
+            </Tooltip>
+            <Tooltip content="Crear un nuevo proyecto">
+              <button
+                onClick={() => openModal()}
+                className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Nuevo Proyecto
+              </button>
+            </Tooltip>
           </div>
         </div>
 
@@ -381,20 +387,20 @@ export default function ProjectManager() {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button
+                        <ActionButton
                           onClick={() => openModal(project)}
-                          className="text-cyan-400 hover:text-cyan-300 p-1"
-                          title="Editar"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
+                          icon={<Edit className="w-4 h-4" />}
+                          label="Editar proyecto"
+                          tooltip="Editar información del proyecto"
+                          variant="primary"
+                        />
+                        <ActionButton
                           onClick={() => handleDelete(project)}
-                          className="text-red-400 hover:text-red-300 p-1"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                          icon={<Trash2 className="w-4 h-4" />}
+                          label="Eliminar proyecto"
+                          tooltip="Eliminar proyecto permanentemente"
+                          variant="danger"
+                        />
                       </div>
                     </td>
                   </tr>
@@ -594,20 +600,24 @@ export default function ProjectManager() {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="flex-1 glass-button px-4 py-2 rounded-lg text-white"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={saveLoading}
-                  className="flex-1 glass-button px-4 py-2 rounded-lg text-white bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 disabled:opacity-50"
-                >
-                  {saveLoading ? 'Guardando...' : (editingProject ? 'Actualizar' : 'Crear')}
-                </button>
+                <Tooltip content="Cancelar y cerrar el formulario">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="flex-1 glass-button px-4 py-2 rounded-lg text-white"
+                  >
+                    Cancelar
+                  </button>
+                </Tooltip>
+                <Tooltip content={editingProject ? 'Guardar cambios del proyecto' : 'Crear nuevo proyecto'}>
+                  <button
+                    type="submit"
+                    disabled={saveLoading}
+                    className="flex-1 glass-button px-4 py-2 rounded-lg text-white bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 disabled:opacity-50"
+                  >
+                    {saveLoading ? 'Guardando...' : (editingProject ? 'Actualizar' : 'Crear')}
+                  </button>
+                </Tooltip>
               </div>
             </form>
           </div>
