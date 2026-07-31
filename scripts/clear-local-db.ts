@@ -13,8 +13,8 @@ async function clearLocalDatabase() {
   try {
     // Borrar la base de datos completamente
     await Dexie.delete(DB_NAME);
-    console.log('✅ Base de datos local eliminada exitosamente');
-    console.log('📊 La base de datos se recreará automáticamente con el nuevo schema (versión 2)');
+    console.log('✅ Base de datos local eliminada exitamente');
+    console.log('📊 La base de datos se recreará automáticamente con el nuevo schema (versión 6)');
   } catch (error) {
     console.error('❌ Error al limpiar la base de datos:', error);
     process.exit(1);
