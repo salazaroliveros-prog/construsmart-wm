@@ -21,6 +21,8 @@ const AnalyticsDashboard = dynamic(() => import('@/components/analytics/Analytic
 const ClientManager = dynamic(() => import('@/components/crm/ClientManager'), { ssr: false });
 const ProjectLogManager = dynamic(() => import('@/components/project/ProjectLogManager'), { ssr: false });
 const InteractiveCalendar = dynamic(() => import('@/components/dashboard/InteractiveCalendar'), { ssr: false });
+const SupplierManager = dynamic(() => import('@/components/warehouse/SupplierManager'), { ssr: false });
+const PurchaseOrderManager = dynamic(() => import('@/components/warehouse/PurchaseOrderManager'), { ssr: false });
 
 // Navigation tabs configuration
 const NAVIGATION_TABS = [
@@ -30,6 +32,8 @@ const NAVIGATION_TABS = [
   { id: 'finances', label: 'Finanzas', icon: 'DollarSign' },
   { id: 'payroll', label: 'Nómina', icon: 'Users' },
   { id: 'warehouse', label: 'Almacén', icon: 'Warehouse' },
+  { id: 'suppliers', label: 'Proveedores', icon: 'Truck' },
+  { id: 'orders', label: 'Órdenes de Compra', icon: 'ShoppingCart' },
   { id: 'analytics', label: 'Analytics', icon: 'TrendingUp' },
   { id: 'clients', label: 'Clientes', icon: 'Users' },
   { id: 'logs', label: 'Bitácora', icon: 'BookOpen' },
@@ -156,6 +160,10 @@ export default function Dashboard() {
         return <PayrollManager />;
       case 'warehouse':
         return <WarehouseManager />;
+      case 'suppliers':
+        return <SupplierManager />;
+      case 'orders':
+        return <PurchaseOrderManager />;
       case 'analytics':
         return <AnalyticsDashboard />;
       case 'clients':
