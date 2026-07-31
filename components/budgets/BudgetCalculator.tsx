@@ -16,6 +16,7 @@ import { RENGLONES_BY_TYPOLOGY } from '@/lib/data/apuRenglones';
 import { ProjectTypology, APUFormulaParams, APUResult, TYPOLOGY_LABELS, MATERIAL_FACTORS } from '@/lib/types/apu';
 import type { APURenglon } from '@/lib/types/apu';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
+import { budgetState, ActiveBudgetState } from '@/lib/state/budgetState';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
@@ -314,6 +315,26 @@ export default function BudgetCalculator() {
         sync_status: 'updated_offline',
         updated_at: new Date().toISOString(),
       });
+
+      // Save to global budget state for interconnection with other modules
+      const activeBudget: ActiveBudgetState = {
+        projectId: selectedProject,
+        budgetId: budgetId as string,
+        typology: selectedTypology,
+        costDirectTotal: summary.directCost,
+        costTotalWithIndirects: summary.total,
+        breakdown: {
+          materials: items.reduce((sum, item) => 
+            sum + (item.apuResult?.breakdown.materials || item.totalCost * 0.6), 0),
+          labor: items.reduce((sum, item) => 
+            sum + (item.apuResult?.breakdown.labor || item.totalCost * 0.3), 0),
+          machinery: items.reduce((sum, item) => 
+            sum + (item.apuResult?.breakdown.machinery || item.totalCost * 0.1), 0),
+        },
+        topographyData: topographyData,
+        calculatedAt: new Date().toISOString(),
+      };
+      budgetState.set(activeBudget);
 
       showToast('success', 'Presupuesto guardado, proyecto actualizado y materiales agregados al almacén');
     } catch (error) {

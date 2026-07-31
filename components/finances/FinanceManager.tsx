@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, TrendingUp, TrendingDown, DollarSign, Wallet, ArrowDownCircle, ArrowUpCircle, Calendar, X, Save, Inbox, Calculator } from 'lucide-react';
 import { offlineDB, LocalFinancialTransaction, LocalProject, LocalBudget, LocalBudgetItem } from '@/lib/db/offlineStore';
+import { budgetState } from '@/lib/state/budgetState';
 import { supabase } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
