@@ -276,7 +276,7 @@ export default function BudgetCalculator() {
 
       // Save budget items
       for (const item of items) {
-        await offlineDB.budgetItems.add({
+        const budgetItemData: any = {
           budget_id: budgetId as string,
           code: item.code,
           description: item.description,
@@ -286,13 +286,18 @@ export default function BudgetCalculator() {
           total_cost: item.totalCost,
           item_order: 0,
           is_custom: true,
-          // Save APU data if available
-          apu_result: item.apuResult,
-          apu_params: item.apuResult ? apuParams : undefined,
           sync_status: 'created_offline',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        });
+        };
+
+        // Add APU data if available
+        if (item.apuResult) {
+          budgetItemData.apu_result = item.apuResult;
+          budgetItemData.apu_params = apuParams;
+        }
+
+        await offlineDB.budgetItems.add(budgetItemData);
 
         // Add material to warehouse if it doesn't exist
         const existingStock = await offlineDB.warehouseStock
