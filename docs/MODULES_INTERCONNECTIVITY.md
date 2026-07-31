@@ -1,8 +1,11 @@
 # Validación de Interconectividad de Módulos - CONSTRUCTORA WM/M&S
 
-**Fecha:** 2025-01-XX
+**Fecha:** 2025-01-19
 **Slogan:** "CONSTRUYENDO EL FUTURO"
-**Versión DB:** 5
+**Versión DB:** 5 (Local), 5 (Remota - Migración Pendiente)
+
+**Estado Migración Remota:** ⚠️ Pendiente ejecución SQL
+**Instrucciones:** Ver `docs/SUPABASE_MIGRATION_INSTRUCTIONS.md`
 
 ---
 
