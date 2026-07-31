@@ -1,20 +1,22 @@
 'use client';
 
-import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp, Database, User, LogOut } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp, Database, User, LogOut, AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ChangeEvent } from 'react';
 import { useAuth } from '@/lib/auth/auth-context';
+import { offlineDB } from '@/lib/db/offlineStore';
 
 interface NavItem {
   id: string;
   label: string;
   icon: string;
   badge?: number;
+  badgeColor?: 'cyan' | 'amber' | 'red';
 }
 
 // Navigation items configuration matching the 7 main screens
-const NAV_ITEMS: NavItem[] = [
+const NAV_ITEMS_BASE: NavItem[] = [
   { id: 'dashboard', label: 'Tablero Principal', icon: 'LayoutDashboard' },
   { id: 'projects', label: 'Proyectos', icon: 'FolderKanban' },
   { id: 'budgets', label: 'Presupuestos', icon: 'Calculator' },
@@ -113,6 +115,51 @@ export default function DashboardNav({ activeTab, onTabChange }: DashboardNavPro
   const isActive = (id: string) => activeTab === id;
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const [navItems, setNavItems] = useState<NavItem[]>(NAV_ITEMS_BASE);
+
+  useEffect(() => {
+    loadBadges();
+  }, []);
+
+  const loadBadges = async () => {
+    try {
+      const [projects, budgets, warehouseStock] = await Promise.all([
+        offlineDB.projects.toArray(),
+        offlineDB.budgets.toArray(),
+        offlineDB.warehouseStock.toArray(),
+      ]);
+
+      const updatedItems = [...NAV_ITEMS_BASE];
+
+      // Badge for projects in execution (cyan - info)
+      const executionProjects = projects.filter(p => p.status === 'execution').length;
+      const projectsItem = updatedItems.find(item => item.id === 'projects');
+      if (projectsItem && executionProjects > 0) {
+        projectsItem.badge = executionProjects;
+        projectsItem.badgeColor = 'cyan';
+      }
+
+      // Badge for budgets (amber - warning - projects in planning)
+      const planningProjects = projects.filter(p => p.status === 'planning').length;
+      const budgetsItem = updatedItems.find(item => item.id === 'budgets');
+      if (budgetsItem && planningProjects > 0) {
+        budgetsItem.badge = planningProjects;
+        budgetsItem.badgeColor = 'amber';
+      }
+
+      // Badge for warehouse (red - critical - low stock items)
+      const lowStockItems = warehouseStock.filter(item => item.current_stock <= item.minimum_threshold).length;
+      const warehouseItem = updatedItems.find(item => item.id === 'warehouse');
+      if (warehouseItem && lowStockItems > 0) {
+        warehouseItem.badge = lowStockItems;
+        warehouseItem.badgeColor = 'red';
+      }
+
+      setNavItems(updatedItems);
+    } catch (error) {
+      console.error('Error loading badges:', error);
+    }
+  };
 
   const handleSignOut = () => {
     signOut();
@@ -137,7 +184,7 @@ export default function DashboardNav({ activeTab, onTabChange }: DashboardNavPro
       {/* Navigation Items */}
       <div className="flex-1 overflow-y-auto py-3 sm:py-4">
         <div className="px-2 sm:px-3 space-y-1">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const active = isActive(item.id);
             return (
               <button
@@ -155,7 +202,14 @@ export default function DashboardNav({ activeTab, onTabChange }: DashboardNavPro
                   <span className="font-medium text-xs sm:text-sm">{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] sm:text-xs font-medium">
+                  <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium flex items-center gap-1 ${
+                    item.badgeColor === 'red'
+                      ? 'bg-red-500/20 text-red-300'
+                      : item.badgeColor === 'amber'
+                      ? 'bg-amber-500/20 text-amber-300'
+                      : 'bg-cyan-500/20 text-cyan-300'
+                  }`}>
+                    {item.badgeColor === 'red' && <AlertCircle className="w-3 h-3" />}
                     {item.badge}
                   </span>
                 )}

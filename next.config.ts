@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import withPWA from '@ducanh2912/next-pwa';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -21,10 +22,20 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '2mb',
     },
   },
+  turbopack: {},
   // Ensure consistent production URL
   env: {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'https://control-constructora-wm.vercel.app',
   },
 };
 
-export default nextConfig;
+const pwaConfig = withPWA({
+  dest: 'public',
+  register: true,
+  disable: process.env.NODE_ENV === 'development',
+  cacheOnFrontEndNav: true,
+  aggressiveFrontEndNavCaching: true,
+  reloadOnOnline: true,
+});
+
+export default pwaConfig(nextConfig);
