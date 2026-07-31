@@ -11,7 +11,7 @@ import {
   getCostLevelLabel 
 } from '@/lib/calculators/apuCalculator';
 import { RENGLONES_BY_TYPOLOGY } from '@/lib/data/apuRenglones';
-import { ProjectTypology, APUFormulaParams, APUResult, TYPOLOGY_LABELS } from '@/lib/types/apu';
+import { ProjectTypology, APUFormulaParams, APUResult, TYPOLOGY_LABELS, APURenglon } from '@/lib/types/apu';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -166,7 +166,7 @@ export default function BudgetCalculator() {
   };
 
   // Add renglon from typology catalog
-  const addRenglonFromCatalog = (renglon: any) => {
+  const addRenglonFromCatalog = (renglon: APURenglon) => {
     const newItem: BudgetItem = {
       id: Date.now().toString(),
       code: renglon.code,
@@ -408,6 +408,199 @@ export default function BudgetCalculator() {
           />
           <p className="text-white/40 text-xs mt-1">Este valor se usará para calcular la fecha fin del proyecto</p>
         </div>
+      </div>
+
+      {/* APU & Typology Section */}
+      <div className="glass-panel rounded-2xl p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-cyan-400" />
+            Análisis de Precios Unitarios (APU)
+          </h2>
+          <div className="flex gap-2">
+            <select
+              value={selectedTypology}
+              onChange={(e) => setSelectedTypology(e.target.value as ProjectTypology)}
+              className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500/50"
+            >
+              {Object.entries(TYPOLOGY_LABELS).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => setShowAPUCalculator(!showAPUCalculator)}
+              className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+            >
+              <Calculator className="w-4 h-4" />
+              Calculadora APU
+            </button>
+          </div>
+        </div>
+
+        {/* Topography Integration Indicator */}
+        <div className="mb-4 p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
+          <p className="text-cyan-400 text-xs">
+            💡 <strong>Integración Topografía/CivilCAD:</strong> Los volúmenes de corte/relleno se importarán automáticamente cuando estén disponibles en el sistema.
+          </p>
+        </div>
+
+        {/* APU Calculator */}
+        {showAPUCalculator && (
+          <div className="mt-4 p-4 bg-white/5 rounded-xl border border-white/10">
+            <h3 className="text-white font-medium mb-4">🧮 Calculadora de Análisis de Precio Unitario</h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+              <div>
+                <label className="block text-white/60 text-xs sm:text-sm mb-1">Cantidad Teórica</label>
+                <input
+                  type="number"
+                  value={apuParams.theoreticalQuantity}
+                  onChange={(e) => setApuParams({ ...apuParams, theoreticalQuantity: Number(e.target.value) })}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-white/60 text-xs sm:text-sm mb-1">% Desperdicio</label>
+                <input
+                  type="number"
+                  value={apuParams.wastePercentage}
+                  onChange={(e) => setApuParams({ ...apuParams, wastePercentage: Number(e.target.value) })}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-white/60 text-xs sm:text-sm mb-1">Factor Volumétrico</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={apuParams.volumetricFactor}
+                  onChange={(e) => setApuParams({ ...apuParams, volumetricFactor: Number(e.target.value) })}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-white/60 text-xs sm:text-sm mb-1">Salario Cuadrilla (Q)</label>
+                <input
+                  type="number"
+                  value={apuParams.crewDailySalary}
+                  onChange={(e) => setApuParams({ ...apuParams, crewDailySalary: Number(e.target.value) })}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-white/60 text-xs sm:text-sm mb-1">Rendimiento Diario</label>
+                <input
+                  type="number"
+                  value={apuParams.dailyPerformance}
+                  onChange={(e) => setApuParams({ ...apuParams, dailyPerformance: Number(e.target.value) })}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-white/60 text-xs sm:text-sm mb-1">% Indirectos</label>
+                <input
+                  type="number"
+                  value={apuParams.indirectPercentage}
+                  onChange={(e) => setApuParams({ ...apuParams, indirectPercentage: Number(e.target.value) })}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-white/60 text-xs sm:text-sm mb-1">Costo Material (Q)</label>
+                <input
+                  type="number"
+                  value={apuParams.materialUnitCost}
+                  onChange={(e) => setApuParams({ ...apuParams, materialUnitCost: Number(e.target.value) })}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-white/60 text-xs sm:text-sm mb-1">Costo Maquinaria (Q)</label>
+                <input
+                  type="number"
+                  value={apuParams.machineryCost}
+                  onChange={(e) => setApuParams({ ...apuParams, machineryCost: Number(e.target.value) })}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                />
+              </div>
+            </div>
+
+            {/* APU Results Preview */}
+            {(() => {
+              const result = calculateAPU(apuParams);
+              return (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 p-3 bg-white/5 rounded-lg">
+                  <div>
+                    <p className="text-white/40 text-xs">Material Total</p>
+                    <p className="text-white font-medium">{result.totalMaterialQuantity.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/40 text-xs">Costo Directo</p>
+                    <p className="text-white font-medium">{formatQuetzales(result.directCost)}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/40 text-xs">Costo Indirecto</p>
+                    <p className="text-white font-medium">{formatQuetzales(result.indirectCost)}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/40 text-xs">Costo Total</p>
+                    <p className="text-cyan-400 font-medium">{formatQuetzales(result.totalCost)}</p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <button
+              onClick={addAPUCalculation}
+              className="w-full glass-button px-4 py-2 rounded-lg text-white flex items-center justify-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Agregar Cálculo APU al Presupuesto
+            </button>
+          </div>
+        )}
+
+        {/* Renglones Catalog */}
+        {!showAPUCalculator && (
+          <div className="mt-4">
+            <h3 className="text-white font-medium mb-3">📋 Catálogo de Renglones - {TYPOLOGY_LABELS[selectedTypology]}</h3>
+            <div className="data-table-container rounded-xl border border-white/10 overflow-hidden max-h-96 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-white/10">
+                  <tr className="border-b border-white/10">
+                    <th className="text-left text-white/60 py-2 px-3">#</th>
+                    <th className="text-left text-white/60 py-2 px-3">Código</th>
+                    <th className="text-left text-white/60 py-2 px-3">Descripción</th>
+                    <th className="text-left text-white/60 py-2 px-3">Unidad</th>
+                    <th className="text-left text-white/60 py-2 px-3">Categoría</th>
+                    <th className="text-right text-white/60 py-2 px-3">Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {RENGLOONES_BY_TYPOLOGY[selectedTypology].map((renglon) => (
+                    <tr key={renglon.id} className="border-b border-white/10 hover:bg-white/5">
+                      <td className="py-2 px-3 text-white/60">{renglon.number}</td>
+                      <td className="py-2 px-3 text-white">{renglon.code}</td>
+                      <td className="py-2 px-3 text-white">{renglon.description}</td>
+                      <td className="py-2 px-3 text-white">{renglon.unit}</td>
+                      <td className="py-2 px-3 text-white/60">{renglon.category}</td>
+                      <td className="py-2 px-3 text-right">
+                        <button
+                          onClick={() => addRenglonFromCatalog(renglon)}
+                          className="text-cyan-400 hover:text-cyan-300 text-xs"
+                        >
+                          + Agregar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Slab Calculator Section */}
