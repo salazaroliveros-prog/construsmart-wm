@@ -57,6 +57,29 @@ export interface LocalBudgetItem {
   depth_m?: number;
   height_m?: number;
   slab_type?: string;
+  // APU Integration Fields
+  apu_result?: {
+    totalMaterialQuantity: number;
+    unitLaborCost: number;
+    directCost: number;
+    indirectCost: number;
+    totalCost: number;
+    breakdown: {
+      materials: number;
+      labor: number;
+      machinery: number;
+    };
+  };
+  apu_params?: {
+    theoreticalQuantity: number;
+    wastePercentage: number;
+    volumetricFactor: number;
+    crewDailySalary: number;
+    dailyPerformance: number;
+    indirectPercentage: number;
+    materialUnitCost?: number;
+    machineryCost?: number;
+  };
   sync_status: 'synced' | 'created_offline' | 'updated_offline';
   created_at?: string;
   updated_at?: string;

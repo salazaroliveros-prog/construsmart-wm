@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, TrendingUp, TrendingDown, DollarSign, Wallet, ArrowDownCircle, ArrowUpCircle, Calendar, X, Save, Inbox } from 'lucide-react';
-import { offlineDB, LocalFinancialTransaction, LocalProject } from '@/lib/db/offlineStore';
+import { Plus, Edit, Trash2, Search, TrendingUp, TrendingDown, DollarSign, Wallet, ArrowDownCircle, ArrowUpCircle, Calendar, X, Save, Inbox, Calculator } from 'lucide-react';
+import { offlineDB, LocalFinancialTransaction, LocalProject, LocalBudget, LocalBudgetItem } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -62,6 +62,20 @@ export default function FinanceManager() {
   const [selectedProject, setSelectedProject] = useState<string>('all');
   const [deleteConfirm, setDeleteConfirm] = useState<LocalFinancialTransaction | null>(null);
   const [saveLoading, setSaveLoading] = useState(false);
+  
+  // Budget Integration State
+  const [activeBudget, setActiveBudget] = useState<LocalBudget | null>(null);
+  const [budgetItems, setBudgetItems] = useState<LocalBudgetItem[]>([]);
+  const [budgetComparison, setBudgetComparison] = useState<{
+    estimatedTotal: number;
+    actualTotal: number;
+    variance: number;
+    byCategory: {
+      materiales: { estimated: number; actual: number };
+      mano_de_obra: { estimated: number; actual: number };
+      otros: { estimated: number; actual: number };
+    };
+  } | null>(null);
 
   const [formData, setFormData] = useState<TransactionFormData>({
     type: 'expense',
@@ -92,6 +106,11 @@ export default function FinanceManager() {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  // Load budget when project changes
+  useEffect(() => {
+    loadBudgetForProject(selectedProject);
+  }, [selectedProject, transactions]);
 
   const checkOnlineStatus = () => {
     setIsOnline(navigator.onLine);
@@ -132,6 +151,95 @@ export default function FinanceManager() {
       setAvailableProjects(executionProjects);
     } catch (error) {
       console.error('Error loading projects:', error);
+    }
+  };
+
+  // Load active budget for selected project
+  const loadBudgetForProject = async (projectId: string) => {
+    if (projectId === 'all') {
+      setActiveBudget(null);
+      setBudgetItems([]);
+      setBudgetComparison(null);
+      return;
+    }
+
+    try {
+      // Get the latest budget for the project
+      const budgets = await offlineDB.budgets
+        .where('project_id')
+        .equals(projectId)
+        .reverse()
+        .limit(1)
+        .toArray();
+
+      if (budgets.length > 0) {
+        const budget = budgets[0];
+        setActiveBudget(budget);
+
+        // Load budget items with APU data
+        const items = await offlineDB.budgetItems
+          .where('budget_id')
+          .equals(budget.id as string)
+          .toArray();
+        setBudgetItems(items);
+
+        // Calculate budget vs actual comparison
+        const projectTransactions = transactions.filter(t => t.project_id === projectId);
+        const actualTotal = projectTransactions
+          .filter(t => t.type === 'expense')
+          .reduce((sum, t) => sum + t.total_cost, 0);
+
+        // Calculate estimated by category from APU breakdown
+        const estimatedMaterials = items.reduce((sum, item) => {
+          if (item.apu_result?.breakdown) {
+            return sum + item.apu_result.breakdown.materials;
+          }
+          return sum + item.total_cost * 0.6; // Default 60% for materials
+        }, 0);
+
+        const estimatedLabor = items.reduce((sum, item) => {
+          if (item.apu_result?.breakdown) {
+            return sum + item.apu_result.breakdown.labor;
+          }
+          return sum + item.total_cost * 0.3; // Default 30% for labor
+        }, 0);
+
+        const estimatedOthers = items.reduce((sum, item) => {
+          if (item.apu_result?.breakdown) {
+            return sum + item.apu_result.breakdown.machinery;
+          }
+          return sum + item.total_cost * 0.1; // Default 10% for machinery
+        }, 0);
+
+        const actualMaterials = projectTransactions
+          .filter(t => t.category === 'materiales')
+          .reduce((sum, t) => sum + t.total_cost, 0);
+
+        const actualLabor = projectTransactions
+          .filter(t => t.category === 'mano_de_obra')
+          .reduce((sum, t) => sum + t.total_cost, 0);
+
+        const actualOthers = projectTransactions
+          .filter(t => !['materiales', 'mano_de_obra'].includes(t.category))
+          .reduce((sum, t) => sum + t.total_cost, 0);
+
+        setBudgetComparison({
+          estimatedTotal: budget.total_amount,
+          actualTotal,
+          variance: budget.total_amount - actualTotal,
+          byCategory: {
+            materiales: { estimated: estimatedMaterials, actual: actualMaterials },
+            mano_de_obra: { estimated: estimatedLabor, actual: actualLabor },
+            otros: { estimated: estimatedOthers, actual: actualOthers },
+          },
+        });
+      } else {
+        setActiveBudget(null);
+        setBudgetItems([]);
+        setBudgetComparison(null);
+      }
+    } catch (error) {
+      console.error('Error loading budget:', error);
     }
   };
 
@@ -329,6 +437,69 @@ export default function FinanceManager() {
             </p>
           </div>
         </div>
+
+        {/* Budget Comparison Panel */}
+        {budgetComparison && activeBudget && (
+          <div className="mt-4 p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-xl">
+            <div className="flex items-center gap-2 mb-3">
+              <Calculator className="w-4 h-4 text-cyan-400" />
+              <h4 className="text-cyan-400 font-medium">Comparación Presupuesto vs. Gastos Reales</h4>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+              <div>
+                <p className="text-white/60 text-xs">Presupuesto Estimado</p>
+                <p className="text-white font-medium">{formatCurrency(budgetComparison.estimatedTotal)}</p>
+              </div>
+              <div>
+                <p className="text-white/60 text-xs">Gastos Reales</p>
+                <p className="text-white font-medium">{formatCurrency(budgetComparison.actualTotal)}</p>
+              </div>
+              <div>
+                <p className="text-white/60 text-xs">Variación</p>
+                <p className={`font-medium ${budgetComparison.variance >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {formatCurrency(budgetComparison.variance)}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+              <div className="bg-white/5 p-2 rounded">
+                <p className="text-white/60 mb-1">Materiales</p>
+                <div className="flex justify-between">
+                  <span className="text-white/40">Est:</span>
+                  <span className="text-white">{formatCurrency(budgetComparison.byCategory.materiales.estimated)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/40">Real:</span>
+                  <span className="text-white">{formatCurrency(budgetComparison.byCategory.materiales.actual)}</span>
+                </div>
+              </div>
+              <div className="bg-white/5 p-2 rounded">
+                <p className="text-white/60 mb-1">Mano de Obra</p>
+                <div className="flex justify-between">
+                  <span className="text-white/40">Est:</span>
+                  <span className="text-white">{formatCurrency(budgetComparison.byCategory.mano_de_obra.estimated)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/40">Real:</span>
+                  <span className="text-white">{formatCurrency(budgetComparison.byCategory.mano_de_obra.actual)}</span>
+                </div>
+              </div>
+              <div className="bg-white/5 p-2 rounded">
+                <p className="text-white/60 mb-1">Otros</p>
+                <div className="flex justify-between">
+                  <span className="text-white/40">Est:</span>
+                  <span className="text-white">{formatCurrency(budgetComparison.byCategory.otros.estimated)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/40">Real:</span>
+                  <span className="text-white">{formatCurrency(budgetComparison.byCategory.otros.actual)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Filters */}

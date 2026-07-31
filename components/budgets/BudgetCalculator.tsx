@@ -1,17 +1,19 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Calculator, Plus, Trash2, Save, Download, FolderOpen, Building2, TrendingUp } from 'lucide-react';
+import { Calculator, Plus, Trash2, Save, Download, FolderOpen, Building2, TrendingUp, Map } from 'lucide-react';
 import { calculateSlab, SlabDimensions, calculateSlabCost, SlabCostParams } from '@/lib/calculators/slabCalculators';
 import { 
   calculateAPU, 
   calculateBudgetSummary, 
   formatQuetzales, 
   getResidentialCostLevel,
-  getCostLevelLabel 
+  getCostLevelLabel,
+  getVolumetricFactor,
+  calculateEarthworkVolume
 } from '@/lib/calculators/apuCalculator';
 import { RENGLONES_BY_TYPOLOGY } from '@/lib/data/apuRenglones';
-import { ProjectTypology, APUFormulaParams, APUResult, TYPOLOGY_LABELS } from '@/lib/types/apu';
+import { ProjectTypology, APUFormulaParams, APUResult, TYPOLOGY_LABELS, MATERIAL_FACTORS } from '@/lib/types/apu';
 import type { APURenglon } from '@/lib/types/apu';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
 import { useToast } from '@/components/ui/Toast';
@@ -56,6 +58,14 @@ export default function BudgetCalculator() {
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [durationDays, setDurationDays] = useState(180);
   const [showPDFModal, setShowPDFModal] = useState(false);
+  
+  // Topography Integration State
+  const [topographyData, setTopographyData] = useState({
+    volumeCut: 0,           // Volúmenes de corte (m³)
+    volumeFill: 0,          // Volúmenes de relleno (m³)
+    terrainArea: 0,         // Área de terreno (m²)
+    soilType: 'arena' as keyof typeof MATERIAL_FACTORS,
+  });
   
   // APU Integration State
   const [selectedTypology, setSelectedTypology] = useState<ProjectTypology>('residencial');
@@ -266,6 +276,9 @@ export default function BudgetCalculator() {
           total_cost: item.totalCost,
           item_order: 0,
           is_custom: true,
+          // Save APU data if available
+          apu_result: item.apuResult,
+          apu_params: item.apuResult ? apuParams : undefined,
           sync_status: 'created_offline',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -446,11 +459,90 @@ export default function BudgetCalculator() {
           </div>
         </div>
 
-        {/* Topography Integration Indicator */}
-        <div className="mb-4 p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
-          <p className="text-cyan-400 text-xs">
-            💡 <strong>Integración Topografía/CivilCAD:</strong> Los volúmenes de corte/relleno se importarán automáticamente cuando estén disponibles en el sistema.
-          </p>
+        {/* Topography Integration Panel */}
+        <div className="mb-4 p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-cyan-400 font-medium flex items-center gap-2">
+              <Map className="w-4 h-4" />
+              Datos de Topografía / CivilCAD
+            </h4>
+            <button
+              onClick={() => {
+                // Auto-calculate volumetric factors based on topography data
+                const cutFactor = getVolumetricFactor(topographyData.soilType, 'corte');
+                const fillFactor = getVolumetricFactor(topographyData.soilType, 'relleno');
+                setApuParams({ 
+                  ...apuParams, 
+                  volumetricFactor: cutFactor,
+                  theoreticalQuantity: topographyData.terrainArea > 0 ? topographyData.terrainArea : apuParams.theoreticalQuantity,
+                });
+                showToast('success', `Factores aplicados: Corte ${cutFactor.toFixed(2)}x, Relleno ${fillFactor.toFixed(2)}x`);
+              }}
+              className="text-cyan-400 hover:text-cyan-300 text-xs"
+            >
+              Aplicar a APU
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div>
+              <label className="block text-white/60 text-xs mb-1">Volumen Corte (m³)</label>
+              <input
+                type="number"
+                value={topographyData.volumeCut}
+                onChange={(e) => setTopographyData({ ...topographyData, volumeCut: Number(e.target.value) })}
+                className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-xs"
+              />
+            </div>
+            <div>
+              <label className="block text-white/60 text-xs mb-1">Volumen Relleno (m³)</label>
+              <input
+                type="number"
+                value={topographyData.volumeFill}
+                onChange={(e) => setTopographyData({ ...topographyData, volumeFill: Number(e.target.value) })}
+                className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-xs"
+              />
+            </div>
+            <div>
+              <label className="block text-white/60 text-xs mb-1">Área Terreno (m²)</label>
+              <input
+                type="number"
+                value={topographyData.terrainArea}
+                onChange={(e) => setTopographyData({ ...topographyData, terrainArea: Number(e.target.value) })}
+                className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-xs"
+              />
+            </div>
+            <div>
+              <label className="block text-white/60 text-xs mb-1">Tipo de Suelo</label>
+              <select
+                value={topographyData.soilType}
+                onChange={(e) => setTopographyData({ ...topographyData, soilType: e.target.value as keyof typeof MATERIAL_FACTORS })}
+                className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-xs"
+              >
+                {Object.entries(MATERIAL_FACTORS).map(([key, factor]) => (
+                  <option key={key} value={key}>
+                    {factor.soilType}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
+          {/* Calculated factors display */}
+          <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+            <div className="flex justify-between">
+              <span className="text-white/60">Factor Abundamiento:</span>
+              <span className="text-cyan-400">
+                {MATERIAL_FACTORS[topographyData.soilType]?.abundanceFactor.toFixed(2)}x
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/60">Factor Contracción:</span>
+              <span className="text-cyan-400">
+                {MATERIAL_FACTORS[topographyData.soilType]?.contractionFactor.toFixed(2)}x
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* APU Calculator */}
