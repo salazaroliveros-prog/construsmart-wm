@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import type { ChangeEvent } from 'react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { offlineDB } from '@/lib/db/offlineStore';
+import { useCompanySettings } from '@/lib/hooks/useBusinessSettings';
 
 interface NavItem {
   id: string;
@@ -120,6 +121,7 @@ function UserAvatar() {
 export default function DashboardNav({ activeTab, onTabChange, isCollapsed = false }: DashboardNavProps) {
   const isActive = (id: string) => activeTab === id;
   const { user, signOut } = useAuth();
+  const { company } = useCompanySettings();
   const router = useRouter();
   const [navItems, setNavItems] = useState<NavItem[]>(NAV_ITEMS_BASE);
 
@@ -184,7 +186,7 @@ export default function DashboardNav({ activeTab, onTabChange, isCollapsed = fal
           </div>
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
-              <h2 className="text-white font-bold text-sm sm:text-lg">CONSTRUCTORA WM</h2>
+              <h2 className="text-white font-bold text-sm sm:text-lg truncate">{company.shortName || company.name}</h2>
               <p className="text-[10px] sm:text-xs text-cyan-400">Sistema ERP</p>
             </div>
           )}

@@ -151,23 +151,52 @@ export default function RenglonAccordion({
             </div>
           </div>
 
-          {/* Desglose de Materiales */}
+          {/* Desglose de Materiales - Mejorado para Almacén */}
           {materialBreakdown.length > 0 && (
-            <div className="glass-panel p-4 rounded-lg">
+            <div className="glass-panel p-4 rounded-lg border-l-4 border-l-cyan-500">
               <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
                 <Package className="w-4 h-4 text-cyan-400" />
-                Desglose de Materiales
+                Desglose de Materiales (Para Órdenes de Compra)
               </h4>
-              <div className="space-y-2">
-                {materialBreakdown.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
-                    <div>
-                      <p className="text-white text-sm">{item.description}</p>
-                      <p className="text-white/60 text-xs">{item.quantity.toFixed(2)} {item.unit} × {formatCurrency(item.unitCost)}</p>
-                    </div>
-                    <p className="text-emerald-400 font-semibold">{formatCurrency(item.totalCost)}</p>
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10">
+                      <th className="text-left text-white/60 py-2 px-2">Código</th>
+                      <th className="text-left text-white/60 py-2 px-2">Material</th>
+                      <th className="text-right text-white/60 py-2 px-2">Cantidad</th>
+                      <th className="text-right text-white/60 py-2 px-2">Unidad</th>
+                      <th className="text-right text-white/60 py-2 px-2">P. Unitario</th>
+                      <th className="text-right text-white/60 py-2 px-2">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {materialBreakdown.map((item, idx) => (
+                      <tr key={idx} className="border-b border-white/5 hover:bg-white/5">
+                        <td className="py-2 px-2 text-cyan-400 font-mono text-xs">{item.code}</td>
+                        <td className="py-2 px-2 text-white">{item.description}</td>
+                        <td className="py-2 px-2 text-right text-white font-medium">{item.quantity.toFixed(3)}</td>
+                        <td className="py-2 px-2 text-right text-white/60">{item.unit}</td>
+                        <td className="py-2 px-2 text-right text-white/60">{formatCurrency(item.unitCost)}</td>
+                        <td className="py-2 px-2 text-right text-emerald-400 font-semibold">{formatCurrency(item.totalCost)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-cyan-500/30">
+                      <td colSpan={5} className="py-2 px-2 text-right text-white font-semibold">Total Materiales:</td>
+                      <td className="py-2 px-2 text-right text-cyan-400 font-bold">
+                        {formatCurrency(materialBreakdown.reduce((sum, item) => sum + item.totalCost, 0))}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              <div className="mt-3 p-2 bg-cyan-500/10 rounded-lg border border-cyan-500/20">
+                <p className="text-cyan-300 text-xs flex items-center gap-2">
+                  <Package className="w-3 h-3" />
+                  Este desglose se utiliza para generar órdenes de compra en el módulo de almacén
+                </p>
               </div>
             </div>
           )}

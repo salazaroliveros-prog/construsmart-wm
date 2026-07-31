@@ -19,12 +19,25 @@ ALTER TABLE budget_items ADD COLUMN IF NOT EXISTS depth_m DECIMAL(10, 2);
 ALTER TABLE budget_items ADD COLUMN IF NOT EXISTS height_m DECIMAL(10, 2);
 ALTER TABLE budget_items ADD COLUMN IF NOT EXISTS slab_type TEXT;
 
--- 5. AGREGAR ÍNDICES PARA LOS NUEVOS CAMPOS
-CREATE INDEX IF NOT EXISTS idx_projects_budget_total ON projects(budget_total);
-CREATE INDEX IF NOT EXISTS idx_projects_calculated_duration ON projects(calculated_duration);
-CREATE INDEX IF NOT EXISTS idx_warehouse_stock_project_id ON warehouse_stock(project_id);
-CREATE INDEX IF NOT EXISTS idx_payroll_records_project_id ON payroll_records(project_id);
-CREATE INDEX IF NOT EXISTS idx_budget_items_is_custom ON budget_items(is_custom);
+-- 5. AGREGAR ÍNDICES PARA LOS NUEVOS CAMPOS (solo si columnas existen)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'projects' AND column_name = 'budget_total') THEN
+    CREATE INDEX IF NOT EXISTS idx_projects_budget_total ON projects(budget_total);
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'projects' AND column_name = 'calculated_duration') THEN
+    CREATE INDEX IF NOT EXISTS idx_projects_calculated_duration ON projects(calculated_duration);
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'warehouse_stock' AND column_name = 'project_id') THEN
+    CREATE INDEX IF NOT EXISTS idx_warehouse_stock_project_id ON warehouse_stock(project_id);
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payroll_records' AND column_name = 'project_id') THEN
+    CREATE INDEX IF NOT EXISTS idx_payroll_records_project_id ON payroll_records(project_id);
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'budget_items' AND column_name = 'is_custom') THEN
+    CREATE INDEX IF NOT EXISTS idx_budget_items_is_custom ON budget_items(is_custom);
+  END IF;
+END $$;
 
 -- 6. COMENTARIOS PARA DOCUMENTACIÓN
 COMMENT ON COLUMN projects.budget_total IS 'Total del presupuesto calculado por el módulo de presupuestos';

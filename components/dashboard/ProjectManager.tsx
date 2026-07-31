@@ -221,8 +221,28 @@ export default function ProjectManager() {
       loadProjects();
 
       if (isOnline && supabase) {
-        // Sync with Supabase
-        const { error } = await supabase.from('projects').upsert([projectData]);
+        // Sync with Supabase - only send columns that exist in Supabase schema
+        const supabaseProjectData = {
+          id: projectData.id,
+          code: projectData.code,
+          name: projectData.name,
+          client_name: projectData.client_name,
+          client_phone: projectData.client_phone,
+          client_email: projectData.client_email,
+          location: projectData.location,
+          typology: projectData.typology,
+          area_m2: projectData.area_m2,
+          quality_level: projectData.quality_level,
+          status: projectData.status,
+          start_date: projectData.start_date,
+          estimated_end_date: projectData.estimated_end_date,
+          duration_days: projectData.duration_days,
+          total_budget: projectData.total_budget,
+          budget_total: projectData.budget_total,
+          calculated_duration: projectData.calculated_duration,
+          sync_status: projectData.sync_status,
+        };
+        const { error } = await supabase.from('projects').upsert([supabaseProjectData]);
         if (error) throw error;
       }
     } catch (error) {

@@ -20,6 +20,7 @@ export interface SyncResult {
 export interface SyncStats {
   pendingProjects: number;
   pendingBudgets: number;
+  pendingBudgetItems: number;
   pendingTransactions: number;
   pendingPayroll: number;
   pendingWarehouse: number;
@@ -67,6 +68,9 @@ export async function syncOfflineData(): Promise<SyncResult> {
             estimated_end_date: project.estimated_end_date,
             duration_days: project.duration_days,
             total_budget: project.total_budget,
+            budget_total: project.budget_total,
+            calculated_duration: project.calculated_duration,
+            sync_status: project.sync_status,
           })
           .select()
           .single();
@@ -110,6 +114,9 @@ export async function syncOfflineData(): Promise<SyncResult> {
             estimated_end_date: project.estimated_end_date,
             duration_days: project.duration_days,
             total_budget: project.total_budget,
+            budget_total: project.budget_total,
+            calculated_duration: project.calculated_duration,
+            sync_status: project.sync_status,
           })
           .eq('id', project.id);
 
@@ -221,6 +228,8 @@ export async function syncOfflineData(): Promise<SyncResult> {
             contingency_percentage: budget.contingency_percentage,
             profit_percentage: budget.profit_percentage,
             total_amount: budget.total_amount,
+            duration_days: budget.duration_days,
+            sync_status: budget.sync_status,
           })
           .select()
           .single();
@@ -236,6 +245,98 @@ export async function syncOfflineData(): Promise<SyncResult> {
       } catch (error) {
         result.failed++;
         result.errors.push(`Failed to sync budget: ${error}`);
+      }
+    }
+
+    // Sync budget items created offline
+    const offlineBudgetItems = await offlineDB.budgetItems
+      .where('sync_status')
+      .equals('created_offline')
+      .toArray();
+
+    for (const item of offlineBudgetItems) {
+      try {
+        const { data, error } = await supabase
+          .from('budget_items')
+          .insert({
+            budget_id: item.budget_id,
+            parent_id: item.parent_id,
+            item_order: item.item_order,
+            code: item.code,
+            description: item.description,
+            unit: item.unit,
+            quantity: item.quantity,
+            unit_cost: item.unit_cost,
+            total_cost: item.total_cost,
+            is_custom: item.is_custom,
+            length_m: item.length_m,
+            width_m: item.width_m,
+            depth_m: item.depth_m,
+            height_m: item.height_m,
+            slab_type: item.slab_type,
+            apu_result: item.apu_result,
+            apu_params: item.apu_params,
+            sync_status: item.sync_status,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        await offlineDB.budgetItems.update(item.id!, {
+          id: data.id,
+          sync_status: 'synced',
+        });
+
+        result.synced++;
+      } catch (error) {
+        result.failed++;
+        result.errors.push(`Failed to sync budget item ${item.code}: ${error}`);
+      }
+    }
+
+    // Sync budget items updated offline
+    const updatedBudgetItems = await offlineDB.budgetItems
+      .where('sync_status')
+      .equals('updated_offline')
+      .toArray();
+
+    for (const item of updatedBudgetItems) {
+      try {
+        const { error } = await supabase
+          .from('budget_items')
+          .update({
+            budget_id: item.budget_id,
+            parent_id: item.parent_id,
+            item_order: item.item_order,
+            code: item.code,
+            description: item.description,
+            unit: item.unit,
+            quantity: item.quantity,
+            unit_cost: item.unit_cost,
+            total_cost: item.total_cost,
+            is_custom: item.is_custom,
+            length_m: item.length_m,
+            width_m: item.width_m,
+            depth_m: item.depth_m,
+            height_m: item.height_m,
+            slab_type: item.slab_type,
+            apu_result: item.apu_result,
+            apu_params: item.apu_params,
+            sync_status: item.sync_status,
+          })
+          .eq('id', item.id);
+
+        if (error) throw error;
+
+        await offlineDB.budgetItems.update(item.id!, {
+          sync_status: 'synced',
+        });
+
+        result.synced++;
+      } catch (error) {
+        result.failed++;
+        result.errors.push(`Failed to sync budget item update ${item.code}: ${error}`);
       }
     }
 
@@ -286,12 +387,14 @@ export async function syncOfflineData(): Promise<SyncResult> {
         const { data, error } = await supabase
           .from('warehouse_stock')
           .insert({
+            project_id: stock.project_id,
             item_code: stock.item_code,
             description: stock.description,
             unit: stock.unit,
             current_stock: stock.current_stock,
             minimum_threshold: stock.minimum_threshold,
             unit_cost: stock.unit_cost,
+            sync_status: stock.sync_status,
           })
           .select()
           .single();
@@ -374,6 +477,7 @@ export async function getSyncStats(): Promise<SyncStats> {
   const stats: SyncStats = {
     pendingProjects: 0,
     pendingBudgets: 0,
+    pendingBudgetItems: 0,
     pendingTransactions: 0,
     pendingPayroll: 0,
     pendingWarehouse: 0,
@@ -388,6 +492,11 @@ export async function getSyncStats(): Promise<SyncStats> {
       .count();
 
     stats.pendingBudgets = await offlineDB.budgets
+      .where('sync_status')
+      .anyOf(['created_offline', 'updated_offline'])
+      .count();
+
+    stats.pendingBudgetItems = await offlineDB.budgetItems
       .where('sync_status')
       .anyOf(['created_offline', 'updated_offline'])
       .count();

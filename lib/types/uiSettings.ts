@@ -8,8 +8,49 @@ export interface ColorPalette {
   backgroundEnd: string;
 }
 
+export interface GlassPreset {
+  id: string;
+  name: string;
+  description: string;
+  cardTransparency: number;
+  glassBlurIntensity: number;
+  glassGrainIntensity: number;
+  borderOpacity: number;
+  shadowIntensity: number;
+}
+
+export interface CompanySettings {
+  name: string;
+  shortName: string;
+  nit: string;
+  address: string;
+  phone: string;
+  email: string;
+  logoUrl?: string;
+}
+
+export interface FinancialSettings {
+  currency: 'GTQ' | 'USD' | 'EUR';
+  currencySymbol: string;
+  vatRate: number; // IVA percentage
+  profitMargin: number; // Default profit margin percentage
+  includeVatInPrices: boolean;
+}
+
+export interface ExportSettings {
+  pdfIncludeLogo: boolean;
+  pdfIncludeSignature: boolean;
+  pdfIncludeDetailedBreakdown: boolean;
+  csvDelimiter: ',' | ';';
+  csvIncludeHeaders: boolean;
+  dateFormat: 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD';
+}
+
 export interface UISettings {
+  // Appearance
   colorPalette: string;
+  glassPreset: string;
+  themeMode: 'dark' | 'light' | 'auto';
   cardTransparency: number; // 0-100
   glassBlurIntensity: number; // 0-100
   glassGrainIntensity: number; // 0-100
@@ -18,10 +59,76 @@ export interface UISettings {
   animationSpeed: 'slow' | 'normal' | 'fast';
   compactMode: boolean;
   highContrast: boolean;
+  performanceMode: 'high' | 'balanced' | 'low';
+  
+  // Business Settings
+  company: CompanySettings;
+  financial: FinancialSettings;
+  export: ExportSettings;
+  
+  // Sync Settings
+  autoSync: boolean;
+  syncInterval: number; // minutes
 }
 
+export const GLASS_PRESETS: GlassPreset[] = [
+  {
+    id: 'default',
+    name: 'Estándar',
+    description: 'Balance óptimo entre estética y rendimiento',
+    cardTransparency: 55,
+    glassBlurIntensity: 100,
+    glassGrainIntensity: 40,
+    borderOpacity: 12,
+    shadowIntensity: 60,
+  },
+  {
+    id: 'minimal',
+    name: 'Minimalista',
+    description: 'Efectos sutiles para máxima claridad',
+    cardTransparency: 70,
+    glassBlurIntensity: 50,
+    glassGrainIntensity: 20,
+    borderOpacity: 8,
+    shadowIntensity: 40,
+  },
+  {
+    id: 'frosted',
+    name: 'Escarchado',
+    description: 'Desenfoque intenso con alta transparencia',
+    cardTransparency: 40,
+    glassBlurIntensity: 150,
+    glassGrainIntensity: 60,
+    borderOpacity: 15,
+    shadowIntensity: 80,
+  },
+  {
+    id: 'glass',
+    name: 'Cristal Puro',
+    description: 'Efecto de cristal realista con máxima profundidad',
+    cardTransparency: 30,
+    glassBlurIntensity: 200,
+    glassGrainIntensity: 80,
+    borderOpacity: 20,
+    shadowIntensity: 100,
+  },
+  {
+    id: 'performance',
+    name: 'Alto Rendimiento',
+    description: 'Sin desenfoque para máxima velocidad',
+    cardTransparency: 85,
+    glassBlurIntensity: 0,
+    glassGrainIntensity: 0,
+    borderOpacity: 10,
+    shadowIntensity: 30,
+  },
+];
+
 export const DEFAULT_UI_SETTINGS: UISettings = {
+  // Appearance
   colorPalette: 'default',
+  glassPreset: 'default',
+  themeMode: 'dark',
   cardTransparency: 55,
   glassBlurIntensity: 100,
   glassGrainIntensity: 40,
@@ -30,6 +137,37 @@ export const DEFAULT_UI_SETTINGS: UISettings = {
   animationSpeed: 'normal',
   compactMode: false,
   highContrast: false,
+  performanceMode: 'balanced',
+  
+  // Business Settings
+  company: {
+    name: 'CONSTRUCTORA WM/M&S',
+    shortName: 'WM/M&S',
+    nit: '',
+    address: '',
+    phone: '',
+    email: 'info@constructora-wm.com',
+    logoUrl: '',
+  },
+  financial: {
+    currency: 'GTQ',
+    currencySymbol: 'Q.',
+    vatRate: 12,
+    profitMargin: 20,
+    includeVatInPrices: false,
+  },
+  export: {
+    pdfIncludeLogo: true,
+    pdfIncludeSignature: false,
+    pdfIncludeDetailedBreakdown: true,
+    csvDelimiter: ',',
+    csvIncludeHeaders: true,
+    dateFormat: 'DD/MM/YYYY',
+  },
+  
+  // Sync Settings
+  autoSync: true,
+  syncInterval: 5,
 };
 
 export const COLOR_PALETTES: ColorPalette[] = [

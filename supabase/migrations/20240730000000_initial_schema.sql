@@ -98,7 +98,9 @@ CREATE TABLE IF NOT EXISTS payroll_employees (
 );
 
 -- Crear tabla de registros de nómina
-CREATE TABLE IF NOT EXISTS payroll_records (
+-- Note: This table may be recreated in subsequent migrations if structure changes
+DROP TABLE IF EXISTS payroll_records CASCADE;
+CREATE TABLE payroll_records (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   employee_id UUID REFERENCES payroll_employees(id) ON DELETE CASCADE,
   period_start DATE NOT NULL,
@@ -143,8 +145,26 @@ CREATE INDEX IF NOT EXISTS idx_budget_item_breakdowns_item_id ON budget_item_bre
 CREATE INDEX IF NOT EXISTS idx_financial_transactions_project_id ON financial_transactions(project_id);
 CREATE INDEX IF NOT EXISTS idx_financial_transactions_date ON financial_transactions(date);
 CREATE INDEX IF NOT EXISTS idx_financial_transactions_type ON financial_transactions(type);
-CREATE INDEX IF NOT EXISTS idx_payroll_records_employee_id ON payroll_records(employee_id);
-CREATE INDEX IF NOT EXISTS idx_payroll_records_period ON payroll_records(period_start, period_end);
+-- Create indexes for payroll_records only if columns exist
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'payroll_records' 
+    AND column_name = 'employee_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_payroll_records_employee_id ON payroll_records(employee_id);
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'payroll_records' 
+    AND column_name = 'period_start'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_payroll_records_period ON payroll_records(period_start, period_end);
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_warehouse_stock_item_code ON warehouse_stock(item_code);
 
 -- Habilitar Row Level Security (RLS)
@@ -154,17 +174,42 @@ ALTER TABLE budget_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE budget_item_breakdowns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE financial_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payroll_employees ENABLE ROW LEVEL SECURITY;
-ALTER TABLE payroll_records ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payroll_records') THEN
+    ALTER TABLE payroll_records ENABLE ROW LEVEL SECURITY;
+  END IF;
+END $$;
 ALTER TABLE warehouse_stock ENABLE ROW LEVEL SECURITY;
 
 -- Políticas RLS (para desarrollo - permitir todo con anon key)
+DROP POLICY IF EXISTS "Enable all access for projects" ON projects;
 CREATE POLICY "Enable all access for projects" ON projects FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Enable all access for budgets" ON budgets;
 CREATE POLICY "Enable all access for budgets" ON budgets FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Enable all access for budget_items" ON budget_items;
 CREATE POLICY "Enable all access for budget_items" ON budget_items FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Enable all access for budget_item_breakdowns" ON budget_item_breakdowns;
 CREATE POLICY "Enable all access for budget_item_breakdowns" ON budget_item_breakdowns FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Enable all access for financial_transactions" ON financial_transactions;
 CREATE POLICY "Enable all access for financial_transactions" ON financial_transactions FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Enable all access for payroll_employees" ON payroll_employees;
 CREATE POLICY "Enable all access for payroll_employees" ON payroll_employees FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Enable all access for payroll_records" ON payroll_records FOR ALL USING (true) WITH CHECK (true);
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payroll_records') THEN
+    DROP POLICY IF EXISTS "Enable all access for payroll_records" ON payroll_records;
+    CREATE POLICY "Enable all access for payroll_records" ON payroll_records FOR ALL USING (true) WITH CHECK (true);
+  END IF;
+END $$;
+
+DROP POLICY IF EXISTS "Enable all access for warehouse_stock" ON warehouse_stock;
 CREATE POLICY "Enable all access for warehouse_stock" ON warehouse_stock FOR ALL USING (true) WITH CHECK (true);
 
 -- Crear función para actualizar updated_at
@@ -177,26 +222,39 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Crear triggers para updated_at
+DROP TRIGGER IF EXISTS update_projects_updated_at ON projects;
 CREATE TRIGGER update_projects_updated_at BEFORE UPDATE ON projects
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_budgets_updated_at ON budgets;
 CREATE TRIGGER update_budgets_updated_at BEFORE UPDATE ON budgets
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_budget_items_updated_at ON budget_items;
 CREATE TRIGGER update_budget_items_updated_at BEFORE UPDATE ON budget_items
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_budget_item_breakdowns_updated_at ON budget_item_breakdowns;
 CREATE TRIGGER update_budget_item_breakdowns_updated_at BEFORE UPDATE ON budget_item_breakdowns
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_financial_transactions_updated_at ON financial_transactions;
 CREATE TRIGGER update_financial_transactions_updated_at BEFORE UPDATE ON financial_transactions
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_payroll_employees_updated_at ON payroll_employees;
 CREATE TRIGGER update_payroll_employees_updated_at BEFORE UPDATE ON payroll_employees
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_payroll_records_updated_at BEFORE UPDATE ON payroll_records
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payroll_records') THEN
+    DROP TRIGGER IF EXISTS update_payroll_records_updated_at ON payroll_records;
+    CREATE TRIGGER update_payroll_records_updated_at BEFORE UPDATE ON payroll_records
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
 
+DROP TRIGGER IF EXISTS update_warehouse_stock_updated_at ON warehouse_stock;
 CREATE TRIGGER update_warehouse_stock_updated_at BEFORE UPDATE ON warehouse_stock
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

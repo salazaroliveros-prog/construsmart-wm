@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Building2, DollarSign, TrendingUp, Users, Hammer, Calendar, ArrowUpRight, ArrowDownRight, PieChart as PieChartIcon, BarChart3, Activity } from 'lucide-react';
 import { offlineDB, LocalProject, LocalFinancialTransaction, LocalPayrollEmployee, LocalWarehouseStock } from '@/lib/db/offlineStore';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { useFinancialSettings, formatCurrency } from '@/lib/hooks/useBusinessSettings';
 
 interface StatCardProps {
   title: string;
@@ -54,6 +55,7 @@ function StatCard({ title, value, subtitle, icon, trend, trendUp, color = 'cyan'
 const MemoizedStatCard = React.memo(StatCard);
 
 export default function DashboardStats() {
+  const { financial } = useFinancialSettings();
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
   const [employees, setEmployees] = useState<LocalPayrollEmployee[]>([]);
@@ -95,18 +97,6 @@ export default function DashboardStats() {
   const activeEmployees = employees.filter(e => e.active).length;
   const lowStockItems = stockItems.filter(s => s.current_stock <= s.minimum_threshold).length;
 
-  const formatCurrency = (amount: number): string => {
-    if (isNaN(amount) || amount === null || amount === undefined) {
-      return 'Q. 0';
-    }
-    return new Intl.NumberFormat('es-GT', {
-      style: 'currency',
-      currency: 'GTQ',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   // Data for charts
   const projectStatusData = [
     { name: 'Planificación', value: projects.filter(p => p.status === 'planning').length, color: '#f59e0b' },
@@ -147,14 +137,14 @@ export default function DashboardStats() {
           />
           <MemoizedStatCard
             title="Presupuesto Total"
-            value={formatCurrency(totalBudget)}
+            value={formatCurrency(totalBudget, financial)}
             subtitle="Todos los proyectos"
             icon={<DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />}
             color="emerald"
           />
           <MemoizedStatCard
             title="Costo Real"
-            value={formatCurrency(totalSpent)}
+            value={formatCurrency(totalSpent, financial)}
             subtitle={totalBudget > 0 ? `${((totalSpent / totalBudget) * 100).toFixed(1)}% del presupuesto` : 'Sin presupuesto'}
             icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />}
             color="violet"
@@ -249,7 +239,7 @@ export default function DashboardStats() {
                 <Tooltip
                   contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
                   itemStyle={{ color: 'white' }}
-                  formatter={(value) => formatCurrency(Number(value) || 0)}
+                  formatter={(value) => formatCurrency(Number(value) || 0, financial)}
                 />
                 <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -302,7 +292,7 @@ export default function DashboardStats() {
               <Tooltip
                 contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
                 itemStyle={{ color: 'white' }}
-                formatter={(value) => formatCurrency(Number(value) || 0)}
+                formatter={(value) => formatCurrency(Number(value) || 0, financial)}
               />
               <Legend />
               <Line type="monotone" dataKey="income" stroke="#10b981" strokeWidth={2} name="Ingresos" dot={{ fill: '#10b981' }} />

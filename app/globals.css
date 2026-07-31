@@ -401,6 +401,99 @@ body {
   display: none !important;
 }
 
+/* Light Theme Support */
+:root.light {
+  --foreground-rgb: 15, 23, 42;
+  --background-start-rgb: 248, 250, 252;
+  --background-end-rgb: 226, 232, 240;
+}
+
+:root.light body {
+  background: linear-gradient(
+    to bottom,
+    var(--background-start),
+    var(--background-end)
+  );
+  color: rgb(var(--foreground-rgb));
+}
+
+:root.light .glass-panel {
+  background: rgba(255, 255, 255, var(--card-transparency));
+  border: 1px solid rgba(0, 0, 0, var(--border-opacity));
+  box-shadow:
+    0 8px 32px 0 rgba(0, 0, 0, calc(0.1 * var(--shadow-intensity))),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.8),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.05);
+}
+
+:root.light .glass-card {
+  background: rgba(255, 255, 255, calc(0.7 * var(--card-transparency)));
+  border: 1px solid rgba(0, 0, 0, var(--border-opacity));
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, calc(0.05 * var(--shadow-intensity))),
+    0 2px 4px -2px rgba(0, 0, 0, calc(0.05 * var(--shadow-intensity))),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
+}
+
+:root.light .glass-button {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.05) 0%,
+    rgba(0, 0, 0, 0.02) 100%
+  );
+  border: 1px solid rgba(0, 0, 0, calc(var(--border-opacity) * 1.6));
+  color: rgb(var(--foreground-rgb));
+}
+
+:root.light .glass-input {
+  background: rgba(255, 255, 255, calc(0.8 * var(--card-transparency)));
+  border: 1px solid rgba(0, 0, 0, calc(var(--border-opacity) * 1.2));
+  color: rgb(var(--foreground-rgb));
+}
+
+:root.light .glass-input::placeholder {
+  color: rgba(15, 23, 42, 0.4);
+}
+
+/* Performance Mode - Low Performance */
+:root.performance-low .glass-panel,
+:root.performance-low .glass-card,
+:root.performance-low .glass-button,
+:root.performance-low .glass-button-inline,
+:root.performance-low .glass-input {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+:root.performance-low .glass-panel::after,
+:root.performance-low .glass-card::after,
+:root.performance-low .glass-button::after,
+:root.performance-low .glass-button-inline::after {
+  display: none !important;
+}
+
+:root.performance-low .glass-panel::before,
+:root.performance-low .glass-card::before,
+:root.performance-low .glass-button::before,
+:root.performance-low .glass-button-inline::before {
+  display: none !important;
+}
+
+:root.performance-low * {
+  animation-duration: 0s !important;
+  transition-duration: 0.15s !important;
+}
+
+/* Performance Mode - High Performance (full effects) */
+:root.performance-high .glass-panel,
+:root.performance-high .glass-card,
+:root.performance-high .glass-button,
+:root.performance-high .glass-button-inline,
+:root.performance-high .glass-input {
+  backdrop-filter: blur(calc(var(--glass-blur-intensity) * 1.2)) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur-intensity) * 1.2)) saturate(200%) !important;
+}
+
 /* Compact Mode */
 :root.compact-mode .glass-panel,
 :root.compact-mode .glass-card {

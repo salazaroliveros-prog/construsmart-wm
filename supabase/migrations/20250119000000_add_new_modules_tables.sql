@@ -150,18 +150,23 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Triggers para actualización automática de updated_at
+DROP TRIGGER IF EXISTS update_clients_updated_at ON clients;
 CREATE TRIGGER update_clients_updated_at BEFORE UPDATE ON clients
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_project_logs_updated_at ON project_logs;
 CREATE TRIGGER update_project_logs_updated_at BEFORE UPDATE ON project_logs
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_suppliers_updated_at ON suppliers;
 CREATE TRIGGER update_suppliers_updated_at BEFORE UPDATE ON suppliers
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_purchase_orders_updated_at ON purchase_orders;
 CREATE TRIGGER update_purchase_orders_updated_at BEFORE UPDATE ON purchase_orders
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_purchase_order_items_updated_at ON purchase_order_items;
 CREATE TRIGGER update_purchase_order_items_updated_at BEFORE UPDATE ON purchase_order_items
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -175,105 +180,125 @@ ALTER TABLE purchase_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE purchase_order_items ENABLE ROW LEVEL SECURITY;
 
 -- Policies para clients (lectura pública para authenticated)
+DROP POLICY IF EXISTS "Clients are viewable by authenticated users" ON clients;
 CREATE POLICY "Clients are viewable by authenticated users"
     ON clients FOR SELECT
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Clients are insertable by authenticated users" ON clients;
 CREATE POLICY "Clients are insertable by authenticated users"
     ON clients FOR INSERT
     TO authenticated
     WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Clients are updatable by authenticated users" ON clients;
 CREATE POLICY "Clients are updatable by authenticated users"
     ON clients FOR UPDATE
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Clients are deletable by authenticated users" ON clients;
 CREATE POLICY "Clients are deletable by authenticated users"
     ON clients FOR DELETE
     TO authenticated
     USING (true);
 
 -- Policies para project_logs
+DROP POLICY IF EXISTS "Project logs are viewable by authenticated users" ON project_logs;
 CREATE POLICY "Project logs are viewable by authenticated users"
     ON project_logs FOR SELECT
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Project logs are insertable by authenticated users" ON project_logs;
 CREATE POLICY "Project logs are insertable by authenticated users"
     ON project_logs FOR INSERT
     TO authenticated
     WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Project logs are updatable by authenticated users" ON project_logs;
 CREATE POLICY "Project logs are updatable by authenticated users"
     ON project_logs FOR UPDATE
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Project logs are deletable by authenticated users" ON project_logs;
 CREATE POLICY "Project logs are deletable by authenticated users"
     ON project_logs FOR DELETE
     TO authenticated
     USING (true);
 
 -- Policies para suppliers
+DROP POLICY IF EXISTS "Suppliers are viewable by authenticated users" ON suppliers;
 CREATE POLICY "Suppliers are viewable by authenticated users"
     ON suppliers FOR SELECT
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Suppliers are insertable by authenticated users" ON suppliers;
 CREATE POLICY "Suppliers are insertable by authenticated users"
     ON suppliers FOR INSERT
     TO authenticated
     WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Suppliers are updatable by authenticated users" ON suppliers;
 CREATE POLICY "Suppliers are updatable by authenticated users"
     ON suppliers FOR UPDATE
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Suppliers are deletable by authenticated users" ON suppliers;
 CREATE POLICY "Suppliers are deletable by authenticated users"
     ON suppliers FOR DELETE
     TO authenticated
     USING (true);
 
 -- Policies para purchase_orders
+DROP POLICY IF EXISTS "Purchase orders are viewable by authenticated users" ON purchase_orders;
 CREATE POLICY "Purchase orders are viewable by authenticated users"
     ON purchase_orders FOR SELECT
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Purchase orders are insertable by authenticated users" ON purchase_orders;
 CREATE POLICY "Purchase orders are insertable by authenticated users"
     ON purchase_orders FOR INSERT
     TO authenticated
     WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Purchase orders are updatable by authenticated users" ON purchase_orders;
 CREATE POLICY "Purchase orders are updatable by authenticated users"
     ON purchase_orders FOR UPDATE
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Purchase orders are deletable by authenticated users" ON purchase_orders;
 CREATE POLICY "Purchase orders are deletable by authenticated users"
     ON purchase_orders FOR DELETE
     TO authenticated
     USING (true);
 
 -- Policies para purchase_order_items
+DROP POLICY IF EXISTS "Purchase order items are viewable by authenticated users" ON purchase_order_items;
 CREATE POLICY "Purchase order items are viewable by authenticated users"
     ON purchase_order_items FOR SELECT
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Purchase order items are insertable by authenticated users" ON purchase_order_items;
 CREATE POLICY "Purchase order items are insertable by authenticated users"
     ON purchase_order_items FOR INSERT
     TO authenticated
     WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Purchase order items are updatable by authenticated users" ON purchase_order_items;
 CREATE POLICY "Purchase order items are updatable by authenticated users"
     ON purchase_order_items FOR UPDATE
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Purchase order items are deletable by authenticated users" ON purchase_order_items;
 CREATE POLICY "Purchase order items are deletable by authenticated users"
     ON purchase_order_items FOR DELETE
     TO authenticated

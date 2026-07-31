@@ -24,6 +24,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import PDFGenerator from '@/components/pdf/PDFGenerator';
+import CSVGenerator from '@/components/csv/CSVGenerator';
 import RenglonAccordion from '@/components/budgets/RenglonAccordion';
 import { RenglonCalculator, ProjectRenglon, ProjectTimeImpact } from '@/lib/calculators/renglonCalculator';
 
@@ -478,6 +479,35 @@ export default function BudgetCalculator() {
                 <Download className="w-4 h-4" />
                 Exportar PDF
               </button>
+            </Tooltip>
+            <Tooltip content="Exportar presupuesto a CSV con resumen y desglose de materiales">
+              <CSVGenerator
+                projectName={projectName}
+                clientName={clientName}
+                items={items.map(item => ({
+                  code: item.code,
+                  description: item.description,
+                  unit: item.unit,
+                  quantity: item.quantity,
+                  unitCost: item.unitCost,
+                  totalCost: item.totalCost,
+                  timeRequired: item.apuResult ? 
+                    (item.quantity / (apuParams.dailyPerformance * (apuParams.crewSize || 1))) : undefined,
+                  materialBreakdown: item.apuResult ? [{
+                    code: item.code,
+                    description: item.description,
+                    unit: item.unit,
+                    quantity: item.quantity * (1 + apuParams.wastePercentage / 100),
+                    unitCost: item.unitCost,
+                    totalCost: item.totalCost
+                  }] : undefined,
+                }))}
+                summary={summary}
+                indirectPercentage={indirectPercentage}
+                contingencyPercentage={contingencyPercentage}
+                profitPercentage={profitPercentage}
+                totalProjectTime={durationDays}
+              />
             </Tooltip>
           </div>
         </div>
@@ -1116,17 +1146,22 @@ export default function BudgetCalculator() {
                 quantity: item.quantity,
                 unitCost: item.unitCost,
                 totalCost: item.totalCost,
+                timeRequired: item.apuResult ? 
+                  (item.quantity / (apuParams.dailyPerformance * (apuParams.crewSize || 1))) : undefined,
+                materialBreakdown: item.apuResult ? [{
+                  code: item.code,
+                  description: item.description,
+                  unit: item.unit,
+                  quantity: item.quantity * (1 + apuParams.wastePercentage / 100),
+                  unitCost: item.unitCost,
+                  totalCost: item.totalCost
+                }] : undefined,
               }))}
-              summary={{
-                directCost: summary.directCost,
-                indirectCost: summary.indirectCost,
-                contingency: summary.contingency,
-                profit: summary.profit,
-                total: summary.total,
-              }}
+              summary={summary}
               indirectPercentage={indirectPercentage}
               contingencyPercentage={contingencyPercentage}
               profitPercentage={profitPercentage}
+              totalProjectTime={durationDays}
             />
           </div>
         </div>

@@ -108,9 +108,16 @@ CREATE TABLE IF NOT EXISTS payroll_employees (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Índices payroll
-CREATE INDEX IF NOT EXISTS idx_payroll_records_employee_id ON payroll_records(employee_id);
-CREATE INDEX IF NOT EXISTS idx_payroll_records_period ON payroll_records(period_start, period_end);
+-- Índices payroll (solo si columnas existen)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payroll_records' AND column_name = 'employee_id') THEN
+    CREATE INDEX IF NOT EXISTS idx_payroll_records_employee_id ON payroll_records(employee_id);
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payroll_records' AND column_name = 'period_start') THEN
+    CREATE INDEX IF NOT EXISTS idx_payroll_records_period ON payroll_records(period_start, period_end);
+  END IF;
+END $$;
 
 -- RLS para payroll_employees
 ALTER TABLE payroll_employees ENABLE ROW LEVEL SECURITY;
