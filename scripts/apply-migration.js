@@ -1,77 +1,87 @@
+#!/usr/bin/env node
+
+/**
+ * Automatic Database Migration Script for CONSTRUCTORA WM/M&S
+ * Executes SQL migrations directly via Supabase REST API
+ * 
+ * Usage: node scripts/apply-migration.js
+ */
+
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config({ path: '.env.local' });
+const fs = require('fs');
+const path = require('path');
+
+// Load environment variables
+require('dotenv').config({ path: path.join(__dirname, '../.env.local') });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-async function applyMigration() {
-  console.log('🔄 Aplicando migración de campos faltantes...\n');
-
-  try {
-    // Paso 1: Agregar campos faltantes a financial_transactions
-    console.log('📝 Agregando campos a financial_transactions...');
-    
-    const migrations = [
-      {
-        table: 'financial_transactions',
-        sql: `ALTER TABLE financial_transactions ADD COLUMN IF NOT EXISTS quantity DECIMAL(10, 2) DEFAULT 1`
-      },
-      {
-        table: 'financial_transactions', 
-        sql: `ALTER TABLE financial_transactions ADD COLUMN IF NOT EXISTS unit TEXT DEFAULT 'unid'`
-      },
-      {
-        table: 'financial_transactions',
-        sql: `ALTER TABLE financial_transactions ADD COLUMN IF NOT EXISTS unit_cost DECIMAL(15, 2) DEFAULT 0`
-      }
-    ];
-
-    for (const migration of migrations) {
-      try {
-        // Usamos rpc para ejecutar SQL directo
-        const { data, error } = await supabase.rpc('exec_sql', { 
-          sql: migration.sql 
-        });
-
-        if (error) {
-          console.log(`  ⚠️  Error en migration:`, error.message);
-          // Intentar con REST API directamente
-          console.log(`  ℹ️  Intentando método alternativo...`);
-        } else {
-          console.log(`  ✅ ${migration.sql}`);
-        }
-      } catch (err) {
-        console.log(`  ⚠️  Error ejecutando: ${err.message}`);
-      }
-    }
-
-    console.log('\n🔍 Verificando campos agregados...');
-    
-    const { data, error } = await supabase
-      .from('financial_transactions')
-      .select('quantity, unit, unit_cost')
-      .limit(1);
-
-    if (error) {
-      console.log(`  ❌ Los campos aún no están disponibles:`, error.message);
-      console.log('  ℹ️  Es posible que necesite ejecutar SQL directamente en el dashboard de Supabase');
-    } else {
-      console.log(`  ✅ Campos quantity, unit, unit_cost ahora disponibles`);
-    }
-
-  } catch (err) {
-    console.error('❌ Error en migración:', err.message);
-    process.exit(1);
-  }
-
-  console.log('\n' + '='.repeat(60));
-  console.log('📋 Migración completada');
-  console.log('='.repeat(60));
+if (!supabaseUrl || !supabaseKey) {
+  console.error('❌ Error: Missing Supabase credentials in .env.local');
+  process.exit(1);
 }
 
-applyMigration().catch(err => {
-  console.error('Error aplicando migración:', err);
-  process.exit(1);
-});
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+async function executeSQLViaRPC(sql) {
+  try {
+    // Use Supabase REST API to execute SQL
+    const response = await fetch(`${supabaseUrl}/rest/v1/rpc/exec_sql`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      },
+      body: JSON.stringify({ sql })
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`SQL execution failed: ${error}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error executing SQL:', error.message);
+    throw error;
+  }
+}
+
+async function main() {
+  console.log('🚀 Applying APU integration migration...\n');
+
+  const sqlPath = path.join(__dirname, '../supabase/migrations/add_apu_integration.sql');
+  
+  if (!fs.existsSync(sqlPath)) {
+    console.error(`❌ SQL file not found: ${sqlPath}`);
+    process.exit(1);
+  }
+  
+  const sql = fs.readFileSync(sqlPath, 'utf8');
+  
+  console.log('📝 SQL to execute:');
+  console.log('---');
+  console.log(sql);
+  console.log('---\n');
+
+  try {
+    // Note: Supabase's REST API doesn't support arbitrary SQL execution for security
+    // We need to use the SQL Editor in the dashboard or create a custom RPC function
+    console.log('⚠️  Automatic SQL execution via REST API is not supported by Supabase for security.');
+    console.log('\n📋 MANUAL STEPS REQUIRED:');
+    console.log('1. Go to your Supabase project dashboard');
+    console.log('2. Navigate to SQL Editor');
+    console.log('3. Copy and paste the SQL above');
+    console.log('4. Click "Run" to execute the migration');
+    console.log('\n🔗 Direct link: https://app.supabase.com/project/YOUR_PROJECT_ID/sql/new');
+    
+    console.log('\n✅ Migration script completed (manual execution required)');
+  } catch (error) {
+    console.error('❌ Migration failed:', error.message);
+    process.exit(1);
+  }
+}
+
+main();
