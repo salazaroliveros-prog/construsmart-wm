@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import DualBrandHeader from '@/components/dashboard/DualBrandHeader';
 import DashboardNav from '@/components/dashboard/DashboardNav';
 import DashboardStats from '@/components/dashboard/DashboardStats';
@@ -55,8 +55,9 @@ export default function Dashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
-  
+
   // Use scroll lock for mobile menu
   useScrollLock(isMobileMenuOpen && isMobile);
 
@@ -199,6 +200,17 @@ export default function Dashboard() {
           </button>
         )}
 
+        {isMounted && !isMobile && (
+          <button
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="hidden lg:flex fixed top-20 left-3 z-[45] p-2.5 rounded-lg glass-button transition-all hover:scale-105"
+            aria-label={isSidebarCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
+            aria-expanded={!isSidebarCollapsed}
+          >
+            {isSidebarCollapsed ? <ChevronRight className="w-5 h-5 text-white" /> : <ChevronLeft className="w-5 h-5 text-white" />}
+          </button>
+        )}
+
         {isMounted && isMobile && isMobileMenuOpen && (
           <div
             className="fixed inset-0 bg-black/50 z-30 lg:hidden"
@@ -209,14 +221,16 @@ export default function Dashboard() {
 
         <div className="flex flex-1 overflow-hidden relative">
           <aside
-            className={`sidebar-container fixed lg:relative w-64 flex-shrink-0 h-full lg:block ${isMobileMenuOpen ? 'open' : ''}`}
+            className={`sidebar-container fixed lg:relative flex-shrink-0 h-full lg:block transition-all duration-300 ease-in-out ${
+              isMobileMenuOpen ? 'open w-64' : '-left-64 lg:-left-64'
+            } ${!isMobile && isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:overflow-hidden' : 'lg:w-64 lg:opacity-100'}`}
             style={{ zIndex: 40 }}
             aria-label="Menú lateral de navegación"
           >
             <DashboardNav activeTab={activeTab} onTabChange={(tab) => {
               setActiveTab(tab);
               setIsMobileMenuOpen(false);
-            }} />
+            }} isCollapsed={isSidebarCollapsed} />
           </aside>
 
           <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 main-content pt-20 sm:pt-24 lg:pt-6" id="main-content" role="main" aria-label="Contenido principal">

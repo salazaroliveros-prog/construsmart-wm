@@ -569,6 +569,13 @@ body {
   .glass-card {
     margin-bottom: 0.75rem;
   }
+
+  /* Disable icon animations on mobile for performance */
+  .animate-float,
+  .animate-glow,
+  .animate-shake {
+    animation: none !important;
+  }
 }
 
 /* Mobile Landscape (portrait to landscape) */
@@ -595,6 +602,12 @@ body {
 
   .chart-container { min-height: 200px; }
   .kpi-value { font-size: 1.2rem; }
+
+  /* Grid adjustments for landscape */
+  .grid-responsive-mobile {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
 }
 
 /* Small Mobile (iPhone SE, etc.) */
@@ -667,6 +680,9 @@ body {
     padding-left: 1rem;
     padding-right: 1rem;
   }
+
+  /* Chart container adjustments */
+  .chart-container { min-height: 300px; }
 }
 
 /* Tablet Landscape */
@@ -682,6 +698,9 @@ body {
   .sidebar-container {
     top: 56px;
   }
+
+  /* Chart container adjustments */
+  .chart-container { min-height: 280px; }
 }
 
 /* Desktop Small */
@@ -693,6 +712,9 @@ body {
 
   h1 { font-size: 2rem; }
   h2 { font-size: 1.5rem; }
+
+  /* Chart container adjustments */
+  .chart-container { min-height: 320px; }
 }
 
 /* Desktop Large */
@@ -704,6 +726,9 @@ body {
 
   h1 { font-size: 2.25rem; }
   h2 { font-size: 1.75rem; }
+
+  /* Chart container adjustments */
+  .chart-container { min-height: 350px; }
 }
 
 /* Ultra Wide */
@@ -872,6 +897,35 @@ html, body {
 
 .animate-slide-up {
   animation: slide-up var(--animation-duration) ease-out;
+}
+
+/* Icon Animations */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+  20%, 40%, 60%, 80% { transform: translateX(2px); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes glow {
+  0%, 100% { filter: drop-shadow(0 0 2px currentColor); }
+  50% { filter: drop-shadow(0 0 8px currentColor); }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
 }
 
 /* Custom Scrollbar */

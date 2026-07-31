@@ -32,6 +32,7 @@ const NAV_ITEMS_BASE: NavItem[] = [
 interface DashboardNavProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  isCollapsed?: boolean;
 }
 
 const ICONS: Record<string, React.ReactNode> = {
@@ -116,7 +117,7 @@ function UserAvatar() {
   return <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />;
 }
 
-export default function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
+export default function DashboardNav({ activeTab, onTabChange, isCollapsed = false }: DashboardNavProps) {
   const isActive = (id: string) => activeTab === id;
   const { user, signOut } = useAuth();
   const router = useRouter();
@@ -172,41 +173,52 @@ export default function DashboardNav({ activeTab, onTabChange }: DashboardNavPro
   };
 
   return (
-    <nav className="glass-panel border-r border-white/10 flex flex-col h-full z-40" aria-label="Navegación principal">
+    <nav className={`glass-panel border-r border-white/10 flex flex-col h-full z-40 transition-all duration-300 ${
+      isCollapsed ? 'w-16' : 'w-64'
+    }`} aria-label="Navegación principal">
       {/* Brand Section */}
-      <div className="px-3 sm:px-4 py-3 sm:py-4 border-b border-white/10">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center">
-            <LayoutDashboard className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+      <div className={`px-3 sm:px-4 py-3 sm:py-4 border-b border-white/10 ${isCollapsed ? 'flex justify-center' : ''}`}>
+        {!isCollapsed ? (
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center">
+              <LayoutDashboard className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-white font-bold text-sm sm:text-lg">CONSTRUCTORA WM</h2>
+              <p className="text-[10px] sm:text-xs text-cyan-400">Sistema ERP</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-white font-bold text-sm sm:text-lg">CONSTRUCTORA WM</h2>
-            <p className="text-[10px] sm:text-xs text-cyan-400">Sistema ERP</p>
+        ) : (
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center">
+            <LayoutDashboard className="w-5 h-5 text-white" />
           </div>
-        </div>
+        )}
       </div>
 
       {/* Navigation Items */}
       <div className="flex-1 overflow-y-auto py-3 sm:py-4">
-        <div className="px-2 sm:px-3 space-y-1">
+        <div className={`px-2 sm:px-3 space-y-1 ${isCollapsed ? 'space-y-2' : ''}`}>
           {navItems.map((item) => {
             const active = isActive(item.id);
             return (
               <button
                 key={item.id}
                 onClick={() => onTabChange(item.id)}
-                className={`w-full flex items-center justify-between px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg transition-all ${
+                className={`w-full flex items-center rounded-lg transition-all ${
+                  isCollapsed ? 'justify-center p-2' : 'justify-between px-2 sm:px-3 py-2 sm:py-2.5'
+                } ${
                   active
                     ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
                     : 'text-white/60 hover:bg-white/5 hover:text-white border border-transparent'
                 }`}
                 aria-current={active ? 'page' : undefined}
+                title={isCollapsed ? item.label : undefined}
               >
-                <div className="flex items-center gap-2 sm:gap-3">
+                <div className={`flex items-center ${isCollapsed ? '' : 'gap-2 sm:gap-3'}`}>
                   {ICONS[item.icon]}
-                  <span className="font-medium text-xs sm:text-sm">{item.label}</span>
+                  {!isCollapsed && <span className="font-medium text-xs sm:text-sm">{item.label}</span>}
                 </div>
-                {item.badge && (
+                {!isCollapsed && item.badge && (
                   <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium flex items-center gap-1 ${
                     item.badgeColor === 'red'
                       ? 'bg-red-500/20 text-red-300'
@@ -218,6 +230,11 @@ export default function DashboardNav({ activeTab, onTabChange }: DashboardNavPro
                     {item.badge}
                   </span>
                 )}
+                {isCollapsed && item.badge && (
+                  <span className={`absolute top-1 right-1 w-2 h-2 rounded-full ${
+                    item.badgeColor === 'red' ? 'bg-red-500' : item.badgeColor === 'amber' ? 'bg-amber-500' : 'bg-cyan-500'
+                  }`} />
+                )}
               </button>
             );
           })}
@@ -225,38 +242,65 @@ export default function DashboardNav({ activeTab, onTabChange }: DashboardNavPro
       </div>
 
       {/* Admin Section */}
-      <div className="px-3 sm:px-4 py-3 sm:py-4 border-t border-white/10">
-        <a
-          href="/admin/database-cleaner"
-          className="flex items-center gap-2 sm:gap-3 text-white/60 hover:text-white transition-colors group"
-        >
-          <Database className="w-4 h-4 sm:w-5 sm:h-5 group-hover:text-red-400 transition-colors" />
-          <span className="text-[10px] sm:text-xs">Limpiar BD</span>
-        </a>
+      <div className={`px-3 sm:px-4 py-3 sm:py-4 border-t border-white/10 ${isCollapsed ? 'flex justify-center' : ''}`}>
+        {!isCollapsed ? (
+          <a
+            href="/admin/database-cleaner"
+            className="flex items-center gap-2 sm:gap-3 text-white/60 hover:text-white transition-colors group"
+          >
+            <Database className="w-4 h-4 sm:w-5 sm:h-5 group-hover:text-red-400 transition-colors" />
+            <span className="text-[10px] sm:text-xs">Limpiar BD</span>
+          </a>
+        ) : (
+          <a
+            href="/admin/database-cleaner"
+            className="text-white/60 hover:text-red-400 transition-colors"
+            title="Limpiar BD"
+          >
+            <Database className="w-5 h-5" />
+          </a>
+        )}
       </div>
 
       {/* User Info Section */}
-      <div className="px-3 sm:px-4 py-3 sm:py-4 border-t border-white/10">
-        <div className="flex items-center gap-2 sm:gap-3 mb-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center overflow-hidden">
-            <UserAvatar />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white font-medium text-xs sm:text-sm truncate">
-              {user?.name || user?.email || 'Usuario'}
-            </p>
-            <p className="text-cyan-400 text-[10px] sm:text-xs truncate">
-              {user?.email || ''}
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={handleSignOut}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors text-xs"
-        >
-          <LogOut className="w-4 h-4" />
-          Cerrar Sesión
-        </button>
+      <div className={`px-3 sm:px-4 py-3 sm:py-4 border-t border-white/10 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
+        {!isCollapsed ? (
+          <>
+            <div className="flex items-center gap-2 sm:gap-3 mb-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center overflow-hidden">
+                <UserAvatar />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-medium text-xs sm:text-sm truncate">
+                  {user?.name || user?.email || 'Usuario'}
+                </p>
+                <p className="text-cyan-400 text-[10px] sm:text-xs truncate">
+                  {user?.email || ''}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors text-xs"
+            >
+              <LogOut className="w-4 h-4" />
+              Cerrar Sesión
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center overflow-hidden mb-2">
+              <UserAvatar />
+            </div>
+            <button
+              onClick={handleSignOut}
+              className="text-white/60 hover:text-white transition-colors"
+              title="Cerrar Sesión"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </>
+        )}
       </div>
     </nav>
   );
