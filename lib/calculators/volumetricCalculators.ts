@@ -54,6 +54,34 @@ export function calculateCylindricalVolume(params: DimensionalParams): VolumeRes
 }
 
 /**
+ * Calculate trapezoidal volume (zapatas, estribos)
+ * Volume = (Height/3) × (BaseArea + TopArea + √(BaseArea × TopArea))
+ */
+export interface TrapezoidalParams {
+  baseLength: number;
+  baseWidth: number;
+  topLength: number;
+  topWidth: number;
+  height: number;
+}
+
+export function calculateTrapezoidalVolume(params: TrapezoidalParams): VolumeResult {
+  const { baseLength, baseWidth, topLength, topWidth, height } = params;
+  const baseArea = baseLength * baseWidth;
+  const topArea = topLength * topWidth;
+  const volume = (height / 3) * (baseArea + topArea + Math.sqrt(baseArea * topArea));
+  const surfaceArea = baseArea + topArea + (baseLength + topLength) * height / 2 + (baseWidth + topWidth) * height / 2;
+  const perimeter = 2 * (baseLength + baseWidth + topLength + topWidth);
+
+  return {
+    volume,
+    surfaceArea,
+    perimeter,
+    description: `Volumen Trapezoidal: ${baseLength}×${baseWidth}m → ${topLength}×${topWidth}m × ${height}m`,
+  };
+}
+
+/**
  * Calculate excavation volume for foundations
  * Includes expansion factor for soil
  */
