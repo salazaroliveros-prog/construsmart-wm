@@ -133,7 +133,7 @@ export default function DashboardStats() {
   return (
     <div className="space-y-3 sm:space-y-4">
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-3 lg:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 2xl:grid-cols-6 gap-2 sm:gap-3 lg:gap-4">
         {!isLoading ? (
         <>
           <MemoizedStatCard
@@ -201,7 +201,7 @@ export default function DashboardStats() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3 gap-3 sm:gap-4">
         {/* Project Status Pie Chart */}
         <div className="glass-panel rounded-2xl p-3 sm:p-4">
           <h3 className="text-xs sm:text-sm font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
