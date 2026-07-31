@@ -50,9 +50,9 @@ body {
 
 /* Modal Backdrop with Enhanced Gaussian Blur */
 .modal-backdrop {
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(calc(var(--glass-blur-intensity) * 0.6)) saturate(150%);
-  -webkit-backdrop-filter: blur(calc(var(--glass-blur-intensity) * 0.6)) saturate(150%);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(calc(var(--glass-blur-intensity) * 1.2)) saturate(150%);
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur-intensity) * 1.2)) saturate(150%);
   position: fixed;
   inset: 0;
   z-index: 50;

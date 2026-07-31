@@ -25,7 +25,7 @@ export const DEFAULT_UI_SETTINGS: UISettings = {
   colorPalette: 'default',
   backgroundGradientIntensity: 50,
   cardTransparency: 55,
-  glassBlurIntensity: 80,
+  glassBlurIntensity: 100,
   glassGrainIntensity: 40,
   borderOpacity: 12,
   shadowIntensity: 60,
