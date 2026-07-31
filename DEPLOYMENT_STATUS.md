@@ -14,7 +14,7 @@
 
 **Repository:** Up to date
 - Branch: `main`
-- Latest commit: `84bffc9` - feat: add overflow-anchor-none to all scrollable containers
+- Latest commit: `01cd5ef` - refactor: swap tier cards and chart panels in dashboard layout
 - Status: Sincronizado con origin
 - No cambios pendientes
 
@@ -38,6 +38,7 @@
 3. **`turbopack` experimental en `next.config.ts`** — Se eliminó la configuración de `turbopack` que podía causar fallos de build en Vercel (luego se restauró porque Next.js 16 lo requiere).
 4. **Auto-deploy no funcionaba** — No había webhook de GitHub configurado para Vercel. Se creó un webhook en la repo de GitHub que dispara deploys en cada push a `main`.
 5. **Scroll bloqueado por `overflow-anchor`** — Se agregó `overflow-anchor-none` a todos los contenedores scrollables de la suite para evitar que el navegador bloquee el scroll cuando hay elementos flotantes o modales.
+6. **Reordenamiento de tarjetas en dashboard** — Se intercambiaron las posiciones de las tarjetas de nivel (Básico/Moderado/Premium) y los paneles de gráficas (Estado de Proyectos/Distribución de Gastos/Flujo Financiero). Las tarjetas de nivel ahora están en el área de gráficas y las gráficas están en la columna derecha donde estaban las tarjetas.
 
 ### Pasos para Verificar el Deploy
 
@@ -47,14 +48,16 @@
 ## Estado del Código
 
 **Últimos Commits:**
-1. `84bffc9` - feat: add overflow-anchor-none to all scrollable containers
-2. `d9cdfad` - fix: add overflow-anchor-none to ProjectOverview + globals.css
-3. `e50d68e` - fix: vercel.json cache headers, sw.js v3, DEPLOYMENT_STATUS update
-4. `244f280` - Refactor: dashboard zero-scroll layout, no sidebar toggle, centered nav
-5. `0b6fc84` - Refactor: dashboard zero-scroll layout with responsive sidebar
-6. `e14a236` - Fix: correct DB version reference in clear-local-db script (v2 -> v6)
-7. `8eece68` - Fix offline sync bugs, add Realtime refresh, idempotent budget save
-8. `9052395` - chore: pin node engine to 24.x to silence vercel auto-upgrade warning
+1. `01cd5ef` - refactor: swap tier cards and chart panels in dashboard layout
+2. `c88ca9f` - docs: update DEPLOYMENT_STATUS.md with webhook fix and overflow-anchor-none
+3. `84bffc9` - feat: add overflow-anchor-none to all scrollable containers
+4. `d9cdfad` - fix: add overflow-anchor-none to ProjectOverview + globals.css
+5. `e50d68e` - fix: vercel.json cache headers, sw.js v3, DEPLOYMENT_STATUS update
+6. `244f280` - Refactor: dashboard zero-scroll layout, no sidebar toggle, centered nav
+7. `0b6fc84` - Refactor: dashboard zero-scroll layout with responsive sidebar
+8. `e14a236` - Fix: correct DB version reference in clear-local-db script (v2 -> v6)
+9. `8eece68` - Fix offline sync bugs, add Realtime refresh, idempotent budget save
+10. `9052395` - chore: pin node engine to 24.x to silence vercel auto-upgrade warning
 
 **Archivos Nuevos Importantes:**
 - `lib/state/budgetState.ts` - Estado global del presupuesto
@@ -85,6 +88,7 @@ El proyecto está configurado con GitHub auto-deploy en Vercel. Se creó un webh
 | sw.js | ✅ | Cache version actualizado a v3 |
 | Auto-deploy Webhook | ✅ | Creado en GitHub repo |
 | overflow-anchor-none | ✅ | Aplicado a todos los contenedores scrollables |
+| Dashboard Layout | ✅ | Tarjetas de nivel y gráficas intercambiadas de posición |
 | Vercel Deploy | ✅ | Funcionando |
 | Live Site | ✅ | https://control-constructora-wm.vercel.app |
 
@@ -92,3 +96,4 @@ El proyecto está configurado con GitHub auto-deploy en Vercel. Se creó un webh
 
 1. Verificar que el auto-deploy funciona haciendo un cambio pequeño y haciendo push a `main`
 2. Probar el scroll en todos los contenedores de la suite para confirmar que `overflow-anchor-none` resuelve el problema de scroll bloqueado
+3. Verificar que el intercambio de tarjetas y gráficas en el dashboard se muestra correctamente
