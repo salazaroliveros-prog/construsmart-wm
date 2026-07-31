@@ -4,6 +4,7 @@ import './globals.css';
 import { APP_CONFIG } from '@/lib/config/app.config';
 import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration';
 import { ToastProvider } from '@/components/ui/Toast';
+import { AuthProvider } from '@/lib/auth/auth-context';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -55,10 +56,12 @@ export default function RootLayout({
         <meta name="description" content="Sistema de Gestión de Construcción - CONSTRUCTORA WM/M&S - CONSTRUYENDO EL FUTURO" />
       </head>
       <body className={inter.className}>
-        <ToastProvider>
-          <ServiceWorkerRegistration />
-          {children}
-        </ToastProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <ServiceWorkerRegistration />
+            {children}
+          </ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   );

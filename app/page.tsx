@@ -7,6 +7,7 @@ import DualBrandHeader from '@/components/dashboard/DualBrandHeader';
 import DashboardNav from '@/components/dashboard/DashboardNav';
 import DashboardStats from '@/components/dashboard/DashboardStats';
 import ProjectOverview from '@/components/dashboard/ProjectOverview';
+import AuthGuard from '@/components/auth/AuthGuard';
 import { offlineDB } from '@/lib/db/offlineStore';
 import { useScrollLock } from '@/lib/hooks/useScrollLock';
 
@@ -156,66 +157,68 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <DualBrandHeader />
+    <AuthGuard>
+      <div className="flex flex-col h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <DualBrandHeader />
 
-      {isMounted && isMobile && (
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="lg:hidden fixed top-20 left-3 sm:left-4 z-[45] p-2.5 sm:p-3 rounded-lg glass-button"
-          aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
-          aria-expanded={isMobileMenuOpen}
-        >
-          {isMobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6 text-white" />}
-        </button>
-      )}
+        {isMounted && isMobile && (
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="lg:hidden fixed top-20 left-3 sm:left-4 z-[45] p-2.5 sm:p-3 rounded-lg glass-button"
+            aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+            aria-expanded={isMobileMenuOpen}
+          >
+            {isMobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6 text-white" />}
+          </button>
+        )}
 
-      {isMounted && isMobile && isMobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-          onClick={() => setIsMobileMenuOpen(false)}
-          aria-hidden="true"
-        />
-      )}
+        {isMounted && isMobile && isMobileMenuOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+        )}
 
-      <div className="flex flex-1 overflow-hidden relative">
-        <aside
-          className={`sidebar-container fixed lg:relative w-64 flex-shrink-0 h-full lg:block ${isMobileMenuOpen ? 'open' : ''}`}
-          style={{ zIndex: 40 }}
-          aria-label="Menú lateral de navegación"
-        >
-          <DashboardNav activeTab={activeTab} onTabChange={(tab) => {
-            setActiveTab(tab);
-            setIsMobileMenuOpen(false);
-          }} />
-        </aside>
+        <div className="flex flex-1 overflow-hidden relative">
+          <aside
+            className={`sidebar-container fixed lg:relative w-64 flex-shrink-0 h-full lg:block ${isMobileMenuOpen ? 'open' : ''}`}
+            style={{ zIndex: 40 }}
+            aria-label="Menú lateral de navegación"
+          >
+            <DashboardNav activeTab={activeTab} onTabChange={(tab) => {
+              setActiveTab(tab);
+              setIsMobileMenuOpen(false);
+            }} />
+          </aside>
 
-        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 main-content pt-20 sm:pt-24 lg:pt-6" id="main-content" role="main" aria-label="Contenido principal">
-          <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
-            <nav className="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-1" aria-label="Navegación de pestañas">
-              {NAVIGATION_TABS.map(tab => {
-                const isTabActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all whitespace-nowrap text-xs sm:text-sm ${
-                      isTabActive
-                        ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
-                        : 'text-gray-400 hover:text-white border border-transparent'
-                    }`}
-                    aria-current={isTabActive ? 'page' : undefined}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </nav>
+          <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 main-content pt-20 sm:pt-24 lg:pt-6" id="main-content" role="main" aria-label="Contenido principal">
+            <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+              <nav className="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-1" aria-label="Navegación de pestañas">
+                {NAVIGATION_TABS.map(tab => {
+                  const isTabActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all whitespace-nowrap text-xs sm:text-sm ${
+                        isTabActive
+                          ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
+                          : 'text-gray-400 hover:text-white border border-transparent'
+                      }`}
+                      aria-current={isTabActive ? 'page' : undefined}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </nav>
 
-            {renderTabContent()}
-          </div>
-        </main>
+              {renderTabContent()}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </AuthGuard>
   );
 }

@@ -1,8 +1,10 @@
 'use client';
 
-import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp, Database, User } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp, Database, User, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import type { ChangeEvent } from 'react';
+import { useAuth } from '@/lib/auth/auth-context';
 
 interface NavItem {
   id: string;
@@ -39,19 +41,13 @@ const ICONS: Record<string, React.ReactNode> = {
 
 // User Avatar Component
 function UserAvatar() {
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const { user, getUserAvatar } = useAuth();
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
   const [showUpload, setShowUpload] = useState(false);
 
   useEffect(() => {
-    // Load avatar from localStorage
-    const savedAvatar = localStorage.getItem('userAvatar');
-    if (savedAvatar) {
-      setAvatarUrl(savedAvatar);
-    } else {
-      // Fallback to generated avatar
-      setAvatarUrl('https://ui-avatars.com/api/?name=Wilson+Salazar&background=0D8BC&color=fff&size=128&font-size=0.33');
-    }
-  }, []);
+    setAvatarUrl(getUserAvatar());
+  }, [user, getUserAvatar]);
 
   const handleAvatarUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -97,7 +93,7 @@ function UserAvatar() {
       >
         <img
           src={avatarUrl}
-          alt="Arq. Wilson Salazar"
+          alt={user?.user_metadata?.full_name || 'Usuario'}
           className="w-full h-full object-cover"
         />
       </div>
@@ -109,6 +105,13 @@ function UserAvatar() {
 
 export default function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
   const isActive = (id: string) => activeTab === id;
+  const { user, signOut } = useAuth();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
 
   return (
     <nav className="glass-panel border-r border-white/10 flex flex-col h-full z-40" aria-label="Navegación principal">
@@ -169,15 +172,26 @@ export default function DashboardNav({ activeTab, onTabChange }: DashboardNavPro
 
       {/* User Info Section */}
       <div className="px-3 sm:px-4 py-3 sm:py-4 border-t border-white/10">
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 mb-3">
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center overflow-hidden">
             <UserAvatar />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white font-medium text-xs sm:text-sm truncate">Arq. Wilson Salazar</p>
-            <p className="text-cyan-400 text-[10px] sm:text-xs truncate">Director de Proyectos</p>
+            <p className="text-white font-medium text-xs sm:text-sm truncate">
+              {user?.user_metadata?.full_name || user?.email || 'Usuario'}
+            </p>
+            <p className="text-cyan-400 text-[10px] sm:text-xs truncate">
+              {user?.email || ''}
+            </p>
           </div>
         </div>
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors text-xs"
+        >
+          <LogOut className="w-4 h-4" />
+          Cerrar Sesión
+        </button>
       </div>
     </nav>
   );

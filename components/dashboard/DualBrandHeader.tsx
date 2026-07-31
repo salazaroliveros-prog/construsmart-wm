@@ -2,23 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import { Building2, Calendar, Clock, User, Wifi, WifiOff } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import type { ChangeEvent } from 'react';
+import { useAuth } from '@/lib/auth/auth-context';
 
 // User Avatar Component
 function UserAvatar() {
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const { user, getUserAvatar } = useAuth();
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
   const [showUpload, setShowUpload] = useState(false);
 
   useEffect(() => {
-    // Load avatar from localStorage
-    const savedAvatar = localStorage.getItem('userAvatar');
-    if (savedAvatar) {
-      setAvatarUrl(savedAvatar);
-    } else {
-      // Fallback to generated avatar
-      setAvatarUrl('https://ui-avatars.com/api/?name=Wilson+Salazar&background=0D8BC&color=fff&size=128&font-size=0.33');
-    }
-  }, []);
+    setAvatarUrl(getUserAvatar());
+  }, [user, getUserAvatar]);
 
   const handleAvatarUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -64,7 +60,7 @@ function UserAvatar() {
       >
         <img
           src={avatarUrl}
-          alt="Arq. Wilson Salazar"
+          alt={user?.user_metadata?.full_name || 'Usuario'}
           className="w-full h-full object-cover"
         />
       </div>
@@ -75,6 +71,7 @@ function UserAvatar() {
 }
 
 export default function DualBrandHeader() {
+  const { user } = useAuth();
   const [isOnline, setIsOnline] = useState(true);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [isMounted, setIsMounted] = useState(false);
@@ -185,8 +182,12 @@ export default function DualBrandHeader() {
 
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="hidden sm:block text-right">
-            <p className="text-sm font-medium text-white">Arq. Wilson Salazar</p>
-            <p className="text-xs text-cyan-400">Director de Proyectos</p>
+            <p className="text-sm font-medium text-white">
+              {user?.user_metadata?.full_name || user?.email || 'Usuario'}
+            </p>
+            <p className="text-xs text-cyan-400">
+              {user?.email || ''}
+            </p>
           </div>
           <div className="relative">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 border-2 border-cyan-500/50 overflow-hidden">
