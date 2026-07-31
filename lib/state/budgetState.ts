@@ -5,6 +5,7 @@
 // ============================================================================
 
 import { ProjectTypology } from '@/lib/types/apu';
+import { ProjectTimeImpact } from '@/lib/calculators/renglonCalculator';
 
 export interface ActiveBudgetState {
   projectId?: string;
@@ -17,6 +18,8 @@ export interface ActiveBudgetState {
     labor: number;
     machinery: number;
   };
+  timeImpact?: ProjectTimeImpact;
+  renglonTimeData?: Record<string, number>;
   topographyData?: {
     volumeCut: number;
     volumeFill: number;

@@ -13,6 +13,7 @@ import {
   calculateEarthworkVolume
 } from '@/lib/calculators/apuCalculator';
 import { RENGLONES_BY_TYPOLOGY } from '@/lib/data/apuRenglones';
+import { RENGLONES_BY_TYPOLOGY_DETAILED } from '@/lib/data/apuRenglonesDetailed';
 import { ProjectTypology, APUFormulaParams, APUResult, TYPOLOGY_LABELS, MATERIAL_FACTORS } from '@/lib/types/apu';
 import type { APURenglon } from '@/lib/types/apu';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
@@ -23,6 +24,8 @@ import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import PDFGenerator from '@/components/pdf/PDFGenerator';
+import RenglonAccordion from '@/components/budgets/RenglonAccordion';
+import { RenglonCalculator, ProjectRenglon, ProjectTimeImpact } from '@/lib/calculators/renglonCalculator';
 
 // Interfaces for budget calculation
 interface BudgetItem {
@@ -69,7 +72,7 @@ export default function BudgetCalculator() {
   });
   
   // APU Integration State
-  const [selectedTypology, setSelectedTypology] = useState<ProjectTypology>('residencial');
+  const [selectedTypology, setSelectedTypology] = useState<ProjectTypology>('residential');
   const [showAPUCalculator, setShowAPUCalculator] = useState(false);
   const [apuParams, setApuParams] = useState<APUFormulaParams>({
     theoreticalQuantity: 100,
@@ -299,26 +302,73 @@ export default function BudgetCalculator() {
 
         await offlineDB.budgetItems.add(budgetItemData);
 
-        // Add material to warehouse if it doesn't exist
-        const existingStock = await offlineDB.warehouseStock
-          .where('item_code')
-          .equals(item.code)
-          .and(stock => stock.project_id === selectedProject)
-          .first();
+        // Add detailed material breakdown to warehouse
+        const catalogRenglon = RENGLONES_BY_TYPOLOGY_DETAILED[selectedTypology]?.find(
+          r => r.code === item.code
+        );
 
-        if (!existingStock) {
-          await offlineDB.warehouseStock.add({
-            project_id: selectedProject,
-            item_code: item.code,
-            description: item.description,
-            unit: item.unit,
-            current_stock: 0,
-            minimum_threshold: Math.max(1, Math.floor(item.quantity * 0.1)),
-            unit_cost: item.unitCost,
-            sync_status: 'created_offline',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+        if (catalogRenglon && catalogRenglon.materialFormula) {
+          // Calculate material breakdown using RenglonCalculator
+          const materialBreakdown = RenglonCalculator.calculateMaterialBreakdown({
+            quantity: item.quantity,
+            renglon: catalogRenglon,
+            customMaterialCost: item.unitCost
           });
+
+          // Add each material to warehouse stock
+          for (const material of materialBreakdown) {
+            const existingStock = await offlineDB.warehouseStock
+              .where('item_code')
+              .equals(material.code)
+              .and(stock => stock.project_id === selectedProject)
+              .first();
+
+            if (existingStock) {
+              // Update existing stock with new material quantity
+              await offlineDB.warehouseStock.update(existingStock.id!, {
+                current_stock: existingStock.current_stock + material.quantity,
+                unit_cost: material.unitCost,
+                sync_status: 'updated_offline',
+                updated_at: new Date().toISOString(),
+              });
+            } else {
+              // Create new stock item
+              await offlineDB.warehouseStock.add({
+                project_id: selectedProject,
+                item_code: material.code,
+                description: material.description,
+                unit: material.unit,
+                current_stock: material.quantity,
+                minimum_threshold: Math.max(1, Math.floor(material.quantity * 0.1)),
+                unit_cost: material.unitCost,
+                sync_status: 'created_offline',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              });
+            }
+          }
+        } else {
+          // Fallback for items without detailed breakdown
+          const existingStock = await offlineDB.warehouseStock
+            .where('item_code')
+            .equals(item.code)
+            .and(stock => stock.project_id === selectedProject)
+            .first();
+
+          if (!existingStock) {
+            await offlineDB.warehouseStock.add({
+              project_id: selectedProject,
+              item_code: item.code,
+              description: item.description,
+              unit: item.unit,
+              current_stock: item.quantity,
+              minimum_threshold: Math.max(1, Math.floor(item.quantity * 0.1)),
+              unit_cost: item.unitCost,
+              sync_status: 'created_offline',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+          }
         }
       }
 
@@ -330,13 +380,39 @@ export default function BudgetCalculator() {
         updated_at: new Date().toISOString(),
       });
 
-      // Save to global budget state for interconnection with other modules
+      // Calculate and store time data for Gantt and progress tracking
+      const projectRenglones: ProjectRenglon[] = items.map(item => {
+        const catalogRenglon = RENGLONES_BY_TYPOLOGY_DETAILED[selectedTypology]?.find(
+          r => r.code === item.code
+        );
+        return {
+          id: item.id,
+          quantity: item.quantity,
+          renglon: catalogRenglon || {
+            id: item.id,
+            number: 0,
+            code: item.code,
+            description: item.description,
+            unit: item.unit,
+            formula: '',
+            category: 'Custom',
+            typology: selectedTypology
+          },
+          customCrewSize: apuParams.crewSize
+        };
+      });
+
+      const timeImpact = RenglonCalculator.calculateProjectTimeImpact(projectRenglones);
+
+      // Store time impact data in budget state for other modules
       const activeBudget: ActiveBudgetState = {
         projectId: selectedProject,
         budgetId: budgetId as string,
         typology: selectedTypology,
         costDirectTotal: summary.directCost,
         costTotalWithIndirects: summary.total,
+        timeImpact: timeImpact,
+        renglonTimeData: timeImpact.renglonDays,
         breakdown: {
           materials: items.reduce((sum, item) => 
             sum + (item.apuResult?.breakdown.materials || item.totalCost * 0.6), 0),
@@ -842,56 +918,88 @@ export default function BudgetCalculator() {
             description="Agregue cálculos de losa o items manuales para comenzar a armar el presupuesto."
           />
         ) : (
-          <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
-            <table className="w-full text-sm min-w-[600px]">
-              <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left text-white/60 py-2 px-3">Código</th>
-                  <th className="text-left text-white/60 py-2 px-3">Descripción</th>
-                  <th className="text-left text-white/60 py-2 px-3">Unidad</th>
-                  <th className="text-left text-white/60 py-2 px-3">Cantidad</th>
-                  <th className="text-left text-white/60 py-2 px-3">Costo Unitario</th>
-                  <th className="text-left text-white/60 py-2 px-3">Costo Total</th>
-                  <th className="text-right text-white/60 py-2 px-3">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.id} className="border-b border-white/10 hover:bg-white/5">
-                    <td className="py-2 px-3 text-white">{item.code}</td>
-                    <td className="py-2 px-3 text-white">{item.description}</td>
-                    <td className="py-2 px-3 text-white">{item.unit}</td>
-                    <td className="py-2 px-3">
-                      <input
-                        type="number"
-                        value={item.quantity}
-                        onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
-                        className="w-20 bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-sm"
-                      />
-                    </td>
-                    <td className="py-2 px-3">
-                      <input
-                        type="number"
-                        value={item.unitCost}
-                        onChange={(e) => updateItem(item.id, 'unitCost', e.target.value)}
-                        className="w-24 bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-sm"
-                      />
-                    </td>
-                    <td className="py-2 px-3 text-white font-medium">
+          <div className="space-y-3">
+            {items.map((item) => {
+              // Find matching renglon from catalog for detailed calculation
+              const catalogRenglon = RENGLONES_BY_TYPOLOGY_DETAILED[selectedTypology]?.find(
+                r => r.code === item.code
+              );
+
+              if (catalogRenglon) {
+                return (
+                  <RenglonAccordion
+                    key={item.id}
+                    renglon={catalogRenglon}
+                    quantity={item.quantity}
+                    onQuantityChange={(value) => updateItem(item.id, 'quantity', value)}
+                    onCrewSizeChange={(value) => {
+                      // Update renglon-specific crew size (stored in apu_params)
+                      const updatedApuParams = {
+                        ...apuParams,
+                        crewSize: value
+                      };
+                      setApuParams(updatedApuParams);
+                    }}
+                    onMaterialCostChange={(value) => {
+                      updateItem(item.id, 'unitCost', value);
+                    }}
+                    onPerformanceChange={(value) => {
+                      const updatedApuParams = {
+                        ...apuParams,
+                        dailyPerformance: value
+                      };
+                      setApuParams(updatedApuParams);
+                    }}
+                    onEfficiencyChange={(value) => {
+                      const updatedApuParams = {
+                        ...apuParams,
+                        efficiency: value
+                      };
+                      setApuParams(updatedApuParams);
+                    }}
+                    defaultExpanded={false}
+                  />
+                );
+              }
+
+              // Fallback to simple table row for items without catalog renglon
+              return (
+                <div key={item.id} className="glass-card p-4 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 grid grid-cols-6 gap-4">
+                      <div className="text-cyan-400 font-mono text-sm">{item.code}</div>
+                      <div className="text-white col-span-2">{item.description}</div>
+                      <div className="text-white/60">{item.unit}</div>
+                      <div>
+                        <input
+                          type="number"
+                          value={item.quantity}
+                          onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
+                          className="w-20 bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-sm"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="number"
+                          value={item.unitCost}
+                          onChange={(e) => updateItem(item.id, 'unitCost', e.target.value)}
+                          className="w-24 bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div className="text-white font-medium mr-4">
                       {new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(item.totalCost)}
-                    </td>
-                    <td className="py-2 px-3 text-right">
-                      <button
-                        onClick={() => deleteItem(item.id)}
-                        className="text-red-400 hover:text-red-300 p-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                    <button
+                      onClick={() => deleteItem(item.id)}
+                      className="text-red-400 hover:text-red-300 p-1"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

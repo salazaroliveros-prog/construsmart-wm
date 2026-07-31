@@ -3,7 +3,7 @@
 // CONSTRUCTORA WM/M&S - "CONSTRUYENDO EL FUTURO"
 // ============================================================================
 
-export type ProjectTypology = 'residencial' | 'comercial' | 'industrial' | 'obra_civil' | 'obra_publica';
+export type ProjectTypology = 'residential' | 'commercial' | 'industrial' | 'civil' | 'public';
 
 export interface APURenglon {
   id: string;
@@ -14,6 +14,29 @@ export interface APURenglon {
   formula: string;
   category: string;
   typology: ProjectTypology;
+  // Detailed calculation formulas
+  materialFormula?: {
+    baseQuantity: string; // e.g., "Largo × Ancho × Espesor"
+    wastePercentage: number; // %
+    materialUnitCost: number; // Q/unidad base
+    unit: string; // unidad base (m³, kg, unid, etc)
+  };
+  laborFormula?: {
+    crewSize: number; // personas por defecto
+    dailySalary: number; // Q/día por cuadrilla
+    dailyPerformance: number; // unidades/día
+    unit: string; // unidad de rendimiento
+  };
+  machineryFormula?: {
+    equipmentType: string;
+    hourlyCost: number; // Q/hora
+    hourlyRate: number; // unidades/hora
+    unit: string;
+  };
+  defaultValues?: {
+    efficiency?: number; // % eficiencia
+    complexity?: number; // 1-5, factor de complejidad
+  };
 }
 
 export interface APUFormulaParams {
@@ -26,6 +49,8 @@ export interface APUFormulaParams {
   indirectPercentage: number;         // % Gastos Indirectos (0-100)
   materialUnitCost?: number;          // Costo unitario del material (Q)
   machineryCost?: number;            // Costo de maquinaria (Q)
+  crewSize?: number;                  // Tamaño de cuadrilla (personas)
+  efficiency?: number;               // % Eficiencia (50-150)
 }
 
 export interface APUResult {
@@ -72,9 +97,9 @@ export const MATERIAL_FACTORS: Record<string, MaterialFactor> = {
 };
 
 export const TYPOLOGY_LABELS: Record<ProjectTypology, string> = {
-  residencial: 'Residencial 🏠',
-  comercial: 'Comercial 🏢',
+  residential: 'Residencial 🏠',
+  commercial: 'Comercial 🏢',
   industrial: 'Industrial 🏭',
-  obra_civil: 'Obra Civil / Vial 🌉',
-  obra_publica: 'Obra Pública 🏛️',
+  civil: 'Obra Civil / Vial 🌉',
+  public: 'Obra Pública 🏛️',
 };

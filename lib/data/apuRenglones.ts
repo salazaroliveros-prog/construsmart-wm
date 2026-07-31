@@ -18,7 +18,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Área_terreno',
     category: 'Preparación del Sitio',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-002',
@@ -28,7 +28,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Área_planta. Estacas y cordel.',
     category: 'Preparación del Sitio',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-003',
@@ -38,7 +38,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'm³',
     formula: 'Ancho × Profundidad × Largo',
     category: 'Cimentación',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-004',
@@ -48,7 +48,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'm³',
     formula: 'Concreto + Acero por metro lineal',
     category: 'Cimentación',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-005',
@@ -58,7 +58,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'kg',
     formula: 'Longitud varilla × peso nominal',
     category: 'Estructura',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-006',
@@ -68,7 +68,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Área de contacto con el suelo',
     category: 'Cimentación',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-007',
@@ -78,7 +78,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Unidades/m² (considerando sisa de 1.5cm)',
     category: 'Mampostería',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-008',
@@ -88,7 +88,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'm',
     formula: 'Concreto y acero transversal',
     category: 'Estructura',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-009',
@@ -98,7 +98,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'm³',
     formula: 'Volumen × Factor_abundamiento',
     category: 'Cimentación',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-010',
@@ -108,7 +108,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'ml',
     formula: 'Longitud de tubería + % accesorios',
     category: 'Instalaciones',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-011',
@@ -118,7 +118,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'ml',
     formula: 'Pendiente mínima y excavación por tramo',
     category: 'Instalaciones',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-012',
@@ -128,7 +128,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'm³',
     formula: 'Acero longitudinal + estribos',
     category: 'Estructura',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-013',
@@ -138,7 +138,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Espesor × área (acero 2 direcciones)',
     category: 'Estructura',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-014',
@@ -148,7 +148,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'Punto',
     formula: 'Ducto y cable por salida',
     category: 'Instalaciones',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-015',
@@ -158,7 +158,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Área neta (descontando vanos)',
     category: 'Acabados',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-016',
@@ -168,7 +168,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Rendimiento por saco de mezcla fina',
     category: 'Acabados',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-017',
@@ -178,7 +178,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Área × (1 + %Desperdicio) + pegamento',
     category: 'Acabados',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-018',
@@ -188,7 +188,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Altura instalación × perímetro',
     category: 'Acabados',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-019',
@@ -198,7 +198,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Suspensión y estructura de soporte',
     category: 'Acabados',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-020',
@@ -208,7 +208,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'Unidad',
     formula: 'Marco, chapa y bisagras',
     category: 'Carpintería',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-021',
@@ -218,7 +218,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Medidas de vano en plano',
     category: 'Carpintería',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-022',
@@ -228,7 +228,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Área × Num_manos / Rendimiento galón',
     category: 'Acabados',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-023',
@@ -238,7 +238,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'Unidad',
     formula: 'Inodoro, lavamanos, grifería',
     category: 'Instalaciones',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-024',
@@ -248,7 +248,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'Unidad',
     formula: 'Lámparas según diseño eléctrico',
     category: 'Instalaciones',
-    typology: 'residencial',
+    typology: 'residential',
   },
   {
     id: 'RES-025',
@@ -258,7 +258,7 @@ export const RENGLONES_RESIDENCIAL: APURenglon[] = [
     unit: 'Global',
     formula: 'Retiro de ripio y limpieza de vidrios',
     category: 'Final de Obra',
-    typology: 'residencial',
+    typology: 'residential',
   },
 ];
 
@@ -274,7 +274,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'ml',
     formula: 'Perímetro del local/terreno',
     category: 'Preparación del Sitio',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-002',
@@ -284,7 +284,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'm³',
     formula: 'Volumen × 1.30 (Esponjamiento)',
     category: 'Demolición',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-003',
@@ -294,7 +294,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'm³',
     formula: 'Zapatas aisladas para marcos',
     category: 'Cimentación',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-004',
@@ -304,7 +304,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'kg',
     formula: 'Peso perfiles × 1.05 (Desperdicio)',
     category: 'Estructura',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-005',
@@ -314,7 +314,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'Unidad',
     formula: 'Cantidad por placa base × profundidad',
     category: 'Estructura',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-006',
@@ -324,7 +324,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Área expuesta del acero',
     category: 'Acabados',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-007',
@@ -334,7 +334,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Lámina troquelada + Concreto (Área × Espesor)',
     category: 'Estructura',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-008',
@@ -344,7 +344,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Modulación a 0.61m. Rendimiento = Jornal / 20-25 m²/día',
     category: 'Mampostería',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-009',
@@ -354,7 +354,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Área de muros/cielos',
     category: 'Aislamiento',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-010',
@@ -364,7 +364,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'kg',
     formula: 'Desarrollo de ducto y calibre',
     category: 'Instalaciones',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-011',
@@ -374,7 +374,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'Unidad',
     formula: 'Capacidad en BTUs o Toneladas',
     category: 'Instalaciones',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-012',
@@ -384,7 +384,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'Punto',
     formula: 'Cabezales + ml tubería cédula 40',
     category: 'Instalaciones',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-013',
@@ -394,7 +394,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'ml',
     formula: 'Diámetro × longitud de trayectorias',
     category: 'Instalaciones',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-014',
@@ -404,7 +404,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'Punto',
     formula: 'Longitud cable UTP + holgura en cajas',
     category: 'Instalaciones',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-015',
@@ -414,7 +414,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'Unidad',
     formula: 'Número de polos y capacidad (Amperios)',
     category: 'Instalaciones',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-016',
@@ -424,7 +424,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Área × 1.10 (Desperdicio por cortes)',
     category: 'Acabados',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-017',
@@ -434,7 +434,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Área vanos + herrajes/arañas',
     category: 'Acabados',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-018',
@@ -444,7 +444,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Área / 0.36 + estructura metálica',
     category: 'Acabados',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-019',
@@ -454,7 +454,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'Unidad',
     formula: 'Diseño de lúmenes por espacio',
     category: 'Instalaciones',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-020',
@@ -464,7 +464,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Ancho × Alto (incluye caja motor)',
     category: 'Carpintería',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-021',
@@ -474,7 +474,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Perfiles según serie comercial',
     category: 'Carpintería',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-022',
@@ -484,7 +484,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'Punto',
     formula: 'Sensores + Panel direccionable',
     category: 'Instalaciones',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-023',
@@ -494,7 +494,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Mármol o granito + sellador',
     category: 'Acabados',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-024',
@@ -504,7 +504,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'Unidad',
     formula: 'Normas de seguridad e imagen corporativa',
     category: 'Señalización',
-    typology: 'comercial',
+    typology: 'commercial',
   },
   {
     id: 'COM-025',
@@ -514,7 +514,7 @@ export const RENGLONES_COMERCIAL: APURenglon[] = [
     unit: 'Global',
     formula: 'Horas técnico certificar HVAC, Eléctrico y Gas',
     category: 'Final de Obra',
-    typology: 'comercial',
+    typology: 'commercial',
   },
 ];
 
@@ -786,7 +786,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'm²',
     formula: 'Área faja de terreno a intervenir',
     category: 'Preparación del Sitio',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-002',
@@ -796,7 +796,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'km',
     formula: 'Enlace directo con módulo Topografía/CivilCAD',
     category: 'Topografía',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-003',
@@ -806,7 +806,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'm³',
     formula: 'Área transversal × Longitud × Factor_esponjamiento',
     category: 'Movimiento de Tierras',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-004',
@@ -816,7 +816,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'm³',
     formula: 'Retiro de suelos orgánicos o fango',
     category: 'Movimiento de Tierras',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-005',
@@ -826,7 +826,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'm³',
     formula: 'V_necesario = V_diseño / F_contracción (F ≈ 0.90)',
     category: 'Movimiento de Tierras',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-006',
@@ -836,7 +836,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'm³',
     formula: 'Espesor compactado × ancho calzada',
     category: 'Estructura Vial',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-007',
@@ -846,7 +846,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'm³',
     formula: 'Capa superior de soporte para pavimento',
     category: 'Estructura Vial',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-008',
@@ -856,7 +856,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'Gal/m²',
     formula: 'Riego de liga para adherir asfalto',
     category: 'Pavimentación',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-009',
@@ -866,7 +866,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'Ton',
     formula: 'Ton = Área × Espesor × Densidad (2.4 Ton/m³)',
     category: 'Pavimentación',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-010',
@@ -876,7 +876,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'm³',
     formula: 'Losa de concreto rígido para rodadura',
     category: 'Pavimentación',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-011',
@@ -886,7 +886,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'ml',
     formula: 'Canales laterales para drenaje pluvial',
     category: 'Drenaje',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-012',
@@ -896,7 +896,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'ml',
     formula: 'Tuberías de concreto o metal bajo vía',
     category: 'Drenaje',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-013',
@@ -906,7 +906,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'ml',
     formula: 'Excavación profunda y concreto masivo',
     category: 'Puentes',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-014',
@@ -916,7 +916,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'm³',
     formula: 'Estructuras de soporte en extremos',
     category: 'Puentes',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-015',
@@ -926,7 +926,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'Unidad',
     formula: 'Vigas prefabricadas con cables tensados',
     category: 'Puentes',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-016',
@@ -936,7 +936,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'm³',
     formula: 'Concreto estructural sobre vigas',
     category: 'Puentes',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-017',
@@ -946,7 +946,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'ml',
     formula: 'Sellos mecánicos para movimiento térmico',
     category: 'Puentes',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-018',
@@ -956,7 +956,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'ml',
     formula: 'Barreras de seguridad en curvas/puentes',
     category: 'Seguridad Vial',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-019',
@@ -966,7 +966,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'm²',
     formula: 'Pintura termoplástica + microesferas de vidrio',
     category: 'Señalización',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-020',
@@ -976,7 +976,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'Unidad',
     formula: 'Rótulos informativos, reglamentarios y preventivos',
     category: 'Señalización',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-021',
@@ -986,7 +986,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'm³',
     formula: 'Cajas de malla rellenas de piedra clasificada',
     category: 'Contención',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-022',
@@ -996,7 +996,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'ml',
     formula: 'Filtros con piedra y tubería perforada',
     category: 'Drenaje',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-023',
@@ -1006,7 +1006,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'Unidad',
     formula: 'Postes y luminarias en tramos urbanos',
     category: 'Instalaciones',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-024',
@@ -1016,7 +1016,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'Unidad',
     formula: 'Estructuras verticales para alcantarillado',
     category: 'Drenaje',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
   {
     id: 'OC-025',
@@ -1026,7 +1026,7 @@ export const RENGLONES_OBRA_CIVIL: APURenglon[] = [
     unit: 'm²',
     formula: 'Hidrosiembra o hidrosep',
     category: 'Contención',
-    typology: 'obra_civil',
+    typology: 'civil',
   },
 ];
 
@@ -1042,7 +1042,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'Unidad',
     formula: 'Dimensiones exigidas por el ente contratista estatal',
     category: 'Identificación',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-002',
@@ -1052,7 +1052,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'Global',
     formula: 'Flete y transporte de maquinaria al sitio',
     category: 'Movilización',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-003',
@@ -1062,7 +1062,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'm²',
     formula: 'Precisión topográfica inicial',
     category: 'Topografía',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-004',
@@ -1072,7 +1072,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'm³',
     formula: 'Largo × Ancho × Profundidad',
     category: 'Cimentación',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-005',
@@ -1082,7 +1082,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'm³',
     formula: 'Concreto + kg de acero según norma estatal',
     category: 'Cimentación',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-006',
@@ -1092,7 +1092,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'm³',
     formula: 'Estructuras sismorresistentes obligatorias',
     category: 'Estructura',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-007',
@@ -1102,7 +1102,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'm²',
     formula: 'Unidades de bloque × m² + refuerzo interno',
     category: 'Mampostería',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-008',
@@ -1112,7 +1112,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'ml',
     formula: 'Tuberías certificadas y pruebas de presión',
     category: 'Instalaciones',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-009',
@@ -1122,7 +1122,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'ml',
     formula: 'Tubería PVC × pendiente de diseño',
     category: 'Instalaciones',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-010',
@@ -1132,7 +1132,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'ml',
     formula: 'Manejo de aguas pluviales hacia colectores',
     category: 'Instalaciones',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-011',
@@ -1142,7 +1142,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'Punto',
     formula: 'Ductos, cables y tableros bajo norma',
     category: 'Instalaciones',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-012',
@@ -1152,7 +1152,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'kg',
     formula: 'Perfiles de acero + costaneras',
     category: 'Estructura',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-013',
@@ -1162,7 +1162,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'm²',
     formula: 'Área de techo + % traslapes',
     category: 'Cubierta',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-014',
@@ -1172,7 +1172,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'm²',
     formula: 'Paneles y suspensión metálica',
     category: 'Acabados',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-015',
@@ -1182,7 +1182,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'm²',
     formula: 'Resistencia a tráfico intenso de personas',
     category: 'Acabados',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-016',
@@ -1192,7 +1192,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'Unidad',
     formula: 'Marcos reforzados para uso público',
     category: 'Carpintería',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-017',
@@ -1202,7 +1202,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'm²',
     formula: 'Marcos y empaques reforzados',
     category: 'Carpintería',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-018',
@@ -1212,7 +1212,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'm²',
     formula: 'Acabado liso lavable de alta duración',
     category: 'Acabados',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-019',
@@ -1222,7 +1222,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'm²',
     formula: 'Pintura lavable para instituciones',
     category: 'Acabados',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-020',
@@ -1232,7 +1232,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'Unidad',
     formula: 'Inodoros, lavamanos e inoxidables',
     category: 'Instalaciones',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-021',
@@ -1242,7 +1242,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'm²',
     formula: 'Cumplimiento estricto de norma ADA (S = Altura/Longitud × 100 ≤ 8%)',
     category: 'Accesibilidad',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-022',
@@ -1252,7 +1252,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'ml',
     formula: 'Protección en rampas y gradas',
     category: 'Accesibilidad',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-023',
@@ -1262,7 +1262,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'm²',
     formula: 'Grama y plantas ornamentales',
     category: 'Paisajismo',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-024',
@@ -1272,7 +1272,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'Global',
     formula: 'Entrega de obra lista para operar',
     category: 'Final de Obra',
-    typology: 'obra_publica',
+    typology: 'public',
   },
   {
     id: 'OP-025',
@@ -1282,7 +1282,7 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
     unit: 'Global',
     formula: 'Planos de cómo quedó la obra según leyes estatales',
     category: 'Documentación',
-    typology: 'obra_publica',
+    typology: 'public',
   },
 ];
 
@@ -1290,11 +1290,11 @@ export const RENGLONES_OBRA_PUBLICA: APURenglon[] = [
 // CATALOGO UNIFICADO DE RENGLONES
 // ============================================================================
 export const RENGLONES_BY_TYPOLOGY: Record<ProjectTypology, APURenglon[]> = {
-  residencial: RENGLONES_RESIDENCIAL,
-  comercial: RENGLONES_COMERCIAL,
+  residential: RENGLONES_RESIDENCIAL,
+  commercial: RENGLONES_COMERCIAL,
   industrial: RENGLONES_INDUSTRIAL,
-  obra_civil: RENGLONES_OBRA_CIVIL,
-  obra_publica: RENGLONES_OBRA_PUBLICA,
+  civil: RENGLONES_OBRA_CIVIL,
+  public: RENGLONES_OBRA_PUBLICA,
 };
 
 export const ALL_RENGLONES = [
