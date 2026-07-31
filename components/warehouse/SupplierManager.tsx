@@ -5,6 +5,8 @@ import { Truck, Plus, Edit, Trash2, Phone, Mail, MapPin, Building2, Search, Filt
 import { offlineDB, LocalSupplier } from '@/lib/db/offlineStore';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import Tooltip from '@/components/ui/Tooltip';
+import ActionButton from '@/components/ui/ActionButton';
 
 export default function SupplierManager() {
   const [suppliers, setSuppliers] = useState<LocalSupplier[]>([]);
@@ -130,27 +132,29 @@ export default function SupplierManager() {
           <h2 className="text-2xl font-bold text-white">Gestión de Proveedores</h2>
           <p className="text-white/60 text-sm">Registro de proveedores de materiales y servicios</p>
         </div>
-        <button
-          onClick={() => {
-            setEditingSupplier(null);
-            setFormData({
-              code: generateSupplierCode(),
-              name: '',
-              contact_person: '',
-              phone: '',
-              email: '',
-              address: '',
-              city: '',
-              payment_terms: '',
-              notes: '',
-            });
-            setShowForm(true);
-          }}
-          className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 text-white"
-        >
-          <Plus className="w-4 h-4" />
-          Nuevo Proveedor
-        </button>
+        <Tooltip content="Agregar nuevo proveedor al sistema">
+          <button
+            onClick={() => {
+              setEditingSupplier(null);
+              setFormData({
+                code: generateSupplierCode(),
+                name: '',
+                contact_person: '',
+                phone: '',
+                email: '',
+                address: '',
+                city: '',
+                payment_terms: '',
+                notes: '',
+              });
+              setShowForm(true);
+            }}
+            className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 text-white"
+          >
+            <Plus className="w-4 h-4" />
+            Nuevo Proveedor
+          </button>
+        </Tooltip>
       </div>
 
       {/* Summary Cards */}

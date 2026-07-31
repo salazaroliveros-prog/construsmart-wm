@@ -383,19 +383,23 @@ export default function WarehouseManager() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <div className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm ${
-              isOnline ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
-            }`}>
-              {isOnline ? '🟢 En línea' : '🟡 Sin conexión'}
-            </div>
-            <button
-              onClick={() => handleOpenModal()}
-              className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Nuevo Material</span>
-              <span className="sm:hidden">Nuevo</span>
-            </button>
+            <Tooltip content={isOnline ? 'Conectado a internet' : 'Trabajando sin conexión'}>
+              <div className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm ${
+                isOnline ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+              }`}>
+                {isOnline ? '🟢 En línea' : '🟡 Sin conexión'}
+              </div>
+            </Tooltip>
+            <Tooltip content="Agregar nuevo material al inventario">
+              <button
+                onClick={() => handleOpenModal()}
+                className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Nuevo Material</span>
+                <span className="sm:hidden">Nuevo</span>
+              </button>
+            </Tooltip>
           </div>
         </div>
 
@@ -553,42 +557,42 @@ export default function WarehouseManager() {
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center space-x-1">
-                        <button
-                          onClick={() => handleStockAdjustment(item, 1)}
-                          className="p-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
-                          title="Aumentar stock"
-                          aria-label={`Aumentar stock de ${item.description}`}
-                        >
-                          <ArrowUp className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleStockAdjustment(item, -1)}
-                          className="p-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                          title="Disminuir stock"
-                          aria-label={`Disminuir stock de ${item.description}`}
-                        >
-                          <ArrowDown className="w-4 h-4" />
-                        </button>
+                        <Tooltip content="Aumentar stock en 1 unidad">
+                          <button
+                            onClick={() => handleStockAdjustment(item, 1)}
+                            className="p-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                            aria-label={`Aumentar stock de ${item.description}`}
+                          >
+                            <ArrowUp className="w-4 h-4" />
+                          </button>
+                        </Tooltip>
+                        <Tooltip content="Disminuir stock en 1 unidad">
+                          <button
+                            onClick={() => handleStockAdjustment(item, -1)}
+                            className="p-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                            aria-label={`Disminuir stock de ${item.description}`}
+                          >
+                            <ArrowDown className="w-4 h-4" />
+                          </button>
+                        </Tooltip>
                       </div>
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button
+                        <ActionButton
                           onClick={() => handleOpenModal(item)}
-                          className="text-cyan-400 hover:text-cyan-300 p-1"
-                          title="Editar"
-                          aria-label={`Editar material ${item.description}`}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
+                          icon={<Edit className="w-4 h-4" />}
+                          label="Editar material"
+                          tooltip="Editar información del material"
+                          variant="primary"
+                        />
+                        <ActionButton
                           onClick={() => setDeleteConfirm(item)}
-                          className="text-red-400 hover:text-red-300 p-1"
-                          title="Eliminar"
-                          aria-label={`Eliminar material ${item.description}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                          icon={<Trash2 className="w-4 h-4" />}
+                          label="Eliminar material"
+                          tooltip="Eliminar material del inventario"
+                          variant="danger"
+                        />
                       </div>
                     </td>
                   </tr>
