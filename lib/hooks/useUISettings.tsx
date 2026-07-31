@@ -35,7 +35,6 @@ export function useUISettings() {
     document.documentElement.style.setProperty('--card-transparency', `${settings.cardTransparency / 100}`);
     document.documentElement.style.setProperty('--border-opacity', `${settings.borderOpacity / 100}`);
     document.documentElement.style.setProperty('--shadow-intensity', `${settings.shadowIntensity / 100}`);
-    document.documentElement.style.setProperty('--gradient-intensity', `${settings.backgroundGradientIntensity / 100}`);
 
     // Apply animation speed
     const animationDuration = settings.animationSpeed === 'slow' ? '0.5s' : settings.animationSpeed === 'fast' ? '0.15s' : '0.3s';

@@ -10,7 +10,6 @@ export interface ColorPalette {
 
 export interface UISettings {
   colorPalette: string;
-  backgroundGradientIntensity: number; // 0-100
   cardTransparency: number; // 0-100
   glassBlurIntensity: number; // 0-100
   glassGrainIntensity: number; // 0-100
@@ -23,7 +22,6 @@ export interface UISettings {
 
 export const DEFAULT_UI_SETTINGS: UISettings = {
   colorPalette: 'default',
-  backgroundGradientIntensity: 50,
   cardTransparency: 55,
   glassBlurIntensity: 100,
   glassGrainIntensity: 40,

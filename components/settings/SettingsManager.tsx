@@ -60,7 +60,6 @@ export default function SettingsManager() {
     document.documentElement.style.setProperty('--card-transparency', `${newSettings.cardTransparency / 100}`);
     document.documentElement.style.setProperty('--border-opacity', `${newSettings.borderOpacity / 100}`);
     document.documentElement.style.setProperty('--shadow-intensity', `${newSettings.shadowIntensity / 100}`);
-    document.documentElement.style.setProperty('--gradient-intensity', `${newSettings.backgroundGradientIntensity / 100}`);
 
     // Apply animation speed
     const animationDuration = newSettings.animationSpeed === 'slow' ? '0.5s' : newSettings.animationSpeed === 'fast' ? '0.15s' : '0.3s';
@@ -204,28 +203,6 @@ function ColorsTab({ settings, updateSetting }: { settings: UISettings; updateSe
               )}
             </button>
           ))}
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <Zap className="w-5 h-5 text-cyan-400" />
-          Intensidad del Gradiente de Fondo
-        </h3>
-        <div className="space-y-3">
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={settings.backgroundGradientIntensity}
-            onChange={e => updateSetting('backgroundGradientIntensity', Number(e.target.value))}
-            className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-cyan-500"
-          />
-          <div className="flex justify-between text-sm text-white/60">
-            <span>Suave</span>
-            <span className="text-cyan-400 font-medium">{settings.backgroundGradientIntensity}%</span>
-            <span>Intenso</span>
-          </div>
         </div>
       </div>
     </div>
