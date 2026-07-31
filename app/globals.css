@@ -381,44 +381,59 @@ body {
 
 /* Responsive Typography & Components */
 @media (max-width: 768px) {
+  /* Touch targets - minimum 44x44px for accessibility */
   button, input, select, textarea {
     min-height: 44px;
     min-width: 44px;
   }
 
+  /* Consistent typography scale */
   h1 { font-size: 1.5rem; line-height: 1.3; }
   h2 { font-size: 1.25rem; line-height: 1.3; }
   h3 { font-size: 1.1rem; line-height: 1.3; }
+  h4 { font-size: 1rem; line-height: 1.4; }
   p, li, label { font-size: 0.9rem; line-height: 1.5; }
+  small { font-size: 0.8rem; line-height: 1.4; }
 
+  /* Content padding */
   .main-content {
-    padding-left: 0.8rem;
-    padding-right: 0.8rem;
-    padding-top: 1rem;
-    padding-bottom: 2rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.75rem;
+    padding-bottom: 1.5rem;
   }
 
+  /* Button improvements */
   .glass-button {
     min-height: 48px;
     font-size: 1rem;
-    border-radius: 8px;
-    margin-bottom: 8px;
+    border-radius: 12px;
+    margin-bottom: 0.5rem;
+    padding: 0.75rem 1rem;
+    width: 100%;
   }
 
   .glass-button-inline {
     min-height: 44px;
     font-size: 0.95rem;
-    border-radius: 8px;
+    border-radius: 10px;
     margin-bottom: 0;
+    padding: 0.5rem 0.75rem;
   }
 
+  /* Input improvements */
   input, select, textarea {
-    margin-bottom: 12px;
-    padding: 12px;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border-radius: 10px;
   }
 
-  .hide-on-mobile { display: none; }
+  /* Hide desktop-only elements */
+  .hide-on-mobile { display: none !important; }
+  .show-on-mobile { display: block !important; }
 
+  /* Sidebar handling */
   .sidebar-container {
     position: fixed;
     left: -100%;
@@ -427,6 +442,7 @@ body {
     z-index: 40;
     max-height: calc(100vh - 64px);
     overflow-y: auto;
+    width: 280px;
   }
 
   .sidebar-container.open { left: 0; }
@@ -442,52 +458,315 @@ body {
     z-index: 30;
   }
 
+  /* Reduce blur effects for performance */
   .glass-card {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
   }
 
+  .glass-panel {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Chart sizing */
   .chart-container { min-height: 260px; }
   .kpi-value { font-size: 1.4rem; }
   .kpi-label { font-size: 0.85rem; }
+
+  /* Grid adjustments */
+  .grid-responsive-mobile {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  /* Table containers */
+  .data-table-container {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .data-table-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Modal adjustments */
+  .modal-content {
+    max-height: 90vh;
+    max-width: 95vw;
+    margin: 1rem;
+  }
+
+  /* Card spacing */
+  .glass-card {
+    margin-bottom: 0.75rem;
+  }
 }
 
-@media (max-width: 480px) {
-  h1 { font-size: 1.3rem; }
+/* Mobile Landscape (portrait to landscape) */
+@media (max-width: 768px) and (orientation: landscape) {
+  h1 { font-size: 1.25rem; }
   h2 { font-size: 1.1rem; }
+  h3 { font-size: 1rem; }
+
+  .glass-button {
+    min-height: 40px;
+    font-size: 0.95rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .main-content {
+    padding-top: 0.5rem;
+    padding-bottom: 1rem;
+  }
+
+  .sidebar-container {
+    top: 56px;
+    max-height: calc(100vh - 56px);
+  }
+
+  .chart-container { min-height: 200px; }
+  .kpi-value { font-size: 1.2rem; }
+}
+
+/* Small Mobile (iPhone SE, etc.) */
+@media (max-width: 480px) {
+  h1 { font-size: 1.3rem; line-height: 1.25; }
+  h2 { font-size: 1.15rem; line-height: 1.25; }
+  h3 { font-size: 1.05rem; line-height: 1.25; }
+  p, li, label { font-size: 0.875rem; line-height: 1.5; }
 
   .glass-button {
     min-height: 52px;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
+    border-radius: 12px;
+    padding: 0.875rem 1rem;
   }
 
   .glass-button-inline {
     min-height: 48px;
     font-size: 1rem;
+    border-radius: 10px;
+    padding: 0.625rem 0.875rem;
   }
 
-  .responsive-grid { grid-template-columns: 1fr; }
+  input, select, textarea {
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+  }
+
+  .main-content {
+    padding-left: 0.625rem;
+    padding-right: 0.625rem;
+    padding-top: 0.625rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .responsive-grid { grid-template-columns: 1fr; gap: 0.625rem; }
+
+  .chart-container { min-height: 220px; }
+  .kpi-value { font-size: 1.3rem; }
+  .kpi-label { font-size: 0.8rem; }
+
+  .glass-card {
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+  }
+
+  .glass-panel {
+    padding: 0.75rem;
+    border-radius: 0.875rem;
+  }
 }
 
-@media (min-width: 769px) and (max-width: 1024px) {
+/* Tablet Portrait */
+@media (min-width: 769px) and (max-width: 1024px) and (orientation: portrait) {
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.4rem; }
+  h3 { font-size: 1.2rem; }
+
   .responsive-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
+    gap: 1rem;
+  }
+
+  .glass-button {
+    min-height: 44px;
+    font-size: 0.95rem;
+  }
+
+  .main-content {
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 }
 
-@media (min-width: 1025px) {
+/* Tablet Landscape */
+@media (min-width: 769px) and (max-width: 1024px) and (orientation: landscape) {
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.25rem; }
+
   .responsive-grid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
+    gap: 1rem;
+  }
+
+  .sidebar-container {
+    top: 56px;
   }
 }
 
+/* Desktop Small */
+@media (min-width: 1025px) and (max-width: 1280px) {
+  .responsive-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.5rem; }
+}
+
+/* Desktop Large */
+@media (min-width: 1281px) {
+  .responsive-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+  }
+
+  h1 { font-size: 2.25rem; }
+  h2 { font-size: 1.75rem; }
+}
+
+/* Ultra Wide */
 @media (min-width: 1400px) {
   .responsive-grid {
     max-width: 1400px;
     margin-left: auto;
     margin-right: auto;
+  }
+
+  .main-content {
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* Orientation-specific optimizations */
+@media (orientation: portrait) {
+  /* Vertical layout optimizations */
+  .layout-vertical {
+    flex-direction: column;
+  }
+
+  .layout-vertical > * {
+    width: 100%;
+  }
+}
+
+@media (orientation: landscape) {
+  /* Horizontal layout optimizations */
+  .layout-horizontal {
+    flex-direction: row;
+  }
+
+  .layout-horizontal > * {
+    flex: 1;
+  }
+}
+
+/* Prevent text reflow on zoom */
+* {
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Prevent horizontal scroll on mobile */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+/* Safe area insets for notched devices */
+@supports (padding: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .mobile-safe-top {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+
+  .mobile-safe-bottom {
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Optimize glassmorphism for mobile performance */
+@media (max-width: 768px) {
+  .glass-panel,
+  .glass-card,
+  .glass-button,
+  .glass-input {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  /* Disable noise texture on mobile for performance */
+  .glass-panel::after,
+  .glass-card::after,
+  .glass-button::after {
+    display: none;
+  }
+}
+
+/* Improve touch interaction feedback */
+@media (hover: none) and (pointer: coarse) {
+  .glass-button:active,
+  .glass-card:active {
+    transform: scale(0.97);
+    transition: transform 0.1s ease;
+  }
+
+  /* Remove hover effects on touch devices */
+  .glass-button:hover,
+  .glass-card:hover {
+    transform: none;
+  }
+}
+
+/* Prevent layout shift */
+.layout-stable {
+  contain: layout;
+}
+
+.prevent-layout-shift {
+  position: relative;
+}
+
+/* Responsive spacing utilities */
+.space-y-mobile > * + * {
+  margin-top: 0.75rem;
+}
+
+@media (min-width: 769px) {
+  .space-y-mobile > * + * {
+    margin-top: 1rem;
+  }
+}
+
+.space-x-mobile > * + * {
+  margin-left: 0.75rem;
+}
+
+@media (min-width: 769px) {
+  .space-x-mobile > * + * {
+    margin-left: 1rem;
   }
 }
 
