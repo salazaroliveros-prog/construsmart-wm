@@ -792,8 +792,8 @@ export default function PayrollManager() {
 
       {/* Employee Modal */}
       {isEmployeeModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="glass-panel rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="modal-backdrop flex items-center justify-center p-4">
+          <div className="glass-panel rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-white">
                 {editingEmployee ? 'Editar Empleado' : 'Nuevo Empleado'}
@@ -904,8 +904,8 @@ export default function PayrollManager() {
 
       {/* Payroll Modal */}
       {isPayrollModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="glass-panel rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="modal-backdrop flex items-center justify-center p-4">
+          <div className="glass-panel rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-white">
                 {editingPayroll ? 'Editar Registro de Pago' : 'Nuevo Registro de Pago'}

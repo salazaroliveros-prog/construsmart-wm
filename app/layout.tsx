@@ -5,6 +5,7 @@ import { APP_CONFIG } from '@/lib/config/app.config';
 import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration';
 import { ToastProvider } from '@/components/ui/Toast';
 import { AuthProvider } from '@/lib/auth/auth-context';
+import { UISettingsProvider } from '@/lib/hooks/useUISettings';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -59,10 +60,12 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <AuthProvider>
-          <ToastProvider>
-            <ServiceWorkerRegistration />
-            {children}
-          </ToastProvider>
+          <UISettingsProvider>
+            <ToastProvider>
+              <ServiceWorkerRegistration />
+              {children}
+            </ToastProvider>
+          </UISettingsProvider>
         </AuthProvider>
       </body>
     </html>

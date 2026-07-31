@@ -1,6 +1,6 @@
 'use client';
 
-import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp, Database, User, LogOut, AlertCircle, BookOpen } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp, Database, User, LogOut, AlertCircle, BookOpen, Settings } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ChangeEvent } from 'react';
@@ -26,6 +26,7 @@ const NAV_ITEMS_BASE: NavItem[] = [
   { id: 'analytics', label: 'Analytics', icon: 'TrendingUp' },
   { id: 'clients', label: 'Clientes', icon: 'Users' },
   { id: 'logs', label: 'Bitácora', icon: 'BookOpen' },
+  { id: 'settings', label: 'Ajustes', icon: 'Settings' },
 ];
 
 interface DashboardNavProps {
@@ -42,6 +43,7 @@ const ICONS: Record<string, React.ReactNode> = {
   Warehouse: <Warehouse className="w-5 h-5" />,
   TrendingUp: <TrendingUp className="w-5 h-5" />,
   BookOpen: <BookOpen className="w-5 h-5" />,
+  Settings: <Settings className="w-5 h-5" />,
 };
 
 // User Avatar Component

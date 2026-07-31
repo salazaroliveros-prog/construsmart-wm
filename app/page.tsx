@@ -24,6 +24,7 @@ const InteractiveCalendar = dynamic(() => import('@/components/dashboard/Interac
 const SupplierManager = dynamic(() => import('@/components/warehouse/SupplierManager'), { ssr: false });
 const PurchaseOrderManager = dynamic(() => import('@/components/warehouse/PurchaseOrderManager'), { ssr: false });
 const ProgressTracker = dynamic(() => import('@/components/progress/ProgressTracker'), { ssr: false });
+const SettingsManager = dynamic(() => import('@/components/settings/SettingsManager'), { ssr: false });
 
 // Navigation tabs configuration
 const NAVIGATION_TABS = [
@@ -39,6 +40,7 @@ const NAVIGATION_TABS = [
   { id: 'analytics', label: 'Analytics', icon: 'TrendingUp' },
   { id: 'clients', label: 'Clientes', icon: 'Users' },
   { id: 'logs', label: 'Bitácora', icon: 'BookOpen' },
+  { id: 'settings', label: 'Ajustes', icon: 'Settings' },
 ] as const;
 
 interface RecentActivity {
@@ -174,6 +176,8 @@ export default function Dashboard() {
         return <ClientManager />;
       case 'logs':
         return <ProjectLogManager />;
+      case 'settings':
+        return <SettingsManager />;
       default:
         return null;
     }
