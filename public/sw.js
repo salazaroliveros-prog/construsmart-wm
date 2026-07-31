@@ -45,7 +45,6 @@ if (isDevelopment) {
   const STATIC_ASSETS = [
     '/',
     '/manifest.json',
-    '/logo.png',
     '/assets/branding/logo-constructora-wm.jpg',
     '/assets/branding/letterhead-multiservicios.jpg',
   ];
