@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Save, X, FolderOpen } from 'lucide-react';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
-import { queueDelete } from '@/lib/utils/offlineSync';
+import { queueDelete, isServerId } from '@/lib/utils/offlineSync';
+import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
@@ -208,7 +209,7 @@ export default function ProjectManager() {
         ...formData,
         sync_status: editingProject
           ? (editingProject.sync_status === 'synced' ? (isOnline ? 'synced' : 'updated_offline') : 'created_offline')
-          : (isOnline ? 'synced' : 'created_offline'),
+          : 'created_offline',
         created_at: editingProject?.created_at || new Date().toISOString()
       };
 
@@ -223,7 +224,7 @@ export default function ProjectManager() {
       closeModal();
       loadProjects();
 
-      if (isOnline && supabase) {
+      if (isOnline && supabase && isServerId(projectData.id)) {
         // Sync with Supabase - only send columns that exist in Supabase schema
         const supabaseProjectData = {
           id: projectData.id,
@@ -270,6 +271,22 @@ export default function ProjectManager() {
     try {
       await queueDelete('projects', deleteConfirm);
       await offlineDB.projects.delete(deleteConfirm.id);
+
+      // Cascada local para no dejar huérfanos (el servidor usa CASCADE/SET NULL):
+      // elimina presupuestos + items y bitácoras; desvincula transacciones, stock, nómina y OC.
+      const projectId = deleteConfirm.id!;
+      const budgetIds = (await offlineDB.budgets.where('project_id').equals(projectId).toArray())
+        .map((b) => b.id as string);
+      if (budgetIds.length > 0) {
+        await offlineDB.budgetItems.where('budget_id').anyOf(budgetIds).delete();
+      }
+      await offlineDB.budgets.where('project_id').equals(projectId).delete();
+      await offlineDB.projectLogs.where('project_id').equals(projectId).delete();
+      await offlineDB.financialTransactions.where('project_id').equals(projectId).modify({ project_id: undefined });
+      await offlineDB.warehouseStock.where('project_id').equals(projectId).modify({ project_id: undefined });
+      await offlineDB.payrollRecords.where('project_id').equals(projectId).modify({ project_id: undefined });
+      await offlineDB.purchaseOrders.where('project_id').equals(projectId).modify({ project_id: undefined });
+
       showToast('success', 'Proyecto eliminado exitosamente');
       loadProjects();
     } catch (error) {
@@ -296,6 +313,8 @@ export default function ProjectManager() {
       maximumFractionDigits: 0
     }).format(amount);
   };
+
+  useRealtimeRefresh(['projects'], loadProjects);
 
   return (
     <div className="space-y-6">

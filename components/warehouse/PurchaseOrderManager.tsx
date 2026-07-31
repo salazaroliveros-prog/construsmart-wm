@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { ShoppingCart, Plus, Edit, Trash2, FileText, Search, Filter, Package, DollarSign, Calendar, CheckCircle, Clock, XCircle, Building2, X } from 'lucide-react';
 import { offlineDB, LocalPurchaseOrder, LocalPurchaseOrderItem, LocalSupplier, LocalProject } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
+import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
@@ -257,6 +258,11 @@ export default function PurchaseOrderManager() {
   const currentOrderItems = selectedOrder
     ? orderItems.filter((oi) => oi.purchase_order_id === selectedOrder.id)
     : [];
+
+  // Realtime refresh: recarga cuando cambios llegan de otros dispositivos
+  useRealtimeRefresh(['purchase_orders', 'suppliers', 'purchase_order_items', 'projects'], () => {
+    loadData();
+  });
 
   return (
     <div className="space-y-6">

@@ -37,10 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    // Save credentials to localStorage (for demo purposes - in production, never store passwords in localStorage)
-    localStorage.setItem('userEmail', email);
-    localStorage.setItem('userPassword', password);
-
+    // El acceso es local (gate de UI). No se persiste la contraseña.
     // Create user object
     const newUser: LocalUser = {
       email,

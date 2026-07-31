@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Building2, MapPin, Calendar, DollarSign, TrendingUp, MoreVertical, Inbox } from 'lucide-react';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
+import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import EmptyState from '@/components/ui/EmptyState';
 
 const statusColors = {
@@ -46,6 +47,9 @@ export default function ProjectOverview() {
       setLoading(false);
     }
   };
+
+  // Realtime refresh: recarga cuando cambios llegan de otros dispositivos
+  useRealtimeRefresh(['projects'], loadProjects);
 
   if (loading) {
     return (

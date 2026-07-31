@@ -5,7 +5,8 @@ import { Plus, Edit, Trash2, Search, TrendingUp, TrendingDown, DollarSign, Walle
 import { offlineDB, LocalFinancialTransaction, LocalProject, LocalBudget, LocalBudgetItem } from '@/lib/db/offlineStore';
 import { budgetState } from '@/lib/state/budgetState';
 import { supabase } from '@/lib/supabase/client';
-import { queueDelete, PENDING_STATUSES } from '@/lib/utils/offlineSync';
+import { queueDelete, PENDING_STATUSES, isServerId } from '@/lib/utils/offlineSync';
+import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
@@ -306,7 +307,7 @@ export default function FinanceManager() {
         receipt_url: formData.receipt_url,
         sync_status: editingTransaction
           ? (editingTransaction.sync_status === 'synced' ? (isOnline ? 'synced' : 'updated_offline') : 'created_offline')
-          : (isOnline ? 'synced' : 'created_offline'),
+          : 'created_offline',
         created_at: editingTransaction?.created_at || new Date().toISOString()
       };
 
@@ -321,7 +322,7 @@ export default function FinanceManager() {
       closeModal();
       loadTransactions();
 
-      if (isOnline && supabase) {
+      if (isOnline && supabase && isServerId(transactionData.id)) {
         const { error } = await supabase.from('financial_transactions').upsert([transactionData]);
         if (error) {
           await offlineDB.financialTransactions.update(transactionData.id!, { sync_status: 'created_offline' });
@@ -383,6 +384,8 @@ export default function FinanceManager() {
     .reduce((sum, t) => sum + t.total_cost, 0);
 
   const balance = totalIncome - totalExpense;
+
+  useRealtimeRefresh(['financial_transactions', 'projects'], loadTransactions);
 
   return (
     <div className="space-y-6">

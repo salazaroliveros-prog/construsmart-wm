@@ -7,6 +7,7 @@ import type { ChangeEvent } from 'react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { offlineDB } from '@/lib/db/offlineStore';
 import { useCompanySettings } from '@/lib/hooks/useBusinessSettings';
+import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 
 interface NavItem {
   id: string;
@@ -173,6 +174,9 @@ export default function DashboardNav({ activeTab, onTabChange, isCollapsed = fal
     signOut();
     router.push('/login');
   };
+
+  // Realtime refresh: recarga badges cuando cambios llegan de otros dispositivos
+  useRealtimeRefresh(['projects', 'budgets', 'warehouse_stock'], loadBadges);
 
   return (
     <nav className={`glass-panel border-r border-white/10 flex flex-col h-full z-40 transition-all duration-300 ${

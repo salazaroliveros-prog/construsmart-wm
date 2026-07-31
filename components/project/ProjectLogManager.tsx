@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { BookOpen, Plus, Edit, Trash2, Calendar, TrendingUp, AlertTriangle, Flag, MessageSquare, Filter, Search, DollarSign } from 'lucide-react';
 import { offlineDB, LocalProject, LocalProjectLog } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
+import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
@@ -171,6 +172,12 @@ export default function ProjectLogManager() {
     const project = projects.find((p) => p.id === projectId);
     return project?.name || 'Proyecto desconocido';
   };
+
+  // Realtime refresh: recarga cuando cambios llegan de otros dispositivos
+  useRealtimeRefresh(['project_logs', 'projects'], () => {
+    loadLogs();
+    loadProjects();
+  });
 
   return (
     <div className="space-y-6">

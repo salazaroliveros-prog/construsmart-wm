@@ -10,6 +10,7 @@ import ProjectOverview from '@/components/dashboard/ProjectOverview';
 import AuthGuard from '@/components/auth/AuthGuard';
 import { offlineDB } from '@/lib/db/offlineStore';
 import { useScrollLock } from '@/lib/hooks/useScrollLock';
+import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 
 // Dynamic imports for code splitting
 const ProjectManager = dynamic(() => import('@/components/dashboard/ProjectManager'), { ssr: false });
@@ -104,6 +105,9 @@ export default function Dashboard() {
       setRecentActivity([]);
     }
   };
+
+  // Realtime refresh: actualiza la actividad reciente cuando cambios llegan de otros dispositivos
+  useRealtimeRefresh(['financial_transactions', 'projects'], loadRecentActivity);
 
   const renderTabContent = () => {
     switch (activeTab) {

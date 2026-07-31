@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Calendar, DollarSign, BarChart3, Filter, Activity, Target, AlertCircle, Loader2, FolderOpen, ArrowRight, ZoomIn, ZoomOut, Settings } from 'lucide-react';
 import { offlineDB, LocalProject, LocalFinancialTransaction } from '@/lib/db/offlineStore';
+import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import EmptyState from '@/components/ui/EmptyState';
 
 // ==================== TYPES & INTERFACES ====================
@@ -133,6 +134,9 @@ export default function AnalyticsDashboard() {
       setIsLoading(false);
     }
   };
+
+  // Realtime refresh: recarga datos cuando cambios llegan de otros dispositivos
+  useRealtimeRefresh(['projects'], loadProjects);
 
   const loadAnalyticsData = async () => {
     if (!hasData) {

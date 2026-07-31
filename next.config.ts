@@ -22,7 +22,9 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '2mb',
     },
   },
-  turbopack: {},
+  turbopack: {
+    root: process.cwd(),
+  },
   // Ensure consistent production URL
   env: {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'https://control-constructora-wm.vercel.app',

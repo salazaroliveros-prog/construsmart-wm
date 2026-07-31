@@ -5,6 +5,7 @@ import { Plus, Edit, Trash2, Search, Users, DollarSign, Calendar, BadgeCheck, X,
 import { offlineDB, LocalPayrollEmployee, LocalPayrollRecord, LocalProject } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
 import { queueDelete, PENDING_STATUSES } from '@/lib/utils/offlineSync';
+import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
@@ -381,6 +382,9 @@ export default function PayrollManager() {
       await queueDelete('payroll_employees', employee);
       await offlineDB.payrollEmployees.delete(employee.id!);
 
+      // Cascada local: el servidor borra en CASCADE los registros de nómina del empleado
+      await offlineDB.payrollRecords.where('employee_id').equals(employee.id!).delete();
+
       await loadEmployees();
       showToast('info', `Empleado "${employee.name}" eliminado`);
     } catch (error) {
@@ -465,7 +469,7 @@ export default function PayrollManager() {
         net_salary: netSalary,
         sync_status: editingPayroll
           ? (editingPayroll.sync_status === 'synced' ? (isOnline ? 'synced' : 'updated_offline') : 'created_offline')
-          : (isOnline ? 'synced' : 'created_offline'),
+          : 'created_offline',
         created_at: new Date().toISOString(),
       };
 
@@ -540,6 +544,13 @@ export default function PayrollManager() {
   });
 
   const summary = calculateSummary();
+
+  // Realtime refresh: reload data when changes arrive from other devices
+  useRealtimeRefresh(['payroll_employees', 'payroll_records', 'projects'], () => {
+    loadEmployees();
+    loadPayrollRecords();
+    loadProjects();
+  });
 
   // ---------------------------------------------------------------------------
   // RENDER

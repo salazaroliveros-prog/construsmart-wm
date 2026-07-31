@@ -5,6 +5,7 @@ import { Plus, Edit, Trash2, Search, Package, AlertTriangle, TrendingUp, X, Save
 import { offlineDB, LocalWarehouseStock, LocalProject } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
 import { queueDelete, PENDING_STATUSES } from '@/lib/utils/offlineSync';
+import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
@@ -372,9 +373,8 @@ export default function WarehouseManager() {
   const lowStockItems = stockItems.filter(item => item.current_stock <= item.minimum_threshold);
   const summary = calculateSummary();
 
-  // ---------------------------------------------------------------------------
-  // RENDER
-  // ---------------------------------------------------------------------------
+  // Realtime refresh: recarga cuando cambios llegan de otros dispositivos
+  useRealtimeRefresh(['warehouse_stock', 'projects'], loadStockItems);
 
   return (
     <div className="space-y-6">

@@ -5,6 +5,7 @@ import { Building2, DollarSign, TrendingUp, Users, Hammer, Calendar, ArrowUpRigh
 import { offlineDB, LocalProject, LocalFinancialTransaction, LocalPayrollEmployee, LocalWarehouseStock } from '@/lib/db/offlineStore';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { useFinancialSettings, formatCurrency } from '@/lib/hooks/useBusinessSettings';
+import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 
 interface StatCardProps {
   title: string;
@@ -119,6 +120,12 @@ export default function DashboardStats() {
   ];
 
   const COLORS = ['#06b6d4', '#10b981', '#f59e0b', '#8b5cf6', '#6366f1'];
+
+  // Realtime refresh: recarga cuando cambios llegan de otros dispositivos
+  useRealtimeRefresh(
+    ['projects', 'financial_transactions', 'payroll_employees', 'warehouse_stock'],
+    loadRealData
+  );
 
   return (
     <div className="space-y-3 sm:space-y-4 w-full">

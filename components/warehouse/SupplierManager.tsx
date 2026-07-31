@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Truck, Plus, Edit, Trash2, Phone, Mail, MapPin, Building2, Search, Filter } from 'lucide-react';
 import { offlineDB, LocalSupplier } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
+import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
@@ -114,6 +115,16 @@ export default function SupplierManager() {
     try {
       await queueDelete('suppliers', supplier);
       await offlineDB.suppliers.delete(supplier.id!);
+
+      // Cascada local: el servidor usa RESTRICT, así que el motor borra primero las OC;
+      // aquí limpiamos localmente las OC del proveedor y sus items.
+      const orderIds = (await offlineDB.purchaseOrders.where('supplier_id').equals(supplier.id!).toArray())
+        .map((o) => o.id as string);
+      if (orderIds.length > 0) {
+        await offlineDB.purchaseOrderItems.where('purchase_order_id').anyOf(orderIds).delete();
+        await offlineDB.purchaseOrders.where('supplier_id').equals(supplier.id!).delete();
+      }
+
       setDeleteDialog({ show: false, supplier: null });
       loadSuppliers();
     } catch (error) {
@@ -125,6 +136,9 @@ export default function SupplierManager() {
     const count = suppliers.length + 1;
     return `SUP-${String(count).padStart(4, '0')}`;
   };
+
+  // Realtime refresh: recarga cuando cambios llegan de otros dispositivos
+  useRealtimeRefresh(['suppliers', 'purchase_orders'], loadSuppliers);
 
   return (
     <div className="space-y-6">

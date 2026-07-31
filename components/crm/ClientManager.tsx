@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Users, Plus, Edit, Trash2, Phone, Mail, MapPin, Building2, Search, Filter } from 'lucide-react';
 import { offlineDB, LocalClient } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
+import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
@@ -132,6 +133,9 @@ export default function ClientManager() {
     const count = clients.length + 1;
     return `CLI-${String(count).padStart(4, '0')}`;
   };
+
+  // Realtime refresh: recarga cuando cambios llegan de otros dispositivos
+  useRealtimeRefresh(['clients'], loadClients);
 
   return (
     <div className="space-y-6">

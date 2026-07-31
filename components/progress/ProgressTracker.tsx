@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, BarChart3, Activity, DollarSign, Target, Clock, AlertTriangle } from 'lucide-react';
 import { offlineDB, LocalProject, LocalFinancialTransaction } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
+import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { budgetState, ActiveBudgetState } from '@/lib/state/budgetState';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -60,15 +61,45 @@ export default function ProgressTracker() {
     }
   };
 
-  const loadBudgetState = () => {
+  const loadBudgetState = async () => {
     // Try to get budget from global state first
     const state = budgetState.get();
     if (state && state.projectId === selectedProject) {
       setActiveBudget(state);
-    } else {
-      // Fallback: check if any budget exists for this project
-      setActiveBudget(null);
+      return;
     }
+
+    // Fallback: read the latest budget from the local DB (e.g. created on another device)
+    try {
+      const budgets = await offlineDB.budgets
+        .where('project_id')
+        .equals(selectedProject)
+        .reverse()
+        .limit(1)
+        .toArray();
+
+      if (budgets.length > 0) {
+        const budget = budgets[0];
+        setActiveBudget({
+          projectId: selectedProject,
+          budgetId: budget.id as string,
+          typology: 'residential',
+          costDirectTotal: budget.direct_cost || 0,
+          costTotalWithIndirects: budget.total_amount || 0,
+          breakdown: {
+            materials: 0,
+            labor: 0,
+            machinery: 0,
+          },
+          calculatedAt: budget.updated_at || '',
+        });
+        return;
+      }
+    } catch (error) {
+      console.error('Error loading budget from DB:', error);
+    }
+
+    setActiveBudget(null);
   };
 
   const loadTransactions = async () => {
@@ -197,6 +228,13 @@ export default function ProgressTracker() {
       fill: '#f59e0b',
     },
   ] : [];
+
+  // Realtime refresh: recarga cuando cambios llegan de otros dispositivos
+  useRealtimeRefresh(['financial_transactions', 'projects', 'budgets'], () => {
+    loadProjects();
+    loadTransactions();
+    loadBudgetState();
+  });
 
   return (
     <div className="space-y-6">

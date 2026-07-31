@@ -18,6 +18,7 @@ import { ProjectTypology, APUFormulaParams, APUResult, TYPOLOGY_LABELS, MATERIAL
 import type { APURenglon } from '@/lib/types/apu';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
+import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { budgetState, ActiveBudgetState } from '@/lib/state/budgetState';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -481,6 +482,9 @@ export default function BudgetCalculator() {
   };
 
   const summary = calculateSummary();
+
+  // Realtime refresh: recarga cuando cambios llegan de otros dispositivos
+  useRealtimeRefresh(['projects', 'budgets', 'budget_items'], loadProjects);
 
   return (
     <div className="space-y-6">

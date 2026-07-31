@@ -47,6 +47,7 @@ async function applyChange(payload: {
         await local.delete(serverId);
         await offlineDB.pendingDeletes.where('serverId').equals(serverId).delete();
       }
+      window.dispatchEvent(new CustomEvent('wm-dexie-changed', { detail: { table: payload.table } }));
       return;
     }
 
@@ -60,6 +61,9 @@ async function applyChange(payload: {
     }
 
     await local.put({ ...serverRow, sync_status: 'synced' });
+
+    // Notifica a las vistas abiertas para que recarguen su estado desde Dexie
+    window.dispatchEvent(new CustomEvent('wm-dexie-changed', { detail: { table: payload.table } }));
   } catch (error) {
     console.error(`Realtime: error applying change for ${payload.table}:`, error);
   }
