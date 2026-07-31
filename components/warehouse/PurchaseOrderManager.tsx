@@ -448,26 +448,32 @@ export default function PurchaseOrderManager() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => handleViewItems(order)}
-                    className="glass-button px-3 py-2 rounded-lg text-white text-sm flex items-center gap-2"
-                  >
-                    <Package className="w-4 h-4" />
-                    Items
-                  </button>
-                  <button
-                    onClick={() => handleEdit(order)}
-                    className="glass-button px-3 py-2 rounded-lg text-white text-sm flex items-center gap-2"
-                  >
-                    <Edit className="w-4 h-4" />
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => setDeleteDialog({ show: true, order })}
-                    className="px-3 py-2 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-all"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <Tooltip content="Ver items de la orden">
+                    <button
+                      onClick={() => handleViewItems(order)}
+                      className="glass-button px-3 py-2 rounded-lg text-white text-sm flex items-center gap-2"
+                    >
+                      <Package className="w-4 h-4" />
+                      Items
+                    </button>
+                  </Tooltip>
+                  <Tooltip content="Editar información de la orden">
+                    <button
+                      onClick={() => handleEdit(order)}
+                      className="glass-button px-3 py-2 rounded-lg text-white text-sm flex items-center gap-2"
+                    >
+                      <Edit className="w-4 h-4" />
+                      Editar
+                    </button>
+                  </Tooltip>
+                  <Tooltip content="Eliminar orden permanentemente">
+                    <button
+                      onClick={() => setDeleteDialog({ show: true, order })}
+                      className="px-3 py-2 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-all"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
             </div>
@@ -491,24 +497,26 @@ export default function PurchaseOrderManager() {
             </div>
 
             <div className="flex gap-3 mb-6">
-              <button
-                onClick={() => {
-                  setItemFormData({
-                    purchase_order_id: selectedOrder.id,
-                    item_code: '',
-                    description: '',
-                    quantity: 0,
-                    unit: '',
-                    unit_price: 0,
-                    total_price: 0,
-                  });
-                  setShowItemForm(true);
-                }}
-                className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Agregar Item
-              </button>
+              <Tooltip content="Agregar nuevo item a la orden">
+                <button
+                  onClick={() => {
+                    setItemFormData({
+                      purchase_order_id: selectedOrder.id,
+                      item_code: '',
+                      description: '',
+                      quantity: 0,
+                      unit: '',
+                      unit_price: 0,
+                      total_price: 0,
+                    });
+                    setShowItemForm(true);
+                  }}
+                  className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Agregar Item
+                </button>
+              </Tooltip>
             </div>
 
             {currentOrderItems.length === 0 ? (
