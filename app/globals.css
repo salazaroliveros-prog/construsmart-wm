@@ -1013,3 +1013,13 @@ html, body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
+
+/* Prevent extra scroll space at bottom of containers */
+.overflow-anchor-none {
+  overflow-anchor: none;
+}
+
+.overflow-anchor-none > *:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+}

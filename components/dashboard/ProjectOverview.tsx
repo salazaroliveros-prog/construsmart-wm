@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Building2, Calendar, DollarSign, Inbox } from 'lucide-react';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
@@ -32,6 +32,7 @@ function formatCurrency(amount: number): string {
 export default function ProjectOverview() {
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [loading, setLoading] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadProjects();
@@ -49,6 +50,12 @@ export default function ProjectOverview() {
   };
 
   useRealtimeRefresh(['projects'], loadProjects);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [projects]);
 
   if (loading) {
     return (
@@ -94,7 +101,7 @@ export default function ProjectOverview() {
         <span>Proyectos Activos</span>
       </h2>
 
-      <div className="space-y-1.5 flex-1 overflow-y-auto">
+      <div className="space-y-1.5 flex-1 overflow-y-auto overflow-anchor-none" ref={scrollRef}>
         {projects.map((project) => {
           const status = project.status || 'planning';
           const colors = statusColors[status] || statusColors.planning;
