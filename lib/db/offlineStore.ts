@@ -19,6 +19,7 @@ export interface LocalProject {
   total_budget: number;
   sync_status: 'synced' | 'created_offline' | 'updated_offline';
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface LocalBudget {
@@ -33,6 +34,7 @@ export interface LocalBudget {
   duration_days: number;
   sync_status: 'synced' | 'created_offline' | 'updated_offline';
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface LocalBudgetItem {
@@ -52,8 +54,9 @@ export interface LocalBudgetItem {
   depth_m?: number;
   height_m?: number;
   slab_type?: string;
-  sync_status: 'synced' | 'pending';
+  sync_status: 'synced' | 'created_offline' | 'updated_offline';
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface LocalBudgetItemBreakdown {
@@ -68,14 +71,15 @@ export interface LocalBudgetItemBreakdown {
   unit_price: number;
   waste_percentage: number;
   total_price: number;
-  sync_status: 'synced' | 'pending';
+  sync_status: 'synced' | 'created_offline' | 'updated_offline';
+  created_at?: string;
 }
 
 export interface LocalFinancialTransaction {
   id?: string;
   project_id?: string;
   type: 'income' | 'expense';
-  category: 'materiales' | 'mano_de_obra' | 'herramienta' | 'sub_contrato' | 
+  category: 'materiales' | 'mano_de_obra' | 'herramienta' | 'sub_contrato' |
            'administrativo' | 'personal' | 'transporte' | 'fijos' | 'hogar' | 'aporte' | 'trabajos_extra';
   description: string;
   quantity: number;
@@ -86,6 +90,7 @@ export interface LocalFinancialTransaction {
   receipt_url?: string;
   sync_status: 'synced' | 'created_offline' | 'updated_offline';
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface LocalPayrollRecord {
@@ -107,6 +112,7 @@ export interface LocalPayrollRecord {
   net_salary: number;
   sync_status: 'synced' | 'created_offline' | 'updated_offline';
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface LocalPayrollEmployee {
@@ -120,6 +126,7 @@ export interface LocalPayrollEmployee {
   active: boolean;
   sync_status: 'synced' | 'created_offline' | 'updated_offline';
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface LocalWarehouseStock {
@@ -131,6 +138,8 @@ export interface LocalWarehouseStock {
   minimum_threshold: number;
   unit_cost: number;
   sync_status: 'synced' | 'created_offline' | 'updated_offline';
+  created_at?: string;
+  updated_at?: string;
 }
 
 export class WMDatabase extends Dexie {
@@ -145,15 +154,15 @@ export class WMDatabase extends Dexie {
 
   constructor() {
     super('ConstructoraWM_OfflineDB');
-    this.version(1).stores({
-      projects: 'id, code, name, sync_status, status, typology',
-      budgets: 'id, project_id, version, sync_status',
-      budgetItems: 'id, budget_id, parent_id, code, sync_status, item_order',
-      budgetItemBreakdowns: 'id, budget_item_id, resource_type, sync_status',
-      financialTransactions: 'id, project_id, type, category, date, sync_status',
-      payrollEmployees: 'id, name, position, category, department, sync_status',
-      payrollRecords: 'id, employee_id, period_start, period_end, sync_status',
-      warehouseStock: 'id, item_code, sync_status'
+    this.version(2).stores({
+      projects: 'id, code, name, sync_status, status, typology, created_at, updated_at',
+      budgets: 'id, project_id, version, sync_status, created_at, updated_at',
+      budgetItems: 'id, budget_id, parent_id, code, sync_status, item_order, created_at, updated_at',
+      budgetItemBreakdowns: 'id, budget_item_id, resource_type, sync_status, created_at',
+      financialTransactions: 'id, project_id, type, category, date, sync_status, created_at, updated_at',
+      payrollEmployees: 'id, name, position, category, department, sync_status, created_at, updated_at',
+      payrollRecords: 'id, employee_id, period_start, period_end, sync_status, created_at, updated_at',
+      warehouseStock: 'id, item_code, sync_status, created_at, updated_at'
     });
   }
 }

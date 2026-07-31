@@ -12,7 +12,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "clear-db": "tsx scripts/clear-local-db.ts"
   },
   "keywords": [
     "construction",
@@ -48,5 +49,8 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.1"
   }
 }
