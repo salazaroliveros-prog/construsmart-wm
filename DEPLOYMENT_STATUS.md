@@ -14,7 +14,7 @@
 
 **Repository:** Up to date
 - Branch: `main`
-- Latest commit: `01cd5ef` - refactor: swap tier cards and chart panels in dashboard layout
+- Latest commit: `11ccf18` - fix: remove deployment-url.txt, add to .gitignore, remove PWA plugin to prevent sw.js overwrite
 - Status: Sincronizado con origin
 - No cambios pendientes
 
@@ -36,9 +36,10 @@
 1. **Caché del Service Worker obsoleta** — El `sw.js` usaba nombres de caché versionados (`v2`) que no se actualizaban entre deploys. Se actualizó a `v3` y se mejoró la limpieza de cachés antiguos.
 2. **Sin `vercel.json`** — Se creó `vercel.json` con headers de `Cache-Control: max-age=0, must-revalidate` para `sw.js`, `manifest.json` y todas las rutas, forzando al navegador a revalidar en cada visita.
 3. **`turbopack` experimental en `next.config.ts`** — Se eliminó la configuración de `turbopack` que podía causar fallos de build en Vercel (luego se restauró porque Next.js 16 lo requiere).
-4. **Auto-deploy no funcionaba** — No había webhook de GitHub configurado para Vercel. Se creó un webhook en la repo de GitHub que dispara deploys en cada push a `main`.
+4. **Auto-deploy no funcionaba** — No había webhook de GitHub configurado para Vercel. Se creó un webhook en la repo de GitHub que dispara deploys en cada push a `main`. (Posteriormente se reemplazó por la integración Git de Vercel).
 5. **Scroll bloqueado por `overflow-anchor`** — Se agregó `overflow-anchor-none` a todos los contenedores scrollables de la suite para evitar que el navegador bloquee el scroll cuando hay elementos flotantes o modales.
 6. **Reordenamiento de tarjetas en dashboard** — Se intercambiaron las posiciones de las tarjetas de nivel (Básico/Moderado/Premium) y los paneles de gráficas (Estado de Proyectos/Distribución de Gastos/Flujo Financiero). Las tarjetas de nivel ahora están en el área de gráficas y las gráficas están en la columna derecha donde estaban las tarjetas.
+7. **Plugin PWA sobrescribiendo `sw.js`** — El plugin `@ducanh2912/next-pwa` regeneraba `public/sw.js` durante el build de Vercel, sobrescribiendo los nombres de caché personalizados (`v3`). Se eliminó el plugin de `next.config.ts` para preservar el `sw.js` personalizado y los nombres de caché `v3`.
 
 ### Pasos para Verificar el Deploy
 
@@ -48,18 +49,22 @@
 ## Estado del Código
 
 **Últimos Commits:**
-1. `01cd5ef` - refactor: swap tier cards and chart panels in dashboard layout
-2. `c88ca9f` - docs: update DEPLOYMENT_STATUS.md with webhook fix and overflow-anchor-none
-3. `84bffc9` - feat: add overflow-anchor-none to all scrollable containers
-4. `d9cdfad` - fix: add overflow-anchor-none to ProjectOverview + globals.css
-5. `e50d68e` - fix: vercel.json cache headers, sw.js v3, DEPLOYMENT_STATUS update
-6. `244f280` - Refactor: dashboard zero-scroll layout, no sidebar toggle, centered nav
-7. `0b6fc84` - Refactor: dashboard zero-scroll layout with responsive sidebar
-8. `e14a236` - Fix: correct DB version reference in clear-local-db script (v2 -> v6)
-9. `8eece68` - Fix offline sync bugs, add Realtime refresh, idempotent budget save
-10. `9052395` - chore: pin node engine to 24.x to silence vercel auto-upgrade warning
+1. `11ccf18` - fix: remove deployment-url.txt, add to .gitignore, remove PWA plugin to prevent sw.js overwrite
+2. `60740ba` - fix: remove @ducanh2912/next-pwa plugin to prevent sw.js overwrite during Vercel builds
+3. `01cd5ef` - refactor: swap tier cards and chart panels in dashboard layout
+4. `c88ca9f` - docs: update DEPLOYMENT_STATUS.md with webhook fix and overflow-anchor-none
+5. `84bffc9` - feat: add overflow-anchor-none to all scrollable containers
+6. `d9cdfad` - fix: add overflow-anchor-none to ProjectOverview + globals.css
+7. `e50d68e` - fix: vercel.json cache headers, sw.js v3, DEPLOYMENT_STATUS update
+8. `244f280` - Refactor: dashboard zero-scroll layout, no sidebar toggle, centered nav
+9. `0b6fc84` - Refactor: dashboard zero-scroll layout with responsive sidebar
+10. `e14a236` - Fix: correct DB version reference in clear-local-db script (v2 -> v6)
+11. `8eece68` - Fix offline sync bugs, add Realtime refresh, idempotent budget save
+12. `9052395` - chore: pin node engine to 24.x to silence vercel auto-upgrade warning
 
 **Archivos Nuevos Importantes:**
+- `components/dashboard/TierCards.tsx` - Tarjetas de nivel (Básico/Moderado/Premium) extraídas como componente
+- `components/dashboard/DashboardCharts.tsx` - Gráficas extraídas como componente (Estado de Proyectos, Distribución de Gastos, Flujo Financiero)
 - `lib/state/budgetState.ts` - Estado global del presupuesto
 - `components/progress/ProgressTracker.tsx` - Módulo de control de avance
 - `lib/calculators/apuCalculator.ts` - Motor de cálculo APU
@@ -74,7 +79,10 @@
 El CLI de Vercel está vinculado al proyecto localmente. Los deploys se pueden hacer con `vercel --prod`.
 
 ### Auto-deploy desde GitHub
-El proyecto está configurado con GitHub auto-deploy en Vercel. Se creó un webhook en la repo de GitHub que dispara deploys automáticamente al hacer push a `main`.
+El proyecto está configurado con GitHub auto-deploy en Vercel mediante la integración Git de Vercel. Los pushes a `main` disparan deploys automáticamente.
+
+### PWA (Service Worker)
+El plugin `@ducanh2912/next-pwa` fue eliminado de `next.config.ts` porque sobrescribía `public/sw.js` durante el build de Vercel. El SW personalizado (`public/sw.js` con cache `v3`) es registrado manualmente por `ServiceWorkerRegistration.tsx`.
 
 ## Resumen
 
@@ -84,16 +92,17 @@ El proyecto está configurado con GitHub auto-deploy en Vercel. Se creó un webh
 | GitHub | ✅ | Up to date |
 | Supabase DB | ✅ | Migración completada |
 | vercel.json | ✅ | Creado con cache headers |
-| next.config.ts | ✅ | turbopack restaurado (requerido por Next.js 16) |
-| sw.js | ✅ | Cache version actualizado a v3 |
-| Auto-deploy Webhook | ✅ | Creado en GitHub repo |
+| next.config.ts | ✅ | turbopack restaurado, PWA plugin eliminado |
+| sw.js | ✅ | Cache version actualizado a v3, PWA plugin removed to prevent overwrite |
+| Auto-deploy | ✅ | Vercel Git Integration funcionando |
 | overflow-anchor-none | ✅ | Aplicado a todos los contenedores scrollables |
-| Dashboard Layout | ✅ | Tarjetas de nivel y gráficas intercambiadas de posición |
+| Dashboard Layout | ✅ | Tarjetas de nivel y gráficas intercambiadas |
 | Vercel Deploy | ✅ | Funcionando |
 | Live Site | ✅ | https://control-constructora-wm.vercel.app |
 
 ## Siguiente Acción
 
-1. Verificar que el auto-deploy funciona haciendo un cambio pequeño y haciendo push a `main`
+1. ✅ Verificado: auto-deploy funciona (push a `main` dispara deploy automáticamente)
 2. Probar el scroll en todos los contenedores de la suite para confirmar que `overflow-anchor-none` resuelve el problema de scroll bloqueado
 3. Verificar que el intercambio de tarjetas y gráficas en el dashboard se muestra correctamente
+4. Verificar que el service worker v3 se sirve correctamente en producción (Ctrl+Shift+R)
