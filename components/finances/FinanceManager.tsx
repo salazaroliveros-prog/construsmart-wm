@@ -20,8 +20,33 @@ interface TransactionFormData {
   receipt_url?: string;
 }
 
-type TransactionType = 'income' | 'expense';
-type TransactionCategory = 'materiales' | 'mano_de_obra' | 'herramienta' | 'sub_contrato' | 'administrativo' | 'personal' | 'transporte' | 'fijos' | 'hogar' | 'aporte' | 'trabajos_extra';
+const categoryLabels: Record<string, string> = {
+  materiales: 'Materiales',
+  mano_de_obra: 'Mano de Obra',
+  herramienta: 'Herramienta',
+  sub_contrato: 'Sub Contrato',
+  administrativo: 'Administrativo',
+  personal: 'Personal',
+  transporte: 'Transporte',
+  fijos: 'Fijos',
+  hogar: 'Hogar',
+  aporte: 'Aporte',
+  trabajos_extra: 'Trabajos Extra'
+};
+
+const categoryColors: Record<string, { bg: string; text: string; border: string }> = {
+  materiales: { bg: 'rgba(59, 130, 246, 0.2)', text: 'rgb(147, 197, 253)', border: 'rgba(59, 130, 246, 0.3)' },
+  mano_de_obra: { bg: 'rgba(16, 185, 129, 0.2)', text: 'rgb(134, 239, 172)', border: 'rgba(16, 185, 129, 0.3)' },
+  herramienta: { bg: 'rgba(245, 158, 11, 0.2)', text: 'rgb(253, 186, 116)', border: 'rgba(245, 158, 11, 0.3)' },
+  sub_contrato: { bg: 'rgba(139, 92, 246, 0.2)', text: 'rgb(196, 181, 253)', border: 'rgba(139, 92, 246, 0.3)' },
+  administrativo: { bg: 'rgba(236, 72, 153, 0.2)', text: 'rgb(244, 114, 182)', border: 'rgba(236, 72, 153, 0.3)' },
+  personal: { bg: 'rgba(239, 68, 68, 0.2)', text: 'rgb(248, 113, 113)', border: 'rgba(239, 68, 68, 0.3)' },
+  transporte: { bg: 'rgba(20, 184, 166, 0.2)', text: 'rgb(45, 212, 191)', border: 'rgba(20, 184, 166, 0.3)' },
+  fijos: { bg: 'rgba(99, 102, 241, 0.2)', text: 'rgb(129, 140, 248)', border: 'rgba(99, 102, 241, 0.3)' },
+  hogar: { bg: 'rgba(34, 197, 94, 0.2)', text: 'rgb(74, 222, 128)', border: 'rgba(34, 197, 94, 0.3)' },
+  aporte: { bg: 'rgba(168, 85, 247, 0.2)', text: 'rgb(192, 132, 252)', border: 'rgba(168, 85, 247, 0.3)' },
+  trabajos_extra: { bg: 'rgba(249, 115, 22, 0.2)', text: 'rgb(251, 146, 60)', border: 'rgba(249, 115, 22, 0.3)' }
+};
 
 export default function FinanceManager() {
   const { showToast } = useToast();
@@ -34,6 +59,7 @@ export default function FinanceManager() {
   const [isOnline, setIsOnline] = useState(true);
   const [selectedProject, setSelectedProject] = useState<string>('all');
   const [deleteConfirm, setDeleteConfirm] = useState<LocalFinancialTransaction | null>(null);
+  const [saveLoading, setSaveLoading] = useState(false);
 
   const [formData, setFormData] = useState<TransactionFormData>({
     type: 'expense',
@@ -106,39 +132,7 @@ export default function FinanceManager() {
     }
   };
 
-  const handleOpenModal = (transaction?: LocalFinancialTransaction) => {
-    if (transaction) {
-      setEditingTransaction(transaction);
-      setFormData({
-        project_id: transaction.project_id,
-        type: transaction.type,
-        category: transaction.category,
-        description: transaction.description,
-        quantity: transaction.quantity,
-        unit: transaction.unit,
-        unit_cost: transaction.unit_cost,
-        date: transaction.date,
-        receipt_url: transaction.receipt_url || '',
-      });
-    } else {
-      setEditingTransaction(null);
-      setFormData({
-        type: 'expense',
-        category: 'materiales',
-        description: '',
-        quantity: 1,
-        unit: 'unid',
-        unit_cost: 0,
-        date: new Date().toISOString().split('T')[0],
-        receipt_url: '',
-      });
-    }
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingTransaction(null);
+  const resetForm = () => {
     setFormData({
       type: 'expense',
       category: 'materiales',
@@ -149,106 +143,94 @@ export default function FinanceManager() {
       date: new Date().toISOString().split('T')[0],
       receipt_url: '',
     });
+    setEditingTransaction(null);
   };
 
-  const handleSaveTransaction = async () => {
+  const openModal = (transaction?: LocalFinancialTransaction) => {
+    if (transaction) {
+      setEditingTransaction(transaction);
+      setFormData({
+        project_id: transaction.project_id,
+        type: transaction.type as 'income' | 'expense',
+        category: transaction.category as any,
+        description: transaction.description,
+        quantity: transaction.quantity,
+        unit: transaction.unit,
+        unit_cost: transaction.unit_cost,
+        date: transaction.date,
+        receipt_url: transaction.receipt_url,
+      });
+    } else {
+      resetForm();
+    }
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    resetForm();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaveLoading(true);
+
     try {
       const totalCost = formData.quantity * formData.unit_cost;
-
       const transactionData: LocalFinancialTransaction = {
-        ...formData,
+        id: editingTransaction?.id || crypto.randomUUID(),
+        project_id: formData.project_id,
+        type: formData.type,
+        category: formData.category,
+        description: formData.description,
+        quantity: formData.quantity,
+        unit: formData.unit,
+        unit_cost: formData.unit_cost,
         total_cost: totalCost,
+        date: formData.date,
+        receipt_url: formData.receipt_url,
         sync_status: isOnline ? 'synced' : 'created_offline',
-        created_at: new Date().toISOString(),
+        created_at: editingTransaction?.created_at || new Date().toISOString()
       };
 
       if (editingTransaction) {
-        await offlineDB.financialTransactions.update(editingTransaction.id!, {
-          ...transactionData,
-          sync_status: isOnline ? 'synced' : 'updated_offline',
-        });
-
-        if (isOnline && editingTransaction.id && supabase) {
-          const { error } = await supabase
-            .from('financial_transactions')
-            .update({
-              project_id: transactionData.project_id,
-              type: transactionData.type,
-              category: transactionData.category,
-              description: transactionData.description,
-              quantity: transactionData.quantity,
-              unit: transactionData.unit,
-              unit_cost: transactionData.unit_cost,
-              total_cost: transactionData.total_cost,
-              date: transactionData.date,
-              receipt_url: transactionData.receipt_url,
-            })
-            .eq('id', editingTransaction.id);
-
-          if (error) {
-            console.error('Error updating transaction in Supabase:', error);
-            await offlineDB.financialTransactions.update(editingTransaction.id!, {
-              sync_status: 'updated_offline',
-            });
-          }
-        }
-
-        showToast('success', 'Transacción actualizada');
+        await offlineDB.financialTransactions.update(editingTransaction.id, transactionData);
+        showToast('success', 'Transacción actualizada exitosamente');
       } else {
-        const id = await offlineDB.financialTransactions.add(transactionData);
-
-        if (isOnline && supabase) {
-          const { data, error } = await supabase
-            .from('financial_transactions')
-            .insert({
-              project_id: transactionData.project_id,
-              type: transactionData.type,
-              category: transactionData.category,
-              description: transactionData.description,
-              quantity: transactionData.quantity,
-              unit: transactionData.unit,
-              unit_cost: transactionData.unit_cost,
-              total_cost: transactionData.total_cost,
-              date: transactionData.date,
-              receipt_url: transactionData.receipt_url,
-            })
-            .select()
-            .single();
-
-          if (error) {
-            console.error('Error creating transaction in Supabase:', error);
-          } else if (data) {
-            await offlineDB.financialTransactions.update(id, {
-              id: data.id,
-              sync_status: 'synced',
-            });
-          }
-        }
-
+        await offlineDB.financialTransactions.add(transactionData);
         showToast('success', 'Transacción creada exitosamente');
       }
 
-      await loadTransactions();
-      handleCloseModal();
+      closeModal();
+      loadTransactions();
+
+      if (isOnline && supabase) {
+        const { error } = await supabase.from('financial_transactions').upsert([transactionData]);
+        if (error) throw error;
+      }
     } catch (error) {
       console.error('Error saving transaction:', error);
       showToast('error', 'Error al guardar la transacción');
+    } finally {
+      setSaveLoading(false);
     }
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDelete = async (transaction: LocalFinancialTransaction) => {
+    setDeleteConfirm(transaction);
+  };
+
+  const confirmDelete = async () => {
     if (!deleteConfirm) return;
 
     try {
-      await offlineDB.financialTransactions.delete(deleteConfirm.id!);
+      await offlineDB.financialTransactions.delete(deleteConfirm.id);
+      showToast('success', 'Transacción eliminada exitosamente');
+      loadTransactions();
 
-      if (isOnline && deleteConfirm.id && supabase) {
-        const { error } = await supabase.from('financial_transactions').delete().eq('id', deleteConfirm.id);
-        if (error) console.error('Error deleting from Supabase:', error);
+      if (isOnline && supabase) {
+        await supabase.from('financial_transactions').delete().eq('id', deleteConfirm.id);
       }
-
-      showToast('success', 'Transacción eliminada');
-      await loadTransactions();
     } catch (error) {
       console.error('Error deleting transaction:', error);
       showToast('error', 'Error al eliminar la transacción');
@@ -257,42 +239,11 @@ export default function FinanceManager() {
     }
   };
 
-  const calculateSummary = () => {
-    const filtered = selectedProject === 'all'
-      ? transactions
-      : transactions.filter(t => t.project_id === selectedProject);
-
-    const income = filtered
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + t.total_cost, 0);
-
-    const expenses = filtered
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + t.total_cost, 0);
-
-    const balance = income - expenses;
-
-    const expensesByCategory = filtered
-      .filter(t => t.type === 'expense')
-      .reduce((acc, t) => {
-        acc[t.category] = (acc[t.category] || 0) + t.total_cost;
-        return acc;
-      }, {} as Record<string, number>);
-
-    return { income, expenses, balance, expensesByCategory };
-  };
-
-  const summary = calculateSummary();
-
   const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch =
-      transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.category.toLowerCase().includes(searchTerm.toLowerCase());
-
+    const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || transaction.type === filterType;
     const matchesCategory = filterCategory === 'all' || transaction.category === filterCategory;
     const matchesProject = selectedProject === 'all' || transaction.project_id === selectedProject;
-
     return matchesSearch && matchesType && matchesCategory && matchesProject;
   });
 
@@ -300,396 +251,351 @@ export default function FinanceManager() {
     return new Intl.NumberFormat('es-GT', {
       style: 'currency',
       currency: 'GTQ',
-      minimumFractionDigits: 2,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(amount);
   };
 
-  const categoryColors = {
-    materiales: { bg: 'rgba(59, 130, 246, 0.2)', text: 'rgb(147, 197, 253)', border: 'rgba(59, 130, 246, 0.3)' },
-    mano_de_obra: { bg: 'rgba(16, 185, 129, 0.2)', text: 'rgb(134, 239, 172)', border: 'rgba(16, 185, 129, 0.3)' },
-    herramienta: { bg: 'rgba(245, 158, 11, 0.2)', text: 'rgb(253, 186, 116)', border: 'rgba(245, 158, 11, 0.3)' },
-    sub_contrato: { bg: 'rgba(139, 92, 246, 0.2)', text: 'rgb(196, 181, 253)', border: 'rgba(139, 92, 246, 0.3)' },
-    administrativo: { bg: 'rgba(236, 72, 153, 0.2)', text: 'rgb(209, 213, 219)', border: 'rgba(236, 72, 153, 0.3)' },
-    personal: { bg: 'rgba(244, 63, 94, 0.2)', text: 'rgb(251, 146, 114)', border: 'rgba(244, 63, 94, 0.3)' },
-    transporte: { 'bg': 'rgba(20, 184, 166, 0.2)', text: 'rgb(94, 234, 212)', border: 'rgba(20, 184, 166, 0.3)' },
-    fijos: { bg: 'rgba(100, 116, 139, 0.2)', text: 'rgb(148, 163, 184)', border: 'rgba(100, 116, 139, 0.3)' },
-    hogar: { bg: 'rgba(251, 191, 36, 0.2)', text: 'rgb(254, 202, 87)', border: 'rgba(251, 191, 36, 0.3)' },
-    aporte: { bg: 'rgba(34, 197, 94, 0.2)', text: 'rgb(134, 239, 172)', border: 'rgba(34, 197, 94, 0.3)' },
-    trabajos_extra: { bg: 'rgba(168, 85, 247, 0.2)', text: 'rgb(192, 132, 252)', border: 'rgba(168, 85, 247, 0.3)' },
-  };
+  const totalIncome = filteredTransactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.total_cost, 0);
 
-  const categoryLabels = {
-    materiales: 'Materiales',
-    mano_de_obra: 'Mano de Obra',
-    herramienta: 'Herramienta',
-    sub_contrato: 'Sub Contrato',
-    administrativo: 'Administrativo',
-    personal: 'Personal',
-    transporte: 'Transporte',
-    fijos: 'Fijos',
-    hogar: 'Hogar',
-    aporte: 'Aporte',
-    trabajos_extra: 'Trabajos Extra',
-  };
+  const totalExpense = filteredTransactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.total_cost, 0);
+
+  const balance = totalIncome - totalExpense;
 
   return (
-    <div className="glass-panel rounded-2xl p-4 sm:p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
-        <h2 className="text-base sm:text-lg font-semibold text-white flex items-center space-x-2">
-          <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center">
-            <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-          </span>
-          <span>Gestión Financiera</span>
-        </h2>
-        <div className="flex items-center gap-2">
-          <div className={`flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full ${isOnline ? 'bg-emerald-500/20 border border-emerald-500/30' : 'bg-amber-500/20 border border-amber-500/30'}`}>
-            <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-            <span className={`text-[10px] sm:text-xs font-medium ${isOnline ? 'text-emerald-300' : 'text-amber-300'}`}>
-              {isOnline ? 'Online' : 'Offline'}
-            </span>
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="glass-panel rounded-2xl p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+              <Wallet className="w-6 h-6 sm:w-8 sm:h-8 text-cyan-400" />
+              Gestión Financiera
+            </h1>
+            <p className="text-white/60 text-sm mt-1">
+              Controle ingresos, gastos y flujo de caja
+            </p>
           </div>
-          <button
-            onClick={() => handleOpenModal()}
-            className="glass-button-inline px-3 sm:px-4 py-2 rounded-lg text-sm text-cyan-300 flex items-center space-x-2"
+          <div className="flex items-center gap-2">
+            <div className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm ${
+              isOnline ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+            }`}>
+              {isOnline ? '🟢 En línea' : '🟡 Sin conexión'}
+            </div>
+            <button
+              onClick={() => openModal()}
+              className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Nueva Transacción
+            </button>
+          </div>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-emerald-500">
+            <div className="flex items-center gap-2 mb-1">
+              <ArrowUpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
+              <span className="text-white/60 text-xs sm:text-sm">Ingresos Totales</span>
+            </div>
+            <p className="text-lg sm:text-xl font-bold text-emerald-400">{formatCurrency(totalIncome)}</p>
+          </div>
+          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-red-500">
+            <div className="flex items-center gap-2 mb-1">
+              <ArrowDownCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
+              <span className="text-white/60 text-xs sm:text-sm">Gastos Totales</span>
+            </div>
+            <p className="text-lg sm:text-xl font-bold text-red-400">{formatCurrency(totalExpense)}</p>
+          </div>
+          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-cyan-500">
+            <div className="flex items-center gap-2 mb-1">
+              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+              <span className="text-white/60 text-xs sm:text-sm">Balance</span>
+            </div>
+            <p className={`text-lg sm:text-xl font-bold ${balance >= 0 ? 'text-cyan-400' : 'text-red-400'}`}>
+              {formatCurrency(balance)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="glass-panel rounded-2xl p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              <input
+                type="text"
+                placeholder="Buscar transacciones..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-white/10 border border-white/20 rounded-lg pl-10 pr-4 py-2 text-white text-sm"
+              />
+            </div>
+          </div>
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white text-sm"
           >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Nueva Transacción</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="glass-card p-4 rounded-xl">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-white/60 text-sm">Ingresos</span>
-            <ArrowUpCircle className="w-5 h-5 text-emerald-400" />
-          </div>
-          <p className="text-2xl font-bold text-emerald-400">{formatCurrency(summary.income)}</p>
-        </div>
-        <div className="glass-card p-4 rounded-xl">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-white/60 text-sm">Gastos</span>
-            <ArrowDownCircle className="w-5 h-5 text-red-400" />
-          </div>
-          <p className="text-2xl font-bold text-red-400">{formatCurrency(summary.expenses)}</p>
-        </div>
-        <div className="glass-card p-4 rounded-xl">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-white/60 text-sm">Balance</span>
-            <Wallet className="w-5 h-5 text-cyan-400" />
-          </div>
-          <p className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-cyan-400' : 'text-red-400'}`}>
-            {formatCurrency(summary.balance)}
-          </p>
-        </div>
-        <div className="glass-card p-4 rounded-xl">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-white/60 text-sm">Transacciones</span>
-            <DollarSign className="w-5 h-5 text-violet-400" />
-          </div>
-          <p className="text-2xl font-bold text-white">{filteredTransactions.length}</p>
-        </div>
-      </div>
-
-      {/* Expenses by Category */}
-      {Object.keys(summary.expensesByCategory).length > 0 && (
-        <div className="mb-6 p-4 rounded-xl border border-white/10 bg-white/5">
-          <h3 className="text-white font-medium mb-4">Gastos por Categoría</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {Object.entries(summary.expensesByCategory).map(([category, amount]) => (
-              <div key={category} className="glass-card p-3 rounded-lg">
-                <span className="text-xs text-white/60 mb-1">{categoryLabels[category as keyof typeof categoryLabels]}</span>
-                <p className="text-lg font-bold text-white">{formatCurrency(amount)}</p>
-              </div>
+            <option value="all">Todos los tipos</option>
+            <option value="income">Ingresos</option>
+            <option value="expense">Gastos</option>
+          </select>
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white text-sm"
+          >
+            <option value="all">Todas las categorías</option>
+            {Object.entries(categoryLabels).map(([key, label]) => (
+              <option key={key} value={key}>{label}</option>
             ))}
-          </div>
+          </select>
+          <select
+            value={selectedProject}
+            onChange={(e) => setSelectedProject(e.target.value)}
+            className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white text-sm"
+          >
+            <option value="all">Todos los proyectos</option>
+            {availableProjects.map(project => (
+              <option key={project.id} value={project.id}>{project.name}</option>
+            ))}
+          </select>
         </div>
-      )}
-
-      {/* Search and Filter */}
-      <div className="flex flex-wrap items-center gap-4 mb-6">
-        <div className="flex-1 min-w-[200px] relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/40" />
-          <input
-            type="text"
-            placeholder="Buscar transacciones..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
-            aria-label="Buscar transacciones"
-          />
-        </div>
-        <select
-          value={selectedProject}
-          onChange={(e) => setSelectedProject(e.target.value)}
-          className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
-          aria-label="Filtrar por proyecto"
-        >
-          <option value="all">Todos los Proyectos</option>
-          {availableProjects.map((project) => (
-            <option key={project.id} value={project.id}>{project.name}</option>
-          ))}
-        </select>
-        <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
-          aria-label="Filtrar por tipo"
-        >
-          <option value="all">Todos los Tipos</option>
-          <option value="income">Ingresos</option>
-          <option value="expense">Gastos</option>
-        </select>
-        <select
-          value={filterCategory}
-          onChange={(e) => setFilterCategory(e.target.value)}
-          className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
-          aria-label="Filtrar por categoría"
-        >
-          <option value="all">Todas las Categorías</option>
-          {Object.keys(categoryLabels).map((cat) => (
-            <option key={cat} value={cat}>{categoryLabels[cat as keyof typeof categoryLabels]}</option>
-          ))}
-        </select>
       </div>
 
-      {/* Transactions Table or Empty State */}
-      {filteredTransactions.length === 0 ? (
-        <EmptyState
-          icon={<Inbox className="w-8 h-8 text-white/30" />}
-          title="No hay transacciones"
-          description={searchTerm || filterType !== 'all' || filterCategory !== 'all' ? 'No se encontraron transacciones con los filtros actuales.' : 'Agregue su primera transacción financiera usando el botón "Nueva Transacción".'}
-          action={
-            !searchTerm && filterType === 'all' && filterCategory === 'all' ? (
-              <button
-                onClick={() => handleOpenModal()}
-                className="glass-button px-4 py-2 rounded-lg text-sm text-cyan-300 flex items-center space-x-2"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Nueva Transacción</span>
-              </button>
-            ) : undefined
-          }
-        />
-      ) : (
-        <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
-          <table className="w-full text-sm min-w-[600px]">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left text-white/60 py-3 px-4">Fecha</th>
-                <th className="text-left text-white/60 py-3 px-4">Descripción</th>
-                <th className="text-left text-white/60 py-3 px-4">Categoría</th>
-                <th className="text-left text-white/60 py-3 px-4">Tipo</th>
-                <th className="text-left text-white/60 py-3 px-4">Cantidad</th>
-                <th className="text-left text-white/60 py-3 px-4">Unit. Costo</th>
-                <th className="text-left text-white/60 py-3 px-4">Total</th>
-                <th className="text-left text-white/60 py-3 px-4">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTransactions.map((transaction) => (
-                <tr key={transaction.id} className="border-b border-white/5 hover:bg-white/5">
-                  <td className="py-3 px-4 text-white/70">{transaction.date}</td>
-                  <td className="py-3 px-4 text-white font-medium">{transaction.description}</td>
-                  <td className="py-3 px-4">
-                    <span
-                      className="px-2 py-1 rounded-full text-xs font-medium border"
-                      style={{
-                        background: categoryColors[transaction.category as keyof typeof categoryColors].bg,
-                        color: categoryColors[transaction.category as keyof typeof categoryColors].text,
-                        borderColor: categoryColors[transaction.category as keyof typeof categoryColors].border
-                      }}
-                    >
-                      {categoryLabels[transaction.category as keyof typeof categoryLabels]}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className={`flex items-center space-x-1 ${transaction.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {transaction.type === 'income' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                      <span className="capitalize">{transaction.type === 'income' ? 'Ingreso' : 'Gasto'}</span>
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-white/70">{transaction.quantity} {transaction.unit}</td>
-                  <td className="py-3 px-4 text-white/70">{formatCurrency(transaction.unit_cost)}</td>
-                  <td className="py-3 px-4 text-white font-medium">{formatCurrency(transaction.total_cost)}</td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleOpenModal(transaction)}
-                        className="text-cyan-400 hover:text-cyan-300"
-                        aria-label={`Editar transacción ${transaction.description}`}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setDeleteConfirm(transaction)}
-                        className="text-red-400 hover:text-red-300"
-                        aria-label={`Eliminar transacción ${transaction.description}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+      {/* Transactions Table */}
+      <div className="glass-panel rounded-2xl p-4 sm:p-6">
+        {filteredTransactions.length === 0 ? (
+          <EmptyState
+            icon={<Inbox className="w-8 h-8 text-white/30" />}
+            title="No hay transacciones"
+            description={searchTerm || filterType !== 'all' || filterCategory !== 'all' || selectedProject !== 'all'
+              ? 'No se encontraron transacciones con los filtros actuales.'
+              : 'Comience registrando transacciones para controlar sus finanzas.'}
+          />
+        ) : (
+          <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
+            <table className="w-full text-sm min-w-[600px]">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left text-white/60 py-3 px-4">Fecha</th>
+                  <th className="text-left text-white/60 py-3 px-4">Descripción</th>
+                  <th className="text-left text-white/60 py-3 px-4">Categoría</th>
+                  <th className="text-left text-white/60 py-3 px-4">Tipo</th>
+                  <th className="text-left text-white/60 py-3 px-4">Cantidad</th>
+                  <th className="text-left text-white/60 py-3 px-4">Costo Unitario</th>
+                  <th className="text-left text-white/60 py-3 px-4">Costo Total</th>
+                  <th className="text-right text-white/60 py-3 px-4">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {filteredTransactions.map((transaction) => (
+                  <tr key={transaction.id} className="border-b border-white/10 hover:bg-white/5">
+                    <td className="py-3 px-4 text-white">{transaction.date}</td>
+                    <td className="py-3 px-4 text-white">{transaction.description}</td>
+                    <td className="py-3 px-4">
+                      <span
+                        className="px-2 py-1 rounded-md text-xs font-medium"
+                        style={{
+                          backgroundColor: categoryColors[transaction.category]?.bg || 'rgba(255,255,255,0.1)',
+                          color: categoryColors[transaction.category]?.text || 'white',
+                          border: `1px solid ${categoryColors[transaction.category]?.border || 'rgba(255,255,255,0.2)'}`
+                        }}
+                      >
+                        {categoryLabels[transaction.category] || transaction.category}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`flex items-center gap-1 ${
+                        transaction.type === 'income' ? 'text-emerald-400' : 'text-red-400'
+                      }`}>
+                        {transaction.type === 'income' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                        {transaction.type === 'income' ? 'Ingreso' : 'Gasto'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-white">{transaction.quantity} {transaction.unit}</td>
+                    <td className="py-3 px-4 text-white">{formatCurrency(transaction.unit_cost)}</td>
+                    <td className="py-3 px-4 text-white font-medium">{formatCurrency(transaction.total_cost)}</td>
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => openModal(transaction)}
+                          className="text-cyan-400 hover:text-cyan-300 p-1"
+                          title="Editar"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(transaction)}
+                          className="text-red-400 hover:text-red-300 p-1"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Modal */}
       {isModalOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
-          onClick={handleCloseModal}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="transaction-modal-title"
-        >
-          <div className="glass-panel rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-4" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="glass-panel rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 id="transaction-modal-title" className="text-lg font-semibold text-white">
+              <h2 className="text-xl font-bold text-white">
                 {editingTransaction ? 'Editar Transacción' : 'Nueva Transacción'}
-              </h3>
+              </h2>
               <button
-                onClick={handleCloseModal}
-                className="text-white/60 hover:text-white"
-                aria-label="Cerrar modal"
+                onClick={closeModal}
+                className="text-white/60 hover:text-white p-1"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs text-white/60 mb-1 block" htmlFor="transaction-type">Tipo</label>
-                <select
-                  id="transaction-type"
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as TransactionType })}
-                  className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
-                >
-                  <option value="income">Ingreso</option>
-                  <option value="expense">Gasto</option>
-                </select>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-white/60 text-sm mb-1">Tipo</label>
+                  <select
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                  >
+                    <option value="income">Ingreso</option>
+                    <option value="expense">Gasto</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-white/60 text-sm mb-1">Categoría</label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                  >
+                    {Object.entries(categoryLabels).map(([key, label]) => (
+                      <option key={key} value={key}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-white/60 text-sm mb-1">Proyecto</label>
+                  <select
+                    value={formData.project_id || ''}
+                    onChange={(e) => setFormData({ ...formData, project_id: e.target.value || undefined })}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                  >
+                    <option value="">Sin proyecto</option>
+                    {availableProjects.map(project => (
+                      <option key={project.id} value={project.id}>{project.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-white/60 text-sm mb-1">Fecha</label>
+                  <input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                    required
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-white/60 text-sm mb-1">Descripción</label>
+                  <input
+                    type="text"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-white/60 text-sm mb-1">Cantidad</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-white/60 text-sm mb-1">Unidad</label>
+                  <input
+                    type="text"
+                    value={formData.unit}
+                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                    required
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-white/60 text-sm mb-1">Costo Unitario (GTQ)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.unit_cost}
+                    onChange={(e) => setFormData({ ...formData, unit_cost: Number(e.target.value) })}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                    required
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-white/60 text-sm mb-1">URL de Recibo (opcional)</label>
+                  <input
+                    type="url"
+                    value={formData.receipt_url}
+                    onChange={(e) => setFormData({ ...formData, receipt_url: e.target.value })}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="text-xs text-white/60 mb-1 block" htmlFor="transaction-category">Categoría</label>
-                <select
-                  id="transaction-category"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value as TransactionCategory })}
-                  className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
-                >
-                  {Object.keys(categoryLabels).map((cat) => (
-                    <option key={cat} value={cat}>{categoryLabels[cat as keyof typeof categoryLabels]}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="md:col-span-2">
-                <label className="text-xs text-white/60 mb-1 block" htmlFor="transaction-description">Descripción</label>
-                <input
-                  id="transaction-description"
-                  type="text"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-white/60 mb-1 block" htmlFor="transaction-quantity">Cantidad</label>
-                <input
-                  id="transaction-quantity"
-                  type="number"
-                  value={formData.quantity}
-                  onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
-                  className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-white/60 mb-1 block" htmlFor="transaction-unit">Unidad</label>
-                <input
-                  id="transaction-unit"
-                  type="text"
-                  value={formData.unit}
-                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-white/60 mb-1 block" htmlFor="transaction-unit-cost">Costo Unitario</label>
-                <input
-                  id="transaction-unit-cost"
-                  type="number"
-                  value={formData.unit_cost}
-                  onChange={(e) => setFormData({ ...formData, unit_cost: Number(e.target.value) })}
-                  className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-white/60 mb-1 block" htmlFor="transaction-date">Fecha</label>
-                <input
-                  id="transaction-date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="text-xs text-white/60 mb-1 block" htmlFor="transaction-project">Proyecto</label>
-                <select
-                  id="transaction-project"
-                  value={formData.project_id || ''}
-                  onChange={(e) => setFormData({ ...formData, project_id: e.target.value || undefined })}
-                  className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
-                >
-                  <option value="">Sin proyecto asignado</option>
-                  {availableProjects.map((project) => (
-                    <option key={project.id} value={project.id}>{project.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="md:col-span-2">
-                <label className="text-xs text-white/60 mb-1 block" htmlFor="transaction-receipt">URL de Recibo (opcional)</label>
-                <input
-                  id="transaction-receipt"
-                  type="text"
-                  value={formData.receipt_url}
-                  onChange={(e) => setFormData({ ...formData, receipt_url: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-            </div>
 
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={handleCloseModal}
-                className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm hover:bg-white/20"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveTransaction}
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-600 text-white text-sm hover:opacity-90 flex items-center space-x-2"
-              >
-                <Save className="w-4 h-4" />
-                <span>Guardar</span>
-              </button>
-            </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="flex-1 glass-button px-4 py-2 rounded-lg text-white"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={saveLoading}
+                  className="flex-1 glass-button px-4 py-2 rounded-lg text-white bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 disabled:opacity-50"
+                >
+                  {saveLoading ? 'Guardando...' : (editingTransaction ? 'Actualizar' : 'Crear')}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
+      {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         isOpen={deleteConfirm !== null}
         title="Eliminar Transacción"
-        message="¿Está seguro de eliminar esta transacción? Esta acción no se puede deshacer."
-        confirmLabel="Eliminar"
-        variant="danger"
-        onConfirm={handleDeleteConfirm}
+        message={`¿Está seguro de eliminar la transacción "${deleteConfirm?.description}"? Esta acción no se puede deshacer.`}
+        onConfirm={confirmDelete}
         onCancel={() => setDeleteConfirm(null)}
+        variant="danger"
       />
     </div>
   );
