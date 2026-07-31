@@ -131,9 +131,9 @@ export default function DashboardStats() {
   const COLORS = ['#06b6d4', '#10b981', '#f59e0b', '#8b5cf6', '#6366f1'];
 
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="space-y-3 sm:space-y-4 w-full">
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 2xl:grid-cols-6 gap-2 sm:gap-3 lg:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-2 sm:gap-3 lg:gap-4">
         {!isLoading ? (
         <>
           <MemoizedStatCard
@@ -201,14 +201,14 @@ export default function DashboardStats() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3 gap-3 sm:gap-4 w-full">
         {/* Project Status Pie Chart */}
-        <div className="glass-panel rounded-2xl p-3 sm:p-4">
+        <div className="glass-panel rounded-2xl p-3 sm:p-4 aspect-square">
           <h3 className="text-xs sm:text-sm font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
             <PieChartIcon className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-400" />
             Estado de Proyectos
           </h3>
-          <div className="h-40 sm:h-48">
+          <div className="h-[calc(100%-2rem)]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -235,12 +235,12 @@ export default function DashboardStats() {
         </div>
 
         {/* Expense Category Bar Chart */}
-        <div className="glass-panel rounded-2xl p-3 sm:p-4">
+        <div className="glass-panel rounded-2xl p-3 sm:p-4 aspect-square">
           <h3 className="text-xs sm:text-sm font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
             <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
             Distribución de Gastos
           </h3>
-          <div className="h-40 sm:h-48">
+          <div className="h-[calc(100%-2rem)]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={categoryData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -258,12 +258,12 @@ export default function DashboardStats() {
         </div>
 
         {/* Employee Department Bar Chart */}
-        <div className="glass-panel rounded-2xl p-3 sm:p-4">
+        <div className="glass-panel rounded-2xl p-3 sm:p-4 aspect-square">
           <h3 className="text-xs sm:text-sm font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
             <Users className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400" />
             Empleados por Departamento
           </h3>
-          <div className="h-40 sm:h-48">
+          <div className="h-[calc(100%-2rem)]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={employeeDepartmentData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -315,12 +315,12 @@ export default function DashboardStats() {
       {/* Additional Charts Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
         {/* Physical vs Financial Progress */}
-        <div className="glass-panel rounded-2xl p-3 sm:p-4">
+        <div className="glass-panel rounded-2xl p-3 sm:p-4 aspect-square">
           <h3 className="text-xs sm:text-sm font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
             <Activity className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-400" />
             Avance Físico vs Financiero
           </h3>
-          <div className="h-40 sm:h-48">
+          <div className="h-[calc(100%-2rem)]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={projects.map(p => {
                 let physical = 0;
@@ -359,12 +359,12 @@ export default function DashboardStats() {
         </div>
 
         {/* Low Stock Items */}
-        <div className="glass-panel rounded-2xl p-3 sm:p-4">
+        <div className="glass-panel rounded-2xl p-3 sm:p-4 aspect-square">
           <h3 className="text-xs sm:text-sm font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
             <Hammer className="w-3 h-3 sm:w-4 sm:h-4 text-red-400" />
             Alertas de Stock
           </h3>
-          <div className="h-40 sm:h-48">
+          <div className="h-[calc(100%-2rem)]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={[
                 { name: 'Stock Bajo', value: lowStockItems },

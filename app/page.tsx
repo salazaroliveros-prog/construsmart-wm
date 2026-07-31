@@ -112,7 +112,7 @@ export default function Dashboard() {
           <>
             <DashboardStats />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 w-full">
               <ProjectOverview />
               
               <InteractiveCalendar />
@@ -194,7 +194,7 @@ export default function Dashboard() {
         {isMounted && !isMobile && (
           <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="hidden lg:flex fixed top-24 left-4 z-[45] w-8 h-8 rounded-lg glass-button items-center justify-center transition-all hover:scale-110"
+            className="fixed top-24 left-4 z-[45] w-8 h-8 rounded-lg glass-button items-center justify-center transition-all hover:scale-110"
             aria-label={isSidebarCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
             aria-expanded={!isSidebarCollapsed}
           >
@@ -224,8 +224,8 @@ export default function Dashboard() {
             }} isCollapsed={isSidebarCollapsed} />
           </aside>
 
-          <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 main-content pt-20 sm:pt-24 lg:pt-6 transition-all duration-300" id="main-content" role="main" aria-label="Contenido principal">
-            <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+          <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 main-content pt-20 sm:pt-24 lg:pt-6 transition-all duration-300 w-full" id="main-content" role="main" aria-label="Contenido principal">
+            <div className="w-full space-y-4 sm:space-y-6">
               <nav className="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-1" aria-label="Navegación de pestañas">
                 {NAVIGATION_TABS.map(tab => {
                   const isTabActive = activeTab === tab.id;

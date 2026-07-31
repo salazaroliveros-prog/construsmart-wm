@@ -49,7 +49,7 @@ export default function InteractiveCalendar() {
       <div
         key={day}
         onClick={() => setSelectedDate(date)}
-        className={`p-2 min-h-[80px] border border-white/10 rounded-lg cursor-pointer transition-all hover:bg-white/5 ${
+        className={`p-2 aspect-square border border-white/10 rounded-lg cursor-pointer transition-all hover:bg-white/5 ${
           isSelected ? 'bg-cyan-500/20 border-cyan-500/50' : ''
         } ${isToday ? 'bg-violet-500/10 border-violet-500/30' : ''}`}
       >
