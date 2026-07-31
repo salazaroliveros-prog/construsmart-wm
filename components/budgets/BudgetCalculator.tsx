@@ -864,7 +864,7 @@ export default function BudgetCalculator() {
         {!showAPUCalculator && (
           <div className="mt-4">
             <h3 className="text-white font-medium mb-3">📋 Catálogo de Renglones - {TYPOLOGY_LABELS[selectedTypology]}</h3>
-            <div className="data-table-container rounded-xl border border-white/10 overflow-hidden max-h-96 overflow-y-auto">
+            <div className="data-table-container rounded-xl border border-white/10 overflow-hidden max-h-96 overflow-y-auto overflow-anchor-none">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-white/10">
                   <tr className="border-b border-white/10">
@@ -1165,7 +1165,7 @@ export default function BudgetCalculator() {
       {/* PDF Export Modal */}
       {showPDFModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="glass-panel rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="glass-panel rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto overflow-anchor-none">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-white">Exportar Presupuesto a PDF</h2>
               <button

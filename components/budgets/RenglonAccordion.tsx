@@ -158,7 +158,7 @@ export default function RenglonAccordion({
                 <Package className="w-4 h-4 text-cyan-400" />
                 Desglose de Materiales (Para Órdenes de Compra)
               </h4>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto overflow-anchor-none">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-white/10">

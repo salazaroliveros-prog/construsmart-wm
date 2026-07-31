@@ -218,7 +218,7 @@ export default function SettingsManager() {
       </div>
 
       {/* Tabs - Mobile Scrollable */}
-      <div className="flex gap-2 overflow-x-auto pb-3 sm:pb-4 scrollbar-hide -mx-3 sm:mx-0 px-3 sm:px-0">
+      <div className="flex gap-2 overflow-x-auto overflow-anchor-none pb-3 sm:pb-4 scrollbar-hide -mx-3 sm:mx-0 px-3 sm:px-0">
         {tabs.map(tab => {
           const Icon = tab.icon;
           return (

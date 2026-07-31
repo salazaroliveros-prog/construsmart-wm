@@ -595,7 +595,7 @@ export default function AnalyticsDashboard() {
           <Activity className="w-5 h-5 text-cyan-400" />
           Seguimiento de Proyectos
         </h2>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-anchor-none">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/10">
@@ -702,7 +702,7 @@ export default function AnalyticsDashboard() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-anchor-none">
           <div className="min-w-[600px]" style={{ transform: `scale(${ganttZoom})`, transformOrigin: 'left' }}>
             <div className="space-y-2">
               {ganttData.map((item) => (

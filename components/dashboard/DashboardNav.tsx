@@ -198,7 +198,7 @@ export default function DashboardNav({ activeTab, onTabChange, isCollapsed = fal
       </div>
 
       {/* Navigation Items */}
-      <div className="flex-1 overflow-y-auto py-3 sm:py-4">
+      <div className="flex-1 overflow-y-auto overflow-anchor-none py-3 sm:py-4">
         <div className="px-2 sm:px-3 space-y-1">
           {navItems.map((item) => {
             const active = isActive(item.id);

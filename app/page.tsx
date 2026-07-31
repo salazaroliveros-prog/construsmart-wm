@@ -123,7 +123,7 @@ export default function Dashboard() {
                 <div className="glass-panel rounded-xl p-2 md:p-3 flex-1 min-h-0">
                   <ProjectOverview />
                 </div>
-                <div className="glass-panel rounded-xl p-3 md:p-3 flex-[0.6] min-h-0 overflow-y-auto">
+                <div className="glass-panel rounded-xl p-3 md:p-3 flex-[0.6] min-h-0 overflow-y-auto overflow-anchor-none">
                   <h3 className="text-xs md:text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
                     Actividad Reciente
@@ -253,7 +253,7 @@ export default function Dashboard() {
 
           {/* Main content - full width utilizando espacio disponible */}
           <main
-            className="flex-1 overflow-y-auto transition-all duration-300 lg:ml-16"
+            className="flex-1 overflow-y-auto overflow-anchor-none transition-all duration-300 lg:ml-16"
             style={{ height: CONTENT_HEIGHT }}
             id="main-content"
             role="main"

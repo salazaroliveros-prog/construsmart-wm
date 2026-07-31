@@ -298,7 +298,7 @@ export default function SupplierManager() {
       {/* Form Modal */}
       {showForm && (
         <div className="modal-backdrop flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="glass-panel relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-6" onClick={e => e.stopPropagation()}>
+          <div className="glass-panel relative w-full max-w-2xl max-h-[90vh] overflow-y-auto overflow-anchor-none rounded-2xl p-6" onClick={e => e.stopPropagation()}>
             <h3 className="text-xl font-bold text-white mb-6">
               {editingSupplier ? 'Editar Proveedor' : 'Nuevo Proveedor'}
             </h3>

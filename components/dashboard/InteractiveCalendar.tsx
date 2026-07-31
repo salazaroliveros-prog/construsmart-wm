@@ -127,7 +127,7 @@ export default function InteractiveCalendar() {
 
       {/* Selected date events - compact */}
       {selectedDate && selectedDateEvents.length > 0 && (
-        <div className="mt-1.5 pt-1.5 border-t border-white/10 flex-1 overflow-y-auto min-h-0">
+        <div className="mt-1.5 pt-1.5 border-t border-white/10 flex-1 overflow-y-auto overflow-anchor-none min-h-0">
           <h4 className="text-[10px] font-semibold text-white mb-1">
             {selectedDate.toLocaleDateString('es-GT', { day: 'numeric', month: 'short' })}
           </h4>
