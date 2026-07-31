@@ -28,7 +28,7 @@
     {
       "name": "Tablero Principal",
       "short_name": "Tablero",
-      "description": "Ver dashboard principal",
+      "description": "Ver dashboard principal con KPIs y calendario",
       "url": "/",
       "icons": [
         {
@@ -40,8 +40,116 @@
     {
       "name": "Proyectos",
       "short_name": "Proyectos",
-      "description": "Gestionar proyectos",
+      "description": "Gestionar proyectos de construcción",
       "url": "/?tab=projects",
+      "icons": [
+        {
+          "src": "/assets/branding/logo-constructora-wm.jpg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Presupuestos",
+      "short_name": "Presupuestos",
+      "description": "Crear y gestionar presupuestos",
+      "url": "/?tab=budgets",
+      "icons": [
+        {
+          "src": "/assets/branding/logo-constructora-wm.jpg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Finanzas",
+      "short_name": "Finanzas",
+      "description": "Gestionar finanzas y transacciones",
+      "url": "/?tab=finances",
+      "icons": [
+        {
+          "src": "/assets/branding/logo-constructora-wm.jpg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Nómina",
+      "short_name": "Nómina",
+      "description": "Gestionar nómina y empleados",
+      "url": "/?tab=payroll",
+      "icons": [
+        {
+          "src": "/assets/branding/logo-constructora-wm.jpg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Almacén",
+      "short_name": "Almacén",
+      "description": "Gestionar inventario de materiales",
+      "url": "/?tab=warehouse",
+      "icons": [
+        {
+          "src": "/assets/branding/logo-constructora-wm.jpg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Proveedores",
+      "short_name": "Proveedores",
+      "description": "Gestionar proveedores de materiales",
+      "url": "/?tab=suppliers",
+      "icons": [
+        {
+          "src": "/assets/branding/logo-constructora-wm.jpg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Órdenes de Compra",
+      "short_name": "Órdenes",
+      "description": "Gestionar órdenes de compra",
+      "url": "/?tab=orders",
+      "icons": [
+        {
+          "src": "/assets/branding/logo-constructora-wm.jpg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "short_name": "Analytics",
+      "description": "Ver análisis y métricas",
+      "url": "/?tab=analytics",
+      "icons": [
+        {
+          "src": "/assets/branding/logo-constructora-wm.jpg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Clientes",
+      "short_name": "Clientes",
+      "description": "Gestionar clientes (CRM)",
+      "url": "/?tab=clients",
+      "icons": [
+        {
+          "src": "/assets/branding/logo-constructora-wm.jpg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Bitácora",
+      "short_name": "Bitácora",
+      "description": "Ver bitácora de proyectos",
+      "url": "/?tab=logs",
       "icons": [
         {
           "src": "/assets/branding/logo-constructora-wm.jpg",
