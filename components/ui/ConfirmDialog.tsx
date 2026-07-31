@@ -60,7 +60,7 @@ export default function ConfirmDialog({
       aria-labelledby="confirm-dialog-title"
     >
       <div
-        className={`glass-panel rounded-2xl p-6 w-full max-w-md mx-4 border ${borderColor}`}
+         className={`glass-panel rounded-2xl p-6 w-full max-w-md mx-4 border ${borderColor} overflow-y-auto overflow-anchor-none`}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-start gap-4">

@@ -244,7 +244,7 @@ export default function Dashboard() {
             role="main"
             aria-label="Contenido principal"
           >
-            <div className="h-full w-full px-3 sm:px-4 py-1.5 overflow-hidden">
+             <div className="h-full w-full px-3 sm:px-4 py-1.5">
               {renderTabContent()}
             </div>
           </main>
