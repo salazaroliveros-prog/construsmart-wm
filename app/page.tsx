@@ -23,12 +23,14 @@ const ProjectLogManager = dynamic(() => import('@/components/project/ProjectLogM
 const InteractiveCalendar = dynamic(() => import('@/components/dashboard/InteractiveCalendar'), { ssr: false });
 const SupplierManager = dynamic(() => import('@/components/warehouse/SupplierManager'), { ssr: false });
 const PurchaseOrderManager = dynamic(() => import('@/components/warehouse/PurchaseOrderManager'), { ssr: false });
+const ProgressTracker = dynamic(() => import('@/components/progress/ProgressTracker'), { ssr: false });
 
 // Navigation tabs configuration
 const NAVIGATION_TABS = [
   { id: 'dashboard', label: 'Tablero Principal', icon: 'LayoutDashboard' },
   { id: 'projects', label: 'Proyectos', icon: 'FolderKanban' },
   { id: 'budgets', label: 'Presupuestos', icon: 'Calculator' },
+  { id: 'progress', label: 'Control de Avance', icon: 'Activity' },
   { id: 'finances', label: 'Finanzas', icon: 'DollarSign' },
   { id: 'payroll', label: 'Nómina', icon: 'Users' },
   { id: 'warehouse', label: 'Almacén', icon: 'Warehouse' },
@@ -154,6 +156,8 @@ export default function Dashboard() {
         return <ProjectManager />;
       case 'budgets':
         return <BudgetCalculator />;
+      case 'progress':
+        return <ProgressTracker />;
       case 'finances':
         return <FinanceManager />;
       case 'payroll':
