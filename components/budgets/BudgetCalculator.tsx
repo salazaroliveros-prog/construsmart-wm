@@ -196,6 +196,15 @@ export default function BudgetCalculator() {
     showToast('success', `Renglón "${renglon.description}" agregado al presupuesto`);
   };
 
+  const [renglonConfirm, setRenglonConfirm] = useState<APURenglon | null>(null);
+
+  const confirmAddRenglon = () => {
+    if (renglonConfirm) {
+      addRenglonFromCatalog(renglonConfirm);
+      setRenglonConfirm(null);
+    }
+  };
+
   const addItem = () => {
     const newItem: BudgetItem = {
       id: Date.now().toString(),
@@ -370,21 +379,25 @@ export default function BudgetCalculator() {
             </p>
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={saveBudget}
-              disabled={saveLoading}
-              className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2 disabled:opacity-50"
-            >
-              <Save className="w-4 h-4" />
-              {saveLoading ? 'Guardando...' : 'Guardar'}
-            </button>
-            <button
-              onClick={generatePDF}
-              className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Exportar PDF
-            </button>
+            <Tooltip content="Guardar presupuesto y actualizar proyecto">
+              <button
+                onClick={saveBudget}
+                disabled={saveLoading}
+                className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2 disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                {saveLoading ? 'Guardando...' : 'Guardar'}
+              </button>
+            </Tooltip>
+            <Tooltip content="Exportar presupuesto a PDF con membrete corporativo">
+              <button
+                onClick={generatePDF}
+                className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Exportar PDF
+              </button>
+            </Tooltip>
           </div>
         </div>
 
@@ -470,13 +483,15 @@ export default function BudgetCalculator() {
                 </option>
               ))}
             </select>
-            <button
-              onClick={() => setShowAPUCalculator(!showAPUCalculator)}
-              className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
-            >
-              <Calculator className="w-4 h-4" />
-              Calculadora APU
-            </button>
+            <Tooltip content="Abrir calculadora de Análisis de Precios Unitarios">
+              <button
+                onClick={() => setShowAPUCalculator(!showAPUCalculator)}
+                className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+              >
+                <Calculator className="w-4 h-4" />
+                Calculadora APU
+              </button>
+            </Tooltip>
           </div>
         </div>
 
@@ -487,65 +502,75 @@ export default function BudgetCalculator() {
               <Map className="w-4 h-4" />
               Datos de Topografía / CivilCAD
             </h4>
-            <button
-              onClick={() => {
-                // Auto-calculate volumetric factors based on topography data
-                const cutFactor = getVolumetricFactor(topographyData.soilType, 'corte');
-                const fillFactor = getVolumetricFactor(topographyData.soilType, 'relleno');
-                setApuParams({ 
-                  ...apuParams, 
-                  volumetricFactor: cutFactor,
-                  theoreticalQuantity: topographyData.terrainArea > 0 ? topographyData.terrainArea : apuParams.theoreticalQuantity,
-                });
-                showToast('success', `Factores aplicados: Corte ${cutFactor.toFixed(2)}x, Relleno ${fillFactor.toFixed(2)}x`);
-              }}
-              className="text-cyan-400 hover:text-cyan-300 text-xs"
-            >
-              Aplicar a APU
-            </button>
+            <Tooltip content="Aplicar factores volumétricos a la calculadora APU">
+              <button
+                onClick={() => {
+                  // Auto-calculate volumetric factors based on topography data
+                  const cutFactor = getVolumetricFactor(topographyData.soilType, 'corte');
+                  const fillFactor = getVolumetricFactor(topographyData.soilType, 'relleno');
+                  setApuParams({ 
+                    ...apuParams, 
+                    volumetricFactor: cutFactor,
+                    theoreticalQuantity: topographyData.terrainArea > 0 ? topographyData.terrainArea : apuParams.theoreticalQuantity,
+                  });
+                  showToast('success', `Factores aplicados: Corte ${cutFactor.toFixed(2)}x, Relleno ${fillFactor.toFixed(2)}x`);
+                }}
+                className="text-cyan-400 hover:text-cyan-300 text-xs"
+              >
+                Aplicar a APU
+              </button>
+            </Tooltip>
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <label className="block text-white/60 text-xs mb-1">Volumen Corte (m³)</label>
-              <input
-                type="number"
-                value={topographyData.volumeCut}
-                onChange={(e) => setTopographyData({ ...topographyData, volumeCut: Number(e.target.value) })}
-                className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-xs"
-              />
+              <Tooltip content="Volumen de corte del terreno en metros cúbicos">
+                <label className="block text-white/60 text-xs mb-1">Volumen Corte (m³)</label>
+                <input
+                  type="number"
+                  value={topographyData.volumeCut}
+                  onChange={(e) => setTopographyData({ ...topographyData, volumeCut: Number(e.target.value) })}
+                  className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-xs"
+                />
+              </Tooltip>
             </div>
             <div>
-              <label className="block text-white/60 text-xs mb-1">Volumen Relleno (m³)</label>
-              <input
-                type="number"
-                value={topographyData.volumeFill}
-                onChange={(e) => setTopographyData({ ...topographyData, volumeFill: Number(e.target.value) })}
-                className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-xs"
-              />
+              <Tooltip content="Volumen de relleno necesario en metros cúbicos">
+                <label className="block text-white/60 text-xs mb-1">Volumen Relleno (m³)</label>
+                <input
+                  type="number"
+                  value={topographyData.volumeFill}
+                  onChange={(e) => setTopographyData({ ...topographyData, volumeFill: Number(e.target.value) })}
+                  className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-xs"
+                />
+              </Tooltip>
             </div>
             <div>
-              <label className="block text-white/60 text-xs mb-1">Área Terreno (m²)</label>
-              <input
-                type="number"
-                value={topographyData.terrainArea}
-                onChange={(e) => setTopographyData({ ...topographyData, terrainArea: Number(e.target.value) })}
-                className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-xs"
-              />
+              <Tooltip content="Área total del terreno en metros cuadrados">
+                <label className="block text-white/60 text-xs mb-1">Área Terreno (m²)</label>
+                <input
+                  type="number"
+                  value={topographyData.terrainArea}
+                  onChange={(e) => setTopographyData({ ...topographyData, terrainArea: Number(e.target.value) })}
+                  className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-xs"
+                />
+              </Tooltip>
             </div>
             <div>
-              <label className="block text-white/60 text-xs mb-1">Tipo de Suelo</label>
-              <select
-                value={topographyData.soilType}
-                onChange={(e) => setTopographyData({ ...topographyData, soilType: e.target.value as keyof typeof MATERIAL_FACTORS })}
-                className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-xs"
-              >
-                {Object.entries(MATERIAL_FACTORS).map(([key, factor]) => (
-                  <option key={key} value={key}>
-                    {factor.soilType}
-                  </option>
-                ))}
-              </select>
+              <Tooltip content="Tipo de suelo para calcular factores volumétricos">
+                <label className="block text-white/60 text-xs mb-1">Tipo de Suelo</label>
+                <select
+                  value={topographyData.soilType}
+                  onChange={(e) => setTopographyData({ ...topographyData, soilType: e.target.value as keyof typeof MATERIAL_FACTORS })}
+                  className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-xs"
+                >
+                  {Object.entries(MATERIAL_FACTORS).map(([key, factor]) => (
+                    <option key={key} value={key}>
+                      {factor.soilType}
+                    </option>
+                  ))}
+                </select>
+              </Tooltip>
             </div>
           </div>
           
@@ -672,13 +697,15 @@ export default function BudgetCalculator() {
               );
             })()}
 
-            <button
-              onClick={addAPUCalculation}
-              className="w-full glass-button px-4 py-2 rounded-lg text-white flex items-center justify-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Agregar Cálculo APU al Presupuesto
-            </button>
+            <Tooltip content="Agregar cálculo APU al presupuesto">
+              <button
+                onClick={addAPUCalculation}
+                className="w-full glass-button px-4 py-2 rounded-lg text-white flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Agregar Cálculo APU al Presupuesto
+              </button>
+            </Tooltip>
           </div>
         )}
 
@@ -709,12 +736,14 @@ export default function BudgetCalculator() {
                         <td className="py-2 px-3 text-white">{renglon.unit}</td>
                         <td className="py-2 px-3 text-white/60">{renglon.category}</td>
                         <td className="py-2 px-3 text-right">
-                          <button
-                            onClick={() => addRenglonFromCatalog(renglon)}
-                            className="text-cyan-400 hover:text-cyan-300 text-xs"
-                          >
-                            + Agregar
-                          </button>
+                          <Tooltip content={`Agregar ${renglon.description} al presupuesto`}>
+                            <button
+                              onClick={() => setRenglonConfirm(renglon)}
+                              className="text-cyan-400 hover:text-cyan-300 text-xs"
+                            >
+                              + Agregar
+                            </button>
+                          </Tooltip>
                         </td>
                       </tr>
                     ));
@@ -938,6 +967,16 @@ export default function BudgetCalculator() {
         onConfirm={confirmDelete}
         onCancel={() => setDeleteConfirm(null)}
         variant="danger"
+      />
+
+      {/* Renglon Add Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={renglonConfirm !== null}
+        title="Agregar Renglón"
+        message={`¿Desea agregar el renglón "${renglonConfirm?.description}" al presupuesto?`}
+        onConfirm={confirmAddRenglon}
+        onCancel={() => setRenglonConfirm(null)}
+        variant="info"
       />
 
       {/* PDF Export Modal */}

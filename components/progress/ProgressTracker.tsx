@@ -140,7 +140,7 @@ export default function ProgressTracker() {
 
     try {
       await offlineDB.financialTransactions.delete(deleteConfirm.id);
-      showToast('success', 'Transacción eliminada exitosamente');
+      showToast('success', 'Transacción eliminada exitosamente del control de avance');
       loadTransactions();
     } catch (error) {
       console.error('Error deleting transaction:', error);
@@ -248,59 +248,75 @@ export default function ProgressTracker() {
         <>
           {/* Progress Overview Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="glass-card p-4 rounded-xl border-l-4 border-l-emerald-500">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-4 h-4 text-emerald-400" />
-                <span className="text-white/60 text-sm">Avance Físico</span>
-              </div>
-              <p className="text-2xl font-bold text-emerald-400">
-                {metrics?.physicalProgress.toFixed(1)}%
-              </p>
-            </div>
+            <Tooltip content="Porcentaje de avance físico estimado del proyecto">
+              <span className="block">
+                <div className="glass-card p-4 rounded-xl border-l-4 border-l-emerald-500">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                    <span className="text-white/60 text-sm">Avance Físico</span>
+                  </div>
+                  <p className="text-2xl font-bold text-emerald-400">
+                    {metrics?.physicalProgress.toFixed(1)}%
+                  </p>
+                </div>
+              </span>
+            </Tooltip>
             
-            <div className="glass-card p-4 rounded-xl border-l-4 border-l-blue-500">
-              <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="w-4 h-4 text-blue-400" />
-                <span className="text-white/60 text-sm">Avance Financiero</span>
-              </div>
-              <p className="text-2xl font-bold text-blue-400">
-                {metrics?.financialProgress.toFixed(1)}%
-              </p>
-            </div>
+            <Tooltip content="Porcentaje de avance financiero basado en gastos reales">
+              <span className="block">
+                <div className="glass-card p-4 rounded-xl border-l-4 border-l-blue-500">
+                  <div className="flex items-center gap-2 mb-2">
+                    <DollarSign className="w-4 h-4 text-blue-400" />
+                    <span className="text-white/60 text-sm">Avance Financiero</span>
+                  </div>
+                  <p className="text-2xl font-bold text-blue-400">
+                    {metrics?.financialProgress.toFixed(1)}%
+                  </p>
+                </div>
+              </span>
+            </Tooltip>
             
-            <div className="glass-card p-4 rounded-xl border-l-4 border-l-amber-500">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-4 h-4 text-amber-400" />
-                <span className="text-white/60 text-sm">Tiempo Transcurrido</span>
-              </div>
-              <p className="text-2xl font-bold text-amber-400">
-                {metrics?.timeProgress.toFixed(1)}%
-              </p>
-              <p className="text-white/40 text-xs mt-1">
-                {metrics?.daysElapsed} / {metrics?.totalDays} días
-              </p>
-            </div>
+            <Tooltip content="Porcentaje de tiempo transcurrido del proyecto">
+              <span className="block">
+                <div className="glass-card p-4 rounded-xl border-l-4 border-l-amber-500">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="w-4 h-4 text-amber-400" />
+                    <span className="text-white/60 text-sm">Tiempo Transcurrido</span>
+                  </div>
+                  <p className="text-2xl font-bold text-amber-400">
+                    {metrics?.timeProgress.toFixed(1)}%
+                  </p>
+                  <p className="text-white/40 text-xs mt-1">
+                    {metrics?.daysElapsed} / {metrics?.totalDays} días
+                  </p>
+                </div>
+              </span>
+            </Tooltip>
             
-            <div className={`glass-card p-4 rounded-xl border-l-4 ${
-              metrics && metrics.variance >= 0 ? 'border-l-emerald-500' : 'border-l-red-500'
-            }`}>
-              <div className="flex items-center gap-2 mb-2">
-                {metrics && metrics.variance >= 0 ? (
-                  <TrendingUp className="w-4 h-4 text-emerald-400" />
-                ) : (
-                  <TrendingDown className="w-4 h-4 text-red-400" />
-                )}
-                <span className="text-white/60 text-sm">Variación</span>
-              </div>
-              <p className={`text-2xl font-bold ${
-                metrics && metrics.variance >= 0 ? 'text-emerald-400' : 'text-red-400'
-              }`}>
-                {metrics?.variance.toFixed(1)}%
-              </p>
-              <p className="text-white/40 text-xs mt-1">
-                {metrics && metrics.variance >= 0 ? 'Adelantado' : 'Atrasado'}
-              </p>
-            </div>
+            <Tooltip content="Diferencia entre avance físico y financiero">
+              <span className="block">
+                <div className={`glass-card p-4 rounded-xl border-l-4 ${
+                  metrics && metrics.variance >= 0 ? 'border-l-emerald-500' : 'border-l-red-500'
+                }`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    {metrics && metrics.variance >= 0 ? (
+                      <TrendingUp className="w-4 h-4 text-emerald-400" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4 text-red-400" />
+                    )}
+                    <span className="text-white/60 text-sm">Variación</span>
+                  </div>
+                  <p className={`text-2xl font-bold ${
+                    metrics && metrics.variance >= 0 ? 'text-emerald-400' : 'text-red-400'
+                  }`}>
+                    {metrics?.variance.toFixed(1)}%
+                  </p>
+                  <p className="text-white/40 text-xs mt-1">
+                    {metrics && metrics.variance >= 0 ? 'Adelantado' : 'Atrasado'}
+                  </p>
+                </div>
+              </span>
+            </Tooltip>
           </div>
 
           {/* Budget Overview */}
@@ -447,7 +463,7 @@ export default function ProgressTracker() {
       <ConfirmDialog
         isOpen={deleteConfirm !== null}
         title="Eliminar Transacción"
-        message={`¿Está seguro de eliminar esta transacción del control de avance?`}
+        message={`¿Está seguro de eliminar esta transacción del control de avance? Esta acción no se puede deshacer.`}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteConfirm(null)}
         variant="danger"

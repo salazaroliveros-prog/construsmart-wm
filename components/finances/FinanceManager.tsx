@@ -441,65 +441,69 @@ export default function FinanceManager() {
 
         {/* Budget Comparison Panel */}
         {budgetComparison && activeBudget && (
-          <div className="mt-4 p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-xl">
-            <div className="flex items-center gap-2 mb-3">
-              <Calculator className="w-4 h-4 text-cyan-400" />
-              <h4 className="text-cyan-400 font-medium">Comparación Presupuesto vs. Gastos Reales</h4>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-              <div>
-                <p className="text-white/60 text-xs">Presupuesto Estimado</p>
-                <p className="text-white font-medium">{formatCurrency(budgetComparison.estimatedTotal)}</p>
-              </div>
-              <div>
-                <p className="text-white/60 text-xs">Gastos Reales</p>
-                <p className="text-white font-medium">{formatCurrency(budgetComparison.actualTotal)}</p>
-              </div>
-              <div>
-                <p className="text-white/60 text-xs">Variación</p>
-                <p className={`font-medium ${budgetComparison.variance >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {formatCurrency(budgetComparison.variance)}
-                </p>
-              </div>
-            </div>
+          <Tooltip content="Ver comparación de presupuesto vs gastos reales">
+            <span className="block">
+              <div className="mt-4 p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-xl">
+                <div className="flex items-center gap-2 mb-3">
+                  <Calculator className="w-4 h-4 text-cyan-400" />
+                  <h4 className="text-cyan-400 font-medium">Comparación Presupuesto vs. Gastos Reales</h4>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                  <div>
+                    <p className="text-white/60 text-xs">Presupuesto Estimado</p>
+                    <p className="text-white font-medium">{formatCurrency(budgetComparison.estimatedTotal)}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/60 text-xs">Gastos Reales</p>
+                    <p className="text-white font-medium">{formatCurrency(budgetComparison.actualTotal)}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/60 text-xs">Variación</p>
+                    <p className={`font-medium ${budgetComparison.variance >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {formatCurrency(budgetComparison.variance)}
+                    </p>
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-              <div className="bg-white/5 p-2 rounded">
-                <p className="text-white/60 mb-1">Materiales</p>
-                <div className="flex justify-between">
-                  <span className="text-white/40">Est:</span>
-                  <span className="text-white">{formatCurrency(budgetComparison.byCategory.materiales.estimated)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/40">Real:</span>
-                  <span className="text-white">{formatCurrency(budgetComparison.byCategory.materiales.actual)}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                  <div className="bg-white/5 p-2 rounded">
+                    <p className="text-white/60 mb-1">Materiales</p>
+                    <div className="flex justify-between">
+                      <span className="text-white/40">Est:</span>
+                      <span className="text-white">{formatCurrency(budgetComparison.byCategory.materiales.estimated)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/40">Real:</span>
+                      <span className="text-white">{formatCurrency(budgetComparison.byCategory.materiales.actual)}</span>
+                    </div>
+                  </div>
+                  <div className="bg-white/5 p-2 rounded">
+                    <p className="text-white/60 mb-1">Mano de Obra</p>
+                    <div className="flex justify-between">
+                      <span className="text-white/40">Est:</span>
+                      <span className="text-white">{formatCurrency(budgetComparison.byCategory.mano_de_obra.estimated)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/40">Real:</span>
+                      <span className="text-white">{formatCurrency(budgetComparison.byCategory.mano_de_obra.actual)}</span>
+                    </div>
+                  </div>
+                  <div className="bg-white/5 p-2 rounded">
+                    <p className="text-white/60 mb-1">Otros</p>
+                    <div className="flex justify-between">
+                      <span className="text-white/40">Est:</span>
+                      <span className="text-white">{formatCurrency(budgetComparison.byCategory.otros.estimated)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/40">Real:</span>
+                      <span className="text-white">{formatCurrency(budgetComparison.byCategory.otros.actual)}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="bg-white/5 p-2 rounded">
-                <p className="text-white/60 mb-1">Mano de Obra</p>
-                <div className="flex justify-between">
-                  <span className="text-white/40">Est:</span>
-                  <span className="text-white">{formatCurrency(budgetComparison.byCategory.mano_de_obra.estimated)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/40">Real:</span>
-                  <span className="text-white">{formatCurrency(budgetComparison.byCategory.mano_de_obra.actual)}</span>
-                </div>
-              </div>
-              <div className="bg-white/5 p-2 rounded">
-                <p className="text-white/60 mb-1">Otros</p>
-                <div className="flex justify-between">
-                  <span className="text-white/40">Est:</span>
-                  <span className="text-white">{formatCurrency(budgetComparison.byCategory.otros.estimated)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/40">Real:</span>
-                  <span className="text-white">{formatCurrency(budgetComparison.byCategory.otros.actual)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+            </span>
+          </Tooltip>
         )}
       </div>
 
