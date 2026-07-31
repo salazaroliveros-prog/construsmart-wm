@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Building2, MapPin, Calendar, DollarSign, TrendingUp, MoreVertical, Inbox } from 'lucide-react';
+import { Building2, Calendar, DollarSign, Inbox } from 'lucide-react';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import EmptyState from '@/components/ui/EmptyState';
@@ -48,23 +48,20 @@ export default function ProjectOverview() {
     }
   };
 
-  // Realtime refresh: recarga cuando cambios llegan de otros dispositivos
   useRealtimeRefresh(['projects'], loadProjects);
 
   if (loading) {
     return (
-      <div className="glass-panel rounded-2xl p-4 sm:p-6">
-        <h2 className="text-base sm:text-lg font-semibold text-white flex items-center space-x-2 mb-4 sm:mb-6">
-          <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+      <div className="glass-panel rounded-xl p-3 sm:p-4 h-full flex flex-col">
+        <h2 className="text-xs sm:text-sm font-semibold text-white flex items-center space-x-2 mb-2">
+          <Building2 className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-400" />
           <span>Proyectos Activos</span>
         </h2>
-        <div className="space-y-3 sm:space-y-4">
+        <div className="space-y-1.5 flex-1">
           {[1, 2, 3].map(i => (
-            <div key={i} className="glass-card p-3 sm:p-4 rounded-xl animate-pulse">
-              <div className="h-3 sm:h-4 bg-white/10 rounded w-1/3 mb-2 sm:mb-3" />
-              <div className="h-4 sm:h-5 bg-white/10 rounded w-2/3 mb-1 sm:mb-2" />
-              <div className="h-3 sm:h-4 bg-white/10 rounded w-1/2 mb-3 sm:mb-4" />
-              <div className="h-1.5 sm:h-2 bg-white/10 rounded-full w-full" />
+            <div key={i} className="glass-card p-2.5 rounded-lg animate-pulse">
+              <div className="h-2.5 bg-white/10 rounded w-1/3 mb-1" />
+              <div className="h-3 bg-white/10 rounded w-2/3" />
             </div>
           ))}
         </div>
@@ -74,46 +71,46 @@ export default function ProjectOverview() {
 
   if (projects.length === 0) {
     return (
-      <div className="glass-panel rounded-2xl p-4 sm:p-6">
-        <h2 className="text-base sm:text-lg font-semibold text-white flex items-center space-x-2 mb-4 sm:mb-6">
-          <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+      <div className="glass-panel rounded-xl p-3 sm:p-4 h-full flex flex-col">
+        <h2 className="text-xs sm:text-sm font-semibold text-white flex items-center space-x-2 mb-2">
+          <Building2 className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-400" />
           <span>Proyectos Activos</span>
         </h2>
-        <EmptyState
-          icon={<Inbox className="w-8 h-8 text-white/30" />}
-          title="No hay proyectos activos"
-          description="Cree un nuevo proyecto desde la sección Gestión de Proyectos para comenzar."
-        />
+        <div className="flex-1 flex items-center justify-center">
+          <EmptyState
+            icon={<Inbox className="w-6 h-6 text-white/30" />}
+            title="No hay proyectos activos"
+            description="Cree un nuevo proyecto desde Gestión de Proyectos."
+          />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="glass-panel rounded-2xl p-4 sm:p-6">
-      <div className="flex items-center justify-between mb-4 sm:mb-6">
-        <h2 className="text-base sm:text-lg font-semibold text-white flex items-center space-x-2">
-          <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
-          <span>Proyectos Activos</span>
-        </h2>
-      </div>
+    <div className="glass-panel rounded-xl p-3 sm:p-4 h-full flex flex-col">
+      <h2 className="text-xs sm:text-sm font-semibold text-white flex items-center space-x-2 mb-2">
+        <Building2 className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-400" />
+        <span>Proyectos Activos</span>
+      </h2>
 
-      <div className="space-y-3 sm:space-y-4">
+      <div className="space-y-1.5 flex-1 overflow-y-auto">
         {projects.map((project) => {
           const status = project.status || 'planning';
           const colors = statusColors[status] || statusColors.planning;
           const label = statusLabels[status] || status;
-          
+
           return (
             <div
               key={project.id}
-              className="glass-card p-3 sm:p-4 rounded-xl transition-all duration-300 hover:bg-white/10 hover:border-cyan-500/40 hover:shadow-lg hover:shadow-cyan-500/20 hover:-translate-y-0.5"
+              className="glass-card p-2.5 rounded-lg transition-all hover:bg-white/5"
             >
-              <div className="flex items-start justify-between mb-2 sm:mb-3">
+              <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
-                    <span className="text-[10px] sm:text-xs font-mono text-cyan-400 truncate">{project.code}</span>
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className="text-[9px] font-mono text-cyan-400 truncate">{project.code}</span>
                     <span
-                      className="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium border flex-shrink-0"
+                      className="px-1.5 py-0.25 rounded-full text-[9px] font-medium border flex-shrink-0"
                       style={{
                         background: colors.bg,
                         color: colors.text,
@@ -123,33 +120,14 @@ export default function ProjectOverview() {
                       {label}
                     </span>
                   </div>
-                  <h3 className="text-white font-medium mb-0.5 sm:mb-1 text-sm sm:text-base truncate">{project.name}</h3>
-                  <p className="text-xs sm:text-sm text-white/60 truncate">{project.client_name}</p>
+                  <h3 className="text-white font-medium text-xs truncate">{project.name}</h3>
+                  <p className="text-[10px] text-white/60 truncate">{project.client_name}</p>
                 </div>
-                <button className="p-1 sm:p-1.5 rounded-lg hover:bg-white/10 transition-colors flex-shrink-0">
-                  <MoreVertical className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/40" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-2 sm:mb-3">
-                <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
-                  <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-white/40 flex-shrink-0" />
-                  <span className="text-white/70 truncate">{project.location}</span>
-                </div>
-                <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
-                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-white/40 flex-shrink-0" />
-                  <span className="text-white/70 truncate">{project.estimated_end_date || '—'}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm font-medium text-white truncate">{formatCurrency(project.total_budget)}</span>
-                </div>
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-violet-400 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm font-medium text-white">{project.duration_days} días</span>
+                <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
+                  <Calendar className="w-3 h-3 text-white/40" />
+                  <span className="text-[10px] text-white/70">{project.duration_days}d</span>
+                  <DollarSign className="w-3 h-3 text-emerald-400" />
+                  <span className="text-[10px] font-medium text-white">{formatCurrency(project.total_budget)}</span>
                 </div>
               </div>
             </div>

@@ -113,42 +113,57 @@ export default function Dashboard() {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <>
-            <DashboardStats />
+          <div className="h-[calc(100vh-5rem)] sm:h-[calc(100vh-5.5rem)] flex flex-col space-y-2">
+            {/* Top row: KPI cards + Line chart (fluyen juntos) */}
+            <div className="flex flex-col lg:flex-row gap-2 flex-1 min-h-0">
+              {/* Stats take 2 cols when sidebar expanded, 3 when collapsed */}
+              <div className={`glass-panel rounded-xl p-2 flex-1 min-h-0 transition-all duration-300 ${
+                !isMobile && isSidebarCollapsed ? 'lg:basis-2/5 xl:basis-1/2' : 'lg:basis-1/2 xl:basis-2/5'
+              }`}>
+                <DashboardStats />
+              </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 w-full">
-              <ProjectOverview />
-              
-              <InteractiveCalendar />
-              
-              <div className="glass-panel rounded-2xl p-3 sm:p-4">
-                <h2 className="text-sm sm:text-base font-semibold text-white mb-3 sm:mb-4">
-                  Matriz de Costos Residenciales (GTQ)
-                </h2>
+              {/* ProjectOverview + Cost matrix fill remaining vertical space */}
+              <div className={`flex flex-col gap-2 flex-1 min-h-0 transition-all duration-300 ${
+                !isMobile && isSidebarCollapsed ? 'lg:basis-3/5 xl:basis-1/2' : 'lg:basis-1/2 xl:basis-3/5'
+              }`}>
+                <div className={`grid gap-2 flex-1 min-h-0 ${
+                  // When sidebar collapsed: 2 cols; expanded: 1 col with calendar below
+                  !isMobile && isSidebarCollapsed
+                    ? 'grid-cols-2'
+                    : 'grid-cols-1'
+                }`}>
+                  {/* ProjectOverview */}
+                  <div className="min-h-0">
+                    <ProjectOverview />
+                  </div>
+                  {/* Cost Matrix cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 min-h-0">
+                    <div className="glass-panel rounded-xl p-2 sm:p-3 flex-1">
+                      <div className="text-xs sm:text-sm font-semibold text-white mb-1">Nivel Básico</div>
+                      <p className="text-xs sm:text-sm text-white/60">Acabados económicos</p>
+                      <p className="text-sm sm:text-lg font-bold text-white">Q. 3,000 - Q. 3,500/m²</p>
+                    </div>
+                    <div className="glass-panel rounded-xl p-2 sm:p-3 flex-1">
+                      <div className="text-xs sm:text-sm font-semibold text-white mb-1">Nivel Moderado</div>
+                      <p className="text-xs sm:text-sm text-white/60">Calidad media</p>
+                      <p className="text-sm sm:text-lg font-bold text-white">Q. 3,500 - Q. 4,000/m²</p>
+                    </div>
+                    <div className="glass-panel rounded-xl p-2 sm:p-3 flex-1">
+                      <div className="text-xs sm:text-sm font-semibold text-white mb-1">Nivel Premium</div>
+                      <p className="text-xs sm:text-sm text-white/60">Alta gama</p>
+                      <p className="text-sm sm:text-lg font-bold text-white">Q. 4,000 - Q. 5,000/m²</p>
+                    </div>
+                  </div>
+                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-                  <div className="glass-card p-2 sm:p-3 rounded-xl border-l-4 border-l-blue-500">
-                    <h3 className="text-blue-400 font-semibold mb-1 text-xs sm:text-sm">Nivel Básico</h3>
-                    <p className="text-base sm:text-xl font-bold text-white mb-0.5">Q. 3,000 - Q. 3,500</p>
-                    <p className="text-[10px] sm:text-xs text-white/60">por m²</p>
-                    <p className="text-[9px] sm:text-[10px] text-white/40 mt-1">Acabados económicos</p>
-                  </div>
-                  <div className="glass-card p-2 sm:p-3 rounded-xl border-l-4 border-l-emerald-500">
-                    <h3 className="text-emerald-400 font-semibold mb-1 text-xs sm:text-sm">Nivel Moderado</h3>
-                    <p className="text-base sm:text-xl font-bold text-white mb-0.5">Q. 3,500 - Q. 4,000</p>
-                    <p className="text-[10px] sm:text-xs text-white/60">por m²</p>
-                    <p className="text-[9px] sm:text-[10px] text-white/40 mt-1">Calidad media</p>
-                  </div>
-                  <div className="glass-card p-2 sm:p-3 rounded-xl border-l-4 border-l-violet-500">
-                    <h3 className="text-violet-400 font-semibold mb-1 text-xs sm:text-sm">Nivel Premium</h3>
-                    <p className="text-base sm:text-xl font-bold text-white mb-0.5">Q. 4,000 - Q. 5,000</p>
-                    <p className="text-[10px] sm:text-xs text-white/60">por m²</p>
-                    <p className="text-[9px] sm:text-[10px] text-white/40 mt-1">Alta gama</p>
-                  </div>
+                {/* Calendar fits at full width below */}
+                <div className="flex-1 min-h-0">
+                  <InteractiveCalendar />
                 </div>
               </div>
             </div>
-          </>
+          </div>
         );
       case 'projects':
         return <ProjectManager />;

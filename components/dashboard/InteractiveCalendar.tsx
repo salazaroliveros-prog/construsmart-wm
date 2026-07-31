@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, MapPin, User } from 'lucide-react';
+import { useState } from 'react';
+import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, MapPin } from 'lucide-react';
 
 interface CalendarEvent {
   id: string;
@@ -18,7 +18,7 @@ interface CalendarEvent {
 export default function InteractiveCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [events] = useState<CalendarEvent[]>([]); // Mock - events loaded from context
   const [showEventForm, setShowEventForm] = useState(false);
 
   const getDaysInMonth = (date: Date) => {
@@ -36,7 +36,7 @@ export default function InteractiveCalendar() {
 
   const days = [];
   for (let i = 0; i < firstDayOfWeek; i++) {
-    days.push(<div key={`empty-${i}`} className="p-2"></div>);
+    days.push(<div key={`empty-${i}`} className="p-1" />);
   }
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
@@ -49,39 +49,21 @@ export default function InteractiveCalendar() {
       <div
         key={day}
         onClick={() => setSelectedDate(date)}
-        className={`p-2 aspect-square border border-white/10 rounded-lg cursor-pointer transition-all hover:bg-white/5 ${
+        className={`p-1 aspect-square border border-white/10 rounded cursor-pointer text-xs transition-all ${
           isSelected ? 'bg-cyan-500/20 border-cyan-500/50' : ''
         } ${isToday ? 'bg-violet-500/10 border-violet-500/30' : ''}`}
       >
-        <div className="text-sm font-medium text-white mb-1">{day}</div>
-        <div className="space-y-1">
-          {dayEvents.slice(0, 2).map((event) => (
-            <div
-              key={event.id}
-              className={`text-xs px-1 py-0.5 rounded truncate ${
-                event.type === 'meeting'
-                  ? 'bg-cyan-500/30 text-cyan-300'
-                  : event.type === 'deadline'
-                  ? 'bg-red-500/30 text-red-300'
-                  : event.type === 'milestone'
-                  ? 'bg-violet-500/30 text-violet-300'
-                  : 'bg-emerald-500/30 text-emerald-300'
-              }`}
-            >
-              {event.title}
-            </div>
-          ))}
-          {dayEvents.length > 2 && (
-            <div className="text-xs text-white/40">+{dayEvents.length - 2} más</div>
-          )}
-        </div>
+        <div className="text-[10px] font-medium text-white mb-0.25">{day}</div>
+        {dayEvents.length > 0 && (
+          <div className="w-1 h-1 bg-cyan-400 rounded-full"></div>
+        )}
       </div>
     );
   }
 
   const monthNames = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
   ];
 
   const goToPreviousMonth = () => {
@@ -102,156 +84,115 @@ export default function InteractiveCalendar() {
     : [];
 
   return (
-    <div className="glass-card p-6 rounded-xl">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <h3 className="text-xl font-bold text-white flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-cyan-400" />
-            Calendario
-          </h3>
+    <div className="glass-card rounded-xl p-2.5 sm:p-3 h-full flex flex-col">
+      <div className="flex items-center justify-between mb-1.5 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+          <h3 className="text-xs font-bold text-white">Calendario</h3>
           <button
             onClick={goToToday}
-            className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+            className="text-[10px] text-cyan-400 hover:text-cyan-300 transition-colors"
           >
             Hoy
           </button>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-0.5">
           <button
             onClick={goToPreviousMonth}
-            className="p-2 rounded-lg hover:bg-white/10 transition-colors text-white"
+            className="p-0.5 rounded text-white/60 hover:text-white transition-colors"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-3.5 h-3.5" />
           </button>
-          <span className="text-white font-medium min-w-[150px] text-center">
+          <span className="text-[10px] font-medium text-white min-w-[110px] text-center">
             {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
           </span>
           <button
             onClick={goToNextMonth}
-            className="p-2 rounded-lg hover:bg-white/10 transition-colors text-white"
+            className="p-0.5 rounded text-white/60 hover:text-white transition-colors"
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-2 mb-4">
-        {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day) => (
-          <div key={day} className="text-center text-sm font-medium text-white/60 py-2">
-            {day}
-          </div>
+      <div className="grid grid-cols-7 gap-0.5 mb-1 text-[8px] font-medium text-white/40">
+        {['D', 'L', 'M', 'X', 'J', 'V', 'S'].map((day) => (
+          <div key={day} className="text-center py-0.5">{day}</div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-2">{days}</div>
+      <div className="grid grid-cols-7 gap-0.5 flex-1 min-h-0">
+        {days}
+      </div>
 
-      {selectedDate && (
-        <div className="mt-6 pt-6 border-t border-white/10">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-white">
-              {selectedDate.toLocaleDateString('es-GT', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </h4>
-            <button
-              onClick={() => setShowEventForm(true)}
-              className="glass-button px-3 py-1.5 rounded-lg text-sm text-white flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Agregar Evento
-            </button>
+      {/* Selected date events - compact */}
+      {selectedDate && selectedDateEvents.length > 0 && (
+        <div className="mt-1.5 pt-1.5 border-t border-white/10 flex-1 overflow-y-auto min-h-0">
+          <h4 className="text-[10px] font-semibold text-white mb-1">
+            {selectedDate.toLocaleDateString('es-GT', { day: 'numeric', month: 'short' })}
+          </h4>
+          <div className="space-y-1">
+            {selectedDateEvents.map((event) => (
+              <div
+                key={event.id}
+                className={`p-1.5 rounded text-[9px] ${
+                  event.type === 'meeting'
+                    ? 'bg-cyan-500/10 border border-cyan-500/20'
+                    : event.type === 'deadline'
+                    ? 'bg-red-500/10 border border-red-500/20'
+                    : event.type === 'milestone'
+                    ? 'bg-violet-500/10 border border-violet-500/20'
+                    : 'bg-emerald-500/10 border border-emerald-500/20'
+                } truncate`}
+                title={event.title}
+              >
+                {event.title}
+              </div>
+            ))}
           </div>
+        </div>
+      )}
 
-          {selectedDateEvents.length === 0 ? (
-            <p className="text-white/40 text-sm text-center py-4">No hay eventos programados</p>
-          ) : (
-            <div className="space-y-3">
-              {selectedDateEvents.map((event) => (
-                <div
-                  key={event.id}
-                  className={`p-3 rounded-lg border ${
-                    event.type === 'meeting'
-                      ? 'bg-cyan-500/10 border-cyan-500/30'
-                      : event.type === 'deadline'
-                      ? 'bg-red-500/10 border-red-500/30'
-                      : event.type === 'milestone'
-                      ? 'bg-violet-500/10 border-violet-500/30'
-                      : 'bg-emerald-500/10 border-emerald-500/30'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h5 className="text-white font-medium mb-1">{event.title}</h5>
-                      {event.time && (
-                        <div className="flex items-center gap-2 text-xs text-white/60 mb-1">
-                          <Clock className="w-3 h-3" />
-                          <span>{event.time}</span>
-                        </div>
-                      )}
-                      {event.location && (
-                        <div className="flex items-center gap-2 text-xs text-white/60 mb-1">
-                          <MapPin className="w-3 h-3" />
-                          <span>{event.location}</span>
-                        </div>
-                      )}
-                      {event.projectName && (
-                        <div className="flex items-center gap-2 text-xs text-white/60">
-                          <User className="w-3 h-3" />
-                          <span>{event.projectName}</span>
-                        </div>
-                      )}
-                      {event.description && (
-                        <p className="text-xs text-white/60 mt-2">{event.description}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+      {selectedDate && selectedDateEvents.length === 0 && (
+        <div className="mt-1.5 text-[9px] text-white/40 text-center py-1">
+          {selectedDate.toLocaleDateString('es-GT', { weekday: 'short', day: 'numeric', month: 'short' })}
         </div>
       )}
 
       {showEventForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowEventForm(false)} />
-          <div className="glass-panel relative w-full max-w-md rounded-2xl p-6">
-            <h3 className="text-xl font-bold text-white mb-6">Nuevo Evento</h3>
-            <form className="space-y-4">
+          <div className="glass-panel relative w-full max-w-sm rounded-xl p-4">
+            <h3 className="text-sm font-bold text-white mb-3">Nuevo Evento</h3>
+            <form className="space-y-3">
               <div>
-                <label className="block text-white/70 text-sm mb-2">Título</label>
-                <input type="text" className="glass-input w-full px-4 py-2 rounded-lg text-white" placeholder="Reunión de coordinación" />
+                <label className="block text-white/70 text-[10px] mb-1">Título</label>
+                <input type="text" className="glass-input w-full px-3 py-1.5 rounded text-[11px] text-white" placeholder="Reunión" />
               </div>
               <div>
-                <label className="block text-white/70 text-sm mb-2">Hora</label>
-                <input type="time" className="glass-input w-full px-4 py-2 rounded-lg text-white" />
+                <label className="block text-white/70 text-[10px] mb-1">Hora</label>
+                <input type="time" className="glass-input w-full px-3 py-1.5 rounded text-[11px] text-white" />
               </div>
               <div>
-                <label className="block text-white/70 text-sm mb-2">Tipo</label>
-                <select className="glass-input w-full px-4 py-2 rounded-lg text-white">
-                  <option value="meeting">Reunión</option>
-                  <option value="deadline">Fecha Límite</option>
-                  <option value="milestone">Hito</option>
-                  <option value="visit">Visita</option>
+                <label className="block text-white/70 text-[10px] mb-1">Tipo</label>
+                <select className="glass-input w-full px-3 py-1.5 rounded text-[11px] text-white">
+                  <option>Reunión</option>
+                  <option>Fecha Límite</option>
+                  <option>Hito</option>
+                  <option>Visita</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-white/70 text-sm mb-2">Ubicación</label>
-                <input type="text" className="glass-input w-full px-4 py-2 rounded-lg text-white" placeholder="Oficina central" />
-              </div>
-              <div>
-                <label className="block text-white/70 text-sm mb-2">Descripción</label>
-                <textarea className="glass-input w-full px-4 py-2 rounded-lg text-white min-h-[80px]" rows={3} />
-              </div>
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowEventForm(false)}
-                  className="flex-1 glass-button px-4 py-2 rounded-lg text-white"
+                  className="flex-1 glass-button px-3 py-1.5 rounded text-[11px] text-white"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-cyan-500 to-violet-600 px-4 py-2 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity"
+                  className="flex-1 bg-gradient-to-r from-cyan-500 to-violet-600 px-3 py-1.5 rounded text-[11px] text-white font-semibold"
                 >
                   Guardar
                 </button>

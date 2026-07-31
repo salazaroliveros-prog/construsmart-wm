@@ -128,16 +128,16 @@ export default function DashboardStats() {
   );
 
   return (
-    <div className="space-y-3 sm:space-y-4 w-full">
+    <div className="space-y-2 w-full h-full flex flex-col">
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-2 sm:gap-3 lg:gap-4">
+      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-1.5 flex-shrink-0">
         {!isLoading ? (
         <>
           <MemoizedStatCard
             title="Proyectos Activos"
             value={activeProjects.length.toString()}
             subtitle={`${projects.length} total`}
-            icon={<Building2 className="w-4 h-4 sm:w-5 sm:h-5" />}
+            icon={<Building2 className="w-4 h-4" />}
             color="cyan"
             trend={activeProjects.length > 0 ? '+2' : undefined}
             trendUp={true}
@@ -146,14 +146,14 @@ export default function DashboardStats() {
             title="Presupuesto Total"
             value={formatCurrency(totalBudget, financial)}
             subtitle="Todos los proyectos"
-            icon={<DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />}
+            icon={<DollarSign className="w-4 h-4" />}
             color="emerald"
           />
           <MemoizedStatCard
             title="Costo Real"
             value={formatCurrency(totalSpent, financial)}
-            subtitle={totalBudget > 0 ? `${((totalSpent / totalBudget) * 100).toFixed(1)}% del presupuesto` : 'Sin presupuesto'}
-            icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />}
+            subtitle={totalBudget > 0 ? `${((totalSpent / totalBudget) * 100).toFixed(1)}% presup.` : 'Sin presupuesto'}
+            icon={<TrendingUp className="w-4 h-4" />}
             color="violet"
             trend={totalBudget > 0 ? '+12%' : undefined}
             trendUp={true}
@@ -162,14 +162,14 @@ export default function DashboardStats() {
             title="Empleados"
             value={activeEmployees.toString()}
             subtitle={`${employees.length} registrados`}
-            icon={<Users className="w-4 h-4 sm:w-5 sm:h-5" />}
+            icon={<Users className="w-4 h-4" />}
             color="amber"
           />
           <MemoizedStatCard
             title="Stock Bajo"
             value={lowStockItems.toString()}
-            subtitle={`${stockItems.length} items totales`}
-            icon={<Hammer className="w-4 h-4 sm:w-5 sm:h-5" />}
+            subtitle={`${stockItems.length} items`}
+            icon={<Hammer className="w-4 h-4" />}
             color="red"
             trend={lowStockItems > 0 ? '+3' : undefined}
             trendUp={false}
@@ -178,7 +178,7 @@ export default function DashboardStats() {
             title="Transacciones"
             value={transactions.length.toString()}
             subtitle="Últimos 30 días"
-            icon={<Calendar className="w-4 h-4 sm:w-5 sm:h-5" />}
+            icon={<Calendar className="w-4 h-4" />}
             color="blue"
             trend="+15"
             trendUp={true}
@@ -187,34 +187,34 @@ export default function DashboardStats() {
       ) : (
         <>
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="glass-card p-3 sm:p-4 rounded-xl animate-pulse">
-              <div className="h-6 sm:h-8 bg-white/10 rounded mb-1 sm:mb-2 w-1/2"></div>
-              <div className="h-4 sm:h-6 bg-white/10 rounded mb-1 w-3/4"></div>
-              <div className="h-3 sm:h-4 bg-white/10 rounded w-1/3"></div>
+            <div key={i} className="glass-card p-3 rounded-xl animate-pulse">
+              <div className="h-6 bg-white/10 rounded mb-1.5 w-1/2"></div>
+              <div className="h-5 bg-white/10 rounded mb-1 w-3/4"></div>
+              <div className="h-3 bg-white/10 rounded w-1/3"></div>
             </div>
           ))}
         </>
       )}
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3 gap-3 sm:gap-4 w-full">
+      {/* Charts Section - Compact grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-5 gap-2 flex-1 min-h-0">
         {/* Project Status Pie Chart */}
-        <div className="glass-panel rounded-2xl p-3 sm:p-4 aspect-square">
-          <h3 className="text-xs sm:text-sm font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
-            <PieChartIcon className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-400" />
+        <div className="glass-panel rounded-xl p-2 lg:col-span-1 flex-1 min-h-0">
+          <h3 className="text-xs font-semibold text-white mb-2 flex items-center gap-1">
+            <PieChartIcon className="w-3 h-3 text-cyan-400" />
             Estado de Proyectos
           </h3>
-          <div className="h-[calc(100%-2rem)]">
+          <div className="h-[calc(100%-1.5rem)]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={projectStatusData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={40}
-                  outerRadius={70}
-                  paddingAngle={5}
+                  innerRadius={32}
+                  outerRadius={56}
+                  paddingAngle={4}
                   dataKey="value"
                 >
                   {projectStatusData.map((entry, index) => (
@@ -224,100 +224,69 @@ export default function DashboardStats() {
                 <Tooltip
                   contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
                   itemStyle={{ color: 'white' }}
+                  formatter={(value) => [value, '']}
+                  labelStyle={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}
                 />
-                <Legend />
+                <Legend iconSize={10} layout="vertical" verticalAlign="bottom" align="center"
+                  wrapperStyle={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)' }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Expense Category Bar Chart */}
-        <div className="glass-panel rounded-2xl p-3 sm:p-4 aspect-square">
-          <h3 className="text-xs sm:text-sm font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
-            <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
+        <div className="glass-panel rounded-xl p-2 lg:col-span-1 flex-1 min-h-0">
+          <h3 className="text-xs font-semibold text-white mb-2 flex items-center gap-1">
+            <BarChart3 className="w-3 h-3 text-emerald-400" />
             Distribución de Gastos
           </h3>
-          <div className="h-[calc(100%-2rem)]">
+          <div className="h-[calc(100%-1.5rem)]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={categoryData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="name" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 11 }} />
-                <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 11 }} />
+              <BarChart data={categoryData} layout="vertical" barGap={0} barCategoryGap={4}>
+                <CartesianGrid strokeDasharray="2 2" stroke="rgba(255,255,255,0.1)" />
+                <XAxis dataKey="name" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 9 }} />
+                <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 9 }} />
                 <Tooltip
                   contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
                   itemStyle={{ color: 'white' }}
                   formatter={(value) => formatCurrency(Number(value) || 0, financial)}
                 />
-                <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="value" fill="#10b981" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Employee Department Bar Chart */}
-        <div className="glass-panel rounded-2xl p-3 sm:p-4 aspect-square">
-          <h3 className="text-xs sm:text-sm font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
-            <Users className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400" />
-            Empleados por Departamento
+        <div className="glass-panel rounded-xl p-2 lg:col-span-1 flex-1 min-h-0">
+          <h3 className="text-xs font-semibold text-white mb-2 flex items-center gap-1">
+            <Users className="w-3 h-3 text-amber-400" />
+            Empleados x Depto
           </h3>
-          <div className="h-[calc(100%-2rem)]">
+          <div className="h-[calc(100%-1.5rem)]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={employeeDepartmentData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="name" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 11 }} />
-                <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 11 }} />
+              <BarChart data={employeeDepartmentData} barCategoryGap={4}>
+                <CartesianGrid strokeDasharray="2 2" stroke="rgba(255,255,255,0.1)" />
+                <XAxis dataKey="name" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 9 }} />
+                <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 9 }} />
                 <Tooltip
                   contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
                   itemStyle={{ color: 'white' }}
                 />
-                <Bar dataKey="value" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="value" fill="#f59e0b" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
-      </div>
 
-      {/* Financial Overview Line Chart */}
-      <div className="glass-panel rounded-2xl p-3 sm:p-4">
-        <h3 className="text-xs sm:text-sm font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
-          <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-violet-400" />
-          Flujo Financiero (Últimos 6 meses)
-        </h3>
-        <div className="h-40 sm:h-48">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={[
-              { month: 'Ene', income: totalIncome * 0.15, expense: totalSpent * 0.15 },
-              { month: 'Feb', income: totalIncome * 0.20, expense: totalSpent * 0.20 },
-              { month: 'Mar', income: totalIncome * 0.18, expense: totalSpent * 0.18 },
-              { month: 'Abr', income: totalIncome * 0.22, expense: totalSpent * 0.22 },
-              { month: 'May', income: totalIncome * 0.25, expense: totalSpent * 0.25 },
-              { month: 'Jun', income: totalIncome, expense: totalSpent },
-            ]}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-              <XAxis dataKey="month" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 11 }} />
-              <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 11 }} />
-              <Tooltip
-                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                itemStyle={{ color: 'white' }}
-                formatter={(value) => formatCurrency(Number(value) || 0, financial)}
-              />
-              <Legend />
-              <Line type="monotone" dataKey="income" stroke="#10b981" strokeWidth={2} name="Ingresos" dot={{ fill: '#10b981' }} />
-              <Line type="monotone" dataKey="expense" stroke="#ef4444" strokeWidth={2} name="Gastos" dot={{ fill: '#ef4444' }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Additional Charts Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
         {/* Physical vs Financial Progress */}
-        <div className="glass-panel rounded-2xl p-3 sm:p-4 aspect-square">
-          <h3 className="text-xs sm:text-sm font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
-            <Activity className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-400" />
-            Avance Físico vs Financiero
+        <div className="glass-panel rounded-xl p-2 lg:col-span-1 flex-1 min-h-0">
+          <h3 className="text-xs font-semibold text-white mb-2 flex items-center gap-1">
+            <Activity className="w-3 h-3 text-cyan-400" />
+            Avance Físico / Financiero
           </h3>
-          <div className="h-[calc(100%-2rem)]">
+          <div className="h-[calc(100%-1.5rem)]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={projects.map(p => {
                 let physical = 0;
@@ -338,43 +307,79 @@ export default function DashboardStats() {
                   }
                 }
                 return { project: p.name.substring(0, 12), physical, financial };
-              }).slice(0, 5)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="project" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10 }} />
-                <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10 }} />
+              }).slice(0, 5)} barCategoryGap={4}>
+                <CartesianGrid strokeDasharray="2 2" stroke="rgba(255,255,255,0.1)" />
+                <XAxis dataKey="project" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 9 }} />
+                <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 9 }} unit="%" />
                 <Tooltip
                   contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
                   itemStyle={{ color: 'white' }}
                   formatter={(value) => `${(value as number)?.toFixed(1) || 0}%`}
                 />
-                <Legend />
-                <Bar dataKey="physical" fill="#06b6d4" radius={[4, 4, 0, 0]} name="Físico" />
-                <Bar dataKey="financial" fill="#10b981" radius={[4, 4, 0, 0]} name="Financiero" />
+                <Legend iconSize={10} layout="vertical" verticalAlign="bottom" align="center"
+                  wrapperStyle={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)' }}
+                />
+                <Bar dataKey="physical" fill="#06b6d4" radius={[3, 3, 0, 0]} name="Físico" />
+                <Bar dataKey="financial" fill="#10b981" radius={[3, 3, 0, 0]} name="Financiero" />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Low Stock Items */}
-        <div className="glass-panel rounded-2xl p-3 sm:p-4 aspect-square">
-          <h3 className="text-xs sm:text-sm font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
-            <Hammer className="w-3 h-3 sm:w-4 sm:h-4 text-red-400" />
+        {/* Financial Overview Line Chart */}
+        <div className="glass-panel rounded-xl p-2 lg:col-span-2 xl:col-span-3 flex-1 min-h-0">
+          <h3 className="text-xs font-semibold text-white mb-2 flex items-center gap-1">
+            <TrendingUp className="w-3 h-3 text-violet-400" />
+            Flujo Financiero (Últimos 6 meses)
+          </h3>
+          <div className="h-[calc(100%-1.5rem)]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={[
+                { month: 'Ene', income: totalIncome * 0.15, expense: totalSpent * 0.15 },
+                { month: 'Feb', income: totalIncome * 0.20, expense: totalSpent * 0.20 },
+                { month: 'Mar', income: totalIncome * 0.18, expense: totalSpent * 0.18 },
+                { month: 'Abr', income: totalIncome * 0.22, expense: totalSpent * 0.22 },
+                { month: 'May', income: totalIncome * 0.25, expense: totalSpent * 0.25 },
+                { month: 'Jun', income: totalIncome, expense: totalSpent },
+              ]}>
+                <CartesianGrid strokeDasharray="2 2" stroke="rgba(255,255,255,0.1)" />
+                <XAxis dataKey="month" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 9 }} />
+                <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 9 }} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                  itemStyle={{ color: 'white' }}
+                  formatter={(value) => formatCurrency(Number(value) || 0, financial)}
+                />
+                <Legend iconSize={10} layout="vertical" verticalAlign="bottom" align="center"
+                  wrapperStyle={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)' }}
+                />
+                <Line type="monotone" dataKey="income" stroke="#10b981" strokeWidth={1.5} name="Ingresos" dot={{ fill: '#10b981', r: 3 }} />
+                <Line type="monotone" dataKey="expense" stroke="#ef4444" strokeWidth={1.5} name="Gastos" dot={{ fill: '#ef4444', r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Alertas de Stock */}
+        <div className="glass-panel rounded-xl p-2 lg:col-span-1 flex-1 min-h-0">
+          <h3 className="text-xs font-semibold text-white mb-2 flex items-center gap-1">
+            <Hammer className="w-3 h-3 text-red-400" />
             Alertas de Stock
           </h3>
-          <div className="h-[calc(100%-2rem)]">
+          <div className="h-[calc(100%-1.5rem)]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={[
                 { name: 'Stock Bajo', value: lowStockItems },
-                { name: 'Stock Normal', value: stockItems.length - lowStockItems },
-              ]}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="name" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10 }} />
-                <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10 }} />
+                { name: 'OK', value: Math.max(0, stockItems.length - lowStockItems) },
+              ]} barCategoryGap={4}>
+                <CartesianGrid strokeDasharray="2 2" stroke="rgba(255,255,255,0.1)" />
+                <XAxis dataKey="name" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 9 }} />
+                <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 9 }} />
                 <Tooltip
                   contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
                   itemStyle={{ color: 'white' }}
                 />
-                <Bar dataKey="value" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="value" fill="#ef4444" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
