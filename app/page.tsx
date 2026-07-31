@@ -110,15 +110,6 @@ export default function Dashboard() {
       case 'dashboard':
         return (
           <>
-            <div className="mb-4">
-              <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">
-                Bienvenido al Sistema de Control
-              </h1>
-              <p className="text-white/60 text-xs sm:text-sm">
-                Gestione proyectos, presupuestos y seguimiento en tiempo real
-              </p>
-            </div>
-
             <DashboardStats />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">

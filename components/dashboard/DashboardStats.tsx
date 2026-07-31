@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Building2, DollarSign, TrendingUp, Users, Hammer, Calendar, ArrowUpRight, ArrowDownRight, PieChart as PieChartIcon, BarChart3 } from 'lucide-react';
+import { Building2, DollarSign, TrendingUp, Users, Hammer, Calendar, ArrowUpRight, ArrowDownRight, PieChart as PieChartIcon, BarChart3, Activity } from 'lucide-react';
 import { offlineDB, LocalProject, LocalFinancialTransaction, LocalPayrollEmployee, LocalWarehouseStock } from '@/lib/db/offlineStore';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
@@ -309,6 +309,78 @@ export default function DashboardStats() {
               <Line type="monotone" dataKey="expense" stroke="#ef4444" strokeWidth={2} name="Gastos" dot={{ fill: '#ef4444' }} />
             </LineChart>
           </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Additional Charts Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+        {/* Physical vs Financial Progress */}
+        <div className="glass-panel rounded-2xl p-3 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
+            <Activity className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-400" />
+            Avance Físico vs Financiero
+          </h3>
+          <div className="h-40 sm:h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={projects.map(p => {
+                let physical = 0;
+                let financial = 0;
+                if (p.start_date && p.estimated_end_date) {
+                  const startDate = new Date(p.start_date);
+                  const endDate = new Date(p.estimated_end_date);
+                  const currentDate = new Date();
+                  const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+                  const elapsedDays = Math.ceil((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+                  const timeProgress = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
+                  if (p.status === 'execution') {
+                    physical = timeProgress * 0.95;
+                    financial = timeProgress * 0.9;
+                  } else if (p.status === 'completed') {
+                    physical = 100;
+                    financial = 100;
+                  }
+                }
+                return { project: p.name.substring(0, 12), physical, financial };
+              }).slice(0, 5)}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <XAxis dataKey="project" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10 }} />
+                <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10 }} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                  itemStyle={{ color: 'white' }}
+                  formatter={(value) => `${(value as number)?.toFixed(1) || 0}%`}
+                />
+                <Legend />
+                <Bar dataKey="physical" fill="#06b6d4" radius={[4, 4, 0, 0]} name="Físico" />
+                <Bar dataKey="financial" fill="#10b981" radius={[4, 4, 0, 0]} name="Financiero" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Low Stock Items */}
+        <div className="glass-panel rounded-2xl p-3 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
+            <Hammer className="w-3 h-3 sm:w-4 sm:h-4 text-red-400" />
+            Alertas de Stock
+          </h3>
+          <div className="h-40 sm:h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={[
+                { name: 'Stock Bajo', value: lowStockItems },
+                { name: 'Stock Normal', value: stockItems.length - lowStockItems },
+              ]}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <XAxis dataKey="name" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10 }} />
+                <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10 }} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                  itemStyle={{ color: 'white' }}
+                />
+                <Bar dataKey="value" fill="#ef4444" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
     </div>
