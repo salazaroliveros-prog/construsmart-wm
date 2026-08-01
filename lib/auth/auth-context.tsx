@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  useEffect(() => {
+    useEffect(() => {
     // Verificar sesión activa al montar
     const checkSession = async () => {
       try {
@@ -37,26 +37,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
-          let userName: string | undefined;
-          
-          // Intentar obtener el perfil, pero si falla, usar el email
-          try {
-            const { data } = await supabase
-              .from('profiles')
-              .select('name')
-              .eq('id', session.user.id)
-              .maybeSingle();
-            
-            userName = data?.name;
-          } catch (profileError) {
-            // Si la tabla profiles no existe o hay error de permisos, continuar sin él
-            console.warn('No se pudo cargar el perfil de usuario:', profileError);
-          }
+          // Usar el email como nombre de usuario (sin depender de tabla profiles)
+          const userName = session.user.email?.split('@')[0] || 'Usuario';
           
           setUser({
             id: session.user.id,
             email: session.user.email || '',
-            name: userName || session.user.email?.split('@')[0],
+            name: userName,
           });
           setIsAuthenticated(true);
         }
@@ -75,26 +62,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: { subscription } } = client.auth.onAuthStateChange(
         async (event, session) => {
           if (event === 'SIGNED_IN' && session?.user) {
-            let userName: string | undefined;
-            
-            // Intentar obtener el perfil, pero si falla, usar el email
-            try {
-              const { data } = await client
-                .from('profiles')
-                .select('name')
-                .eq('id', session.user.id)
-                .maybeSingle();
-              
-              userName = data?.name;
-            } catch (profileError) {
-              // Si la tabla profiles no existe o hay error de permisos, continuar sin él
-              console.warn('No se pudo cargar el perfil de usuario:', profileError);
-            }
+            // Usar el email como nombre de usuario (sin depender de tabla profiles)
+            const userName = session.user.email?.split('@')[0] || 'Usuario';
             
             setUser({
               id: session.user.id,
               email: session.user.email || '',
-              name: userName || session.user.email?.split('@')[0],
+              name: userName,
             });
             setIsAuthenticated(true);
           } else if (event === 'SIGNED_OUT') {
@@ -124,26 +98,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data.user) {
-        let userName: string | undefined;
-        
-        // Intentar obtener el perfil, pero si falla, usar el email
-        try {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('name')
-            .eq('id', data.user.id)
-            .maybeSingle();
-          
-          userName = profile?.name;
-        } catch (profileError) {
-          // Si la tabla profiles no existe o hay error de permisos, continuar sin él
-          console.warn('No se pudo cargar el perfil de usuario:', profileError);
-        }
+        // Usar el email como nombre de usuario (sin depender de tabla profiles)
+        const userName = data.user.email?.split('@')[0] || 'Usuario';
         
         setUser({
           id: data.user.id,
           email: data.user.email || '',
-          name: userName || data.user.email?.split('@')[0],
+          name: userName,
         });
         setIsAuthenticated(true);
       }
