@@ -1,13 +1,58 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Database, Trash2, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
+import { useAuth } from '@/lib/auth/auth-context';
 
 export default function DatabaseCleaner() {
+  const { user, isAuthenticated, loading } = useAuth();
   const { showToast } = useToast();
   const [isClearing, setIsClearing] = useState(false);
   const [cleared, setCleared] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  const ADMIN_EMAIL = 'salazaroliveros@gmail.com';
+
+  useEffect(() => {
+    if (!loading && isAuthenticated && user) {
+      const isAdmin = user.email === ADMIN_EMAIL;
+      setIsAuthorized(isAdmin);
+      if (!isAdmin) {
+        showToast('error', 'No tienes permisos para acceder a esta página');
+      }
+    }
+  }, [user, isAuthenticated, loading, showToast]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="glass-panel rounded-2xl p-8">
+          <p className="text-white text-lg">Verificando permisos...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !isAuthorized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+        <div className="glass-panel rounded-2xl p-8 max-w-md w-full text-center">
+          <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-white mb-4">Acceso Denegado</h1>
+          <p className="text-white/70 mb-6">
+            No tienes permisos para acceder a esta página. Solo el administrador puede acceder.
+          </p>
+          <a
+            href="/"
+            className="inline-block px-6 py-3 rounded-lg glass-button text-white"
+          >
+            Volver al Dashboard
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   const clearDatabase = async () => {
     if (!confirm('⚠️ ¿Está seguro de eliminar TODOS los datos locales?\n\nEsta acción:\n- Eliminará todos los proyectos\n- Eliminará todos los presupuestos\n- Eliminará todas las transacciones\n- Eliminará toda la nómina\n- Eliminará todo el inventario\n\nLa base de datos se recreará automáticamente con el nuevo schema.\n\nEsta acción NO se puede deshacer.')) {
