@@ -65,13 +65,18 @@ NEXT_PUBLIC_APP_URL=https://control-constructora-wm.vercel.app
    - Site URL: `https://control-constructora-wm.vercel.app`
    - Redirect URLs: `https://control-constructora-wm.vercel.app/**`
 
-4. (Opcional) Crear primer usuario de prueba:
-   ```sql
-   -- Ejecutar en SQL Editor
-   INSERT INTO auth.users (email, encrypted_password, email_confirmed_at)
-   VALUES ('admin@constructora-wm.com', crypt('WM2026admin', gen_salt('bf')), NOW())
-   RETURNING id;
-   ```
+4. **Crear usuario administrador:**
+   - Ir a: https://supabase.com/dashboard/project/yibjsruoxjlgdnkgylld/auth/users
+   - Click en **"Add user"** → **"Create new user"**
+   - Email: `salazaroliveros@gmail.com`
+   - Password: (establecer una contraseña segura)
+   - Marcar **"Auto Confirm"** para evitar espera de email
+   - Click en **"Create user"**
+
+5. **Credenciales de acceso:**
+   - Email: `salazaroliveros@gmail.com`
+   - Password: La contraseña que establezcas en el paso anterior
+   - Nota: Esta es la única cuenta con acceso a la ruta `/admin/database-cleaner`
 
 ---
 
