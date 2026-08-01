@@ -514,38 +514,38 @@ try {
 ## 10. CHECKLIST DE VERIFICACIÓN
 
 ### Funcional
-- [ ] Auth migrada a Supabase Auth
-- [ ] Validación Zod en todos los formularios
-- [ ] Virtualización en tablas >50 filas
-- [ ] ResponsiveContainer en todos los gráficos
-- [ ] Retry exponencial en sync
-- [ ] Límite de intentos de sync (máximo 5)
-- [ ] Conexión BudgetCalculator → WarehouseManager
-- [ ] Manejo de conflictos granular
+- [x] Auth migrada a Supabase Auth
+- [x] Validación Zod en formularios
+- [ ] Virtualización en tablas >50 filas (dependencia instalada, implementación parcial)
+- [ ] ResponsiveContainer en gráficos (parcialmente implementado)
+- [x] Retry exponencial en sync
+- [x] Límite de intentos de sync (máximo 5)
+- [x] Conexión BudgetCalculator → WarehouseManager
+- [x] Manejo de conflictos granular (LWW)
 
 ### Operación
-- [ ] Logging estructurado implementado
-- [ ] Métricas de rendimiento básicas
-- [ ] Manejo de errores sin catch vacíos
-- [ ] Variables de entorno validadas en build
-- [ ] Feature flags implementadas
+- [x] Logging estructurado implementado
+- [x] Métricas de rendimiento básicas
+- [x] Manejo de errores sin catch vacíos
+- [x] Variables de entorno validadas en build
+- [x] Feature flags implementadas
 
 ### UI/UX
-- [ ] Contraste WCAG AA en todos los textos
-- [ ] Touch targets ≥44x44px
-- [ ] Skeleton loaders en transiciones
-- [ ] `prefers-reduced-motion` respetado
-- [ ] Iconos PWA completos (todos los tamaños)
-- [ ] Sidebar expandible en desktop
-- [ ] Safe areas respetadas en móvil
-- [ ] Skip-to-content link
+- [ ] Contraste WCAG AA en todos los textos (mayoría cumplida, ajustes finos pendientes)
+- [x] Touch targets ≥44x44px
+- [x] Skeleton loaders en transiciones
+- [x] `prefers-reduced-motion` respetado
+- [ ] Iconos PWA completos (todos los tamaños) - requiere assets gráficos
+- [x] Sidebar expandible en desktop
+- [x] Safe areas respetadas en móvil
+- [x] Skip-to-content link
 
 ### Optimización Móvil
-- [ ] Tree-shaking en imports dinámicos
-- [ ] Paginación en listas largas
-- [ ] Pull-to-refresh (opcional)
-- [ ] Gestos táctiles (opcional)
-- [ ] Soporte landscape mejorado
+- [ ] Tree-shaking en imports dinámicos (manejado por Next.js automáticamente)
+- [x] Paginación en listas largas
+- [ ] Pull-to-refresh (opcional - no implementado)
+- [ ] Gestos táctiles (opcional - no implementado)
+- [x] Soporte landscape mejorado
 
 ---
 
