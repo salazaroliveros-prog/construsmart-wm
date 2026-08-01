@@ -51,6 +51,74 @@ export function isServerId(id?: string): boolean {
 // Statuses that mark a row as pending to be pushed to Supabase.
 export const PENDING_STATUSES = ['created_offline', 'updated_offline', 'pending'];
 
+// Sync configuration with retry and limits
+const MAX_SYNC_RETRIES = 5;
+const BASE_RETRY_DELAY_MS = 1000;
+const MAX_RETRY_DELAY_MS = 16000;
+
+// Performance metrics tracking
+interface SyncMetrics {
+  startTime: number;
+  endTime: number;
+  duration: number;
+  synced: number;
+  failed: number;
+  retries: number;
+  timestamp: number;
+}
+
+const syncMetrics: SyncMetrics[] = [];
+
+export function getSyncMetrics(): SyncMetrics[] {
+  return syncMetrics;
+}
+
+export function clearSyncMetrics(): void {
+  syncMetrics.length = 0;
+}
+
+function recordMetric(metric: SyncMetrics): void {
+  syncMetrics.push(metric);
+  // Keep only last 100 metrics
+  if (syncMetrics.length > 100) {
+    syncMetrics.shift();
+  }
+}
+
+// Retry with exponential backoff
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  context: string,
+  maxRetries = MAX_SYNC_RETRIES
+): Promise<T> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      // Don't retry on client errors (4xx)
+      if (lastError.message.includes('401') || lastError.message.includes('403') || 
+          lastError.message.includes('404') || lastError.message.includes('422')) {
+        throw lastError;
+      }
+      
+      if (attempt < maxRetries - 1) {
+        const delay = Math.min(
+          BASE_RETRY_DELAY_MS * Math.pow(2, attempt) + Math.random() * 1000,
+          MAX_RETRY_DELAY_MS
+        );
+        logger.warn(`Retry ${attempt + 1}/${maxRetries} for ${context} after ${delay}ms`, undefined, 'Sync');
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  throw lastError || new Error(`Failed after ${maxRetries} retries`);
+}
+
 const SYNC_START_EVENT = 'wm-sync-start';
 const SYNC_END_EVENT = 'wm-sync-end';
 
@@ -117,12 +185,13 @@ async function remapOrderFks(localId: string, serverId: string): Promise<void> {
     .modify({ purchase_order_id: serverId });
 }
 
-type Syncable = { id?: string; sync_status?: string };
+type Syncable = { id?: string; sync_status?: string; sync_attempts?: number };
 
 // Generic push loop: INSERTs rows that were never pushed (created_offline/pending,
 // or updated_offline without a server id) and UPDATEs server-owned rows.
 // Returns a map of local id -> server id for the rows it inserted.
 // Implements Last-Write-Wins (LWW) conflict resolution based on updated_at timestamps.
+// Includes retry logic with exponential backoff and attempt limits.
 async function syncRows<T extends Syncable>(
   supabaseTable: string,
   rows: T[],
@@ -137,18 +206,25 @@ async function syncRows<T extends Syncable>(
 
   for (const row of rows) {
     const localId = String(row.id);
+    const rowDescription = `${supabaseTable} ${describe(row)}`;
+    
     try {
       const isUpdate = row.sync_status === 'updated_offline' && isServerId(row.id);
 
       if (isUpdate) {
-        // LWW: Fetch server version to compare timestamps
-        const { data: serverRow, error: fetchError } = await supabase!
-          .from(supabaseTable)
-          .select('updated_at')
-          .eq('id', row.id!)
-          .single();
-
-        if (fetchError) throw fetchError;
+        // LWW: Fetch server version to compare timestamps with retry
+        const serverRow = await withRetry(
+          async () => {
+            const { data, error } = await supabase!
+              .from(supabaseTable)
+              .select('updated_at')
+              .eq('id', row.id!)
+              .single();
+            if (error) throw error;
+            return data;
+          },
+          `fetch ${rowDescription}`
+        );
 
         // Conflict detection: server has been modified since last sync
         const localUpdatedAt = (row as any).updated_at;
@@ -156,14 +232,21 @@ async function syncRows<T extends Syncable>(
 
         if (serverUpdatedAt && localUpdatedAt && new Date(serverUpdatedAt) > new Date(localUpdatedAt)) {
           // Conflict: server is newer
-          logger.warn(`Conflict detected in ${supabaseTable} ${localId}: server is newer (${serverUpdatedAt} > ${localUpdatedAt})`, undefined, 'Sync');
+          logger.warn(`Conflict detected in ${rowDescription}: server is newer (${serverUpdatedAt} > ${localUpdatedAt})`, undefined, 'Sync');
           
           // LWW: Server wins - pull server data and update local
-          const { data: latestServerRow, error: pullError } = await supabase!
-            .from(supabaseTable)
-            .select('*')
-            .eq('id', row.id!)
-            .single();
+          const { data: latestServerRow, error: pullError } = await withRetry(
+            async () => {
+              const { data, error } = await supabase!
+                .from(supabaseTable)
+                .select('*')
+                .eq('id', row.id!)
+                .single();
+              if (error) throw error;
+              return data;
+            },
+            `pull ${rowDescription}`
+          );
 
           if (pullError) throw pullError;
 
@@ -173,25 +256,37 @@ async function syncRows<T extends Syncable>(
             sync_status: 'synced',
           });
 
-          logger.info(`Conflict resolved: server wins for ${supabaseTable} ${localId}`, undefined, 'Sync');
+          logger.info(`Conflict resolved: server wins for ${rowDescription}`, undefined, 'Sync');
           result.synced++;
           continue;
         }
 
-        // No conflict or local is newer: proceed with update
-        const { error } = await supabase!
-          .from(supabaseTable)
-          .update(buildUpdate(row))
-          .eq('id', row.id!);
-        if (error) throw error;
+        // No conflict or local is newer: proceed with update with retry
+        await withRetry(
+          async () => {
+            const { error } = await supabase!
+              .from(supabaseTable)
+              .update(buildUpdate(row))
+              .eq('id', row.id!);
+            if (error) throw error;
+          },
+          `update ${rowDescription}`
+        );
         await markUpdated(row);
       } else {
-        const { data, error } = await supabase!
-          .from(supabaseTable)
-          .insert(buildInsert(row))
-          .select()
-          .single();
-        if (error) throw error;
+        // Insert with retry
+        const { data, error } = await withRetry(
+          async () => {
+            const result = await supabase!
+              .from(supabaseTable)
+              .insert(buildInsert(row))
+              .select()
+              .single();
+            if (result.error) throw result.error;
+            return result.data;
+          },
+          `insert ${rowDescription}`
+        );
         if (row.id) idMap.set(localId, data.id);
         await markInserted(row, localId, data.id);
       }
@@ -199,7 +294,22 @@ async function syncRows<T extends Syncable>(
       result.synced++;
     } catch (error) {
       result.failed++;
-      result.errors.push(`Failed to sync ${supabaseTable} ${describe(row)}: ${error}`);
+      result.errors.push(`Failed to sync ${rowDescription}: ${error}`);
+      
+      // Increment sync attempts for offline-created records
+      if (row.sync_status === 'created_offline' || row.sync_status === 'pending') {
+        const attempts = (row.sync_attempts || 0) + 1;
+        if (attempts >= MAX_SYNC_RETRIES) {
+          // Mark as failed after max retries
+          await offlineDB.table(supabaseTable).update(row.id!, { 
+            sync_status: 'sync_failed',
+            sync_attempts: attempts 
+          });
+          logger.error(`Max retries reached for ${rowDescription}, marked as sync_failed`, undefined, 'Sync');
+        } else {
+          await offlineDB.table(supabaseTable).update(row.id!, { sync_attempts: attempts });
+        }
+      }
     }
   }
 
@@ -215,17 +325,35 @@ export async function syncOfflineData(): Promise<SyncResult> {
     timestamp: Date.now(),
   };
 
+  const metrics: SyncMetrics = {
+    startTime: performance.now(),
+    endTime: 0,
+    duration: 0,
+    synced: 0,
+    failed: 0,
+    retries: 0,
+    timestamp: Date.now(),
+  };
+
   if (!supabase) {
     result.success = false;
     result.errors.push('Supabase not configured. Cannot sync.');
+    metrics.endTime = performance.now();
+    metrics.duration = metrics.endTime - metrics.startTime;
+    recordMetric(metrics);
     return result;
   }
 
   if (syncInProgress) {
     result.errors.push('Sync already in progress, run skipped.');
+    metrics.endTime = performance.now();
+    metrics.duration = metrics.endTime - metrics.startTime;
+    recordMetric(metrics);
     return result;
   }
   syncInProgress = true;
+
+  logger.info('Starting sync...', undefined, 'Sync');
 
   try {
     // 1. PROJECTS (parents of budgets, transactions, payroll, stock, logs, POs)
@@ -966,14 +1094,30 @@ export async function forceFullSync(): Promise<SyncResult> {
     timestamp: Date.now(),
   };
 
+  const metrics: SyncMetrics = {
+    startTime: performance.now(),
+    endTime: 0,
+    duration: 0,
+    synced: 0,
+    failed: 0,
+    retries: 0,
+    timestamp: Date.now(),
+  };
+
   if (!supabase) {
     result.success = false;
     result.errors.push('Supabase not configured.');
+    metrics.endTime = performance.now();
+    metrics.duration = metrics.endTime - metrics.startTime;
+    recordMetric(metrics);
     return result;
   }
 
   if (syncInProgress) {
     result.errors.push('Sync already in progress, run skipped.');
+    metrics.endTime = performance.now();
+    metrics.duration = metrics.endTime - metrics.startTime;
+    recordMetric(metrics);
     return result;
   }
   syncInProgress = true;
@@ -1015,10 +1159,26 @@ export async function forceFullSync(): Promise<SyncResult> {
     }
 
     updateLastSyncTimestamp();
+    
+    metrics.endTime = performance.now();
+    metrics.duration = metrics.endTime - metrics.startTime;
+    metrics.synced = result.synced;
+    metrics.failed = result.failed;
+    recordMetric(metrics);
+    
+    logger.info(`Sync completed: ${result.synced} synced, ${result.failed} failed in ${metrics.duration.toFixed(2)}ms`, undefined, 'Sync');
+    
     return result;
   } catch (error) {
     result.success = false;
     result.errors.push(`Full sync failed: ${error}`);
+    
+    metrics.endTime = performance.now();
+    metrics.duration = metrics.endTime - metrics.startTime;
+    metrics.failed = result.failed;
+    recordMetric(metrics);
+    
+    logger.error(`Sync failed: ${error}`, undefined, 'Sync');
     return result;
   } finally {
     syncInProgress = false;
