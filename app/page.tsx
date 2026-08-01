@@ -349,8 +349,7 @@ useEffect(() => {
 
         {/* Main content - full width con scroll libre y automático */}
         <main
-          className={`flex-1 overflow-y-auto overflow-anchor-none transition-all duration-300 ${!isMobile && !isSidebarCollapsed ? 'lg:ml-64' : 'lg:ml-16'}`}
-          style={{ height: 'calc(100vh - 4rem - 3.25rem)' }}
+          className={`flex-1 transition-all duration-300 ${!isMobile && !isSidebarCollapsed ? 'lg:ml-64' : 'lg:ml-16'}`}
           id="main-content"
           role="main"
           aria-label="Contenido principal"
