@@ -198,20 +198,20 @@ useEffect(() => {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <div className="h-full flex flex-col gap-2">
-            {/* KPIs Full width */}
-            <div className="flex-0">
+          <div className="flex flex-col gap-3 h-full">
+            {/* KPIs Full width - centrado */}
+            <div className="w-full">
               <DashboardStats />
             </div>
 
             {/* Grid: Left (overview + activity) | Right (matrix + calendar) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 flex-1 min-h-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 w-full">
               {/* Left column */}
-              <div className="flex flex-col gap-2 min-h-0">
-                <div className="glass-panel rounded-xl p-2 md:p-3 flex-1 min-h-0">
+              <div className="flex flex-col gap-3">
+                <div className="glass-panel rounded-xl p-2 md:p-3">
                   <ProjectOverview />
                 </div>
-                <div className="glass-panel rounded-xl p-3 md:p-3 flex-[0.6] min-h-0 overflow-y-auto overflow-anchor-none">
+                <div className="glass-panel rounded-xl p-3 md:p-3">
                   <h3 className="text-xs md:text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
                     Actividad Reciente
@@ -233,9 +233,9 @@ useEffect(() => {
               </div>
 
               {/* Right column: charts + calendar */}
-              <div className="flex flex-col gap-2 min-h-0">
+              <div className="flex flex-col gap-3">
                 <DashboardCharts />
-                <div className="flex-1 min-h-0">
+                <div className="flex-1">
                   <InteractiveCalendar />
                 </div>
               </div>
@@ -290,11 +290,11 @@ useEffect(() => {
 
   return (
     <AuthGuard>
-      <div className="flex flex-col h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 font-sans">
+      <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 font-sans">
         <DualBrandHeader />
 
         {/* Tab navigation - right below header, centered */}
-        <nav className="flex-shrink-0 bg-slate-900/60 border-b border-white-5 overflow-x-auto overflow-anchor-none">
+        <nav className="flex-shrink-0 bg-slate-900/60 border-b border-white/10 overflow-x-auto overflow-anchor-none">
           <div className="flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5">
             {NAVIGATION_TABS.map(tab => {
               const isTabActive = activeTab === tab.id;
@@ -324,7 +324,7 @@ useEffect(() => {
         </nav>
 
         {/* Main content area */}
-        <div className="flex flex-1 overflow-hidden relative">
+        <div className="flex flex-1 relative">
           {/* Sidebar */}
           <aside
             className={`sidebar-container fixed lg:relative flex-shrink-0 h-full lg:block transition-all duration-300 ease-in-out z-30 ${
@@ -347,16 +347,16 @@ useEffect(() => {
             />
           )}
 
-        {/* Main content - full width utilizando espacio disponible */}
+        {/* Main content - full width con scroll libre y automático */}
         <main
           className={`flex-1 overflow-y-auto overflow-anchor-none transition-all duration-300 ${!isMobile && !isSidebarCollapsed ? 'lg:ml-64' : 'lg:ml-16'}`}
-          style={{ height: CONTENT_HEIGHT }}
+          style={{ height: 'calc(100vh - 4rem - 3.25rem)' }}
           id="main-content"
           role="main"
           aria-label="Contenido principal"
         >
           <div 
-            className="h-full w-full px-3 sm:px-4 py-1.5"
+            className="w-full px-3 sm:px-4 py-1.5"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
