@@ -103,7 +103,7 @@ export default function InteractiveCalendar() {
           >
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
-          <span className="text-[10px] font-medium text-white min-w-[110px] text-center">
+          <span className="text-[10px] font-medium text-white text-center whitespace-nowrap">
             {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
           </span>
           <button
