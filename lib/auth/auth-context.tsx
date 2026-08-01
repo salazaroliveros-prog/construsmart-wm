@@ -1,62 +1,144 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/lib/supabase/client';
 
-interface LocalUser {
+interface User {
+  id: string;
   email: string;
-  name: string;
+  name?: string;
 }
 
 interface AuthContextType {
-  user: LocalUser | null;
+  user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => void;
+  signOut: () => Promise<void>;
   getUserAvatar: () => string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<LocalUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Check if user is logged in from localStorage
-    const storedUser = localStorage.getItem('localUser');
-    const storedAuth = localStorage.getItem('isAuthenticated');
+    // Verificar sesión activa al montar
+    const checkSession = async () => {
+      try {
+        if (!supabase) {
+          console.warn('Supabase no configurado - modo offline');
+          setLoading(false);
+          return;
+        }
 
-    if (storedUser && storedAuth === 'true') {
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('name')
+            .eq('id', session.user.id)
+            .single();
+          
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            name: data?.name || session.user.email?.split('@')[0],
+          });
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error('Error al verificar sesión:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkSession();
+
+    // Escuchar cambios de autenticación
+    if (supabase) {
+      const client = supabase; // Capturar referencia no-null para callbacks
+      const { data: { subscription } } = client.auth.onAuthStateChange(
+        async (event, session) => {
+          if (event === 'SIGNED_IN' && session?.user) {
+            const { data } = await client
+              .from('profiles')
+              .select('name')
+              .eq('id', session.user.id)
+              .single();
+            
+            setUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              name: data?.name || session.user.email?.split('@')[0],
+            });
+            setIsAuthenticated(true);
+          } else if (event === 'SIGNED_OUT') {
+            setUser(null);
+            setIsAuthenticated(false);
+          }
+        }
+      );
+
+      return () => subscription.unsubscribe();
     }
-
-    setLoading(false);
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    // El acceso es local (gate de UI). No se persiste la contraseña.
-    // Create user object
-    const newUser: LocalUser = {
-      email,
-      name: email.split('@')[0], // Use email prefix as name
-    };
+    if (!supabase) {
+      throw new Error('Supabase no está configurado. No se puede autenticar.');
+    }
 
-    // Save user to localStorage
-    localStorage.setItem('localUser', JSON.stringify(newUser));
-    localStorage.setItem('isAuthenticated', 'true');
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    setUser(newUser);
-    setIsAuthenticated(true);
+      if (error) {
+        throw new Error(error.message || 'Credenciales inválidas');
+      }
+
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', data.user.id)
+          .single();
+
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          name: profile?.name || data.user.email?.split('@')[0],
+        });
+        setIsAuthenticated(true);
+      }
+    } catch (error: any) {
+      throw new Error(error.message || 'Error al iniciar sesión');
+    }
   };
 
-  const signOut = () => {
-    localStorage.removeItem('localUser');
-    localStorage.removeItem('isAuthenticated');
-    setUser(null);
-    setIsAuthenticated(false);
+  const signOut = async () => {
+    if (!supabase) {
+      setUser(null);
+      setIsAuthenticated(false);
+      return;
+    }
+
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setIsAuthenticated(false);
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      // Forzar cierre local incluso si hay error
+      setUser(null);
+      setIsAuthenticated(false);
+    }
   };
 
   const getUserAvatar = () => {
@@ -64,7 +146,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return 'https://ui-avatars.com/api/?name=User&background=0D8BC&color=fff&size=128';
     }
 
-    // Try Gravatar based on email
     const email = user.email;
     if (email) {
       const normalizedEmail = email.trim().toLowerCase();
@@ -72,7 +153,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return `https://www.gravatar.com/avatar/${hash}?d=identicon&size=128`;
     }
 
-    // Fallback to generated avatar
     return 'https://ui-avatars.com/api/?name=User&background=0D8BC&color=fff&size=128';
   };
 

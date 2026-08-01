@@ -1,11 +1,27 @@
 // App Configuration
 // This file centralizes all app-wide configuration constants
 
+function getBaseUrl(): string {
+  // En el cliente, usar el origen de la ventana
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  
+  // En el servidor, usar la variable de entorno (sin fallback hardcodeado)
+  const envUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!envUrl) {
+    throw new Error(
+      'NEXT_PUBLIC_APP_URL no está configurada. ' +
+      'Agrégala en tu archivo .env o en las variables de entorno de Vercel.'
+    );
+  }
+  return envUrl;
+}
+
 export const APP_CONFIG = {
   // The production URL of the application
   // This is set via environment variable NEXT_PUBLIC_APP_URL
-  // Falls back to the Vercel default domain
-  url: process.env.NEXT_PUBLIC_APP_URL || 'https://control-constructora-wm.vercel.app',
+  url: getBaseUrl(),
   
   // App metadata
   name: 'CONSTRUCTORA WM/M&S',

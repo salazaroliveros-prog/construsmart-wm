@@ -211,6 +211,39 @@ export function calculateSlabCost(
   return concreteCost + steelCost + formworkCost;
 }
 
+// Local-use BudgetSummary (aligned with BudgetCalculator component usage)
+export interface LocalBudgetSummary {
+  directCost: number;
+  indirectCost: number;
+  contingency: number;
+  profit: number;
+  total: number;
+}
+
+export function localBudgetSummaryFromBudgetSummary(bs: BudgetSummary): LocalBudgetSummary {
+  return {
+    directCost: bs.totalDirectCost,
+    indirectCost: bs.totalIndirectCost,
+    contingency: bs.totalContingency,
+    profit: bs.totalProfit,
+    total: bs.grandTotal,
+  };
+}
+
+export function calculateLocalBudgetSummary(
+  items: { totalCost: number }[],
+  indirectPercentage: number,
+  contingencyPercentage: number,
+  profitPercentage: number,
+): LocalBudgetSummary {
+  const directCost = items.reduce((sum, item) => sum + item.totalCost, 0);
+  const indirectCost = directCost * (indirectPercentage / 100);
+  const contingency = directCost * (contingencyPercentage / 100);
+  const profit = directCost * (profitPercentage / 100);
+  const total = directCost + indirectCost + contingency + profit;
+  return { directCost, indirectCost, contingency, profit, total };
+}
+
 /**
  * Format currency to Quetzales (GTQ)
  */

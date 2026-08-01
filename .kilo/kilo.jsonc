@@ -1,0 +1,9 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "indexing": {
+    "provider": "kilo",
+    "vectorStore": "lancedb",
+    "enabled": true,
+    "model": "sentence-transformers/paraphrase-minilm-l6-v2"
+  }
+}

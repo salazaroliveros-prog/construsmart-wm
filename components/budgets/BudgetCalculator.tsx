@@ -10,13 +10,15 @@ import {
   getResidentialCostLevel,
   getCostLevelLabel,
   getVolumetricFactor,
-  calculateEarthworkVolume
+  calculateEarthworkVolume,
+  calculateLocalBudgetSummary,
+  type LocalBudgetSummary,
 } from '@/lib/calculators/apuCalculator';
 import { RENGLONES_BY_TYPOLOGY } from '@/lib/data/apuRenglones';
 import { RENGLONES_BY_TYPOLOGY_DETAILED } from '@/lib/data/apuRenglonesDetailed';
 import { ProjectTypology, APUFormulaParams, APUResult, TYPOLOGY_LABELS, MATERIAL_FACTORS } from '@/lib/types/apu';
 import type { APURenglon } from '@/lib/types/apu';
-import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
+import { offlineDB, LocalProject, LocalBudgetItem } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { budgetState, ActiveBudgetState } from '@/lib/state/budgetState';
@@ -30,7 +32,6 @@ import CSVGenerator from '@/components/csv/CSVGenerator';
 import RenglonAccordion from '@/components/budgets/RenglonAccordion';
 import { RenglonCalculator, ProjectRenglon, ProjectTimeImpact } from '@/lib/calculators/renglonCalculator';
 
-// Interfaces for budget calculation
 interface BudgetItem {
   id: string;
   code: string;
@@ -40,20 +41,13 @@ interface BudgetItem {
   unitCost: number;
   totalCost: number;
   category: string;
-  apuResult?: APUResult; // Store APU calculation results
-}
-
-interface BudgetSummary {
-  directCost: number;
-  indirectCost: number;
-  contingency: number;
-  profit: number;
-  total: number;
+  apuResult?: APUResult;
 }
 
 export default function BudgetCalculator() {
   const { showToast } = useToast();
   const [items, setItems] = useState<BudgetItem[]>([]);
+  const [visibleCount, setVisibleCount] = useState(20);
   const [indirectPercentage, setIndirectPercentage] = useState(15);
   const [contingencyPercentage, setContingencyPercentage] = useState(5);
   const [profitPercentage, setProfitPercentage] = useState(10);
@@ -100,15 +94,60 @@ export default function BudgetCalculator() {
       setProjects(planningProjects);
     } catch (error) {
       console.error('Error loading projects:', error);
+      showToast('error', 'Error al cargar proyectos');
     }
   };
 
-  const handleProjectChange = (projectId: string) => {
+  const handleProjectChange = async (projectId: string) => {
     setSelectedProject(projectId);
     const project = projects.find(p => p.id === projectId);
     if (project) {
       setProjectName(project.name);
       setClientName(project.client_name);
+    }
+
+    // Carga el presupuesto existente desde offlineDB y restaura items en memoria.
+    try {
+      const existingBudget = await offlineDB.budgets
+        .where('project_id')
+        .equals(projectId)
+        .reverse()
+        .first();
+
+      if (existingBudget) {
+        const dbItems: LocalBudgetItem[] = await offlineDB.budgetItems
+          .where('budget_id')
+          .equals(existingBudget.id as string)
+          .toArray();
+
+        const restored: BudgetItem[] = dbItems
+          .sort((a, b) => (a.item_order ?? 0) - (b.item_order ?? 0))
+          .map((dbItem): BudgetItem => ({
+            id: dbItem.id ?? Date.now().toString(),
+            code: dbItem.code,
+            description: dbItem.description,
+            unit: dbItem.unit,
+            quantity: dbItem.quantity,
+            unitCost: dbItem.unit_cost,
+            totalCost: dbItem.total_cost,
+            category: dbItem.is_custom ? 'Custom' : 'APU',
+            apuResult: dbItem.apu_result as APUResult | undefined,
+          }));
+
+        setItems(restored);
+        setIndirectPercentage(existingBudget.indirect_percentage);
+        setContingencyPercentage(existingBudget.contingency_percentage);
+        setProfitPercentage(existingBudget.profit_percentage);
+        setDurationDays(existingBudget.duration_days);
+        setVisibleCount(20);
+      } else {
+        // Sin presupuesto previo: limpia el estado
+        setItems([]);
+        setVisibleCount(20);
+      }
+    } catch (error) {
+      console.error('Error cargando presupuesto existente:', error);
+      showToast('error', 'Error al cargar el presupuesto del proyecto');
     }
   };
 
@@ -129,20 +168,8 @@ export default function BudgetCalculator() {
     bovedillaPricePerUnit: 8,
   });
 
-  const calculateSummary = (): BudgetSummary => {
-    const directCost = items.reduce((sum, item) => sum + item.totalCost, 0);
-    const indirectCost = directCost * (indirectPercentage / 100);
-    const contingency = directCost * (contingencyPercentage / 100);
-    const profit = directCost * (profitPercentage / 100);
-    const total = directCost + indirectCost + contingency + profit;
-
-    return {
-      directCost,
-      indirectCost,
-      contingency,
-      profit,
-      total,
-    };
+  const calculateSummary = (): LocalBudgetSummary => {
+    return calculateLocalBudgetSummary(items, indirectPercentage, contingencyPercentage, profitPercentage);
   };
 
   const addSlabCalculation = () => {
@@ -247,11 +274,17 @@ export default function BudgetCalculator() {
     }
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteConfirm) {
-      setItems(items.filter(item => item.id !== deleteConfirm.id));
-      setDeleteConfirm(null);
-      showToast('success', 'Item eliminado del presupuesto');
+      try {
+        await queueDelete('budget_items', { id: deleteConfirm.id });
+        setItems(items.filter(item => item.id !== deleteConfirm.id));
+        setDeleteConfirm(null);
+        showToast('success', 'Item eliminado del presupuesto');
+      } catch (error) {
+        console.error('Error deleting item:', error);
+        showToast('error', 'Error al eliminar el item del presupuesto');
+      }
     }
   };
 
@@ -989,7 +1022,7 @@ export default function BudgetCalculator() {
           />
         ) : (
           <div className="space-y-3">
-            {items.map((item) => {
+            {items.slice(0, visibleCount).map((item) => {
               // Find matching renglon from catalog for detailed calculation
               const catalogRenglon = RENGLONES_BY_TYPOLOGY_DETAILED[selectedTypology]?.find(
                 r => r.code === item.code
@@ -1070,6 +1103,16 @@ export default function BudgetCalculator() {
                 </div>
               );
             })}
+            {items.length > visibleCount && (
+              <div className="text-center py-3">
+                <button
+                  onClick={() => setVisibleCount((c) => c + 20)}
+                  className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 text-sm transition-all"
+                >
+                  Ver más items ({items.length - visibleCount} restantes)
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

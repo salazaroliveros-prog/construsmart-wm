@@ -3,7 +3,7 @@
  * Slogan: "CONSTRUYENDO EL FUTURO"
  * 
  * Bidirectional synchronization between Supabase (PostgreSQL) and Dexie (IndexedDB)
- * Full offline-first architecture with conflict resolution.
+ * Full offline-first architecture with conflict resolution (Last-Write-Wins).
  * 
  * Covers: projects, budgets, budget_items, financial_transactions, payroll_employees,
  * payroll_records, warehouse_stock, clients, project_logs, suppliers,
@@ -13,6 +13,7 @@
 import { Table } from 'dexie';
 import { offlineDB } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
+import { logger } from './logger';
 
 export interface SyncResult {
   success: boolean;
@@ -49,6 +50,21 @@ export function isServerId(id?: string): boolean {
 
 // Statuses that mark a row as pending to be pushed to Supabase.
 export const PENDING_STATUSES = ['created_offline', 'updated_offline', 'pending'];
+
+const SYNC_START_EVENT = 'wm-sync-start';
+const SYNC_END_EVENT = 'wm-sync-end';
+
+function emitSyncStart() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(SYNC_START_EVENT));
+  }
+}
+
+function emitSyncEnd(ok: boolean, error?: string) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(SYNC_END_EVENT, { detail: { ok, error } }));
+  }
+}
 
 // Prevents concurrent sync runs (interval + online event + manual calls).
 let syncInProgress = false;
@@ -106,6 +122,7 @@ type Syncable = { id?: string; sync_status?: string };
 // Generic push loop: INSERTs rows that were never pushed (created_offline/pending,
 // or updated_offline without a server id) and UPDATEs server-owned rows.
 // Returns a map of local id -> server id for the rows it inserted.
+// Implements Last-Write-Wins (LWW) conflict resolution based on updated_at timestamps.
 async function syncRows<T extends Syncable>(
   supabaseTable: string,
   rows: T[],
@@ -124,6 +141,44 @@ async function syncRows<T extends Syncable>(
       const isUpdate = row.sync_status === 'updated_offline' && isServerId(row.id);
 
       if (isUpdate) {
+        // LWW: Fetch server version to compare timestamps
+        const { data: serverRow, error: fetchError } = await supabase!
+          .from(supabaseTable)
+          .select('updated_at')
+          .eq('id', row.id!)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        // Conflict detection: server has been modified since last sync
+        const localUpdatedAt = (row as any).updated_at;
+        const serverUpdatedAt = serverRow?.updated_at;
+
+        if (serverUpdatedAt && localUpdatedAt && new Date(serverUpdatedAt) > new Date(localUpdatedAt)) {
+          // Conflict: server is newer
+          logger.warn(`Conflict detected in ${supabaseTable} ${localId}: server is newer (${serverUpdatedAt} > ${localUpdatedAt})`, undefined, 'Sync');
+          
+          // LWW: Server wins - pull server data and update local
+          const { data: latestServerRow, error: pullError } = await supabase!
+            .from(supabaseTable)
+            .select('*')
+            .eq('id', row.id!)
+            .single();
+
+          if (pullError) throw pullError;
+
+          // Update local with server data (preserving local sync_status)
+          await offlineDB.table(supabaseTable).update(row.id!, {
+            ...latestServerRow,
+            sync_status: 'synced',
+          });
+
+          logger.info(`Conflict resolved: server wins for ${supabaseTable} ${localId}`, undefined, 'Sync');
+          result.synced++;
+          continue;
+        }
+
+        // No conflict or local is newer: proceed with update
         const { error } = await supabase!
           .from(supabaseTable)
           .update(buildUpdate(row))

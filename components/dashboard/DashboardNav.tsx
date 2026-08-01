@@ -1,10 +1,11 @@
 'use client';
 
-import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp, Database, User, LogOut, AlertCircle, BookOpen, Settings } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp, Database, LogOut, AlertCircle, BookOpen, Settings } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ChangeEvent } from 'react';
 import { useAuth } from '@/lib/auth/auth-context';
+import UserAvatar from '@/components/ui/UserAvatar';
 import { offlineDB } from '@/lib/db/offlineStore';
 import { useCompanySettings } from '@/lib/hooks/useBusinessSettings';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
@@ -48,76 +49,6 @@ const ICONS: Record<string, React.ReactNode> = {
   BookOpen: <BookOpen className="w-5 h-5" />,
   Settings: <Settings className="w-5 h-5" />,
 };
-
-// User Avatar Component
-function UserAvatar() {
-  const { user, getUserAvatar } = useAuth();
-  const [avatarUrl, setAvatarUrl] = useState<string>('');
-  const [showUpload, setShowUpload] = useState(false);
-
-  useEffect(() => {
-    // Check localStorage for custom avatar first
-    const customAvatar = localStorage.getItem('userAvatar');
-    if (customAvatar) {
-      setAvatarUrl(customAvatar);
-    } else {
-      setAvatarUrl(getUserAvatar());
-    }
-  }, [user, getUserAvatar]);
-
-  const handleAvatarUpload = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setAvatarUrl(base64String);
-        localStorage.setItem('userAvatar', base64String);
-        setShowUpload(false);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleAvatarClick = () => {
-    setShowUpload(true);
-  };
-
-  if (showUpload) {
-    return (
-      <div className="relative w-full h-full">
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleAvatarUpload}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-          title="Cambiar foto de perfil"
-        />
-        <div className="w-full h-full flex items-center justify-center bg-white/10">
-          <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-        </div>
-      </div>
-    );
-  }
-
-  if (avatarUrl) {
-    return (
-      <div
-        onClick={handleAvatarClick}
-        className="w-full h-full cursor-pointer"
-        title="Click para cambiar foto de perfil"
-      >
-        <img
-          src={avatarUrl}
-          alt={user?.name || 'Usuario'}
-          className="w-full h-full object-cover"
-        />
-      </div>
-    );
-  }
-
-  return <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />;
-}
 
 export default function DashboardNav({ activeTab, onTabChange, isCollapsed = false }: DashboardNavProps) {
   const isActive = (id: string) => activeTab === id;
@@ -203,41 +134,41 @@ export default function DashboardNav({ activeTab, onTabChange, isCollapsed = fal
           {navItems.map((item) => {
             const active = isActive(item.id);
             return (
-              <button
-                key={item.id}
-                onClick={() => onTabChange(item.id)}
-                className={`w-full flex items-center rounded-lg transition-all ${
-                  isCollapsed ? 'justify-center px-2 py-2' : 'justify-between px-2 sm:px-3 py-2 sm:py-2.5'
-                } ${
-                  active
-                    ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
-                    : 'text-white/60 hover:bg-white/5 hover:text-white border border-transparent'
-                }`}
-                aria-current={active ? 'page' : undefined}
-                title={isCollapsed ? item.label : undefined}
-              >
-                <div className={`flex items-center ${isCollapsed ? '' : 'gap-2 sm:gap-3'}`}>
-                  {ICONS[item.icon]}
-                  {!isCollapsed && <span className="font-medium text-xs sm:text-sm">{item.label}</span>}
-                </div>
-                {!isCollapsed && item.badge && (
-                  <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium flex items-center gap-1 ${
-                    item.badgeColor === 'red'
-                      ? 'bg-red-500/20 text-red-300'
-                      : item.badgeColor === 'amber'
-                      ? 'bg-amber-500/20 text-amber-300'
-                      : 'bg-cyan-500/20 text-cyan-300'
-                  }`}>
-                    {item.badgeColor === 'red' && <AlertCircle className="w-3 h-3" />}
-                    {item.badge}
-                  </span>
-                )}
-                {isCollapsed && item.badge && (
-                  <span className={`absolute top-1 right-1 w-2 h-2 rounded-full ${
-                    item.badgeColor === 'red' ? 'bg-red-500' : item.badgeColor === 'amber' ? 'bg-amber-500' : 'bg-cyan-500'
-                  }`} />
-                )}
-              </button>
+               <button
+                 key={item.id}
+                 onClick={() => onTabChange(item.id)}
+                 className={`w-full flex items-center rounded-lg transition-all relative ${
+                   isCollapsed ? 'justify-center px-2 py-2' : 'justify-between px-2 sm:px-3 py-2 sm:py-2.5'
+                 } ${
+                   active
+                     ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
+                     : 'text-white/60 hover:bg-white/5 hover:text-white border border-transparent'
+                 }`}
+                 aria-current={active ? 'page' : undefined}
+                 title={isCollapsed ? item.label : undefined}
+               >
+                 <div className={`flex items-center ${isCollapsed ? '' : 'gap-2 sm:gap-3'}`}>
+                   {ICONS[item.icon]}
+                   {!isCollapsed && <span className="font-medium text-xs sm:text-sm">{item.label}</span>}
+                 </div>
+                 {!isCollapsed && item.badge && (
+                   <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium flex items-center gap-1 ${
+                     item.badgeColor === 'red'
+                       ? 'bg-red-500/20 text-red-300'
+                       : item.badgeColor === 'amber'
+                       ? 'bg-amber-500/20 text-amber-300'
+                       : 'bg-cyan-500/20 text-cyan-300'
+                   }`}>
+                     {item.badgeColor === 'red' && <AlertCircle className="w-3 h-3" />}
+                     {item.badge}
+                   </span>
+                 )}
+                 {isCollapsed && item.badge && (
+                   <span className={`absolute top-1 right-1 w-2 h-2 rounded-full ${
+                     item.badgeColor === 'red' ? 'bg-red-500' : item.badgeColor === 'amber' ? 'bg-amber-500' : 'bg-cyan-500'
+                   }`} />
+                 )}
+               </button>
             );
           })}
         </div>

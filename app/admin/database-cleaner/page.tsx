@@ -20,6 +20,13 @@ export default function DatabaseCleaner() {
       // Eliminar la base de datos IndexedDB
       const deleteRequest = indexedDB.deleteDatabase('ConstructoraWM_OfflineDB');
 
+      // También limpiar datos de sesión antiguos de auth
+      localStorage.removeItem('localUser');
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('wm_auth_session');
+      localStorage.removeItem('wm_auth_hash');
+      localStorage.removeItem('wm_presupuesto_activo');
+
       deleteRequest.onsuccess = () => {
         console.log('✅ Base de datos eliminada exitosamente');
         setCleared(true);

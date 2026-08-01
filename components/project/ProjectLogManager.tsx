@@ -5,12 +5,15 @@ import { BookOpen, Plus, Edit, Trash2, Calendar, TrendingUp, AlertTriangle, Flag
 import { offlineDB, LocalProject, LocalProjectLog } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
+import { useProjectProgress } from '@/lib/hooks/useProjectProgress';
+import { useToast } from '@/components/ui/Toast';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 
 export default function ProjectLogManager() {
+  const { showToast } = useToast();
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [logs, setLogs] = useState<LocalProjectLog[]>([]);
   const [filteredLogs, setFilteredLogs] = useState<LocalProjectLog[]>([]);
@@ -30,6 +33,9 @@ export default function ProjectLogManager() {
     financial_progress: 0,
     created_by: '',
   });
+
+  // Hook compartido para sincronizar con ProgressTracker
+  const { updateProgress } = useProjectProgress(selectedProject);
 
   useEffect(() => {
     loadProjects();
@@ -116,8 +122,14 @@ export default function ProjectLogManager() {
         created_by: '',
       });
       loadLogs();
+      
+      // Actualizar progreso en ProgressTracker
+      if (selectedProject) {
+        updateProgress(selectedProject);
+      }
     } catch (error) {
       console.error('Error saving log:', error);
+      showToast('error', 'Error al guardar la entrada de bitácora');
     }
   };
 
@@ -133,8 +145,10 @@ export default function ProjectLogManager() {
       await offlineDB.projectLogs.delete(log.id!);
       setDeleteDialog({ show: false, log: null });
       loadLogs();
+      showToast('success', 'Entrada eliminada exitosamente');
     } catch (error) {
       console.error('Error deleting log:', error);
+      showToast('error', 'Error al eliminar la entrada de bitácora');
     }
   };
 

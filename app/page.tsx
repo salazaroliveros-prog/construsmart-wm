@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Menu, X } from 'lucide-react';
+import { motion } from 'framer-motion';
 import DualBrandHeader from '@/components/dashboard/DualBrandHeader';
 import DashboardNav from '@/components/dashboard/DashboardNav';
 import DashboardStats from '@/components/dashboard/DashboardStats';
@@ -52,23 +53,64 @@ interface RecentActivity {
 
 const CONTENT_HEIGHT = 'calc(100vh - 4rem - 3.25rem)';
 
+// Función para obtener el índice del tab actual
+const getTabIndex = (tabId: string): number => {
+  const index = NAVIGATION_TABS.findIndex(tab => tab.id === tabId);
+  return index >= 0 ? index : 0;
+};
+
+// Función para obtener el tab por índice
+const getTabById = (index: number): string => {
+  return NAVIGATION_TABS[Math.max(0, Math.min(index, NAVIGATION_TABS.length - 1))]?.id || 'dashboard';
+};
+
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const [isTabLoading, setIsTabLoading] = useState(false);
+  const [tabIndex, setTabIndex] = useState(getTabIndex('dashboard'));
 
   useScrollLock(isMobileMenuOpen && isMobile);
 
   useEffect(() => {
     setIsMounted(true);
     loadRecentActivity();
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setIsMobileMenuOpen(false);
+      }
+    };
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Actualizar tabIndex cuando cambie activeTab
+  useEffect(() => {
+    setTabIndex(getTabIndex(activeTab));
+  }, [activeTab]);
+
+useEffect(() => {
+  if (typeof window === 'undefined') return;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab) {
+      const valid = NAVIGATION_TABS.some(t => t.id === tab);
+      if (valid) {
+        setActiveTab(tab as (typeof NAVIGATION_TABS)[number]['id']);
+      }
+    }
+  } catch {
+    // ignore malformed URL
+  }
+}, [isMounted]);
 
   const loadRecentActivity = async () => {
     try {
@@ -106,6 +148,51 @@ export default function Dashboard() {
   };
 
   useRealtimeRefresh(['financial_transactions', 'projects'], loadRecentActivity);
+
+  // Gestos de swipe para navegación móvil (eventos touch nativos)
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isMobile || touchStartX.current === null || touchStartY.current === null) return;
+
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+    const threshold = 50; // Mínimo desplazamiento horizontal para cambiar de tab
+
+    // Solo activar swipe si el movimiento es principalmente horizontal
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > threshold) {
+      // Swipe izquierdo (siguiente tab)
+      if (deltaX < 0) {
+        const nextIndex = Math.min(tabIndex + 1, NAVIGATION_TABS.length - 1);
+        const nextTab = getTabById(nextIndex);
+        handleTabChange(nextTab);
+      }
+      // Swipe derecho (tab anterior)
+      else {
+        const prevIndex = Math.max(tabIndex - 1, 0);
+        const prevTab = getTabById(prevIndex);
+        handleTabChange(prevTab);
+      }
+    }
+
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+
+  const handleTabChange = (tabId: string) => {
+    if (tabId !== activeTab) {
+      setIsTabLoading(true);
+      setActiveTab(tabId);
+      setTabIndex(getTabIndex(tabId));
+      setTimeout(() => setIsTabLoading(false), 150);
+    }
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -156,33 +243,50 @@ export default function Dashboard() {
           </div>
         );
       case 'projects':
-        return <div className="h-full"><ProjectManager /></div>;
+        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><ProjectManager /></div>;
       case 'budgets':
-        return <div className="h-full"><BudgetCalculator /></div>;
+        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><BudgetCalculator /></div>;
       case 'progress':
-        return <div className="h-full"><ProgressTracker /></div>;
+        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><ProgressTracker /></div>;
       case 'finances':
-        return <div className="h-full"><FinanceManager /></div>;
+        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><FinanceManager /></div>;
       case 'payroll':
-        return <div className="h-full"><PayrollManager /></div>;
+        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><PayrollManager /></div>;
       case 'warehouse':
-        return <div className="h-full"><WarehouseManager /></div>;
+        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><WarehouseManager /></div>;
       case 'suppliers':
-        return <div className="h-full"><SupplierManager /></div>;
+        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><SupplierManager /></div>;
       case 'orders':
-        return <div className="h-full"><PurchaseOrderManager /></div>;
+        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><PurchaseOrderManager /></div>;
       case 'analytics':
-        return <div className="h-full"><AnalyticsDashboard /></div>;
+        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><AnalyticsDashboard /></div>;
       case 'clients':
-        return <div className="h-full"><ClientManager /></div>;
+        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><ClientManager /></div>;
       case 'logs':
-        return <div className="h-full"><ProjectLogManager /></div>;
+        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><ProjectLogManager /></div>;
       case 'settings':
-        return <div className="h-full"><SettingsManager /></div>;
+        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><SettingsManager /></div>;
       default:
         return null;
     }
   };
+
+  // Componente skeleton para transiciones de tab
+  const TabSkeleton = () => (
+    <div className="h-full w-full">
+      <div className="glass-panel rounded-xl p-4 h-full">
+        <div className="space-y-3">
+          <div className="h-4 bg-white/10 rounded w-1/3 animate-pulse" />
+          <div className="h-32 bg-white/5 rounded animate-pulse" />
+          <div className="space-y-2">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-12 bg-white/5 rounded animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <AuthGuard>
@@ -197,8 +301,15 @@ export default function Dashboard() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-3 sm:px-4 py-1.5 rounded-lg transition-all whitespace-nowrap text-xs sm:text-sm font-medium ${
+                  onClick={() => {
+                    if (tab.id !== activeTab) {
+                      setIsTabLoading(true);
+                      setActiveTab(tab.id);
+                      // Ocultar skeleton después de un delay corto para permitir que el componente se monte
+                      setTimeout(() => setIsTabLoading(false), 150);
+                    }
+                  }}
+                  className={`px-4 sm:px-4 py-3 sm:py-1.5 min-h-[44px] rounded-lg transition-all whitespace-nowrap text-xs sm:text-sm font-medium ${
                     isTabActive
                       ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/40 text-white'
                       : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
@@ -214,17 +325,17 @@ export default function Dashboard() {
 
         {/* Main content area */}
         <div className="flex flex-1 overflow-hidden relative">
-          {/* Sidebar - NO toggle arrow, always icon-only */}
+          {/* Sidebar */}
           <aside
             className={`sidebar-container fixed lg:relative flex-shrink-0 h-full lg:block transition-all duration-300 ease-in-out z-30 ${
               isMobileMenuOpen ? 'open w-64 left-0' : '-left-64 lg:left-0'
-            } lg:w-16`}
+            } ${!isMobile && !isSidebarCollapsed ? 'lg:w-64' : 'lg:w-16'}`}
             aria-label="Menú lateral de navegación"
           >
             <DashboardNav activeTab={activeTab} onTabChange={(tab) => {
               setActiveTab(tab);
               setIsMobileMenuOpen(false);
-            }} isCollapsed={true} />
+            }} isCollapsed={isMobile ? true : isSidebarCollapsed} />
           </aside>
 
           {/* Mobile overlay */}
@@ -236,29 +347,45 @@ export default function Dashboard() {
             />
           )}
 
-          {/* Main content - full width utilizando espacio disponible */}
-          <main
-            className="flex-1 overflow-y-auto overflow-anchor-none transition-all duration-300 lg:ml-16"
-            style={{ height: CONTENT_HEIGHT }}
-            id="main-content"
-            role="main"
-            aria-label="Contenido principal"
+        {/* Main content - full width utilizando espacio disponible */}
+        <main
+          className={`flex-1 overflow-y-auto overflow-anchor-none transition-all duration-300 ${!isMobile && !isSidebarCollapsed ? 'lg:ml-64' : 'lg:ml-16'}`}
+          style={{ height: CONTENT_HEIGHT }}
+          id="main-content"
+          role="main"
+          aria-label="Contenido principal"
+        >
+          <div 
+            className="h-full w-full px-3 sm:px-4 py-1.5"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
           >
-             <div className="h-full w-full px-3 sm:px-4 py-1.5">
-              {renderTabContent()}
-            </div>
-          </main>
+            {renderTabContent()}
+          </div>
+        </main>
         </div>
 
-        {/* Mobile menu button - bottom right, no fixed top position */}
+        {/* Mobile menu button - bottom right, respetando safe areas */}
         {isMounted && isMobile && (
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden fixed bottom-4 right-4 z-40 w-10 h-10 rounded-xl glass-button shadow-lg shadow-cyan-500/20"
+            className="lg:hidden fixed bottom-4 right-4 z-40 w-10 h-10 rounded-xl glass-button shadow-lg shadow-cyan-500/20 pb-safe"
             aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
             aria-expanded={isMobileMenuOpen}
           >
             {isMobileMenuOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
+          </button>
+        )}
+
+        {/* Desktop sidebar toggle button */}
+        {isMounted && !isMobile && (
+          <button
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="fixed top-20 left-4 z-40 w-8 h-8 rounded-lg glass-button shadow-lg shadow-cyan-500/20 flex items-center justify-center hover:bg-white/10 transition-colors"
+            aria-label={isSidebarCollapsed ? 'Expandir menú' : 'Colapsar menú'}
+            aria-expanded={!isSidebarCollapsed}
+          >
+            <Menu className="w-4 h-4 text-white" />
           </button>
         )}
       </div>

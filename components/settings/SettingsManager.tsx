@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-  Settings, Palette, Sliders, Eye, EyeOff, Zap, Moon, Sun, RotateCcw, Check, 
-  Building2, DollarSign, FileText, Monitor, Database, Sparkles, Upload, X 
+import {
+  Settings, Palette, Sliders, Eye, EyeOff, Zap, Moon, Sun, RotateCcw, Check,
+  Building2, DollarSign, FileText, Monitor, Database, Sparkles, Upload, X
 } from 'lucide-react';
-import { 
-  DEFAULT_UI_SETTINGS, COLOR_PALETTES, GLASS_PRESETS, UISettings, 
-  CompanySettings, FinancialSettings, ExportSettings 
+import {
+  DEFAULT_UI_SETTINGS, UISettings,
+  CompanySettings, FinancialSettings, ExportSettings,
+  COLOR_PALETTES, GLASS_PRESETS
 } from '@/lib/types/uiSettings';
+import { applyUISettings } from '@/lib/utils/applySettings';
 import { useToast } from '@/components/ui/Toast';
 
 export default function SettingsManager() {
@@ -108,7 +110,10 @@ export default function SettingsManager() {
   };
 
   const updateSetting = <K extends keyof UISettings>(key: K, value: UISettings[K]) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    setSettings(prev => {
+      const next: UISettings = { ...prev, [key]: value };
+      return next;
+    });
     setHasChanges(true);
   };
 

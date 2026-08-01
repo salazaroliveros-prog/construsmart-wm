@@ -1,80 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Building2, Calendar, Clock, User, Wifi, WifiOff } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import type { ChangeEvent } from 'react';
+import { Building2, Calendar, Clock, Wifi, WifiOff } from 'lucide-react';
+import UserAvatar from '@/components/ui/UserAvatar';
 import { useAuth } from '@/lib/auth/auth-context';
-
-// User Avatar Component
-function UserAvatar() {
-  const { user, getUserAvatar } = useAuth();
-  const [avatarUrl, setAvatarUrl] = useState<string>('');
-  const [showUpload, setShowUpload] = useState(false);
-
-  useEffect(() => {
-    // Check localStorage for custom avatar first
-    const customAvatar = localStorage.getItem('userAvatar');
-    if (customAvatar) {
-      setAvatarUrl(customAvatar);
-    } else {
-      setAvatarUrl(getUserAvatar());
-    }
-  }, [user, getUserAvatar]);
-
-  const handleAvatarUpload = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setAvatarUrl(base64String);
-        localStorage.setItem('userAvatar', base64String);
-        setShowUpload(false);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleAvatarClick = () => {
-    setShowUpload(true);
-  };
-
-  if (showUpload) {
-    return (
-      <div className="relative w-full h-full">
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleAvatarUpload}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-          title="Cambiar foto de perfil"
-        />
-        <div className="w-full h-full flex items-center justify-center bg-white/10">
-          <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-        </div>
-      </div>
-    );
-  }
-
-  if (avatarUrl) {
-    return (
-      <div
-        onClick={handleAvatarClick}
-        className="w-full h-full cursor-pointer"
-        title="Click para cambiar foto de perfil"
-      >
-        <img
-          src={avatarUrl}
-          alt={user?.name || 'Usuario'}
-          className="w-full h-full object-cover"
-        />
-      </div>
-    );
-  }
-
-  return <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />;
-}
 
 export default function DualBrandHeader() {
   const { user } = useAuth();
@@ -196,9 +125,9 @@ export default function DualBrandHeader() {
             </p>
           </div>
           <div className="relative">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 border-2 border-cyan-500/50 overflow-hidden">
-              <UserAvatar />
-            </div>
+        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 border-2 border-cyan-500/50 overflow-hidden">
+          <UserAvatar size="md" />
+        </div>
             <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-emerald-500 rounded-full border-2 border-slate-900" />
           </div>
         </div>
