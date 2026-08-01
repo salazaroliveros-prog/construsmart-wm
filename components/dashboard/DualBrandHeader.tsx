@@ -51,7 +51,7 @@ export default function DualBrandHeader() {
       <div className="flex items-center gap-3 sm:gap-4">
         <div className="flex items-center gap-2 sm:gap-3">
           {imgError ? (
-            <div className="h-10 w-10 sm:h-12 sm:w-auto sm:w-32 rounded-lg bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center">
+            <div className="h-10 w-10 sm:h-12 sm:w-32 rounded-lg bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center">
               <Building2 className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
             </div>
           ) : (
