@@ -1,20 +1,29 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import { TrendingUp, Calendar, DollarSign, BarChart3, Filter, Activity, Target, AlertCircle, Loader2, FolderOpen, ArrowRight, ZoomIn, ZoomOut, Settings } from 'lucide-react';
+import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
 import { offlineDB, LocalProject, LocalFinancialTransaction } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import EmptyState from '@/components/ui/EmptyState';
 
-// Dynamic import for recharts - heavy library loaded only on client
-const ChartComponents = dynamic(
-  () => import('recharts').then(mod => mod) as Promise<any>,
-  { 
-    ssr: false,
-    loading: () => <div className="flex items-center justify-center h-64 text-white/60">Cargando gráficos...</div>
-  }
-) as any;
+// Recharts is a client-only library. We use static imports (like DashboardCharts.tsx)
+// and rely on the isMounted guard to avoid SSR hydration mismatches.
+const ChartComponents = {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+};
 
 // ==================== TYPES & INTERFACES ====================
 

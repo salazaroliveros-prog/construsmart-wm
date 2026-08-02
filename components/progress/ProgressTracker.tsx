@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import { TrendingUp, TrendingDown, BarChart3, Activity, DollarSign, Target, Clock, AlertTriangle } from 'lucide-react';
+import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, Legend } from 'recharts';
 import { offlineDB, LocalProject, LocalFinancialTransaction } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
@@ -13,14 +13,20 @@ import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 
-// Dynamic import for recharts - heavy library loaded only on client
-const ChartComponents = dynamic(
-  () => import('recharts').then(mod => mod) as Promise<any>,
-  { 
-    ssr: false,
-    loading: () => <div className="flex items-center justify-center h-64 text-white/60">Cargando gráficos...</div>
-  }
-) as any;
+// Recharts is a client-only library. We use static imports (like DashboardCharts.tsx)
+// which is the correct pattern for recharts (no default export).
+const ChartComponents = {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip: ChartTooltip,
+  Legend,
+};
 
 interface ProgressMetrics {
   physicalProgress: number;      // % avance físico estimado
