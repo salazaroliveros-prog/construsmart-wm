@@ -41,7 +41,7 @@ export default function SyncProvider() {
     document.addEventListener('visibilitychange', onVisibilityChange);
 
     // Periodic sync as a safety net for offline mutations
-    const intervalId = window.setInterval(runSync, 60_000);
+    const intervalId = window.setInterval(runSync, 300_000);
 
     return () => {
       window.clearInterval(intervalId);

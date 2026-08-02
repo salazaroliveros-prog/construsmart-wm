@@ -80,7 +80,9 @@ if (isDevelopment) {
       caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
-            if (cacheName !== STATIC_CACHE && cacheName !== DATA_CACHE) {
+            if (cacheName !== STATIC_CACHE && 
+                cacheName !== DATA_CACHE && 
+                cacheName !== RUNTIME_CACHE) {
               console.log('[SW] Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }

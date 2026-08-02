@@ -1,11 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import dynamic from 'next/dynamic';
 import { TrendingUp, Calendar, DollarSign, BarChart3, Filter, Activity, Target, AlertCircle, Loader2, FolderOpen, ArrowRight, ZoomIn, ZoomOut, Settings } from 'lucide-react';
 import { offlineDB, LocalProject, LocalFinancialTransaction } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import EmptyState from '@/components/ui/EmptyState';
+
+// Dynamic import for recharts - heavy library loaded only on client
+const ChartComponents = dynamic(
+  () => import('recharts').then(mod => mod) as Promise<any>,
+  { 
+    ssr: false,
+    loading: () => <div className="flex items-center justify-center h-64 text-white/60">Cargando gráficos...</div>
+  }
+) as any;
 
 // ==================== TYPES & INTERFACES ====================
 
@@ -54,6 +63,7 @@ interface SummaryMetrics {
 export default function AnalyticsDashboard() {
   // ==================== STATE ====================
   const [projects, setProjects] = useState<LocalProject[]>([]);
+  const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('all');
   const [progressData, setProgressData] = useState<ProgressData[]>([]);
   const [ganttData, setGanttData] = useState<GanttData[]>([]);
@@ -77,6 +87,7 @@ export default function AnalyticsDashboard() {
   // ==================== EFFECTS ====================
   useEffect(() => {
     loadProjects();
+    loadTransactions();
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -135,8 +146,20 @@ export default function AnalyticsDashboard() {
     }
   };
 
+  const loadTransactions = async () => {
+    try {
+      const data = await offlineDB.financialTransactions.toArray();
+      setTransactions(data);
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+    }
+  };
+
   // Realtime refresh: recarga datos cuando cambios llegan de otros dispositivos
-  useRealtimeRefresh(['projects'], loadProjects);
+  useRealtimeRefresh(['projects', 'financial_transactions'], () => {
+    loadProjects();
+    loadTransactions();
+  });
 
   const loadAnalyticsData = async () => {
     if (!hasData) {
@@ -149,7 +172,7 @@ export default function AnalyticsDashboard() {
         ? projects
         : projects.filter(p => p.id === selectedProject);
 
-      // Generate progress data (S-Curve simulation)
+      // Generate progress data (S-Curve with real project data)
       const progress: ProgressData[] = generateProgressData(filteredProjects);
       setProgressData(progress);
 
@@ -189,83 +212,138 @@ export default function AnalyticsDashboard() {
     });
   };
 
-  // ==================== DATA GENERATION ====================
+  // ==================== DATA GENERATION (REAL DATA FROM DB) ====================
+  // Generates S-Curve data from real project dates and financial transactions
   const generateProgressData = (projects: LocalProject[]): ProgressData[] => {
     if (projects.length === 0) return [];
 
     const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    return months.map((month, index) => {
-      // Calculate actual progress based on project status and dates
-      const currentDate = new Date();
-      const year = currentDate.getFullYear();
-      const monthIndex = index + 1; // 1-12
-      const monthDate = new Date(year, monthIndex, 1);
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth(); // 0-11
 
+    // Para cada mes desde inicio de año hasta el mes actual
+    const monthsToShow = currentMonth + 1;
+    
+    return Array.from({ length: monthsToShow }, (_, index) => {
+      const monthDate = new Date(currentDate.getFullYear(), index, 1);
+      
       let totalProgrammed = 0;
       let totalReal = 0;
       let totalProjected = 0;
 
       projects.forEach(project => {
-        if (project.start_date && project.estimated_end_date) {
-          const startDate = new Date(project.start_date);
-          const endDate = new Date(project.estimated_end_date);
-          const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-          const elapsedDays = Math.ceil((monthDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (!project.start_date) return;
+        const startDate = new Date(project.start_date);
+        const endDate = project.estimated_end_date 
+          ? new Date(project.estimated_end_date)
+          : new Date(startDate.getTime() + (project.duration_days || 0) * 86400000);
+        const totalDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000));
+        
+        // Progreso programado basado en tiempo transcurrido
+        const elapsedDays = Math.ceil((monthDate.getTime() - startDate.getTime()) / 86400000);
+        const programmedProgress = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
 
-          const projectProgress = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
-
-          if (project.status === 'execution') {
-            totalProgrammed += projectProgress;
-            totalReal += projectProgress * 0.9; // Assume 90% efficiency
-            totalProjected += projectProgress * 1.05; // Slight projection variance
-          } else if (project.status === 'completed') {
-            totalProgrammed += 100;
-            totalReal += 100;
-            totalProjected += 100;
-          } else {
-            totalProgrammed += projectProgress;
-            totalReal += 0;
-            totalProjected += projectProgress;
-          }
+        if (project.status === 'completed') {
+          totalProgrammed += 100;
+          totalReal += 100;
+          totalProjected += 100;
+        } else if (project.status === 'execution') {
+          totalProgrammed += programmedProgress;
+          // Progreso real basado en avance financiero de transacciones reales
+          const projectTransactions = transactions.filter(t => t.project_id === project.id);
+          const totalExpenses = projectTransactions
+            .filter(t => t.type === 'expense')
+            .reduce((sum, t) => sum + (t.total_cost || 0), 0);
+          const budget = project.budget_total || project.total_budget || 0;
+          const financialReal = budget > 0 ? (totalExpenses / budget) * 100 : 0;
+          totalReal += Math.min(100, financialReal || programmedProgress * 0.5);
+          totalProjected += programmedProgress;
+        } else {
+          totalProgrammed += programmedProgress;
+          totalReal += 0;
+          totalProjected += programmedProgress;
         }
       });
 
-      const avgProgrammed = projects.length > 0 ? totalProgrammed / projects.length : 0;
-      const avgReal = projects.length > 0 ? totalReal / projects.length : 0;
-      const avgProjected = projects.length > 0 ? totalProjected / projects.length : 0;
-
       return {
-        month,
-        programmed: Math.min(100, avgProgrammed),
-        real: Math.min(100, avgReal),
-        projected: Math.min(100, avgProjected),
+        month: months[index],
+        programmed: Math.min(100, projects.length > 0 ? totalProgrammed / projects.length : 0),
+        real: Math.min(100, projects.length > 0 ? totalReal / projects.length : 0),
+        projected: Math.min(100, projects.length > 0 ? totalProjected / projects.length : 0),
       };
     });
   };
 
+  // Generates Gantt data from real project phases (based on duration and progress)
   const generateGanttData = (projects: LocalProject[]): GanttData[] => {
     if (projects.length === 0) return [];
 
     const activities: GanttData[] = [];
-    const phases = ['Planificación', 'Fundación', 'Estructura', 'Mampostería', 'Acabados', 'Entrega'];
+    const phases = [
+      { name: 'Planificación', weight: 0.10 },
+      { name: 'Fundación', weight: 0.15 },
+      { name: 'Estructura', weight: 0.30 },
+      { name: 'Mampostería', weight: 0.20 },
+      { name: 'Acabados', weight: 0.20 },
+      { name: 'Entrega', weight: 0.05 },
+    ];
 
     projects.forEach((project, projectIndex) => {
+      if (!project.start_date) return;
+      const startDate = new Date(project.start_date);
+      const totalDuration = project.duration_days || project.calculated_duration || 90;
+      
+      // Para proyectos completados: todas las fases al 100%
+      // Para proyectos en ejecución: progreso basado en tiempo transcurrido
+      // Para planificación: solo la primera fase
+      const currentDate = new Date();
+      const elapsedDays = Math.max(0, Math.ceil((currentDate.getTime() - startDate.getTime()) / 86400000));
+      const timeProgress = Math.min(100, (elapsedDays / totalDuration) * 100);
+      
+      let cumStartDay = 0;
       phases.forEach((phase, phaseIndex) => {
-        const baseId = (projectIndex * phases.length) + phaseIndex;
-        const baseProgress = Math.min(100, Math.random() * 100);
-        const status = baseProgress === 100 ? 'completed' :
-                       baseProgress > 50 ? 'in_progress' :
-                       baseProgress > 0 ? 'in_progress' : 'pending';
+        const phaseDuration = Math.max(1, Math.round(totalDuration * phase.weight));
+        const phaseStartDay = cumStartDay;
+        const phaseEndDay = cumStartDay + phaseDuration;
+        cumStartDay = phaseEndDay;
+
+        // Calcular progreso real de la fase
+        let phaseProgress = 0;
+        let status: GanttData['status'] = 'pending';
+
+        if (project.status === 'completed') {
+          phaseProgress = 100;
+          status = 'completed';
+        } else if (project.status === 'execution') {
+          if (timeProgress >= phaseEndDay / totalDuration * 100) {
+            phaseProgress = 100;
+            status = 'completed';
+          } else if (timeProgress >= phaseStartDay / totalDuration * 100) {
+            // Progreso parcial en fase actual
+            const phaseElapsed = (timeProgress - (phaseStartDay / totalDuration * 100)) / (phase.weight * 100) * 100;
+            phaseProgress = Math.min(100, Math.max(0, phaseElapsed));
+            status = 'in_progress';
+          } else {
+            phaseProgress = 0;
+            status = 'pending';
+          }
+        } else if (project.status === 'planning' && phaseIndex === 0) {
+          phaseProgress = 50;
+          status = 'in_progress';
+        }
+
+        const activityStart = new Date(startDate.getTime() + phaseStartDay * 86400000);
+        const activityEnd = new Date(startDate.getTime() + phaseEndDay * 86400000);
 
         activities.push({
           id: `${project.id}-${phaseIndex}`,
-          activity: `${phase} - ${project.name.substring(0, 15)}...`,
-          start: `${(baseId * 7 + 1).toString().padStart(2, '0')}/${new Date().getFullYear()}`,
-          end: `${(baseId * 7 + 14).toString().padStart(2, '0')}/${new Date().getFullYear()}`,
-          progress: baseProgress,
-          phase,
-          status: status as any,
-          dependency: baseId > 0 ? `${project.id}-${phaseIndex - 1}` : undefined,
+          activity: `${phase.name} - ${project.name.substring(0, 15)}...`,
+          start: `${activityStart.getDate().toString().padStart(2, '0')}/${(activityStart.getMonth() + 1).toString().padStart(2, '0')}/${activityStart.getFullYear()}`,
+          end: `${activityEnd.getDate().toString().padStart(2, '0')}/${(activityEnd.getMonth() + 1).toString().padStart(2, '0')}/${activityEnd.getFullYear()}`,
+          progress: phaseProgress,
+          phase: phase.name,
+          status,
+          dependency: phaseIndex > 0 ? `${project.id}-${phaseIndex - 1}` : undefined,
         });
       });
     });
@@ -273,6 +351,7 @@ export default function AnalyticsDashboard() {
     return activities;
   };
 
+  // Generates advance data from real project status and transactions
   const generateAdvanceData = (projects: LocalProject[]): AdvanceData[] => {
     if (projects.length === 0) return [];
 
@@ -280,25 +359,29 @@ export default function AnalyticsDashboard() {
       let physical = 0;
       let financial = 0;
 
-      if (project.start_date && project.estimated_end_date) {
+      if (project.status === 'completed') {
+        physical = 100;
+        financial = 100;
+      } else if (project.start_date) {
         const startDate = new Date(project.start_date);
-        const endDate = new Date(project.estimated_end_date);
+        const endDate = project.estimated_end_date 
+          ? new Date(project.estimated_end_date)
+          : new Date(startDate.getTime() + (project.duration_days || 0) * 86400000);
         const currentDate = new Date();
-        const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-        const elapsedDays = Math.ceil((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        const totalDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000));
+        const elapsedDays = Math.max(0, Math.ceil((currentDate.getTime() - startDate.getTime()) / 86400000));
 
-        const timeProgress = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
+        physical = project.status === 'execution' 
+          ? Math.min(100, (elapsedDays / totalDays) * 100)
+          : 0;
 
-        if (project.status === 'execution') {
-          physical = timeProgress * 0.95; // Assume 95% efficiency
-          financial = timeProgress * 0.9; // Financial typically lags slightly
-        } else if (project.status === 'completed') {
-          physical = 100;
-          financial = 100;
-        } else {
-          physical = 0;
-          financial = 0;
-        }
+        // Avance financiero real basado en transacciones
+        const projectTransactions = transactions.filter(t => t.project_id === project.id);
+        const totalExpenses = projectTransactions
+          .filter(t => t.type === 'expense')
+          .reduce((sum, t) => sum + (t.total_cost || 0), 0);
+        const budget = project.budget_total || project.total_budget || 0;
+        financial = budget > 0 ? Math.min(100, (totalExpenses / budget) * 100) : 0;
       }
 
       return {
@@ -309,6 +392,7 @@ export default function AnalyticsDashboard() {
     });
   };
 
+  // Generates budget comparison from real budget data and transactions
   const generateBudgetComparison = (projects: LocalProject[]): BudgetComparison[] => {
     if (projects.length === 0) return [];
 
@@ -318,28 +402,25 @@ export default function AnalyticsDashboard() {
       let totalActual = 0;
 
       projects.forEach(project => {
-        if (project.budget_total) {
-          // Simple distribution by category (in real app, this would come from budget breakdown)
-          const categoryFactor = {
-            'Materiales': 0.4,
-            'Mano de Obra': 0.3,
-            'Equipo': 0.15,
-            'Subcontratos': 0.1,
-            'Otros': 0.05,
-          };
+        if (!project.budget_total) return;
+        // Distribution by category
+        const categoryFactor: Record<string, number> = {
+          'Materiales': 0.4,
+          'Mano de Obra': 0.3,
+          'Equipo': 0.15,
+          'Subcontratos': 0.1,
+          'Otros': 0.05,
+        };
 
-          const categoryBudgeted = project.budget_total * categoryFactor[category as keyof typeof categoryFactor];
-          totalBudgeted += categoryBudgeted;
+        const categoryBudgeted = project.budget_total * (categoryFactor[category] || 0.2);
+        totalBudgeted += categoryBudgeted;
 
-          // Actual is based on execution status
-          if (project.status === 'execution') {
-            totalActual += categoryBudgeted * 0.85; // 85% spent on average
-          } else if (project.status === 'completed') {
-            totalActual += categoryBudgeted;
-          } else {
-            totalActual += 0;
-          }
-        }
+        // Actual spending from real transactions filtered by category
+        const projectTransactions = transactions.filter(t => 
+          t.project_id === project.id && t.type === 'expense' && t.category === category.toLowerCase()
+        );
+        const actualSpent = projectTransactions.reduce((sum, t) => sum + (t.total_cost || 0), 0);
+        totalActual += actualSpent > 0 ? actualSpent : 0;
       });
 
       return {
@@ -371,22 +452,33 @@ export default function AnalyticsDashboard() {
     let totalFinancial = 0;
 
     projects.forEach(project => {
-      if (project.start_date && project.estimated_end_date) {
-        const startDate = new Date(project.start_date);
-        const endDate = new Date(project.estimated_end_date);
-        const currentDate = new Date();
-        const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-        const elapsedDays = Math.ceil((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (project.status === 'completed') {
+        totalPhysical += 100;
+        totalFinancial += 100;
+        return;
+      }
 
-        const timeProgress = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
+      if (!project.start_date) return;
+      const startDate = new Date(project.start_date);
+      const endDate = project.estimated_end_date 
+        ? new Date(project.estimated_end_date)
+        : new Date(startDate.getTime() + (project.duration_days || 0) * 86400000);
+      const currentDate = new Date();
+      const totalDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000));
+      const elapsedDays = Math.max(0, Math.ceil((currentDate.getTime() - startDate.getTime()) / 86400000));
 
-        if (project.status === 'execution') {
-          totalPhysical += timeProgress * 0.95;
-          totalFinancial += timeProgress * 0.9;
-        } else if (project.status === 'completed') {
-          totalPhysical += 100;
-          totalFinancial += 100;
-        }
+      const timeProgress = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
+
+      if (project.status === 'execution') {
+        totalPhysical += timeProgress;
+
+        // Avance financiero real desde transacciones
+        const projectTransactions = transactions.filter(t => t.project_id === project.id);
+        const totalExpenses = projectTransactions
+          .filter(t => t.type === 'expense')
+          .reduce((sum, t) => sum + (t.total_cost || 0), 0);
+        const budget = project.budget_total || project.total_budget || 0;
+        totalFinancial += budget > 0 ? Math.min(100, (totalExpenses / budget) * 100) : 0;
       }
     });
 
@@ -522,21 +614,21 @@ export default function AnalyticsDashboard() {
             Curva S de Avance
           </h2>
           <div className="h-64 sm:h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={progressData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="month" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} />
-                <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} />
-                <Tooltip
+            <ChartComponents.ResponsiveContainer width="100%" height="100%">
+              <ChartComponents.LineChart data={progressData}>
+                <ChartComponents.CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <ChartComponents.XAxis dataKey="month" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} />
+                <ChartComponents.YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} />
+                <ChartComponents.Tooltip
                   contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
                   itemStyle={{ color: 'white' }}
                 />
-                <Legend />
-                <Line type="monotone" dataKey="programmed" stroke="#06b6d4" strokeWidth={2} name="Programado" />
-                <Line type="monotone" dataKey="real" stroke="#10b981" strokeWidth={2} name="Real" />
-                <Line type="monotone" dataKey="projected" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" name="Proyectado" />
-              </LineChart>
-            </ResponsiveContainer>
+                <ChartComponents.Legend />
+                <ChartComponents.Line type="monotone" dataKey="programmed" stroke="#06b6d4" strokeWidth={2} name="Programado" />
+                <ChartComponents.Line type="monotone" dataKey="real" stroke="#10b981" strokeWidth={2} name="Real" />
+                <ChartComponents.Line type="monotone" dataKey="projected" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" name="Proyectado" />
+              </ChartComponents.LineChart>
+            </ChartComponents.ResponsiveContainer>
           </div>
         </div>
 
@@ -547,20 +639,20 @@ export default function AnalyticsDashboard() {
             Avance Físico vs Financiero
           </h2>
           <div className="h-64 sm:h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={advanceData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="project" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} angle={-45} textAnchor="end" height={60} />
-                <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} />
-                <Tooltip
+            <ChartComponents.ResponsiveContainer width="100%" height="100%">
+              <ChartComponents.BarChart data={advanceData}>
+                <ChartComponents.CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <ChartComponents.XAxis dataKey="project" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} angle={-45} textAnchor="end" height={60} />
+                <ChartComponents.YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} />
+                <ChartComponents.Tooltip
                   contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
                   itemStyle={{ color: 'white' }}
                 />
-                <Legend />
-                <Bar dataKey="physical" fill="#06b6d4" name="Físico" />
-                <Bar dataKey="financial" fill="#10b981" name="Financiero" />
-              </BarChart>
-            </ResponsiveContainer>
+                <ChartComponents.Legend />
+                <ChartComponents.Bar dataKey="physical" fill="#06b6d4" name="Físico" />
+                <ChartComponents.Bar dataKey="financial" fill="#10b981" name="Financiero" />
+              </ChartComponents.BarChart>
+            </ChartComponents.ResponsiveContainer>
           </div>
         </div>
       </div>
@@ -572,20 +664,20 @@ export default function AnalyticsDashboard() {
           Presupuestado vs Real
         </h2>
         <div className="h-64 sm:h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={budgetComparison}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-              <XAxis dataKey="category" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} />
-              <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} />
-              <Tooltip
+          <ChartComponents.ResponsiveContainer width="100%" height="100%">
+            <ChartComponents.BarChart data={budgetComparison}>
+              <ChartComponents.CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+              <ChartComponents.XAxis dataKey="category" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} />
+              <ChartComponents.YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} />
+              <ChartComponents.Tooltip
                 contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
                 itemStyle={{ color: 'white' }}
               />
-              <Legend />
-              <Bar dataKey="budgeted" fill="#06b6d4" name="Presupuestado" />
-              <Bar dataKey="actual" fill="#10b981" name="Real" />
-            </BarChart>
-          </ResponsiveContainer>
+              <ChartComponents.Legend />
+              <ChartComponents.Bar dataKey="budgeted" fill="#06b6d4" name="Presupuestado" />
+              <ChartComponents.Bar dataKey="actual" fill="#10b981" name="Real" />
+            </ChartComponents.BarChart>
+          </ChartComponents.ResponsiveContainer>
         </div>
       </div>
 
@@ -610,15 +702,14 @@ export default function AnalyticsDashboard() {
             </thead>
             <tbody>
               {projects.map((project) => {
-                const physicalProgress = project.status === 'completed' ? 100 :
-                                   project.status === 'execution' ? Math.floor(Math.random() * 80 + 20) :
-                                   project.status === 'paused' ? Math.floor(Math.random() * 50) : 0;
-                const financialProgress = project.status === 'completed' ? 100 :
-                                    project.status === 'execution' ? Math.floor(physicalProgress * 0.9) :
-                                    0;
-                const budget = project.budget_total || 0;
+                const advance = generateAdvanceData([project])[0];
+                const physicalProgress = advance?.physical || 0;
+                const financialProgress = advance?.financial || 0;
+                const budget = project.budget_total || project.total_budget || 0;
                 const income = budget * (financialProgress / 100);
-                const expenses = budget * (financialProgress / 100) * 0.85;
+                const expenses = transactions
+                  .filter(t => t.project_id === project.id && t.type === 'expense')
+                  .reduce((sum, t) => sum + (t.total_cost || 0), 0);
                 const pending = budget - income;
                 
                 return (

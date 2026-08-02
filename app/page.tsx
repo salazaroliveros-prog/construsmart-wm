@@ -139,9 +139,7 @@ useEffect(() => {
         });
       });
 
-      setRecentActivity(
-        activities.sort(() => Math.random() - 0.5).slice(0, 4)
-      );
+      setRecentActivity(activities.slice(0, 4));
     } catch {
       setRecentActivity([]);
     }

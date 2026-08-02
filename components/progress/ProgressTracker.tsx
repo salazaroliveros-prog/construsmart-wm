@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { TrendingUp, TrendingDown, BarChart3, Activity, DollarSign, Target, Clock, AlertTriangle } from 'lucide-react';
 import { offlineDB, LocalProject, LocalFinancialTransaction } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
@@ -11,7 +12,15 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
+
+// Dynamic import for recharts - heavy library loaded only on client
+const ChartComponents = dynamic(
+  () => import('recharts').then(mod => mod) as Promise<any>,
+  { 
+    ssr: false,
+    loading: () => <div className="flex items-center justify-center h-64 text-white/60">Cargando gráficos...</div>
+  }
+) as any;
 
 interface ProgressMetrics {
   physicalProgress: number;      // % avance físico estimado
@@ -389,18 +398,18 @@ export default function ProgressTracker() {
 
             {/* Budget Breakdown Chart */}
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={budgetBreakdownData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                  <XAxis dataKey="name" stroke="rgba(255,255,255,0.6)" />
-                  <YAxis stroke="rgba(255,255,255,0.6)" tickFormatter={(value) => `Q${(value / 1000).toFixed(0)}k`} />
-                  <RechartsTooltip 
+              <ChartComponents.ResponsiveContainer width="100%" height="100%">
+                <ChartComponents.BarChart data={budgetBreakdownData}>
+                  <ChartComponents.CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                  <ChartComponents.XAxis dataKey="name" stroke="rgba(255,255,255,0.6)" />
+                  <ChartComponents.YAxis stroke="rgba(255,255,255,0.6)" tickFormatter={(value: any) => `Q${(value / 1000).toFixed(0)}k`} />
+                  <ChartComponents.Tooltip 
                     contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.2)' }}
                     formatter={(value: any) => value ? formatCurrency(value) : ''}
                   />
-                  <Bar dataKey="value" fill="#3b82f6" />
-                </BarChart>
-              </ResponsiveContainer>
+                  <ChartComponents.Bar dataKey="value" fill="#3b82f6" />
+                </ChartComponents.BarChart>
+              </ChartComponents.ResponsiveContainer>
             </div>
           </div>
 
@@ -412,19 +421,19 @@ export default function ProgressTracker() {
             </h2>
             
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                  <XAxis dataKey="name" stroke="rgba(255,255,255,0.6)" />
-                  <YAxis stroke="rgba(255,255,255,0.6)" domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
-                  <RechartsTooltip 
+              <ChartComponents.ResponsiveContainer width="100%" height="100%">
+                <ChartComponents.LineChart data={chartData}>
+                  <ChartComponents.CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                  <ChartComponents.XAxis dataKey="name" stroke="rgba(255,255,255,0.6)" />
+                  <ChartComponents.YAxis stroke="rgba(255,255,255,0.6)" domain={[0, 100]} tickFormatter={(value: any) => `${value}%`} />
+                  <ChartComponents.Tooltip 
                     contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.2)' }}
                     formatter={(value: any) => value ? `${value.toFixed(1)}%` : ''}
                   />
-                  <Legend />
-                  <Line type="monotone" dataKey="value" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981', r: 4 }} />
-                </LineChart>
-              </ResponsiveContainer>
+                  <ChartComponents.Legend />
+                  <ChartComponents.Line type="monotone" dataKey="value" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981', r: 4 }} />
+                </ChartComponents.LineChart>
+              </ChartComponents.ResponsiveContainer>
             </div>
           </div>
 

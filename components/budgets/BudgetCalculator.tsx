@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { Calculator, Plus, Trash2, Save, Download, FolderOpen, Building2, TrendingUp, Map } from 'lucide-react';
 import { calculateSlab, SlabDimensions, calculateSlabCost, SlabCostParams } from '@/lib/calculators/slabCalculators';
 import { 
@@ -27,10 +28,15 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
-import PDFGenerator from '@/components/pdf/PDFGenerator';
 import CSVGenerator from '@/components/csv/CSVGenerator';
 import RenglonAccordion from '@/components/budgets/RenglonAccordion';
 import { RenglonCalculator, ProjectRenglon, ProjectTimeImpact } from '@/lib/calculators/renglonCalculator';
+
+// Dynamic imports for heavy components
+const PDFGenerator = dynamic(() => import('@/components/pdf/PDFGenerator'), {
+  ssr: false,
+  loading: () => <div className="text-white/60 text-sm">Cargando visor PDF...</div>
+});
 
 interface BudgetItem {
   id: string;

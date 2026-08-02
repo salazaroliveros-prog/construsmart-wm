@@ -1,12 +1,21 @@
 'use client';
 
 import React from 'react';
+import dynamic from 'next/dynamic';
 import { PieChart as PieChartIcon, BarChart3, TrendingUp } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { useFinancialSettings, formatCurrency } from '@/lib/hooks/useBusinessSettings';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { offlineDB, LocalProject, LocalFinancialTransaction } from '@/lib/db/offlineStore';
 import { useState, useEffect } from 'react';
+
+// Dynamic import for recharts - heavy library loaded only on client
+const ChartComponents = dynamic(
+  () => import('recharts').then(mod => mod) as Promise<any>,
+  { 
+    ssr: false,
+    loading: () => <div className="flex items-center justify-center h-full text-white/60">Cargando gráficos...</div>
+  }
+) as any;
 
 export default function DashboardCharts() {
   const { financial } = useFinancialSettings();
@@ -83,17 +92,17 @@ export default function DashboardCharts() {
           Estado de Proyectos
         </h3>
         <div className="h-[calc(100%-1.25rem)]">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie data={projectStatusData} cx="50%" cy="50%" innerRadius={24} outerRadius={42} paddingAngle={3} dataKey="value">
+          <ChartComponents.ResponsiveContainer width="100%" height="100%">
+            <ChartComponents.PieChart>
+              <ChartComponents.Pie data={projectStatusData} cx="50%" cy="50%" innerRadius={24} outerRadius={42} paddingAngle={3} dataKey="value">
                 {projectStatusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                  <ChartComponents.Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
-              </Pie>
-              <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px' }} itemStyle={{ color: 'white' }} formatter={(value) => [value, '']} labelStyle={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px' }} />
-              <Legend iconSize={8} layout="vertical" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '9px', color: 'rgba(255,255,255,0.6)', lineHeight: '12px' }} />
-            </PieChart>
-          </ResponsiveContainer>
+              </ChartComponents.Pie>
+              <ChartComponents.Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px' }} itemStyle={{ color: 'white' }} formatter={(value: any) => [value, '']} labelStyle={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px' }} />
+              <ChartComponents.Legend iconSize={8} layout="vertical" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '9px', color: 'rgba(255,255,255,0.6)', lineHeight: '12px' }} />
+            </ChartComponents.PieChart>
+          </ChartComponents.ResponsiveContainer>
         </div>
       </div>
 
@@ -103,15 +112,15 @@ export default function DashboardCharts() {
           Distribución de Gastos
         </h3>
         <div className="h-[calc(100%-1.25rem)]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={categoryData} layout="vertical" barGap={0} barCategoryGap={3}>
-              <CartesianGrid strokeDasharray="1 1" stroke="rgba(255,255,255,0.1)" />
-              <XAxis dataKey="name" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 8 }} />
-              <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 8 }} />
-              <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px' }} itemStyle={{ color: 'white' }} formatter={(value) => formatCurrency(Number(value) || 0, financial)} />
-              <Bar dataKey="value" fill="#10b981" radius={[2, 2, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <ChartComponents.ResponsiveContainer width="100%" height="100%">
+            <ChartComponents.BarChart data={categoryData} layout="vertical" barGap={0} barCategoryGap={3}>
+              <ChartComponents.CartesianGrid strokeDasharray="1 1" stroke="rgba(255,255,255,0.1)" />
+              <ChartComponents.XAxis dataKey="name" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 8 }} />
+              <ChartComponents.YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 8 }} />
+              <ChartComponents.Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px' }} itemStyle={{ color: 'white' }} formatter={(value: any) => formatCurrency(Number(value) || 0, financial)} />
+              <ChartComponents.Bar dataKey="value" fill="#10b981" radius={[2, 2, 0, 0]} />
+            </ChartComponents.BarChart>
+          </ChartComponents.ResponsiveContainer>
         </div>
       </div>
 
@@ -121,8 +130,8 @@ export default function DashboardCharts() {
           Flujo Financiero (6 meses)
         </h3>
         <div className="h-[calc(100%-1.25rem)]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={[
+          <ChartComponents.ResponsiveContainer width="100%" height="100%">
+            <ChartComponents.LineChart data={[
               { month: 'Ene', income: totalIncome * 0.15, expense: totalSpent * 0.15 },
               { month: 'Feb', income: totalIncome * 0.20, expense: totalSpent * 0.20 },
               { month: 'Mar', income: totalIncome * 0.18, expense: totalSpent * 0.18 },
@@ -130,15 +139,15 @@ export default function DashboardCharts() {
               { month: 'May', income: totalIncome * 0.25, expense: totalSpent * 0.25 },
               { month: 'Jun', income: totalIncome, expense: totalSpent },
             ]}>
-              <CartesianGrid strokeDasharray="1 1" stroke="rgba(255,255,255,0.1)" />
-              <XAxis dataKey="month" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 8 }} />
-              <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 8 }} />
-              <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px' }} itemStyle={{ color: 'white' }} formatter={(value) => formatCurrency(Number(value) || 0, financial)} />
-              <Legend iconSize={8} layout="vertical" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '9px', color: 'rgba(255,255,255,0.6)', lineHeight: '12px' }} />
-              <Line type="monotone" dataKey="income" stroke="#10b981" strokeWidth={1.5} name="Ingresos" dot={{ fill: '#10b981', r: 2.5 }} />
-              <Line type="monotone" dataKey="expense" stroke="#ef4444" strokeWidth={1.5} name="Gastos" dot={{ fill: '#ef4444', r: 2.5 }} />
-            </LineChart>
-          </ResponsiveContainer>
+              <ChartComponents.CartesianGrid strokeDasharray="1 1" stroke="rgba(255,255,255,0.1)" />
+              <ChartComponents.XAxis dataKey="month" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 8 }} />
+              <ChartComponents.YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 8 }} />
+              <ChartComponents.Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px' }} itemStyle={{ color: 'white' }} formatter={(value: any) => formatCurrency(Number(value) || 0, financial)} />
+              <ChartComponents.Legend iconSize={8} layout="vertical" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '9px', color: 'rgba(255,255,255,0.6)', lineHeight: '12px' }} />
+              <ChartComponents.Line type="monotone" dataKey="income" stroke="#10b981" strokeWidth={1.5} name="Ingresos" dot={{ fill: '#10b981', r: 2.5 }} />
+              <ChartComponents.Line type="monotone" dataKey="expense" stroke="#ef4444" strokeWidth={1.5} name="Gastos" dot={{ fill: '#ef4444', r: 2.5 }} />
+            </ChartComponents.LineChart>
+          </ChartComponents.ResponsiveContainer>
         </div>
       </div>
     </div>

@@ -8,9 +8,10 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 import { Download } from 'lucide-react';
-import { useBusinessSettings, formatCurrency, formatDate } from '@/lib/hooks/useBusinessSettings';
+import { useBusinessSettings, formatCurrency } from '@/lib/hooks/useBusinessSettings';
 
 interface BudgetItem {
   code: string;

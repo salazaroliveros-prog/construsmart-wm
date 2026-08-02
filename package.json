@@ -11,6 +11,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "start:prod": "node scripts/start-production.js",
+    "start:pm2": "pm2 start scripts/start-production.js --name \"erp-wm\" -i max",
     "type-check": "tsc --noEmit",
     "clear-db": "tsx scripts/clear-local-db.ts"
   },
