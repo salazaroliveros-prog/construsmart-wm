@@ -50,7 +50,7 @@ export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) 
   }, []);
 
   return (
-    <header className="glass-panel border-b border-white/10 px-3 sm:px-6 py-2.5 sm:py-4 flex items-center justify-between fixed top-0 left-0 right-0 z-30 lg:relative lg:top-auto lg:left-auto lg:right-auto">
+<header className="glass-panel border-b border-white/10 px-3 sm:px-6 py-2.5 sm:py-4 flex items-center justify-between flex-shrink-0">
       <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center flex-shrink-0">

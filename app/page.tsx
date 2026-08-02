@@ -209,17 +209,17 @@ export default function Dashboard() {
 
   // (handleTabChange se define arriba con useCallback)
 
-  const renderTabContent = () => {
+const renderTabContent = () => {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <div className="flex flex-col gap-3 h-full">
-            {/* KPIs Full width - centrado */}
+          <div className="flex flex-col gap-3 min-h-full">
+            {/* KPIs Full width */}
             <div className="w-full">
               <DashboardStats />
             </div>
 
-            {/* Grid: Left (overview + activity) | Right (matrix + calendar) */}
+            {/* Grid: Left (overview + activity) | Right (charts + calendar) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 w-full">
               {/* Left column */}
               <div className="flex flex-col gap-3">
@@ -250,7 +250,7 @@ export default function Dashboard() {
               {/* Right column: charts + calendar */}
               <div className="flex flex-col gap-3">
                 <DashboardCharts />
-                <div className="flex-1">
+                <div className="min-h-[250px]">
                   <InteractiveCalendar />
                 </div>
               </div>
@@ -303,12 +303,11 @@ export default function Dashboard() {
     </div>
   );
 
-  return (
+return (
     <AuthGuard>
-      <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 font-sans">
+      <div className="flex flex-col h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 font-sans overflow-hidden">
         <DualBrandHeader />
         <RealtimeProvider activeTab={activeTab} />
-
 
         {/* Tab navigation - right below header, centered */}
         <Suspense fallback={<div className="py-2 text-white/60 text-xs text-center">Cargando…</div>}>
@@ -341,68 +340,67 @@ export default function Dashboard() {
           </nav>
         </Suspense>
 
-        {/* Main content area */}
-        <div className="flex flex-1 relative">
+        {/* Main content area - flex-1 with overflow hidden */}
+        <div className="flex flex-1 relative min-h-0">
           {/* Sidebar */}
           <aside
-            className={`sidebar-container fixed lg:relative flex-shrink-0 h-full lg:block transition-all duration-300 ease-in-out z-30 ${
-              isMobileMenuOpen ? 'open w-64 left-0' : '-left-64 lg:left-0'
-            } ${!isMobile && !isSidebarCollapsed ? 'lg:w-64' : 'lg:w-16'}`}
+            className={`sidebar-container flex-shrink-0 h-full transition-all duration-300 ease-in-out z-30 ${
+              isMobile ? (
+                // Mobile: absolute positioning
+                `fixed top-0 left-0 h-full ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`
+              ) : (
+                // Desktop: relative with width transition
+                isSidebarCollapsed ? 'w-16' : 'w-64'
+              )
+            }`}
             aria-label="Menú lateral de navegación"
           >
-            <DashboardNav activeTab={activeTab} onTabChange={(tab) => {
-              setActiveTab(tab);
-              setIsMobileMenuOpen(false);
-            }} isCollapsed={isMobile ? true : isSidebarCollapsed} />
+            <DashboardNav
+              activeTab={activeTab}
+              onTabChange={(tab) => {
+                setActiveTab(tab);
+                setIsMobileMenuOpen(false);
+              }}
+              isCollapsed={isMobile ? false : isSidebarCollapsed}
+              onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            />
           </aside>
 
           {/* Mobile overlay */}
           {isMounted && isMobile && isMobileMenuOpen && (
             <div
-              className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+              className="fixed inset-0 bg-black/50 z-20"
               onClick={() => setIsMobileMenuOpen(false)}
               aria-hidden="true"
             />
           )}
 
-        {/* Main content - full width con scroll libre y automático */}
-        <main
-          className={`flex-1 transition-all duration-300 ${!isMobile && !isSidebarCollapsed ? 'lg:ml-64' : 'lg:ml-16'}`}
-          id="main-content"
-          role="main"
-          aria-label="Contenido principal"
-        >
-          <div 
-            className="w-full px-3 sm:px-4 py-1.5"
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
+          {/* Main content - full width con scroll inteligente */}
+          <main
+            className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden"
+            id="main-content"
+            role="main"
+            aria-label="Contenido principal"
           >
-            {renderTabContent()}
-          </div>
-        </main>
+            <div
+              className="w-full px-2 sm:px-3 py-2 min-h-full"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
+              {renderTabContent()}
+            </div>
+          </main>
         </div>
 
-        {/* Mobile menu button - bottom right, respetando safe areas */}
+        {/* Mobile menu button - bottom right, solo visible en móvil */}
         {isMounted && isMobile && (
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden fixed bottom-4 right-4 z-40 w-10 h-10 rounded-xl glass-button shadow-lg shadow-cyan-500/20 pb-safe"
+            className="fixed bottom-4 right-4 z-40 w-10 h-10 rounded-xl glass-button shadow-lg shadow-cyan-500/20"
             aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
             aria-expanded={isMobileMenuOpen}
           >
             {isMobileMenuOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
-          </button>
-        )}
-
-        {/* Desktop sidebar toggle button */}
-        {isMounted && !isMobile && (
-          <button
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="fixed top-20 left-4 z-40 w-8 h-8 rounded-lg glass-button shadow-lg shadow-cyan-500/20 flex items-center justify-center hover:bg-white/10 transition-colors"
-            aria-label={isSidebarCollapsed ? 'Expandir menú' : 'Colapsar menú'}
-            aria-expanded={!isSidebarCollapsed}
-          >
-            <Menu className="w-4 h-4 text-white" />
           </button>
         )}
       </div>

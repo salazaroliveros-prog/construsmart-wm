@@ -37,6 +37,7 @@ interface DashboardNavProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 const ICONS: Record<string, React.ReactNode> = {
@@ -110,7 +111,7 @@ const NavButton = memo(({
   );
 });
 
-export default function DashboardNav({ activeTab, onTabChange, isCollapsed = false }: DashboardNavProps) {
+export default function DashboardNav({ activeTab, onTabChange, isCollapsed = false, onToggleCollapse }: DashboardNavProps) {
   const { user, signOut } = useAuth();
   const { company } = useCompanySettings();
   const router = useRouter();
@@ -168,20 +169,24 @@ export default function DashboardNav({ activeTab, onTabChange, isCollapsed = fal
     <nav className={`glass-panel border-r border-white/10 flex flex-col h-full z-40 transition-all duration-300 ${
       isCollapsed ? 'w-16' : 'w-64'
     }`} aria-label="Navegación principal">
-      {/* Brand Section */}
-      <div className={`px-3 sm:px-4 py-3 sm:py-4 border-b border-white/10 ${isCollapsed ? 'flex justify-center' : ''}`}>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center flex-shrink-0">
-            <LayoutDashboard className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+{/* Brand Section */}
+        <div className={`px-3 sm:px-4 py-3 sm:py-4 border-b border-white/10 ${isCollapsed ? 'flex justify-center' : ''}`}>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={onToggleCollapse}
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center flex-shrink-0 hover:opacity-80 transition-opacity"
+              title={isCollapsed ? 'Expandir menú lateral' : 'Colapsar menú lateral'}
+            >
+              <LayoutDashboard className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            </button>
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0">
+                <h2 className="text-white font-bold text-sm sm:text-lg truncate">{company.shortName || company.name}</h2>
+                <p className="text-[10px] sm:text-xs text-cyan-400">Sistema ERP</p>
+              </div>
+            )}
           </div>
-          {!isCollapsed && (
-            <div className="flex-1 min-w-0">
-              <h2 className="text-white font-bold text-sm sm:text-lg truncate">{company.shortName || company.name}</h2>
-              <p className="text-[10px] sm:text-xs text-cyan-400">Sistema ERP</p>
-            </div>
-          )}
         </div>
-      </div>
 
       {/* Navigation Items */}
       <div className="flex-1 overflow-y-auto overflow-anchor-none py-3 sm:py-4">
