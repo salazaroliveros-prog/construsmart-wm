@@ -12,7 +12,7 @@ Crea cada variable haciendo clic en "Add New" y selecciona el entorno:
 
 #### Variable 1: NEXT_PUBLIC_SUPABASE_URL
 - **Name:** `NEXT_PUBLIC_SUPABASE_URL`
-- **Value:** `https://yibjsruoxjlgdnkgylld.supabase.co`
+- **Value:** `TU_SUPABASE_URL`
 - **Environments:** 
   - ✅ Production
   - ✅ Preview
@@ -20,7 +20,7 @@ Crea cada variable haciendo clic en "Add New" y selecciona el entorno:
 
 #### Variable 2: NEXT_PUBLIC_SUPABASE_ANON_KEY
 - **Name:** `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- **Value:** `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpYmpzcnVveGpsZ2Rua2d5bGxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzNjQ3OTYsImV4cCI6MjEwMDk0MDc5Nn0.aZuVrUHA4Sh8h3SBl96QCTmh6dTQSm0tXXFjMR5nRv8`
+- **Value:** `TU_ANON_KEY`
 - **Environments:**
   - ✅ Production
   - ✅ Preview
@@ -28,7 +28,7 @@ Crea cada variable haciendo clic en "Add New" y selecciona el entorno:
 
 #### Variable 3: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 - **Name:** `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-- **Value:** `sb_publishable_i7VPT8T3SSkW3__-ZUlZmw_xiT1Wbri`
+- **Value:** `TU_PUBLISHABLE_KEY`
 - **Environments:**
   - ✅ Production
   - ✅ Preview
@@ -36,7 +36,7 @@ Crea cada variable haciendo clic en "Add New" y selecciona el entorno:
 
 #### Variable 4: NEXT_PUBLIC_APP_URL
 - **Name:** `NEXT_PUBLIC_APP_URL`
-- **Value:** `https://control-constructora-wm.vercel.app`
+- **Value:** `TU_APP_URL`
 - **Environments:**
   - ✅ Production
   - ✅ Preview
