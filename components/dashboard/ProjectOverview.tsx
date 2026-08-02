@@ -101,7 +101,7 @@ export default function ProjectOverview() {
         <span>Proyectos Activos</span>
       </h2>
 
-      <div className="space-y-1.5 flex-1 overflow-y-auto overflow-anchor-none" ref={scrollRef}>
+      <div className="space-y-1.5 flex-1 overflow-y-auto overflow-anchor-none overscroll-contain" ref={scrollRef}>
         {projects.map((project) => {
           const status = project.status || 'planning';
           const colors = statusColors[status] || statusColors.planning;
@@ -110,7 +110,7 @@ export default function ProjectOverview() {
           return (
             <div
               key={project.id}
-              className="glass-card p-2.5 rounded-lg transition-all hover:bg-white/5"
+              className="glass-card p-2.5 rounded-lg transition-all active:bg-white/5 touch-manipulation"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
@@ -130,12 +130,12 @@ export default function ProjectOverview() {
                   <h3 className="text-white font-medium text-xs truncate">{project.name}</h3>
                   <p className="text-[10px] text-white/60 truncate">{project.client_name}</p>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
-                  <Calendar className="w-3 h-3 text-white/40" />
-                  <span className="text-[10px] text-white/70">{project.duration_days}d</span>
-                  <DollarSign className="w-3 h-3 text-emerald-400" />
-                  <span className="text-[10px] font-medium text-white">{formatCurrency(project.total_budget)}</span>
-                </div>
+                  <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
+                    <Calendar className="w-3 h-3 text-white/40 flex-shrink-0" />
+                    <span className="text-[10px] text-white/70">{project.duration_days}d</span>
+                    <DollarSign className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                    <span className="text-[10px] font-medium text-white truncate">{formatCurrency(project.total_budget)}</span>
+                  </div>
               </div>
             </div>
           );

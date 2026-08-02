@@ -17,18 +17,18 @@ interface StatCardProps {
   color?: string;
 }
 
-function StatCard({ title, value, subtitle, icon, trend, trendUp, color = 'cyan' }: StatCardProps) {
-  const colorClasses: Record<string, string> = {
-    cyan: 'text-cyan-400 bg-cyan-500/10',
-    emerald: 'text-emerald-400 bg-emerald-500/10',
-    violet: 'text-violet-400 bg-violet-500/10',
-    amber: 'text-amber-400 bg-amber-500/10',
-    red: 'text-red-400 bg-red-500/10',
-    blue: 'text-blue-400 bg-blue-500/10',
-  };
+const colorClasses: Record<string, string> = {
+  cyan: 'text-cyan-400 bg-cyan-500/10',
+  emerald: 'text-emerald-400 bg-emerald-500/10',
+  violet: 'text-violet-400 bg-violet-500/10',
+  amber: 'text-amber-400 bg-amber-500/10',
+  red: 'text-red-400 bg-red-500/10',
+  blue: 'text-blue-400 bg-blue-500/10',
+};
 
+function StatCard({ title, value, subtitle, icon, trend, trendUp, color = 'cyan' }: StatCardProps) {
   return (
-    <div className="glass-card p-2 sm:p-2.5 rounded-lg transition-all hover:bg-white/5 flex flex-col gap-1">
+    <div className="glass-card p-2 sm:p-2.5 rounded-lg transition-all active:bg-white/5 flex flex-col gap-1 touch-manipulation">
       <div className="flex items-center justify-between">
         <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${colorClasses[color] || colorClasses.cyan}`}>
           {icon}
@@ -44,9 +44,9 @@ function StatCard({ title, value, subtitle, icon, trend, trendUp, color = 'cyan'
         )}
       </div>
       <div>
-        <h3 className="text-[9px] sm:text-[10px] font-medium text-white/50 mb-0.5">{title}</h3>
-        <p className="text-sm sm:text-base font-bold text-white drop-shadow-lg">{value}</p>
-        <p className="text-[8px] sm:text-[9px] text-white/40">{subtitle}</p>
+        <h3 className="text-[9px] sm:text-[10px] font-medium text-white/50 mb-0.5 truncate">{title}</h3>
+        <p className="text-sm sm:text-base font-bold text-white drop-shadow-lg truncate">{value}</p>
+        <p className="text-[8px] sm:text-[9px] text-white/40 truncate">{subtitle}</p>
       </div>
     </div>
   );
@@ -101,7 +101,7 @@ export default function DashboardStats() {
 
   return (
     <div className="flex flex-col w-full h-full gap-2">
-      {/* KPI Cards */}
+      {/* KPI Cards - mobile-first: 3 columnas en móvil */}
       <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-1 flex-shrink-0">
         {!isLoading ? (
           <>

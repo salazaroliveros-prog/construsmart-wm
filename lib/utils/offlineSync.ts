@@ -881,27 +881,51 @@ export async function syncOfflineData(): Promise<SyncResult> {
     );
 
     // 13. PENDING DELETES (registros eliminados sin conexión)
-    // Borra primero en servidor (hijos antes que padres para respetar FKs;
-    // suppliers usa RESTRICT hacia purchase_orders, así que se eliminan las OC primero).
+    // OPTIMIZACIÓN: Procesar en lotes paralelos
     const pendingDeletes = await offlineDB.pendingDeletes.toArray();
+    const deletePromises: Promise<void>[] = [];
+    const supplierDeletePromises: Promise<void>[] = [];
+
     for (const pd of pendingDeletes) {
-      try {
-        if (pd.table === 'suppliers') {
-          const { error: poError } = await supabase
-            .from('purchase_orders')
-            .delete()
-            .eq('supplier_id', pd.serverId);
-          if (poError) throw poError;
-        }
-        const { error } = await supabase.from(pd.table).delete().eq('id', pd.serverId);
-        if (error) throw error;
-        await offlineDB.pendingDeletes.delete(pd.id!);
-        result.synced++;
-      } catch (error) {
-        result.failed++;
-        result.errors.push(`Failed to delete ${pd.table} ${pd.serverId}: ${error}`);
+      if (pd.table === 'suppliers') {
+        // Primero eliminar purchase_orders (RESTRICT)
+        supplierDeletePromises.push(
+          (async () => {
+            try {
+              const { error: poError } = await supabase
+                .from('purchase_orders')
+                .delete()
+                .eq('supplier_id', pd.serverId);
+              if (poError) throw poError;
+              
+              const { error } = await supabase.from(pd.table).delete().eq('id', pd.serverId);
+              if (error) throw error;
+              await offlineDB.pendingDeletes.delete(pd.id!);
+              result.synced++;
+            } catch (error) {
+              result.failed++;
+              result.errors.push(`Failed to delete ${pd.table} ${pd.serverId}: ${error}`);
+            }
+          })()
+        );
+      } else {
+        deletePromises.push(
+          (async () => {
+            try {
+              const { error } = await supabase.from(pd.table).delete().eq('id', pd.serverId);
+              if (error) throw error;
+              await offlineDB.pendingDeletes.delete(pd.id!);
+              result.synced++;
+            } catch (error) {
+              result.failed++;
+              result.errors.push(`Failed to delete ${pd.table} ${pd.serverId}: ${error}`);
+            }
+          })()
+        );
       }
     }
+
+    await Promise.all([...supplierDeletePromises, ...deletePromises]);
 
     return result;
   } catch (error) {
@@ -983,62 +1007,49 @@ export async function getSyncStats(): Promise<SyncStats> {
   };
 
   try {
-    // Count pending items across all tables
-    stats.pendingProjects = await offlineDB.projects
-      .where('sync_status')
-      .anyOf(PENDING_STATUSES)
-      .count();
+    // OPTIMIZACIÓN: Paralelizar todas las queries de conteo
+    const [
+      pendingProjectsCount,
+      pendingBudgetsCount,
+      pendingBudgetItemsCount,
+      pendingTransactionsCount,
+      pendingPayrollEmployeesCount,
+      pendingPayrollRecordsCount,
+      pendingWarehouseCount,
+      pendingClientsCount,
+      pendingProjectLogsCount,
+      pendingSuppliersCount,
+      pendingPurchaseOrdersCount,
+      pendingPurchaseOrderItemsCount,
+      pendingDeletesCount,
+    ] = await Promise.all([
+      offlineDB.projects.where('sync_status').anyOf(PENDING_STATUSES).count(),
+      offlineDB.budgets.where('sync_status').anyOf(PENDING_STATUSES).count(),
+      offlineDB.budgetItems.where('sync_status').anyOf(PENDING_STATUSES).count(),
+      offlineDB.financialTransactions.where('sync_status').anyOf(PENDING_STATUSES).count(),
+      offlineDB.payrollEmployees.where('sync_status').anyOf(PENDING_STATUSES).count(),
+      offlineDB.payrollRecords.where('sync_status').anyOf(PENDING_STATUSES).count(),
+      offlineDB.warehouseStock.where('sync_status').anyOf(PENDING_STATUSES).count(),
+      offlineDB.clients.where('sync_status').anyOf(PENDING_STATUSES).count(),
+      offlineDB.projectLogs.where('sync_status').anyOf(PENDING_STATUSES).count(),
+      offlineDB.suppliers.where('sync_status').anyOf(PENDING_STATUSES).count(),
+      offlineDB.purchaseOrders.where('sync_status').anyOf(PENDING_STATUSES).count(),
+      offlineDB.purchaseOrderItems.where('sync_status').anyOf(PENDING_STATUSES).count(),
+      offlineDB.pendingDeletes.count(),
+    ]);
 
-    stats.pendingBudgets = await offlineDB.budgets
-      .where('sync_status')
-      .anyOf(PENDING_STATUSES)
-      .count();
-
-    stats.pendingBudgetItems = await offlineDB.budgetItems
-      .where('sync_status')
-      .anyOf(PENDING_STATUSES)
-      .count();
-
-    stats.pendingTransactions = await offlineDB.financialTransactions
-      .where('sync_status')
-      .anyOf(PENDING_STATUSES)
-      .count();
-
-    stats.pendingPayroll =
-      (await offlineDB.payrollEmployees.where('sync_status').anyOf(PENDING_STATUSES).count()) +
-      (await offlineDB.payrollRecords.where('sync_status').anyOf(PENDING_STATUSES).count());
-
-    stats.pendingWarehouse = await offlineDB.warehouseStock
-      .where('sync_status')
-      .anyOf(PENDING_STATUSES)
-      .count();
-
-    stats.pendingClients = await offlineDB.clients
-      .where('sync_status')
-      .anyOf(PENDING_STATUSES)
-      .count();
-
-    stats.pendingProjectLogs = await offlineDB.projectLogs
-      .where('sync_status')
-      .anyOf(PENDING_STATUSES)
-      .count();
-
-    stats.pendingSuppliers = await offlineDB.suppliers
-      .where('sync_status')
-      .anyOf(PENDING_STATUSES)
-      .count();
-
-    stats.pendingPurchaseOrders = await offlineDB.purchaseOrders
-      .where('sync_status')
-      .anyOf(PENDING_STATUSES)
-      .count();
-
-    stats.pendingPurchaseOrderItems = await offlineDB.purchaseOrderItems
-      .where('sync_status')
-      .anyOf(PENDING_STATUSES)
-      .count();
-
-    stats.pendingDeletes = await offlineDB.pendingDeletes.count();
+    stats.pendingProjects = pendingProjectsCount;
+    stats.pendingBudgets = pendingBudgetsCount;
+    stats.pendingBudgetItems = pendingBudgetItemsCount;
+    stats.pendingTransactions = pendingTransactionsCount;
+    stats.pendingPayroll = pendingPayrollEmployeesCount + pendingPayrollRecordsCount;
+    stats.pendingWarehouse = pendingWarehouseCount;
+    stats.pendingClients = pendingClientsCount;
+    stats.pendingProjectLogs = pendingProjectLogsCount;
+    stats.pendingSuppliers = pendingSuppliersCount;
+    stats.pendingPurchaseOrders = pendingPurchaseOrdersCount;
+    stats.pendingPurchaseOrderItems = pendingPurchaseOrderItemsCount;
+    stats.pendingDeletes = pendingDeletesCount;
 
     // Get last sync timestamp from localStorage
     const lastSync = localStorage.getItem('lastSyncTimestamp');
@@ -1138,25 +1149,38 @@ export async function forceFullSync(): Promise<SyncResult> {
   ];
 
   try {
+    // OPTIMIZACIÓN: Traer solo IDs y sync_status del servidor, no todo el registro
+    // Primero obtenemos todos los IDs locales que tienen cambios pendientes
+    const localPendingIds = new Map<string, Set<string>>();
     for (const { local, remote } of tables) {
+      const pendingRows = await local.where('sync_status').anyOf(PENDING_STATUSES).toArray();
+      const ids = new Set(pendingRows.map(r => r.id).filter((id): id is string => !!id));
+      localPendingIds.set(remote, ids);
+    }
+
+    // OPTIMIZACIÓN: Traer del servidor y hacer bulk upserts en paralelo
+    await Promise.all(tables.map(async ({ local, remote }) => {
       try {
-        const { data, error } = await supabase.from(remote).select('*');
+        const { data, error } = await supabase!.from(remote).select('*');
         if (error) throw error;
 
+        const pendingIds = localPendingIds.get(remote) || new Set();
+        const bulkOps: Promise<void>[] = [];
+
         for (const row of data || []) {
-          const existing = await (local as { get: (id: string) => Promise<{ sync_status?: string } | undefined> }).get(row.id);
-          if (existing && PENDING_STATUSES.includes(existing.sync_status || '')) {
-            continue; // Preserve local pending changes
-          }
-          await local.put({ ...row, sync_status: 'synced' });
+          // Skip si hay cambios locales pendientes
+          if (pendingIds.has(row.id)) continue;
+
+          bulkOps.push(local.put({ ...row, sync_status: 'synced' }));
         }
 
+        await Promise.all(bulkOps);
         result.synced += (data || []).length;
       } catch (error) {
         result.failed++;
         result.errors.push(`Failed to pull ${remote}: ${error}`);
       }
-    }
+    }) as Promise<void>[]);
 
     updateLastSyncTimestamp();
     

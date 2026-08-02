@@ -98,7 +98,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data.user) {
-        // Usar el email como nombre de usuario (sin depender de tabla profiles)
         const userName = data.user.email?.split('@')[0] || 'Usuario';
         
         setUser({

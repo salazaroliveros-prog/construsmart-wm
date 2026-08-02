@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Menu, X } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -65,6 +66,8 @@ const getTabById = (index: number): string => {
 };
 
 export default function Dashboard() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -96,21 +99,32 @@ export default function Dashboard() {
     setTabIndex(getTabIndex(activeTab));
   }, [activeTab]);
 
-useEffect(() => {
-  if (typeof window === 'undefined') return;
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const tab = params.get('tab');
-    if (tab) {
-      const valid = NAVIGATION_TABS.some(t => t.id === tab);
-      if (valid) {
-        setActiveTab(tab as (typeof NAVIGATION_TABS)[number]['id']);
+  // Sincronización bidireccional con la URL (?tab=...)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const tab = searchParams?.get('tab');
+      if (tab) {
+        const valid = NAVIGATION_TABS.some(t => t.id === tab);
+        if (valid && tab !== activeTab) {
+          setActiveTab(tab as (typeof NAVIGATION_TABS)[number]['id']);
+        }
       }
+    } catch {
+      // ignore malformed URL
     }
-  } catch {
-    // ignore malformed URL
-  }
-}, [isMounted]);
+  }, [searchParams, isMounted, activeTab]);
+
+  const handleTabChange = useCallback((tabId: string) => {
+    if (tabId !== activeTab) {
+      setIsTabLoading(true);
+      setActiveTab(tabId);
+      setTabIndex(getTabIndex(tabId));
+      // Persistir la tab en la URL sin recargar (shallow routing)
+      router.replace(`/?tab=${tabId}`, { scroll: false });
+      setTimeout(() => setIsTabLoading(false), 150);
+    }
+  }, [activeTab, router]);
 
   const loadRecentActivity = async () => {
     try {
@@ -183,14 +197,7 @@ useEffect(() => {
     touchStartY.current = null;
   };
 
-  const handleTabChange = (tabId: string) => {
-    if (tabId !== activeTab) {
-      setIsTabLoading(true);
-      setActiveTab(tabId);
-      setTabIndex(getTabIndex(tabId));
-      setTimeout(() => setIsTabLoading(false), 150);
-    }
-  };
+  // (handleTabChange se define arriba con useCallback)
 
   const renderTabContent = () => {
     switch (activeTab) {

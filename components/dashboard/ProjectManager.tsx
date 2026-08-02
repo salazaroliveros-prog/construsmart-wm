@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Save, X, FolderOpen } from 'lucide-react';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
-import { supabase } from '@/lib/supabase/client';
-import { queueDelete, isServerId } from '@/lib/utils/offlineSync';
+import { queueDelete, isServerId, fetchProjectsForOffline } from '@/lib/utils/offlineSync';
+import { createProject as serverCreateProject, updateProject as serverUpdateProject, getProjectById } from '@/app/actions/project-actions';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -106,7 +106,13 @@ export default function ProjectManager() {
 
   const loadProjects = async () => {
     try {
+      // Lectura desde Supabase cuando hay conexión (Server-side pull al store local)
+      if (isOnline) {
+        const pulled = await fetchProjectsForOffline();
+        console.log('[ProjectManager] fetchProjectsForOffline trajo=', pulled.length);
+      }
       const localProjects = await offlineDB.projects.toArray();
+      console.log('[ProjectManager] offlineDB.projects cargados=', localProjects.length);
       setProjects(localProjects);
     } catch (error) {
       console.error('Error loading projects:', error);
@@ -224,34 +230,19 @@ export default function ProjectManager() {
       closeModal();
       loadProjects();
 
-      if (isOnline && supabase && isServerId(projectData.id)) {
-        // Sync with Supabase - only send columns that exist in Supabase schema
-        const supabaseProjectData = {
-          id: projectData.id,
-          code: projectData.code,
-          name: projectData.name,
-          client_name: projectData.client_name,
-          client_phone: projectData.client_phone,
-          client_email: projectData.client_email,
-          location: projectData.location,
-          typology: projectData.typology,
-          area_m2: projectData.area_m2,
-          quality_level: projectData.quality_level,
-          status: projectData.status,
-          start_date: projectData.start_date,
-          estimated_end_date: projectData.estimated_end_date,
-          duration_days: projectData.duration_days,
-          total_budget: projectData.total_budget,
-          budget_total: projectData.budget_total,
-          calculated_duration: projectData.calculated_duration,
-          sync_status: projectData.sync_status,
-        };
-        const { error } = await supabase.from('projects').upsert([supabaseProjectData]);
-        if (error) {
-          await offlineDB.projects.update(projectData.id, { sync_status: 'created_offline' });
-          throw error;
+      // Sincroniza con Supabase a través de Server Action (segura en servidor)
+      if (isOnline && isServerId(projectData.id)) {
+        const result = editingProject
+          ? await serverUpdateProject(projectData.id!, projectData)
+          : await serverCreateProject(projectData);
+
+        if (result.error) {
+          // Si falla el servidor, quedar pendiente para el motor de sync offline
+          await offlineDB.projects.update(projectData.id!, { sync_status: 'created_offline' });
+          showToast('warning', 'Proyecto guardado localmente; pendiente de sync');
+        } else {
+          await offlineDB.projects.update(projectData.id!, { sync_status: 'synced' });
         }
-        await offlineDB.projects.update(projectData.id, { sync_status: 'synced' });
       }
     } catch (error) {
       console.error('Error saving project:', error);
@@ -389,68 +380,136 @@ export default function ProjectManager() {
               : 'Comience creando un nuevo proyecto para gestionar su portafolio.'}
           />
         ) : (
-          <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
-            <table className="w-full text-sm min-w-[600px]">
-              <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left text-white/60 py-3 px-4">Código</th>
-                  <th className="text-left text-white/60 py-3 px-4">Nombre</th>
-                  <th className="text-left text-white/60 py-3 px-4">Cliente</th>
-                  <th className="text-left text-white/60 py-3 px-4">Ubicación</th>
-                  <th className="text-left text-white/60 py-3 px-4">Tipología</th>
-                  <th className="text-left text-white/60 py-3 px-4">Área (m²)</th>
-                  <th className="text-left text-white/60 py-3 px-4">Estado</th>
-                  <th className="text-left text-white/60 py-3 px-4">Presupuesto</th>
-                  <th className="text-right text-white/60 py-3 px-4">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredProjects.map((project) => (
-                  <tr key={project.id} className="border-b border-white/10 hover:bg-white/5">
-                    <td className="py-3 px-4 text-white font-medium">{project.code}</td>
-                    <td className="py-3 px-4 text-white">{project.name}</td>
-                    <td className="py-3 px-4 text-white">{project.client_name}</td>
-                    <td className="py-3 px-4 text-white">{project.location}</td>
-                    <td className="py-3 px-4 text-white">{typologyLabels[project.typology]}</td>
-                    <td className="py-3 px-4 text-white">{project.area_m2.toLocaleString('es-GT')}</td>
-                    <td className="py-3 px-4">
-                      <span
-                        className="px-2 py-1 rounded-md text-xs font-medium"
-                        style={{
-                          backgroundColor: statusColors[project.status].bg,
-                          color: statusColors[project.status].text,
-                          border: `1px solid ${statusColors[project.status].border}`
-                        }}
-                      >
-                        {statusLabels[project.status]}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-white font-medium">
-                      {formatCurrency(project.total_budget)}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <ActionButton
-                          onClick={() => openModal(project)}
-                          icon={<Edit className="w-4 h-4" />}
-                          label="Editar proyecto"
-                          tooltip="Editar información del proyecto"
-                          variant="primary"
-                        />
-                        <ActionButton
-                          onClick={() => handleDelete(project)}
-                          icon={<Trash2 className="w-4 h-4" />}
-                          label="Eliminar proyecto"
-                          tooltip="Eliminar proyecto permanentemente"
-                          variant="danger"
-                        />
-                      </div>
-                    </td>
+          <>
+            {/* Tabla Desktop (md+) */}
+            <div className="hidden md:block data-table-container rounded-xl border border-white/10 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="text-left text-white/60 py-3 px-4">Código</th>
+                    <th className="text-left text-white/60 py-3 px-4">Nombre</th>
+                    <th className="text-left text-white/60 py-3 px-4">Cliente</th>
+                    <th className="text-left text-white/60 py-3 px-4">Ubicación</th>
+                    <th className="text-left text-white/60 py-3 px-4">Tipología</th>
+                    <th className="text-left text-white/60 py-3 px-4">Área (m²)</th>
+                    <th className="text-left text-white/60 py-3 px-4">Estado</th>
+                    <th className="text-left text-white/60 py-3 px-4">Presupuesto</th>
+                    <th className="text-right text-white/60 py-3 px-4">Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filteredProjects.map((project) => (
+                    <tr key={project.id} className="border-b border-white/10 hover:bg-white/5">
+                      <td className="py-3 px-4 text-white font-medium">{project.code}</td>
+                      <td className="py-3 px-4 text-white">{project.name}</td>
+                      <td className="py-3 px-4 text-white">{project.client_name}</td>
+                      <td className="py-3 px-4 text-white">{project.location}</td>
+                      <td className="py-3 px-4 text-white">{typologyLabels[project.typology]}</td>
+                      <td className="py-3 px-4 text-white">{project.area_m2.toLocaleString('es-GT')}</td>
+                      <td className="py-3 px-4">
+                        <span
+                          className="px-2 py-1 rounded-md text-xs font-medium"
+                          style={{
+                            backgroundColor: statusColors[project.status].bg,
+                            color: statusColors[project.status].text,
+                            border: `1px solid ${statusColors[project.status].border}`
+                          }}
+                        >
+                          {statusLabels[project.status]}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-white font-medium">
+                        {formatCurrency(project.total_budget)}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <ActionButton
+                            onClick={() => openModal(project)}
+                            icon={<Edit className="w-4 h-4" />}
+                            label="Editar proyecto"
+                            tooltip="Editar información del proyecto"
+                            variant="primary"
+                          />
+                          <ActionButton
+                            onClick={() => handleDelete(project)}
+                            icon={<Trash2 className="w-4 h-4" />}
+                            label="Eliminar proyecto"
+                            tooltip="Eliminar proyecto permanentemente"
+                            variant="danger"
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Cards Móvil (<768px) */}
+            <div className="md:hidden space-y-3">
+              {filteredProjects.map((project) => (
+                <div
+                  key={project.id}
+                  className="glass-card rounded-xl p-4 active:bg-white/5 touch-manipulation"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-mono text-cyan-400 truncate">{project.code}</span>
+                        <span
+                          className="px-2 py-0.5 rounded-full text-[10px] font-medium border flex-shrink-0"
+                          style={{
+                            backgroundColor: statusColors[project.status].bg,
+                            color: statusColors[project.status].text,
+                            border: `1px solid ${statusColors[project.status].border}`
+                          }}
+                        >
+                          {statusLabels[project.status]}
+                        </span>
+                      </div>
+                      <h3 className="text-white font-semibold text-sm truncate">{project.name}</h3>
+                      <p className="text-xs text-white/60 truncate mt-0.5">{project.client_name}</p>
+                    </div>
+                    <div className="flex gap-1.5 flex-shrink-0">
+                      <ActionButton
+                        onClick={() => openModal(project)}
+                        icon={<Edit className="w-4 h-4" />}
+                        label="Editar proyecto"
+                        tooltip="Editar información del proyecto"
+                        variant="primary"
+                      />
+                      <ActionButton
+                        onClick={() => handleDelete(project)}
+                        icon={<Trash2 className="w-4 h-4" />}
+                        label="Eliminar proyecto"
+                        tooltip="Eliminar proyecto permanentemente"
+                        variant="danger"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10 mt-2">
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-white/40 truncate">Ubicación</p>
+                      <p className="text-xs text-white/80 truncate">{project.location}</p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-white/40 truncate">Tipología</p>
+                      <p className="text-xs text-white/80 truncate">{typologyLabels[project.typology]}</p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-white/40 truncate">Área</p>
+                      <p className="text-xs text-white/80 truncate">{project.area_m2.toLocaleString('es-GT')} m²</p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-white/40 truncate">Presupuesto</p>
+                      <p className="text-xs font-medium text-emerald-400 truncate">{formatCurrency(project.total_budget)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 

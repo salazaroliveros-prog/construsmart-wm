@@ -1,11 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Building2, Calendar, Clock, Wifi, WifiOff } from 'lucide-react';
 import UserAvatar from '@/components/ui/UserAvatar';
 import { useAuth } from '@/lib/auth/auth-context';
 
-export default function DualBrandHeader() {
+interface DualBrandHeaderProps {
+  onMenuToggle?: () => void;
+}
+
+export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) {
   const { user } = useAuth();
   const [isOnline, setIsOnline] = useState(true);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
@@ -16,120 +20,77 @@ export default function DualBrandHeader() {
     setIsMounted(true);
     setCurrentTime(new Date());
     
-    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
+    const updateOnlineStatus = () => {
+      if (typeof window !== 'undefined') {
+        setIsOnline(navigator.onLine);
+      }
+    };
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', updateOnlineStatus);
+      window.addEventListener('offline', updateOnlineStatus);
+    }
     
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     
     return () => {
-      window.removeEventListener('online', updateOnlineStatus);
-      window.removeEventListener('offline', updateOnlineStatus);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('online', updateOnlineStatus);
+        window.removeEventListener('offline', updateOnlineStatus);
+      }
       clearInterval(timer);
     };
   }, []);
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('es-GT', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    }).format(date);
-  };
-
-  const formatTime = (date: Date) => {
+  const formatTime = useCallback((date: Date) => {
     return new Intl.DateTimeFormat('es-GT', {
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit',
     }).format(date);
-  };
+  }, []);
 
   return (
-    <header className="glass-panel border-b border-white/10 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between fixed top-0 left-0 right-0 z-30 lg:relative lg:top-auto lg:left-auto lg:right-auto">
-      <div className="flex items-center gap-3 sm:gap-4">
+    <header className="glass-panel border-b border-white/10 px-3 sm:px-6 py-2.5 sm:py-4 flex items-center justify-between fixed top-0 left-0 right-0 z-30 lg:relative lg:top-auto lg:left-auto lg:right-auto">
+      <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
         <div className="flex items-center gap-2 sm:gap-3">
-          {imgError ? (
-            <div className="h-10 w-10 sm:h-12 sm:w-32 rounded-lg bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center">
-              <Building2 className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-            </div>
-          ) : (
-            <img
-              src="/assets/branding/logo-constructora-wm.jpg"
-              alt="CONSTRUCTORA WM/M&S"
-              className="h-10 w-auto object-contain sm:w-auto"
-              onError={() => setImgError(true)}
-            />
-          )}
-          
-          <div className="hidden sm:block h-8 w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
-          
-          {imgError ? (
-            <div className="hidden sm:flex h-8 w-24 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 items-center justify-center">
-              <span className="text-white text-xs font-bold">M&S</span>
-            </div>
-          ) : (
-            <img
-              src="/assets/branding/letterhead-multiservicios.jpg"
-              alt="Multi Servicios de Guatemala"
-              className="hidden sm:block h-8 w-auto object-contain"
-              onError={() => setImgError(true)}
-            />
-          )}
-        </div>
-
-        <div className="hidden md:block ml-2 sm:ml-4">
-          <h1 className="text-base sm:text-xl font-bold text-white drop-shadow-lg">CONSTRUCTORA WM/M&S</h1>
-          <p className="text-xs sm:text-sm text-cyan-400 italic">
-            "CONSTRUYENDO EL FUTURO"
-          </p>
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center flex-shrink-0">
+            <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+          </div>
+          <div className="hidden sm:block flex-1 min-w-0">
+            <h1 className="text-sm sm:text-lg font-bold text-white truncate">CONSTRUCTORA WM/M&S</h1>
+            <p className="text-[10px] sm:text-xs text-cyan-400 italic truncate">
+              "CONSTRUYENDO EL FUTURO"
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-3 sm:gap-6">
+      <div className="flex items-center gap-2 sm:gap-4">
         {isMounted && currentTime && (
-          <div className="hidden lg:flex items-center gap-4 text-sm text-white/70">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              <span>{formatDate(currentTime)}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
+          <div className="hidden md:flex items-center gap-3 text-xs sm:text-sm text-white/70">
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span>{formatTime(currentTime)}</span>
             </div>
           </div>
         )}
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-emerald-500/20 backdrop-blur-sm border border-emerald-500/30 active:bg-emerald-500/30 transition-colors">
           {isOnline ? (
-            <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-emerald-500/20 backdrop-blur-sm border border-emerald-500/30">
-              <Wifi className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400" />
-              <span className="text-[10px] sm:text-xs text-emerald-300 font-medium hidden sm:inline">Online</span>
-            </div>
+            <Wifi className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400" />
           ) : (
-            <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-amber-500/20 border border-amber-500/30">
-              <WifiOff className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
-              <span className="text-[10px] sm:text-xs text-amber-300 font-medium hidden sm:inline">Offline</span>
-            </div>
+            <WifiOff className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
           )}
+          <span className="text-[10px] sm:text-xs font-medium text-emerald-300 hidden sm:inline">
+            {isOnline ? 'Online' : 'Offline'}
+          </span>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="hidden sm:block text-right">
-            <p className="text-sm font-medium text-white">
-              {user?.name || user?.email || 'Usuario'}
-            </p>
-            <p className="text-xs text-cyan-400">
-              {user?.email || ''}
-            </p>
+        <div className="relative flex-shrink-0">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 border-2 border-cyan-500/50 overflow-hidden active:scale-95 transition-transform">
+            <UserAvatar size="sm" />
           </div>
-          <div className="relative">
-        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 border-2 border-cyan-500/50 overflow-hidden">
-          <UserAvatar size="md" />
-        </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-emerald-500 rounded-full border-2 border-slate-900" />
-          </div>
+          <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-emerald-500 rounded-full border-2 border-slate-900" />
         </div>
       </div>
     </header>
