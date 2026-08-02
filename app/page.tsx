@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Menu, X } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -67,8 +67,8 @@ const getTabById = (index: number): string => {
 
 export default function Dashboard() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [ready, setReady] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -100,10 +100,11 @@ export default function Dashboard() {
   }, [activeTab]);
 
   // Sincronización bidireccional con la URL (?tab=...)
-  useEffect(() => {
+  const syncTabFromUrl = useCallback(() => {
     if (typeof window === 'undefined') return;
     try {
-      const tab = searchParams?.get('tab');
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
       if (tab) {
         const valid = NAVIGATION_TABS.some(t => t.id === tab);
         if (valid && tab !== activeTab) {
@@ -113,7 +114,15 @@ export default function Dashboard() {
     } catch {
       // ignore malformed URL
     }
-  }, [searchParams, isMounted, activeTab]);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    syncTabFromUrl();
+    const onPop = () => syncTabFromUrl();
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [isMounted, syncTabFromUrl]);
 
   const handleTabChange = useCallback((tabId: string) => {
     if (tabId !== activeTab) {
@@ -299,34 +308,35 @@ export default function Dashboard() {
         <DualBrandHeader />
 
         {/* Tab navigation - right below header, centered */}
-        <nav className="flex-shrink-0 bg-slate-900/60 border-b border-white/10 overflow-x-auto overflow-anchor-none">
-          <div className="flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5">
-            {NAVIGATION_TABS.map(tab => {
-              const isTabActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    if (tab.id !== activeTab) {
-                      setIsTabLoading(true);
-                      setActiveTab(tab.id);
-                      // Ocultar skeleton después de un delay corto para permitir que el componente se monte
-                      setTimeout(() => setIsTabLoading(false), 150);
-                    }
-                  }}
-                  className={`px-4 sm:px-4 py-3 sm:py-1.5 min-h-[44px] rounded-lg transition-all whitespace-nowrap text-xs sm:text-sm font-medium ${
-                    isTabActive
-                      ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/40 text-white'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
-                  }`}
-                  aria-current={isTabActive ? 'page' : undefined}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-        </nav>
+        <Suspense fallback={<div className="py-2 text-white/60 text-xs text-center">Cargando…</div>}>
+          <nav className="flex-shrink-0 bg-slate-900/60 border-b border-white/10 overflow-x-auto overflow-anchor-none">
+            <div className="flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5">
+              {NAVIGATION_TABS.map(tab => {
+                const isTabActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      if (tab.id !== activeTab) {
+                        setIsTabLoading(true);
+                        setActiveTab(tab.id);
+                        setTimeout(() => setIsTabLoading(false), 150);
+                      }
+                    }}
+                    className={`px-4 sm:px-4 py-3 sm:py-1.5 min-h-[44px] rounded-lg transition-all whitespace-nowrap text-xs sm:text-sm font-medium ${
+                      isTabActive
+                        ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/40 text-white'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                    }`}
+                    aria-current={isTabActive ? 'page' : undefined}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+        </Suspense>
 
         {/* Main content area */}
         <div className="flex flex-1 relative">
