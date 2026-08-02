@@ -11,6 +11,7 @@ import {
   COLOR_PALETTES, GLASS_PRESETS
 } from '@/lib/types/uiSettings';
 import { applyUISettings } from '@/lib/utils/applySettings';
+import { updateSettingsSingleton } from '@/lib/hooks/useBusinessSettings';
 import { useToast } from '@/components/ui/Toast';
 
 export default function SettingsManager() {
@@ -39,10 +40,13 @@ export default function SettingsManager() {
     }
   };
 
-  const saveSettings = () => {
+const saveSettings = () => {
     try {
       localStorage.setItem('uiSettings', JSON.stringify(settings));
-      applySettings(settings);
+      // Aplica los estilos UI usando la función centralizada (única fuente de verdad)
+      applyUISettings(settings);
+      // Notifica al singleton para que todos los hooks useBusinessSettings reaccionen
+      updateSettingsSingleton(settings);
       setHasChanges(false);
       showToast('success', 'Configuración guardada exitosamente');
     } catch (error) {
@@ -56,57 +60,6 @@ export default function SettingsManager() {
     setLogoPreview('');
     setHasChanges(true);
     showToast('info', 'Configuración restablecida');
-  };
-
-  const applySettings = (newSettings: UISettings) => {
-    const palette = COLOR_PALETTES.find(p => p.id === newSettings.colorPalette) || COLOR_PALETTES[0];
-
-    // Apply color palette
-    document.documentElement.style.setProperty('--primary-color', palette.primary);
-    document.documentElement.style.setProperty('--secondary-color', palette.secondary);
-    document.documentElement.style.setProperty('--accent-color', palette.accent);
-    document.documentElement.style.setProperty('--background-start', palette.backgroundStart);
-    document.documentElement.style.setProperty('--background-end', palette.backgroundEnd);
-
-    // Apply CSS custom properties for dynamic values
-    document.documentElement.style.setProperty('--glass-blur-intensity', `${newSettings.glassBlurIntensity}px`);
-    document.documentElement.style.setProperty('--glass-grain-intensity', `${newSettings.glassGrainIntensity / 100}`);
-    document.documentElement.style.setProperty('--card-transparency', `${newSettings.cardTransparency / 100}`);
-    document.documentElement.style.setProperty('--border-opacity', `${newSettings.borderOpacity / 100}`);
-    document.documentElement.style.setProperty('--shadow-intensity', `${newSettings.shadowIntensity / 100}`);
-
-    // Apply animation speed
-    const animationDuration = newSettings.animationSpeed === 'slow' ? '0.5s' : newSettings.animationSpeed === 'fast' ? '0.15s' : '0.3s';
-    document.documentElement.style.setProperty('--animation-duration', animationDuration);
-
-    // Apply theme mode
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const shouldUseDark = newSettings.themeMode === 'dark' || (newSettings.themeMode === 'auto' && prefersDark);
-    
-    if (shouldUseDark) {
-      document.documentElement.classList.add('dark');
-      document.documentElement.classList.remove('light');
-    } else {
-      document.documentElement.classList.add('light');
-      document.documentElement.classList.remove('dark');
-    }
-
-    // Apply performance mode
-    document.documentElement.classList.remove('performance-high', 'performance-balanced', 'performance-low');
-    document.documentElement.classList.add(`performance-${newSettings.performanceMode}`);
-
-    // Apply accessibility modes
-    if (newSettings.highContrast) {
-      document.documentElement.classList.add('high-contrast');
-    } else {
-      document.documentElement.classList.remove('high-contrast');
-    }
-
-    if (newSettings.compactMode) {
-      document.documentElement.classList.add('compact-mode');
-    } else {
-      document.documentElement.classList.remove('compact-mode');
-    }
   };
 
   const updateSetting = <K extends keyof UISettings>(key: K, value: UISettings[K]) => {

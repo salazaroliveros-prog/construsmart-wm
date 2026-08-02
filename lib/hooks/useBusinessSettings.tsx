@@ -41,6 +41,12 @@ function updateSettingsInStorage(newSettings: UISettings) {
   }
 }
 
+// Exportada para que SettingsManager pueda notificar al singleton
+// tras guardar cambios desde el módulo de ajustes.
+export function updateSettingsSingleton(newSettings: UISettings) {
+  updateSettingsInStorage(newSettings);
+}
+
 export function useBusinessSettings() {
   const [settings, setSettings] = useState<UISettings>(SETTINGS_CACHE.settings);
   const [isLoading, setIsLoading] = useState(true);
