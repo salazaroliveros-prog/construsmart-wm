@@ -3,36 +3,66 @@
 import { useState, useEffect } from 'react';
 import { DEFAULT_UI_SETTINGS, UISettings, CompanySettings, FinancialSettings, ExportSettings } from '@/lib/types/uiSettings';
 
+// Módulo-singleton para evitar múltiples lecturas de localStorage y múltiples
+// instancias de estado cuando varios componentes usan useBusinessSettings.
+// Esto corrige la duplicación del hook (punto 6.3): ahora todos los hooks
+// derivados (useCompanySettings, useFinancialSettings, useExportSettings)
+// comparten una única fuente de verdad en memoria.
+const SETTINGS_CACHE: { settings: UISettings; listeners: Set<() => void> } = {
+  settings: DEFAULT_UI_SETTINGS,
+  listeners: new Set(),
+};
+
+function notifyListeners() {
+  SETTINGS_CACHE.listeners.forEach((listener) => listener());
+}
+
+function loadSettingsFromStorage(): UISettings {
+  try {
+    if (typeof window === 'undefined') return DEFAULT_UI_SETTINGS;
+    const saved = localStorage.getItem('uiSettings');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return { ...DEFAULT_UI_SETTINGS, ...parsed };
+    }
+  } catch (error) {
+    console.error('Error loading business settings:', error);
+  }
+  return DEFAULT_UI_SETTINGS;
+}
+
+function updateSettingsInStorage(newSettings: UISettings) {
+  try {
+    SETTINGS_CACHE.settings = newSettings;
+    localStorage.setItem('uiSettings', JSON.stringify(newSettings));
+    notifyListeners();
+  } catch (error) {
+    console.error('Error updating business settings:', error);
+  }
+}
+
 export function useBusinessSettings() {
-  const [settings, setSettings] = useState<UISettings>(DEFAULT_UI_SETTINGS);
+  const [settings, setSettings] = useState<UISettings>(SETTINGS_CACHE.settings);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadSettings();
+    // Inicializa el singleton desde localStorage solo una vez
+    const initial = loadSettingsFromStorage();
+    SETTINGS_CACHE.settings = initial;
+    setSettings(initial);
+    setIsLoading(false);
+
+    // Se suscribe a cambios del singleton
+    const listener = () => setSettings(SETTINGS_CACHE.settings);
+    SETTINGS_CACHE.listeners.add(listener);
+    return () => {
+      SETTINGS_CACHE.listeners.delete(listener);
+    };
   }, []);
 
-  const loadSettings = () => {
-    try {
-      const saved = localStorage.getItem('uiSettings');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setSettings(parsed);
-      }
-    } catch (error) {
-      console.error('Error loading business settings:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const updateSettings = (newSettings: Partial<UISettings>) => {
-    try {
-      const updated = { ...settings, ...newSettings };
-      setSettings(updated);
-      localStorage.setItem('uiSettings', JSON.stringify(updated));
-    } catch (error) {
-      console.error('Error updating business settings:', error);
-    }
+    const updated = { ...SETTINGS_CACHE.settings, ...newSettings };
+    updateSettingsInStorage(updated);
   };
 
   return {

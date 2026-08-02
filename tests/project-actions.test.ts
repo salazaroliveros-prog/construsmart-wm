@@ -1,16 +1,18 @@
 import { describe, it, expect, vi } from 'vitest';
 
+const VALID_UUID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+
 const mockSupabase = () => ({
   from: vi.fn(() => ({
     insert: vi.fn(() => ({
       select: vi.fn(() => ({
-        single: vi.fn(() => Promise.resolve({ data: { id: '11111111-1111-1111-1111-111111111111' }, error: null })),
+        single: vi.fn(() => Promise.resolve({ data: { id: VALID_UUID }, error: null })),
       })),
     })),
     update: vi.fn(() => ({
       eq: vi.fn(() => ({
         select: vi.fn(() => ({
-          single: vi.fn(() => Promise.resolve({ data: { id: '11111111-1111-1111-1111-111111111111' }, error: null })),
+          single: vi.fn(() => Promise.resolve({ data: { id: VALID_UUID }, error: null })),
         })),
       })),
     })),
@@ -19,13 +21,13 @@ const mockSupabase = () => ({
     })),
     select: vi.fn(() => ({
       eq: vi.fn(() => ({
-        single: vi.fn(() => Promise.resolve({ data: { id: '11111111-1111-1111-1111-111111111111' }, error: null })),
+        single: vi.fn(() => Promise.resolve({ data: { id: VALID_UUID }, error: null })),
       })),
     })),
   })),
 });
 
-vi.mock('../../lib/supabase/server', () => ({
+vi.mock('../lib/supabase/server', () => ({
   createSupabaseServerClient: vi.fn(() => Promise.resolve(mockSupabase())),
 }));
 
@@ -63,7 +65,7 @@ describe('project-actions', () => {
   });
 
   it('actualiza un proyecto existente', async () => {
-    const result = await updateProject('11111111-1111-1111-1111-111111111111', { name: 'Nuevo nombre' });
+    const result = await updateProject(VALID_UUID, { name: 'Nuevo nombre' });
     expect(result.error).toBeNull();
     expect(result.data).toBeTruthy();
   });
@@ -74,7 +76,7 @@ describe('project-actions', () => {
   });
 
   it('elimina un proyecto existente', async () => {
-    const result = await deleteProject('11111111-1111-1111-1111-111111111111');
+    const result = await deleteProject(VALID_UUID);
     expect(result.error).toBeNull();
     expect(result.success).toBe(true);
   });
@@ -85,7 +87,7 @@ describe('project-actions', () => {
   });
 
   it('obtiene un proyecto por id', async () => {
-    const result = await getProjectById('11111111-1111-1111-1111-111111111111');
+    const result = await getProjectById(VALID_UUID);
     expect(result.error).toBeNull();
     expect(result.data).toBeTruthy();
   });

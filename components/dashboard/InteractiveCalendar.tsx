@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, MapPin } from 'lucide-react';
+import { offlineDB, LocalProjectLog, LocalProject } from '@/lib/db/offlineStore';
 
 interface CalendarEvent {
   id: string;
@@ -18,8 +19,67 @@ interface CalendarEvent {
 export default function InteractiveCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [events] = useState<CalendarEvent[]>([]); // Mock - events loaded from context
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [showEventForm, setShowEventForm] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Cargar eventos reales desde project_logs (hitos) y proyectos (deadlines)
+  const loadRealEvents = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const [logs, projects] = await Promise.all([
+        offlineDB.projectLogs.toArray(),
+        offlineDB.projects.toArray(),
+      ]);
+
+      const projectMap = new Map<string, LocalProject>();
+      projects.forEach(p => p.id && projectMap.set(p.id, p));
+
+      const logEvents: CalendarEvent[] = (logs as LocalProjectLog[])
+        .filter(l => l.log_date)
+        .map(log => ({
+          id: `log-${log.id || Math.random().toString(36).slice(2)}`,
+          title: log.description || 'Bitácora',
+          date: log.log_date,
+          type: (log.activity_type === 'milestone' ? 'milestone' : 'note') as CalendarEvent['type'],
+          projectId: log.project_id,
+          projectName: projectMap.get(log.project_id)?.name,
+          description: log.description,
+        }));
+
+      const deadlineEvents: CalendarEvent[] = projects
+        .filter(p => p.estimated_end_date)
+        .map(p => ({
+          id: `deadline-${p.id}`,
+          title: `Fin: ${p.name}`,
+          date: p.estimated_end_date!,
+          type: 'deadline',
+          projectId: p.id,
+          projectName: p.name,
+        }));
+
+      const startEvents: CalendarEvent[] = projects
+        .filter(p => p.start_date && p.status === 'execution')
+        .map(p => ({
+          id: `start-${p.id}`,
+          title: `Inicio: ${p.name}`,
+          date: p.start_date!,
+          type: 'milestone',
+          projectId: p.id,
+          projectName: p.name,
+        }));
+
+      setEvents([...logEvents, ...deadlineEvents, ...startEvents]);
+    } catch (error) {
+      console.error('Error loading calendar events:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadRealEvents();
+  }, [loadRealEvents]);
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -89,6 +149,7 @@ export default function InteractiveCalendar() {
         <div className="flex items-center gap-2">
           <Calendar className="w-3.5 h-3.5 text-cyan-400" />
           <h3 className="text-xs font-bold text-white">Calendario</h3>
+          {isLoading && <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" title="Cargando eventos..." />}
           <button
             onClick={goToToday}
             className="text-[10px] text-cyan-400 hover:text-cyan-300 transition-colors"

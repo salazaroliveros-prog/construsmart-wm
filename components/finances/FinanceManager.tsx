@@ -6,7 +6,10 @@ import { offlineDB, LocalFinancialTransaction, LocalProject, LocalBudget, LocalB
 import { budgetState } from '@/lib/state/budgetState';
 import { supabase } from '@/lib/supabase/client';
 import { queueDelete, PENDING_STATUSES, isServerId } from '@/lib/utils/offlineSync';
+import { generateId } from '@/lib/utils/generateId';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
+import { useIncrementalList } from '@/lib/hooks/useIncrementalList';
+import { formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
@@ -55,6 +58,7 @@ const categoryColors: Record<string, { bg: string; text: string; border: string 
 
 export default function FinanceManager() {
   const { showToast } = useToast();
+  const { financial } = useFinancialSettings();
   const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<LocalFinancialTransaction | null>(null);
@@ -144,8 +148,9 @@ export default function FinanceManager() {
           setTransactions(updatedTransactions);
         }
       }
-    } catch (error) {
+} catch (error) {
       console.error('Error loading transactions:', error);
+      showToast('error', 'Error al cargar transacciones financieras');
     }
   };
 
@@ -156,6 +161,7 @@ export default function FinanceManager() {
       setAvailableProjects(executionProjects);
     } catch (error) {
       console.error('Error loading projects:', error);
+      showToast('error', 'Error al cargar proyectos');
     }
   };
 
@@ -197,23 +203,25 @@ export default function FinanceManager() {
         // Calculate estimated by category from APU breakdown
         const estimatedMaterials = items.reduce((sum, item) => {
           if (item.apu_result?.breakdown) {
-            return sum + item.apu_result.breakdown.materials;
+            return sum + (item.apu_result.breakdown.materials || 0);
           }
-          return sum + item.total_cost * 0.6; // Default 60% for materials
+          // Fallback: si no hay desglose APU, asigna el costo total a "otros" por defecto
+          return sum;
         }, 0);
 
         const estimatedLabor = items.reduce((sum, item) => {
           if (item.apu_result?.breakdown) {
-            return sum + item.apu_result.breakdown.labor;
+            return sum + (item.apu_result.breakdown.labor || 0);
           }
-          return sum + item.total_cost * 0.3; // Default 30% for labor
+          return sum;
         }, 0);
 
         const estimatedOthers = items.reduce((sum, item) => {
           if (item.apu_result?.breakdown) {
-            return sum + item.apu_result.breakdown.machinery;
+            return sum + (item.apu_result.breakdown.machinery || 0);
           }
-          return sum + item.total_cost * 0.1; // Default 10% for machinery
+          // Items sin desglose APU se agrupan en "otros" (maquinaria/equipo/subcontratos)
+          return sum + item.total_cost;
         }, 0);
 
         const actualMaterials = projectTransactions
@@ -243,8 +251,9 @@ export default function FinanceManager() {
         setBudgetItems([]);
         setBudgetComparison(null);
       }
-    } catch (error) {
+} catch (error) {
       console.error('Error loading budget:', error);
+      showToast('error', 'Error al cargar presupuesto del proyecto');
     }
   };
 
@@ -294,7 +303,7 @@ export default function FinanceManager() {
     try {
       const totalCost = formData.quantity * formData.unit_cost;
       const transactionData: LocalFinancialTransaction = {
-        id: editingTransaction?.id || crypto.randomUUID(),
+        id: editingTransaction?.id || generateId(),
         project_id: formData.project_id,
         type: formData.type,
         category: formData.category,
@@ -366,14 +375,17 @@ export default function FinanceManager() {
     return matchesSearch && matchesType && matchesCategory && matchesProject;
   });
 
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('es-GT', {
-      style: 'currency',
-      currency: 'GTQ',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
+  // Renderizado incremental: evita saturar el DOM con miles de filas.
+  const {
+    visibleItems: visibleTransactions,
+    hasMore: hasMoreTransactions,
+    remaining: remainingTransactions,
+    showMore: showMoreTransactions,
+  } = useIncrementalList({
+    items: filteredTransactions,
+    increment: 30,
+    resetOnItemsChange: true,
+  });
 
   const totalIncome = filteredTransactions
     .filter(t => t.type === 'income')
@@ -589,7 +601,7 @@ export default function FinanceManager() {
                 </tr>
               </thead>
               <tbody>
-                {filteredTransactions.map((transaction) => (
+                {visibleTransactions.map((transaction) => (
                   <tr key={transaction.id} className="border-b border-white/10 hover:bg-white/5">
                     <td className="py-3 px-4 text-white">{transaction.date}</td>
                     <td className="py-3 px-4 text-white">{transaction.description}</td>
@@ -638,6 +650,16 @@ export default function FinanceManager() {
                 ))}
               </tbody>
             </table>
+            {hasMoreTransactions && (
+              <div className="text-center py-3 border-t border-white/10">
+                <button
+                  onClick={showMoreTransactions}
+                  className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 text-sm transition-all"
+                >
+                  Ver más transacciones ({remainingTransactions} restantes)
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

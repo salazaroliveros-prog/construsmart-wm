@@ -6,6 +6,8 @@ import { offlineDB, LocalPayrollEmployee, LocalPayrollRecord, LocalProject } fro
 import { supabase } from '@/lib/supabase/client';
 import { queueDelete, PENDING_STATUSES } from '@/lib/utils/offlineSync';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
+import { useIncrementalList } from '@/lib/hooks/useIncrementalList';
+import { useFinancialSettings, formatCurrency } from '@/lib/hooks/useBusinessSettings';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
@@ -58,6 +60,7 @@ const categoryColors: Record<string, { bg: string; text: string; border: string 
 
 export default function PayrollManager() {
   const { showToast } = useToast();
+  const { financial } = useFinancialSettings();
 
   // ---------------------------------------------------------------------------
   // STATE MANAGEMENT
@@ -125,16 +128,8 @@ export default function PayrollManager() {
   // UTILITY FUNCTIONS
   // ---------------------------------------------------------------------------
 
-  const checkOnlineStatus = () => {
+const checkOnlineStatus = () => {
     setIsOnline(navigator.onLine);
-  };
-
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('es-GT', {
-      style: 'currency',
-      currency: 'GTQ',
-      minimumFractionDigits: 2,
-    }).format(amount);
   };
 
   const calculateGuatemalanBenefits = (baseSalary: number) => {
@@ -202,8 +197,9 @@ export default function PayrollManager() {
           setEmployees(updatedEmployees);
         }
       }
-    } catch (error) {
+} catch (error) {
       console.error('Error loading employees:', error);
+      showToast('error', 'Error al cargar empleados desde el servidor');
     }
   };
 
@@ -234,6 +230,7 @@ export default function PayrollManager() {
       }
     } catch (error) {
       console.error('Error loading payroll records:', error);
+      showToast('error', 'Error al cargar registros de nómina');
     }
   };
 
@@ -243,6 +240,7 @@ export default function PayrollManager() {
       setAvailableProjects(projects);
     } catch (error) {
       console.error('Error loading projects:', error);
+      showToast('error', 'Error al cargar proyectos');
     }
   };
 
@@ -543,6 +541,29 @@ export default function PayrollManager() {
     return matchesProject;
   });
 
+  // Renderizado incremental: evita saturar el DOM con cientos/miles de filas.
+  const {
+    visibleItems: visibleEmployees,
+    hasMore: hasMoreEmployees,
+    remaining: remainingEmployees,
+    showMore: showMoreEmployees,
+  } = useIncrementalList({
+    items: filteredEmployees,
+    increment: 25,
+    resetOnItemsChange: true,
+  });
+
+  const {
+    visibleItems: visiblePayrollRecords,
+    hasMore: hasMorePayrollRecords,
+    remaining: remainingPayrollRecords,
+    showMore: showMorePayrollRecords,
+  } = useIncrementalList({
+    items: filteredPayrollRecords,
+    increment: 25,
+    resetOnItemsChange: true,
+  });
+
   const summary = calculateSummary();
 
   // Realtime refresh: reload data when changes arrive from other devices
@@ -605,21 +626,21 @@ export default function PayrollManager() {
               <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
               <span className="text-white/60 text-xs sm:text-sm">Nómina Mensual</span>
             </div>
-            <p className="text-lg sm:text-xl font-bold text-emerald-400">{formatCurrency(summary.totalMonthlyPayroll)}</p>
+<p className="text-lg sm:text-xl font-bold text-emerald-400">{formatCurrency(summary.totalMonthlyPayroll, financial)}</p>
           </div>
           <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-violet-500">
             <div className="flex items-center gap-2 mb-1">
               <BadgeCheck className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400" />
               <span className="text-white/60 text-xs sm:text-sm">Prestaciones</span>
             </div>
-            <p className="text-lg sm:text-xl font-bold text-violet-400">{formatCurrency(summary.totalBenefits)}</p>
+            <p className="text-lg sm:text-xl font-bold text-violet-400">{formatCurrency(summary.totalBenefits, financial)}</p>
           </div>
           <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-amber-500">
             <div className="flex items-center gap-2 mb-1">
               <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
               <span className="text-white/60 text-xs sm:text-sm">Costo Total</span>
             </div>
-            <p className="text-lg sm:text-xl font-bold text-amber-400">{formatCurrency(summary.totalCost)}</p>
+            <p className="text-lg sm:text-xl font-bold text-amber-400">{formatCurrency(summary.totalCost, financial)}</p>
           </div>
         </div>
       </div>
@@ -708,7 +729,7 @@ export default function PayrollManager() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredEmployees.map((employee) => (
+                  {visibleEmployees.map((employee) => (
                     <tr key={employee.id} className="border-b border-white/10 hover:bg-white/5">
                       <td className="py-3 px-4 text-white font-medium">{employee.name}</td>
                       <td className="py-3 px-4 text-white/70">{employee.position}</td>
@@ -725,7 +746,7 @@ export default function PayrollManager() {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-white/70">{employee.department}</td>
-                      <td className="py-3 px-4 text-white font-medium">{formatCurrency(employee.daily_rate)}</td>
+<td className="py-3 px-4 text-white font-medium">{formatCurrency(employee.daily_rate, financial)}</td>
                       <td className="py-3 px-4">
                         <span className={`flex items-center gap-1 ${
                           employee.active ? 'text-emerald-400' : 'text-red-400'
@@ -754,8 +775,18 @@ export default function PayrollManager() {
                       </td>
                     </tr>
                   ))}
-                </tbody>
+</tbody>
               </table>
+              {hasMoreEmployees && (
+                <div className="text-center py-3 border-t border-white/10">
+                  <button
+                    onClick={showMoreEmployees}
+                    className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 text-sm transition-all"
+                  >
+                    Ver más empleados ({remainingEmployees} restantes)
+                  </button>
+                </div>
+              )}
             </div>
           )
         ) : (
@@ -799,7 +830,7 @@ export default function PayrollManager() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredPayrollRecords.map((record) => {
+                    {visiblePayrollRecords.map((record) => {
                       const employee = employees.find(e => e.id === record.employee_id);
                       return (
                         <tr key={record.id} className="border-b border-white/10 hover:bg-white/5">
@@ -807,14 +838,24 @@ export default function PayrollManager() {
                           <td className="py-3 px-4 text-white/70">{record.period_start} - {record.period_end}</td>
                           <td className="py-3 px-4 text-white/70">{record.days_worked}</td>
                           <td className="py-3 px-4 text-white/70">{record.overtime_hours}</td>
-                          <td className="py-3 px-4 text-white font-medium">{formatCurrency(record.gross_salary)}</td>
-                          <td className="py-3 px-4 text-white/70">{formatCurrency(record.igss_deduction)}</td>
-                          <td className="py-3 px-4 text-emerald-400 font-medium">{formatCurrency(record.net_salary)}</td>
+<td className="py-3 px-4 text-white font-medium">{formatCurrency(record.gross_salary, financial)}</td>
+                          <td className="py-3 px-4 text-white/70">{formatCurrency(record.igss_deduction, financial)}</td>
+                          <td className="py-3 px-4 text-emerald-400 font-medium">{formatCurrency(record.net_salary, financial)}</td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
+                {hasMorePayrollRecords && (
+                  <div className="text-center py-3 border-t border-white/10">
+                    <button
+                      onClick={showMorePayrollRecords}
+                      className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 text-sm transition-all"
+                    >
+                      Ver más registros ({remainingPayrollRecords} restantes)
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )

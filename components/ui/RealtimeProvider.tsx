@@ -15,6 +15,9 @@ import { PENDING_STATUSES } from '@/lib/utils/offlineSync';
  */
 type RemoteToLocal = { remote: string; local: Table<any, any> };
 
+// Mapa de tablas por tab activa. Solo se suscriben las tablas del módulo
+// actualmente visible para reducir canales realtime y carga de red/CPU.
+// La tab "dashboard" usa las tablas esenciales que alimentan los KPIs.
 const TABLES: RemoteToLocal[] = [
   { remote: 'projects', local: offlineDB.projects },
   { remote: 'budgets', local: offlineDB.budgets },
@@ -29,6 +32,29 @@ const TABLES: RemoteToLocal[] = [
   { remote: 'purchase_orders', local: offlineDB.purchaseOrders },
   { remote: 'purchase_order_items', local: offlineDB.purchaseOrderItems },
 ];
+
+// Map de tab → tablas que necesita (por nombre remoto).
+const TAB_BY_TABLES: Record<string, string[]> = {
+  dashboard: ['projects', 'financial_transactions', 'project_logs'],
+  projects: ['projects'],
+  budgets: ['projects', 'budgets', 'budget_items'],
+  progress: ['projects', 'project_logs', 'budgets', 'budget_items'],
+  finances: ['financial_transactions', 'projects', 'budgets', 'budget_items'],
+  payroll: ['payroll_employees', 'payroll_records'],
+  warehouse: ['warehouse_stock', 'projects'],
+  suppliers: ['suppliers', 'purchase_orders'],
+  orders: ['purchase_orders', 'purchase_order_items', 'suppliers'],
+  analytics: ['financial_transactions', 'projects', 'warehouse_stock'],
+  clients: ['clients'],
+  logs: ['project_logs', 'projects'],
+  settings: [],
+};
+
+// Extrae los nombres remotos de las tablas para un tab dado.
+function tablesForTab(activeTab: string): string[] {
+  const names = TAB_BY_TABLES[activeTab] || TAB_BY_TABLES.dashboard;
+  return TABLES.filter(t => names.includes(t.remote)).map(t => t.remote);
+}
 
 async function applyChange(payload: {
   eventType: string;
@@ -69,13 +95,14 @@ async function applyChange(payload: {
   }
 }
 
-export default function RealtimeProvider() {
+export default function RealtimeProvider({ activeTab = 'dashboard' }: { activeTab?: string }) {
   useEffect(() => {
     if (typeof window === 'undefined' || !supabase) return;
 
-    const channels: RealtimeChannel[] = TABLES.map(({ remote }) =>
+    const relevantTables = tablesForTab(activeTab);
+    const channels: RealtimeChannel[] = relevantTables.map((remote) =>
       supabase!
-        .channel(`realtime-${remote}`)
+        .channel(`realtime-${remote}-${activeTab}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: remote }, (payload) => {
           applyChange(payload);
         })
@@ -85,7 +112,7 @@ export default function RealtimeProvider() {
     return () => {
       channels.forEach((channel) => supabase!.removeChannel(channel));
     };
-  }, []);
+  }, [activeTab]);
 
   return null;
 }

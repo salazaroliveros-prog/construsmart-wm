@@ -1,17 +1,13 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Calculator, Plus, Trash2, Save, Download, FolderOpen, Building2, TrendingUp, Map } from 'lucide-react';
+import { Calculator, Plus, Save, Download, FolderOpen, Building2, Map as MapIcon } from 'lucide-react';
 import { calculateSlab, SlabDimensions, calculateSlabCost, SlabCostParams } from '@/lib/calculators/slabCalculators';
 import { 
   calculateAPU, 
-  calculateBudgetSummary, 
   formatQuetzales, 
-  getResidentialCostLevel,
-  getCostLevelLabel,
   getVolumetricFactor,
-  calculateEarthworkVolume,
   calculateLocalBudgetSummary,
   type LocalBudgetSummary,
 } from '@/lib/calculators/apuCalculator';
@@ -21,16 +17,18 @@ import { ProjectTypology, APUFormulaParams, APUResult, TYPOLOGY_LABELS, MATERIAL
 import type { APURenglon } from '@/lib/types/apu';
 import { offlineDB, LocalProject, LocalBudgetItem } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
+import { sendBudgetMaterialsToWarehouse, MaterialToWarehouseInput } from '@/lib/integrations/budgetToWarehouse';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
+import { useIncrementalList } from '@/lib/hooks/useIncrementalList';
 import { budgetState, ActiveBudgetState } from '@/lib/state/budgetState';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
-import ActionButton from '@/components/ui/ActionButton';
 import CSVGenerator from '@/components/csv/CSVGenerator';
-import RenglonAccordion from '@/components/budgets/RenglonAccordion';
-import { RenglonCalculator, ProjectRenglon, ProjectTimeImpact } from '@/lib/calculators/renglonCalculator';
+import { RenglonCalculator, ProjectRenglon } from '@/lib/calculators/renglonCalculator';
+import BudgetItemsTable from '@/components/budgets/BudgetItemsTable';
+import BudgetSummaryPanel from '@/components/budgets/BudgetSummaryPanel';
+import type { BudgetItem } from './types';
 
 // Dynamic imports for heavy components
 const PDFGenerator = dynamic(() => import('@/components/pdf/PDFGenerator'), {
@@ -38,22 +36,9 @@ const PDFGenerator = dynamic(() => import('@/components/pdf/PDFGenerator'), {
   loading: () => <div className="text-white/60 text-sm">Cargando visor PDF...</div>
 });
 
-interface BudgetItem {
-  id: string;
-  code: string;
-  description: string;
-  unit: string;
-  quantity: number;
-  unitCost: number;
-  totalCost: number;
-  category: string;
-  apuResult?: APUResult;
-}
-
 export default function BudgetCalculator() {
   const { showToast } = useToast();
   const [items, setItems] = useState<BudgetItem[]>([]);
-  const [visibleCount, setVisibleCount] = useState(20);
   const [indirectPercentage, setIndirectPercentage] = useState(15);
   const [contingencyPercentage, setContingencyPercentage] = useState(5);
   const [profitPercentage, setProfitPercentage] = useState(10);
@@ -86,6 +71,35 @@ export default function BudgetCalculator() {
     indirectPercentage: 15,
     materialUnitCost: 45,
     machineryCost: 0,
+  });
+
+  // Estado de parámetros por renglón (Map) para no pisar apuParams global
+  const [renglonParams, setRenglonParams] = useState<Map<string, Partial<APUFormulaParams>>>(new Map());
+
+  const updateRenglonParam = (itemId: string, patch: Partial<APUFormulaParams>) => {
+    setRenglonParams(prev => {
+      const next = new Map(prev);
+      const current = next.get(itemId) || {};
+      next.set(itemId, { ...current, ...patch });
+      return next;
+    });
+  };
+
+  const getRenglonParam = (itemId: string): Partial<APUFormulaParams> => {
+    return renglonParams.get(itemId) || {};
+  };
+
+  // Renderizado incremental: evita saturar el DOM con miles de items.
+  const {
+    visibleItems: visibleItems,
+    hasMore: hasMoreItems,
+    remaining: remainingItems,
+    showMore: showMoreItems,
+    reset: resetItems,
+  } = useIncrementalList({
+    items,
+    increment: 20,
+    resetOnItemsChange: true,
   });
 
   // Load projects in planning status
@@ -145,11 +159,11 @@ export default function BudgetCalculator() {
         setContingencyPercentage(existingBudget.contingency_percentage);
         setProfitPercentage(existingBudget.profit_percentage);
         setDurationDays(existingBudget.duration_days);
-        setVisibleCount(20);
+        resetItems();
       } else {
         // Sin presupuesto previo: limpia el estado
         setItems([]);
-        setVisibleCount(20);
+        resetItems();
       }
     } catch (error) {
       console.error('Error cargando presupuesto existente:', error);
@@ -350,6 +364,7 @@ export default function BudgetCalculator() {
       }
 
       // Save budget items
+      const warehouseInputs: MaterialToWarehouseInput[] = [];
       for (const item of items) {
         const budgetItemData: any = {
           budget_id: budgetId as string,
@@ -374,77 +389,45 @@ export default function BudgetCalculator() {
 
         await offlineDB.budgetItems.add(budgetItemData);
 
-        // Materials are only added to warehouse on first save to avoid stock inflation
+        // Acumular materiales para el almacén (se envía al final, solo en el primer guardado)
         if (isFirstSave) {
-        // Add detailed material breakdown to warehouse
-        const catalogRenglon = RENGLONES_BY_TYPOLOGY_DETAILED[selectedTypology]?.find(
-          r => r.code === item.code
-        );
+          const catalogRenglon = RENGLONES_BY_TYPOLOGY_DETAILED[selectedTypology]?.find(
+            r => r.code === item.code
+          );
 
-        if (catalogRenglon && catalogRenglon.materialFormula) {
-          // Calculate material breakdown using RenglonCalculator
-          const materialBreakdown = RenglonCalculator.calculateMaterialBreakdown({
-            quantity: item.quantity,
-            renglon: catalogRenglon,
-            customMaterialCost: item.unitCost
-          });
-
-          // Add each material to warehouse stock
-          for (const material of materialBreakdown) {
-            const existingStock = await offlineDB.warehouseStock
-              .where('item_code')
-              .equals(material.code)
-              .and(stock => stock.project_id === selectedProject)
-              .first();
-
-            if (existingStock) {
-              // Update existing stock with new material quantity
-              await offlineDB.warehouseStock.update(existingStock.id!, {
-                current_stock: existingStock.current_stock + material.quantity,
-                unit_cost: material.unitCost,
-                sync_status: 'updated_offline',
-                updated_at: new Date().toISOString(),
-              });
-            } else {
-              // Create new stock item
-              await offlineDB.warehouseStock.add({
-                project_id: selectedProject,
-                item_code: material.code,
+          if (catalogRenglon && catalogRenglon.materialFormula) {
+            const materialBreakdown = RenglonCalculator.calculateMaterialBreakdown({
+              quantity: item.quantity,
+              renglon: catalogRenglon,
+              customMaterialCost: item.unitCost
+            });
+            for (const material of materialBreakdown) {
+              warehouseInputs.push({
+                projectId: selectedProject,
+                itemCode: material.code,
                 description: material.description,
                 unit: material.unit,
-                current_stock: material.quantity,
-                minimum_threshold: Math.max(1, Math.floor(material.quantity * 0.1)),
-                unit_cost: material.unitCost,
-                sync_status: 'created_offline',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
+                quantity: material.quantity,
+                unitCost: material.unitCost,
               });
             }
-          }
-        } else {
-          // Fallback for items without detailed breakdown
-          const existingStock = await offlineDB.warehouseStock
-            .where('item_code')
-            .equals(item.code)
-            .and(stock => stock.project_id === selectedProject)
-            .first();
-
-          if (!existingStock) {
-            await offlineDB.warehouseStock.add({
-              project_id: selectedProject,
-              item_code: item.code,
+          } else {
+            warehouseInputs.push({
+              projectId: selectedProject,
+              itemCode: item.code,
               description: item.description,
               unit: item.unit,
-              current_stock: item.quantity,
-              minimum_threshold: Math.max(1, Math.floor(item.quantity * 0.1)),
-              unit_cost: item.unitCost,
-              sync_status: 'created_offline',
-              created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              });
-            }
+              quantity: item.quantity,
+              unitCost: item.unitCost,
+            });
           }
         }
+      }
+
+      // Enviar materiales al almacén de forma centralizada (solo en el primer
+      // guardado para evitar inflar el stock en ediciones posteriores)
+      if (isFirstSave && warehouseInputs.length > 0) {
+        await sendBudgetMaterialsToWarehouse(warehouseInputs);
       }
 
       // Update project with budget data
@@ -689,7 +672,7 @@ export default function BudgetCalculator() {
         <div className="mb-4 p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-cyan-400 font-medium flex items-center gap-2">
-              <Map className="w-4 h-4" />
+<MapIcon className="w-4 h-4" />
               Datos de Topografía / CivilCAD
             </h4>
             <Tooltip content="Aplicar factores volumétricos a la calculadora APU">
@@ -1006,190 +989,31 @@ export default function BudgetCalculator() {
       </div>
 
       {/* Budget Items Table */}
-      <div className="glass-panel rounded-2xl p-4 sm:p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-white">Items del Presupuesto</h2>
-          <Tooltip content="Agregar nuevo item al presupuesto">
-            <button
-              onClick={addItem}
-              className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Agregar Item
-            </button>
-          </Tooltip>
-        </div>
-
-        {items.length === 0 ? (
-          <EmptyState
-            icon={<Calculator className="w-8 h-8 text-white/30" />}
-            title="No hay items en el presupuesto"
-            description="Agregue cálculos de losa o items manuales para comenzar a armar el presupuesto."
-          />
-        ) : (
-          <div className="space-y-3">
-            {items.slice(0, visibleCount).map((item) => {
-              // Find matching renglon from catalog for detailed calculation
-              const catalogRenglon = RENGLONES_BY_TYPOLOGY_DETAILED[selectedTypology]?.find(
-                r => r.code === item.code
-              );
-
-              if (catalogRenglon) {
-                return (
-                  <RenglonAccordion
-                    key={item.id}
-                    renglon={catalogRenglon}
-                    quantity={item.quantity}
-                    onQuantityChange={(value) => updateItem(item.id, 'quantity', value)}
-                    onCrewSizeChange={(value) => {
-                      // Update renglon-specific crew size (stored in apu_params)
-                      const updatedApuParams = {
-                        ...apuParams,
-                        crewSize: value
-                      };
-                      setApuParams(updatedApuParams);
-                    }}
-                    onMaterialCostChange={(value) => {
-                      updateItem(item.id, 'unitCost', value);
-                    }}
-                    onPerformanceChange={(value) => {
-                      const updatedApuParams = {
-                        ...apuParams,
-                        dailyPerformance: value
-                      };
-                      setApuParams(updatedApuParams);
-                    }}
-                    onEfficiencyChange={(value) => {
-                      const updatedApuParams = {
-                        ...apuParams,
-                        efficiency: value
-                      };
-                      setApuParams(updatedApuParams);
-                    }}
-                    defaultExpanded={false}
-                  />
-                );
-              }
-
-              // Fallback to simple table row for items without catalog renglon
-              return (
-                <div key={item.id} className="glass-card p-4 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 grid grid-cols-6 gap-4">
-                      <div className="text-cyan-400 font-mono text-sm">{item.code}</div>
-                      <div className="text-white col-span-2">{item.description}</div>
-                      <div className="text-white/60">{item.unit}</div>
-                      <div>
-                        <input
-                          type="number"
-                          value={item.quantity}
-                          onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
-                          className="w-20 bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-sm"
-                        />
-                      </div>
-                      <div>
-                        <input
-                          type="number"
-                          value={item.unitCost}
-                          onChange={(e) => updateItem(item.id, 'unitCost', e.target.value)}
-                          className="w-24 bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-sm"
-                        />
-                      </div>
-                    </div>
-                    <div className="text-white font-medium mr-4">
-                      {new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(item.totalCost)}
-                    </div>
-                    <button
-                      onClick={() => deleteItem(item.id)}
-                      className="text-red-400 hover:text-red-300 p-1"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-            {items.length > visibleCount && (
-              <div className="text-center py-3">
-                <button
-                  onClick={() => setVisibleCount((c) => c + 20)}
-                  className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 text-sm transition-all"
-                >
-                  Ver más items ({items.length - visibleCount} restantes)
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      <BudgetItemsTable
+        items={visibleItems}
+        totalCount={items.length}
+        hasMore={hasMoreItems}
+        remaining={remainingItems}
+        selectedTypology={selectedTypology}
+        onShowMore={showMoreItems}
+        onAddItem={addItem}
+        onUpdateItem={updateItem}
+        onDeleteItem={deleteItem}
+        onCrewSizeChange={(itemId, value) => updateRenglonParam(itemId, { crewSize: value })}
+        onPerformanceChange={(itemId, value) => updateRenglonParam(itemId, { dailyPerformance: value })}
+        onEfficiencyChange={(itemId, value) => updateRenglonParam(itemId, { efficiency: value })}
+      />
 
       {/* Budget Summary */}
-      <div className="glass-panel rounded-2xl p-4 sm:p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Resumen del Presupuesto</h2>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-          <div>
-            <label className="block text-white/60 text-xs sm:text-sm mb-1">Indirectos (%)</label>
-            <input
-              type="number"
-              value={indirectPercentage}
-              onChange={(e) => setIndirectPercentage(Number(e.target.value))}
-              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-white/60 text-xs sm:text-sm mb-1">Contingencia (%)</label>
-            <input
-              type="number"
-              value={contingencyPercentage}
-              onChange={(e) => setContingencyPercentage(Number(e.target.value))}
-              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-white/60 text-xs sm:text-sm mb-1">Utilidad (%)</label>
-            <input
-              type="number"
-              value={profitPercentage}
-              onChange={(e) => setProfitPercentage(Number(e.target.value))}
-              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-white/60 text-xs sm:text-sm mb-1">Total</label>
-            <div className="text-2xl font-bold text-white">
-              {new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(summary.total)}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="glass-card p-3 rounded-lg">
-            <p className="text-white/60 text-xs sm:text-sm">Costo Directo</p>
-            <p className="text-lg font-bold text-white">
-              {new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(summary.directCost)}
-            </p>
-          </div>
-          <div className="glass-card p-3 rounded-lg">
-            <p className="text-white/60 text-xs sm:text-sm">Indirectos</p>
-            <p className="text-lg font-bold text-white">
-              {new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(summary.indirectCost)}
-            </p>
-          </div>
-          <div className="glass-card p-3 rounded-lg">
-            <p className="text-white/60 text-xs sm:text-sm">Contingencia</p>
-            <p className="text-lg font-bold text-white">
-              {new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(summary.contingency)}
-            </p>
-          </div>
-          <div className="glass-card p-3 rounded-lg">
-            <p className="text-white/60 text-xs sm:text-sm">Utilidad</p>
-            <p className="text-lg font-bold text-white">
-              {new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(summary.profit)}
-            </p>
-          </div>
-        </div>
-      </div>
+      <BudgetSummaryPanel
+        summary={summary}
+        indirectPercentage={indirectPercentage}
+        contingencyPercentage={contingencyPercentage}
+        profitPercentage={profitPercentage}
+        onIndirectChange={setIndirectPercentage}
+        onContingencyChange={setContingencyPercentage}
+        onProfitChange={setProfitPercentage}
+      />
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

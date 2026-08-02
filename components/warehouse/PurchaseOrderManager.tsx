@@ -5,12 +5,14 @@ import { ShoppingCart, Plus, Edit, Trash2, FileText, Search, Filter, Package, Do
 import { offlineDB, LocalPurchaseOrder, LocalPurchaseOrderItem, LocalSupplier, LocalProject } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
+import { useToast } from '@/components/ui/Toast';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 
 export default function PurchaseOrderManager() {
+  const { showToast } = useToast();
   const [orders, setOrders] = useState<LocalPurchaseOrder[]>([]);
   const [orderItems, setOrderItems] = useState<LocalPurchaseOrderItem[]>([]);
   const [suppliers, setSuppliers] = useState<LocalSupplier[]>([]);
@@ -66,8 +68,9 @@ export default function PurchaseOrderManager() {
       setOrderItems(localOrderItems);
       setSuppliers(localSuppliers);
       setProjects(localProjects);
-    } catch (error) {
+} catch (error) {
       console.error('Error loading data:', error);
+      showToast('error', 'Error al cargar datos');
     }
   };
 
@@ -127,8 +130,9 @@ export default function PurchaseOrderManager() {
         notes: '',
       });
       loadData();
-    } catch (error) {
+} catch (error) {
       console.error('Error saving order:', error);
+      showToast('error', 'Error al guardar la orden');
     }
   };
 
@@ -172,8 +176,9 @@ export default function PurchaseOrderManager() {
         total_price: 0,
       });
       loadData();
-    } catch (error) {
+} catch (error) {
       console.error('Error adding item:', error);
+      showToast('error', 'Error al agregar item');
     }
   };
 
@@ -194,8 +199,9 @@ export default function PurchaseOrderManager() {
       }
       setDeleteDialog({ show: false, order: null });
       loadData();
-    } catch (error) {
+} catch (error) {
       console.error('Error deleting order:', error);
+      showToast('error', 'Error al eliminar la orden');
     }
   };
 

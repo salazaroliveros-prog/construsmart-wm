@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Building2, Calendar, DollarSign, Inbox } from 'lucide-react';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
+import { useFinancialSettings, formatCurrency } from '@/lib/hooks/useBusinessSettings';
 import EmptyState from '@/components/ui/EmptyState';
 
 const statusColors = {
@@ -20,16 +21,8 @@ const statusLabels = {
   completed: 'Completado'
 };
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('es-GT', {
-    style: 'currency',
-    currency: 'GTQ',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
 export default function ProjectOverview() {
+  const { financial } = useFinancialSettings();
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -134,7 +127,7 @@ export default function ProjectOverview() {
                     <Calendar className="w-3 h-3 text-white/40 flex-shrink-0" />
                     <span className="text-[10px] text-white/70">{project.duration_days}d</span>
                     <DollarSign className="w-3 h-3 text-emerald-400 flex-shrink-0" />
-                    <span className="text-[10px] font-medium text-white truncate">{formatCurrency(project.total_budget)}</span>
+                    <span className="text-[10px] font-medium text-white truncate">{formatCurrency(project.total_budget, financial)}</span>
                   </div>
               </div>
             </div>

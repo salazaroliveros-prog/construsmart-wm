@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Save, X, FolderOpen } from 'lucide-react';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
 import { queueDelete, isServerId, fetchProjectsForOffline } from '@/lib/utils/offlineSync';
+import { generateId } from '@/lib/utils/generateId';
 import { createProject as serverCreateProject, updateProject as serverUpdateProject, getProjectById } from '@/app/actions/project-actions';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useToast } from '@/components/ui/Toast';
@@ -211,7 +212,7 @@ export default function ProjectManager() {
 
     try {
       const projectData: LocalProject = {
-        id: editingProject?.id || crypto.randomUUID(),
+        id: editingProject?.id || generateId(),
         ...formData,
         sync_status: editingProject
           ? (editingProject.sync_status === 'synced' ? (isOnline ? 'synced' : 'updated_offline') : 'created_offline')

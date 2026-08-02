@@ -6,6 +6,8 @@ import { offlineDB, LocalWarehouseStock, LocalProject } from '@/lib/db/offlineSt
 import { supabase } from '@/lib/supabase/client';
 import { queueDelete, PENDING_STATUSES } from '@/lib/utils/offlineSync';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
+import { useIncrementalList } from '@/lib/hooks/useIncrementalList';
+import { useFinancialSettings, formatCurrency } from '@/lib/hooks/useBusinessSettings';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
@@ -60,6 +62,7 @@ const unitColors: Record<string, { bg: string; text: string; border: string }> =
 
 export default function WarehouseManager() {
   const { showToast } = useToast();
+  const { financial } = useFinancialSettings();
 
   // ---------------------------------------------------------------------------
   // STATE MANAGEMENT
@@ -114,14 +117,6 @@ export default function WarehouseManager() {
     setIsOnline(navigator.onLine);
   };
 
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('es-GT', {
-      style: 'currency',
-      currency: 'GTQ',
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
-
   const calculateSummary = () => {
     const totalItems = stockItems.length;
     const lowStockItems = stockItems.filter(item => item.current_stock <= item.minimum_threshold);
@@ -165,8 +160,9 @@ export default function WarehouseManager() {
           setStockItems(updatedItems);
         }
       }
-    } catch (error) {
+} catch (error) {
       console.error('Error loading stock items:', error);
+      showToast('error', 'Error al cargar items del inventario');
     }
   };
 
@@ -176,6 +172,7 @@ export default function WarehouseManager() {
       setAvailableProjects(projects);
     } catch (error) {
       console.error('Error loading projects:', error);
+      showToast('error', 'Error al cargar proyectos');
     }
   };
 
@@ -370,6 +367,18 @@ export default function WarehouseManager() {
     return matchesSearch && matchesProject;
   });
 
+  // Renderizado incremental: evita saturar el DOM con miles de materiales.
+  const {
+    visibleItems: visibleItems,
+    hasMore: hasMoreItems,
+    remaining: remainingItems,
+    showMore: showMoreItems,
+  } = useIncrementalList({
+    items: filteredItems,
+    increment: 30,
+    resetOnItemsChange: true,
+  });
+
   const lowStockItems = stockItems.filter(item => item.current_stock <= item.minimum_threshold);
   const summary = calculateSummary();
 
@@ -432,7 +441,7 @@ export default function WarehouseManager() {
               <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
               <span className="text-white/60 text-xs sm:text-sm">Valor Inventario</span>
             </div>
-            <p className="text-lg sm:text-xl font-bold text-emerald-400">{formatCurrency(summary.totalInventoryValue)}</p>
+            <p className="text-lg sm:text-xl font-bold text-emerald-400">{formatCurrency(summary.totalInventoryValue, financial)}</p>
           </div>
           <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-violet-500">
             <div className="flex items-center gap-2 mb-1">
@@ -529,8 +538,8 @@ export default function WarehouseManager() {
                   <th className="text-right text-white/60 py-3 px-4">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
-                {filteredItems.map((item) => (
+<tbody>
+                {visibleItems.map((item) => (
                   <tr key={item.id} className="border-b border-white/10 hover:bg-white/5">
                     <td className="py-3 px-4 text-cyan-400 font-mono text-xs">{item.item_code}</td>
                     <td className="py-3 px-4 text-white font-medium">{item.description}</td>
@@ -548,8 +557,8 @@ export default function WarehouseManager() {
                     </td>
                     <td className="py-3 px-4 text-white font-medium">{item.current_stock.toLocaleString()}</td>
                     <td className="py-3 px-4 text-white/70">{item.minimum_threshold}</td>
-                    <td className="py-3 px-4 text-white/70">{formatCurrency(item.unit_cost)}</td>
-                    <td className="py-3 px-4 text-white font-medium">{formatCurrency(item.current_stock * item.unit_cost)}</td>
+                    <td className="py-3 px-4 text-white/70">{formatCurrency(item.unit_cost, financial)}</td>
+                    <td className="py-3 px-4 text-white font-medium">{formatCurrency(item.current_stock * item.unit_cost, financial)}</td>
                     <td className="py-3 px-4">
                       {item.current_stock <= item.minimum_threshold ? (
                         <span className="flex items-center space-x-1 text-amber-400">
@@ -607,6 +616,16 @@ export default function WarehouseManager() {
                 ))}
               </tbody>
             </table>
+            {hasMoreItems && (
+              <div className="text-center py-3 border-t border-white/10">
+                <button
+                  onClick={showMoreItems}
+                  className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 text-sm transition-all"
+                >
+                  Ver más materiales ({remainingItems} restantes)
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -5,12 +5,14 @@ import { Users, Plus, Edit, Trash2, Phone, Mail, MapPin, Building2, Search, Filt
 import { offlineDB, LocalClient } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
+import { useToast } from '@/components/ui/Toast';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 
 export default function ClientManager() {
+  const { showToast } = useToast();
   const [clients, setClients] = useState<LocalClient[]>([]);
   const [filteredClients, setFilteredClients] = useState<LocalClient[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -39,12 +41,13 @@ export default function ClientManager() {
     filterClients();
   }, [clients, searchTerm, filterType]);
 
-  const loadClients = async () => {
+const loadClients = async () => {
     try {
       const allClients = await offlineDB.clients.toArray();
       setClients(allClients);
     } catch (error) {
       console.error('Error loading clients:', error);
+      showToast('error', 'Error al cargar clientes');
     }
   };
 

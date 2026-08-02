@@ -3,6 +3,7 @@
 // import { revalidatePath } from 'next/cache';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
 import type { ProjectInsert, ProjectUpdate, ProjectRow } from '../../lib/types/database';
+import { generateId } from '../../lib/utils/generateId';
 import { z } from 'zod';
 
 // ============================================================================
@@ -42,7 +43,7 @@ export async function createProject(input: unknown): Promise<{ data: ProjectRow 
     const supabase = await createSupabaseServerClient();
 
     const payload: ProjectInsert = {
-      id: parsed.id ?? crypto.randomUUID(),
+      id: parsed.id ?? generateId(),
       code: parsed.code,
       name: parsed.name,
       client_name: parsed.client_name,

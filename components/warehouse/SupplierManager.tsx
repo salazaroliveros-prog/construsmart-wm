@@ -5,12 +5,14 @@ import { Truck, Plus, Edit, Trash2, Phone, Mail, MapPin, Building2, Search, Filt
 import { offlineDB, LocalSupplier } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
+import { useToast } from '@/components/ui/Toast';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 
 export default function SupplierManager() {
+  const { showToast } = useToast();
   const [suppliers, setSuppliers] = useState<LocalSupplier[]>([]);
   const [filteredSuppliers, setFilteredSuppliers] = useState<LocalSupplier[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -42,8 +44,9 @@ export default function SupplierManager() {
     try {
       const allSuppliers = await offlineDB.suppliers.toArray();
       setSuppliers(allSuppliers);
-    } catch (error) {
+} catch (error) {
       console.error('Error loading suppliers:', error);
+      showToast('error', 'Error al cargar proveedores');
     }
   };
 
@@ -100,8 +103,9 @@ export default function SupplierManager() {
         notes: '',
       });
       loadSuppliers();
-    } catch (error) {
+} catch (error) {
       console.error('Error saving supplier:', error);
+      showToast('error', 'Error al guardar proveedor');
     }
   };
 
@@ -127,8 +131,9 @@ export default function SupplierManager() {
 
       setDeleteDialog({ show: false, supplier: null });
       loadSuppliers();
-    } catch (error) {
+} catch (error) {
       console.error('Error deleting supplier:', error);
+      showToast('error', 'Error al eliminar proveedor');
     }
   };
 

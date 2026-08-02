@@ -51,13 +51,30 @@ export default function DashboardCharts() {
     { name: 'Completado', value: projects.filter(p => p.status === 'completed').length, color: '#06b6d4' },
   ];
 
+  // Real category distribution from transactions
   const categoryData = [
-    { name: 'Materiales', value: totalSpent * 0.4 },
-    { name: 'Mano de Obra', value: totalSpent * 0.3 },
-    { name: 'Equipo', value: totalSpent * 0.15 },
-    { name: 'Subcontratos', value: totalSpent * 0.1 },
-    { name: 'Otros', value: totalSpent * 0.05 },
+    { name: 'Materiales', value: transactions.filter(t => t.type === 'expense' && t.category === 'materiales').reduce((sum, t) => sum + (t.total_cost || 0), 0) },
+    { name: 'Mano de Obra', value: transactions.filter(t => t.type === 'expense' && t.category === 'mano_de_obra').reduce((sum, t) => sum + (t.total_cost || 0), 0) },
+    { name: 'Equipo', value: transactions.filter(t => t.type === 'expense' && t.category === 'herramienta').reduce((sum, t) => sum + (t.total_cost || 0), 0) },
+    { name: 'Subcontratos', value: transactions.filter(t => t.type === 'expense' && t.category === 'sub_contrato').reduce((sum, t) => sum + (t.total_cost || 0), 0) },
+    { name: 'Otros', value: transactions.filter(t => t.type === 'expense' && !['materiales', 'mano_de_obra', 'herramienta', 'sub_contrato'].includes(t.category)).reduce((sum, t) => sum + (t.total_cost || 0), 0) },
   ];
+
+  // Real cash flow per month (last 6 months)
+  const now = new Date();
+  const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const monthlyFlow = Array.from({ length: 6 }, (_, i) => {
+    const monthDate = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+    const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
+    const monthTx = transactions.filter(t => t.date && t.date.startsWith(monthKey));
+    const income = monthTx.filter(t => t.type === 'income').reduce((sum, t) => sum + (t.total_cost || 0), 0);
+    const expense = monthTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + (t.total_cost || 0), 0);
+    return {
+      month: monthNames[monthDate.getMonth()],
+      income,
+      expense,
+    };
+  });
 
   useRealtimeRefresh(
     ['projects', 'financial_transactions'],
@@ -124,14 +141,7 @@ export default function DashboardCharts() {
         </h3>
         <div className="h-[calc(100%-1.25rem)]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={[
-              { month: 'Ene', income: totalIncome * 0.15, expense: totalSpent * 0.15 },
-              { month: 'Feb', income: totalIncome * 0.20, expense: totalSpent * 0.20 },
-              { month: 'Mar', income: totalIncome * 0.18, expense: totalSpent * 0.18 },
-              { month: 'Abr', income: totalIncome * 0.22, expense: totalSpent * 0.22 },
-              { month: 'May', income: totalIncome * 0.25, expense: totalSpent * 0.25 },
-              { month: 'Jun', income: totalIncome, expense: totalSpent },
-            ]}>
+            <LineChart data={monthlyFlow}>
               <CartesianGrid strokeDasharray="1 1" stroke="rgba(255,255,255,0.1)" />
               <XAxis dataKey="month" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 8 }} />
               <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 8 }} />

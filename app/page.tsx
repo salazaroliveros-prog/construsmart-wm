@@ -14,6 +14,7 @@ import AuthGuard from '@/components/auth/AuthGuard';
 import { offlineDB } from '@/lib/db/offlineStore';
 import { useScrollLock } from '@/lib/hooks/useScrollLock';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
+import RealtimeProvider from '@/components/ui/RealtimeProvider';
 
 const ProjectManager = dynamic(() => import('@/components/dashboard/ProjectManager'), { ssr: false });
 const BudgetCalculator = dynamic(() => import('@/components/budgets/BudgetCalculator'), { ssr: false });
@@ -306,6 +307,8 @@ export default function Dashboard() {
     <AuthGuard>
       <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 font-sans">
         <DualBrandHeader />
+        <RealtimeProvider activeTab={activeTab} />
+
 
         {/* Tab navigation - right below header, centered */}
         <Suspense fallback={<div className="py-2 text-white/60 text-xs text-center">Cargando…</div>}>
