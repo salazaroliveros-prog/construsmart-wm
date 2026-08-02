@@ -17,13 +17,34 @@ function notifyListeners() {
   SETTINGS_CACHE.listeners.forEach((listener) => listener());
 }
 
+// Deep merge para que las secciones anidadas (company, financial, export,
+// dashboard, notifications, accents, locale) conserven defaults cuando el
+// localStorage guardado es de una versión anterior sin esos campos.
+function deepMerge<T>(base: T, override: Partial<T>): T {
+  const result: Record<string, unknown> = { ...(base as Record<string, unknown>) };
+  for (const key of Object.keys(override || {})) {
+    const baseVal = (base as Record<string, unknown>)[key];
+    const overrideVal = (override as Record<string, unknown>)[key];
+    if (
+      baseVal && overrideVal &&
+      typeof baseVal === 'object' && typeof overrideVal === 'object' &&
+      !Array.isArray(baseVal) && !Array.isArray(overrideVal)
+    ) {
+      result[key] = deepMerge(baseVal, overrideVal);
+    } else {
+      result[key] = overrideVal;
+    }
+  }
+  return result as T;
+}
+
 function loadSettingsFromStorage(): UISettings {
   try {
     if (typeof window === 'undefined') return DEFAULT_UI_SETTINGS;
     const saved = localStorage.getItem('uiSettings');
     if (saved) {
       const parsed = JSON.parse(saved);
-      return { ...DEFAULT_UI_SETTINGS, ...parsed };
+      return deepMerge(DEFAULT_UI_SETTINGS, parsed);
     }
   } catch (error) {
     console.error('Error loading business settings:', error);
@@ -67,7 +88,7 @@ export function useBusinessSettings() {
   }, []);
 
   const updateSettings = (newSettings: Partial<UISettings>) => {
-    const updated = { ...SETTINGS_CACHE.settings, ...newSettings };
+    const updated = deepMerge(SETTINGS_CACHE.settings, newSettings);
     updateSettingsInStorage(updated);
   };
 
@@ -79,6 +100,10 @@ export function useBusinessSettings() {
     company: settings.company,
     financial: settings.financial,
     export: settings.export,
+    dashboard: settings.dashboard,
+    notifications: settings.notifications,
+    accents: settings.accents,
+    locale: settings.locale,
   };
 }
 

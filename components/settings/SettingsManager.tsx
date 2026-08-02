@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import {
   Settings, Palette, Sliders, Eye, EyeOff, Zap, Moon, Sun, RotateCcw, Check,
-  Building2, DollarSign, FileText, Monitor, Database, Sparkles, Upload, X
+  Building2, DollarSign, FileText, Monitor, Database, Sparkles, Upload, X,
+  LayoutDashboard, Bell, Ruler, Globe
 } from 'lucide-react';
 import {
   DEFAULT_UI_SETTINGS, UISettings,
   CompanySettings, FinancialSettings, ExportSettings,
+  DashboardSettings, NotificationSettings, ThemeAccentSettings, LocaleSettings,
   COLOR_PALETTES, GLASS_PRESETS
 } from '@/lib/types/uiSettings';
 import { applyUISettings } from '@/lib/utils/applySettings';
@@ -17,7 +19,7 @@ import { useToast } from '@/components/ui/Toast';
 export default function SettingsManager() {
   const { showToast } = useToast();
   const [settings, setSettings] = useState<UISettings>(DEFAULT_UI_SETTINGS);
-  const [activeTab, setActiveTab] = useState<'appearance' | 'glass' | 'company' | 'financial' | 'export' | 'sync'>('appearance');
+  const [activeTab, setActiveTab] = useState<'appearance' | 'glass' | 'dashboard' | 'notifications' | 'accents' | 'company' | 'financial' | 'export' | 'locale' | 'sync'>('appearance');
   const [hasChanges, setHasChanges] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string>('');
 
@@ -94,6 +96,38 @@ const saveSettings = () => {
     setHasChanges(true);
   };
 
+  const updateDashboardSetting = <K extends keyof DashboardSettings>(key: K, value: DashboardSettings[K]) => {
+    setSettings(prev => ({
+      ...prev,
+      dashboard: { ...prev.dashboard, [key]: value }
+    }));
+    setHasChanges(true);
+  };
+
+  const updateNotificationSetting = <K extends keyof NotificationSettings>(key: K, value: NotificationSettings[K]) => {
+    setSettings(prev => ({
+      ...prev,
+      notifications: { ...prev.notifications, [key]: value }
+    }));
+    setHasChanges(true);
+  };
+
+  const updateAccentSetting = <K extends keyof ThemeAccentSettings>(key: K, value: ThemeAccentSettings[K]) => {
+    setSettings(prev => ({
+      ...prev,
+      accents: { ...prev.accents, [key]: value }
+    }));
+    setHasChanges(true);
+  };
+
+  const updateLocaleSetting = <K extends keyof LocaleSettings>(key: K, value: LocaleSettings[K]) => {
+    setSettings(prev => ({
+      ...prev,
+      locale: { ...prev.locale, [key]: value }
+    }));
+    setHasChanges(true);
+  };
+
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -131,9 +165,13 @@ const saveSettings = () => {
   const tabs = [
     { id: 'appearance' as const, label: 'Apariencia', icon: Palette },
     { id: 'glass' as const, label: 'Glassmorphism', icon: Sliders },
+    { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'notifications' as const, label: 'Notificaciones', icon: Bell },
+    { id: 'accents' as const, label: 'Acentos', icon: Ruler },
     { id: 'company' as const, label: 'Empresa', icon: Building2 },
     { id: 'financial' as const, label: 'Finanzas', icon: DollarSign },
     { id: 'export' as const, label: 'Exportación', icon: FileText },
+    { id: 'locale' as const, label: 'Región', icon: Globe },
     { id: 'sync' as const, label: 'Sincronización', icon: Database },
   ];
 
@@ -198,11 +236,15 @@ const saveSettings = () => {
 
       {/* Tab Content */}
       <div className="glass-panel rounded-2xl p-4 sm:p-6">
-        {activeTab === 'appearance' && <AppearanceTab settings={settings} updateSetting={updateSetting} />}
+{activeTab === 'appearance' && <AppearanceTab settings={settings} updateSetting={updateSetting} />}
         {activeTab === 'glass' && <GlassTab settings={settings} updateSetting={updateSetting} applyPreset={applyGlassPreset} />}
+        {activeTab === 'dashboard' && <DashboardTab settings={settings} updateSetting={updateDashboardSetting} />}
+        {activeTab === 'notifications' && <NotificationsTab settings={settings} updateSetting={updateNotificationSetting} />}
+        {activeTab === 'accents' && <AccentsTab settings={settings} updateSetting={updateAccentSetting} />}
         {activeTab === 'company' && <CompanyTab settings={settings} updateSetting={updateCompanySetting} logoPreview={logoPreview} onLogoUpload={handleLogoUpload} onRemoveLogo={handleRemoveLogo} />}
         {activeTab === 'financial' && <FinancialTab settings={settings} updateSetting={updateFinancialSetting} />}
         {activeTab === 'export' && <ExportTab settings={settings} updateSetting={updateExportSetting} />}
+        {activeTab === 'locale' && <LocaleTab settings={settings} updateSetting={updateLocaleSetting} />}
         {activeTab === 'sync' && <SyncTab settings={settings} updateSetting={updateSetting} />}
       </div>
     </div>
@@ -926,6 +968,362 @@ function SyncTab({ settings, updateSetting }: {
               <span>60 min</span>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// NUEVAS PESTAÑAS: Dashboard, Notificaciones, Acentos, Región
+// ============================================================================
+
+function DashboardTab({ settings, updateSetting }: {
+  settings: UISettings;
+  updateSetting: <K extends keyof DashboardSettings>(key: K, value: DashboardSettings[K]) => void;
+}) {
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      <div>
+        <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
+          <LayoutDashboard className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+          Personalización del Dashboard
+        </h3>
+      </div>
+
+      <div className="space-y-3 sm:space-y-4">
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-white mb-2">Columnas del Grid</label>
+          <div className="grid grid-cols-4 gap-2">
+            {([1, 2, 3, 4] as const).map(cols => (
+              <button
+                key={cols}
+                onClick={() => updateSetting('gridColumns', cols)}
+                className={`px-3 py-2 rounded-lg border transition-all text-xs sm:text-sm ${
+                  settings.dashboard.gridColumns === cols
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border-cyan-500/30 text-white'
+                    : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {cols}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-xs sm:text-sm font-medium text-white">Widgets Visibles</p>
+          {([
+            { key: 'showCharts' as const, label: 'Gráficos' },
+            { key: 'showCalendar' as const, label: 'Calendario' },
+            { key: 'showStats' as const, label: 'Estadísticas' },
+            { key: 'showBudgetSummary' as const, label: 'Resumen de Presupuesto' },
+          ]).map(widget => (
+            <div key={widget.key} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
+              <span className="text-xs sm:text-sm text-white">{widget.label}</span>
+              <button
+                onClick={() => updateSetting(widget.key, !settings.dashboard[widget.key])}
+                className={`relative w-10 h-5 sm:w-12 sm:h-6 rounded-full transition-colors ${
+                  settings.dashboard[widget.key] ? 'bg-cyan-500' : 'bg-white/20'
+                }`}
+              >
+                <div className={`absolute top-0.5 sm:top-1 w-4 h-4 sm:w-4 sm:h-4 rounded-full bg-white transition-transform ${
+                  settings.dashboard[widget.key] ? 'left-5 sm:left-7' : 'left-0.5 sm:left-1'
+                }`} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NotificationsTab({ settings, updateSetting }: {
+  settings: UISettings;
+  updateSetting: <K extends keyof NotificationSettings>(key: K, value: NotificationSettings[K]) => void;
+}) {
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      <div>
+        <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
+          <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+          Configuración de Notificaciones
+        </h3>
+      </div>
+
+      <div className="space-y-3 sm:space-y-4">
+        <p className="text-xs sm:text-sm font-medium text-white/80 mb-2">Canales</p>
+        {([
+          { key: 'inAppEnabled' as const, label: 'En la App', desc: 'Notificaciones dentro de la plataforma' },
+          { key: 'pushEnabled' as const, label: 'Push', desc: 'Notificaciones push en el navegador' },
+          { key: 'emailEnabled' as const, label: 'Email', desc: 'Notificaciones por correo electrónico' },
+        ]).map(channel => (
+          <div key={channel.key} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-white">{channel.label}</p>
+              <p className="text-[10px] sm:text-xs text-white/60">{channel.desc}</p>
+            </div>
+            <button
+              onClick={() => updateSetting(channel.key, !settings.notifications[channel.key])}
+              className={`relative w-10 h-5 sm:w-12 sm:h-6 rounded-full transition-colors ${
+                settings.notifications[channel.key] ? 'bg-cyan-500' : 'bg-white/20'
+              }`}
+            >
+              <div className={`absolute top-0.5 sm:top-1 w-4 h-4 sm:w-4 sm:h-4 rounded-full bg-white transition-transform ${
+                settings.notifications[channel.key] ? 'left-5 sm:left-7' : 'left-0.5 sm:left-1'
+              }`} />
+            </button>
+          </div>
+        ))}
+
+        <p className="text-xs sm:text-sm font-medium text-white/80 mb-2 mt-4">Eventos</p>
+        {([
+          { key: 'notifyOnSyncComplete' as const, label: 'Sincronización Completada' },
+          { key: 'notifyOnError' as const, label: 'Errores del Sistema' },
+          { key: 'notifyOnNewProject' as const, label: 'Nuevo Proyecto Creado' },
+          { key: 'notifyOnLowStock' as const, label: 'Stock Bajo en Almacén' },
+          { key: 'notifyOnBudgetExceeded' as const, label: 'Presupuesto Excedido' },
+          { key: 'notifyOnPayrollDue' as const, label: 'Nómina por Vencer' },
+        ]).map(event => (
+          <div key={event.key} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
+            <span className="text-xs sm:text-sm text-white">{event.label}</span>
+            <button
+              onClick={() => updateSetting(event.key, !settings.notifications[event.key])}
+              className={`relative w-10 h-5 sm:w-12 sm:h-6 rounded-full transition-colors ${
+                settings.notifications[event.key] ? 'bg-cyan-500' : 'bg-white/20'
+              }`}
+            >
+              <div className={`absolute top-0.5 sm:top-1 w-4 h-4 sm:w-4 sm:h-4 rounded-full bg-white transition-transform ${
+                settings.notifications[event.key] ? 'left-5 sm:left-7' : 'left-0.5 sm:left-1'
+              }`} />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AccentsTab({ settings, updateSetting }: {
+  settings: UISettings;
+  updateSetting: <K extends keyof ThemeAccentSettings>(key: K, value: ThemeAccentSettings[K]) => void;
+}) {
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      <div>
+        <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
+          <Ruler className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+          Acentos de Tema
+        </h3>
+      </div>
+
+      <div className="space-y-3 sm:space-y-4">
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-white mb-2">Bordes Redondeados</label>
+          <div className="grid grid-cols-5 gap-2">
+            {(['sm', 'md', 'lg', 'xl', 'full'] as const).map(radius => (
+              <button
+                key={radius}
+                onClick={() => updateSetting('borderRadius', radius)}
+                className={`px-2 py-2 rounded-lg border transition-all text-[10px] sm:text-xs ${
+                  settings.accents.borderRadius === radius
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border-cyan-500/30 text-white'
+                    : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {radius === 'full' ? 'Full' : radius.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-white mb-2">Espaciado</label>
+          <div className="grid grid-cols-3 gap-2">
+            {(['compact', 'normal', 'relaxed'] as const).map(spacing => (
+              <button
+                key={spacing}
+                onClick={() => updateSetting('spacing', spacing)}
+                className={`px-3 py-2 rounded-lg border transition-all text-xs sm:text-sm ${
+                  settings.accents.spacing === spacing
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border-cyan-500/30 text-white'
+                    : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {spacing === 'compact' ? 'Compacto' : spacing === 'normal' ? 'Normal' : 'Relajado'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-white mb-2">Estilo de Botones</label>
+          <div className="grid grid-cols-3 gap-2">
+            {(['glass', 'solid', 'outline'] as const).map(style => (
+              <button
+                key={style}
+                onClick={() => updateSetting('buttonStyle', style)}
+                className={`px-3 py-2 rounded-lg border transition-all text-xs sm:text-sm ${
+                  settings.accents.buttonStyle === style
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border-cyan-500/30 text-white'
+                    : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {style === 'glass' ? 'Vidrio' : style === 'solid' ? 'Sólido' : 'Contorno'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-white mb-2">Estilo de Tarjetas</label>
+          <div className="grid grid-cols-3 gap-2">
+            {(['glass', 'solid', 'border'] as const).map(style => (
+              <button
+                key={style}
+                onClick={() => updateSetting('cardStyle', style)}
+                className={`px-3 py-2 rounded-lg border transition-all text-xs sm:text-sm ${
+                  settings.accents.cardStyle === style
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border-cyan-500/30 text-white'
+                    : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {style === 'glass' ? 'Vidrio' : style === 'solid' ? 'Sólido' : 'Borde'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-white mb-2">Escala de Fuente</label>
+          <div className="grid grid-cols-3 gap-2">
+            {([0.875, 1, 1.125] as const).map(scale => (
+              <button
+                key={scale}
+                onClick={() => updateSetting('fontScale', scale)}
+                className={`px-3 py-2 rounded-lg border transition-all text-xs sm:text-sm ${
+                  settings.accents.fontScale === scale
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border-cyan-500/30 text-white'
+                    : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {scale === 0.875 ? 'Pequeña' : scale === 1 ? 'Normal' : 'Grande'}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LocaleTab({ settings, updateSetting }: {
+  settings: UISettings;
+  updateSetting: <K extends keyof LocaleSettings>(key: K, value: LocaleSettings[K]) => void;
+}) {
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      <div>
+        <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
+          <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+          Configuración Regional
+        </h3>
+      </div>
+
+      <div className="space-y-3 sm:space-y-4">
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-white mb-2">Idioma</label>
+          <div className="grid grid-cols-2 gap-2">
+            {(['es', 'en'] as const).map(lang => (
+              <button
+                key={lang}
+                onClick={() => updateSetting('language', lang)}
+                className={`px-3 py-2 rounded-lg border transition-all text-xs sm:text-sm ${
+                  settings.locale.language === lang
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border-cyan-500/30 text-white'
+                    : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {lang === 'es' ? 'Español' : 'English'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-white mb-2">Región</label>
+          <div className="grid grid-cols-3 gap-2">
+            {(['GT', 'US', 'EU'] as const).map(region => (
+              <button
+                key={region}
+                onClick={() => updateSetting('region', region)}
+                className={`px-3 py-2 rounded-lg border transition-all text-xs sm:text-sm ${
+                  settings.locale.region === region
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border-cyan-500/30 text-white'
+                    : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {region === 'GT' ? 'Guatemala' : region === 'US' ? 'Estados Unidos' : 'Europa'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-white mb-2">Formato de Números</label>
+          <div className="grid grid-cols-3 gap-2">
+            {(['es-GT', 'en-US', 'de-DE'] as const).map(nf => (
+              <button
+                key={nf}
+                onClick={() => updateSetting('numberFormat', nf)}
+                className={`px-3 py-2 rounded-lg border transition-all text-xs sm:text-sm ${
+                  settings.locale.numberFormat === nf
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border-cyan-500/30 text-white'
+                    : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {nf === 'es-GT' ? '1,234.56' : nf === 'en-US' ? '1,234.56' : '1.234,56'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-white mb-2">Primer Día de la Semana</label>
+          <div className="grid grid-cols-2 gap-2">
+            {([0, 1] as const).map(day => (
+              <button
+                key={day}
+                onClick={() => updateSetting('firstDayOfWeek', day)}
+                className={`px-3 py-2 rounded-lg border transition-all text-xs sm:text-sm ${
+                  settings.locale.firstDayOfWeek === day
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border-cyan-500/30 text-white'
+                    : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {day === 0 ? 'Domingo' : 'Lunes'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-white mb-2">Zona Horaria</label>
+          <select
+            value={settings.locale.timezone}
+            onChange={e => updateSetting('timezone', e.target.value)}
+            className="w-full glass-input px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-white text-sm"
+          >
+            <option value="America/Guatemala">América/Guatemala (UTC-6)</option>
+            <option value="America/New_York">América/Nueva York (UTC-5)</option>
+            <option value="America/Chicago">América/Chicago (UTC-6)</option>
+            <option value="America/Denver">América/Denver (UTC-7)</option>
+            <option value="America/Los_Angeles">América/Los Ángeles (UTC-8)</option>
+            <option value="Europe/Madrid">Europa/Madrid (UTC+1)</option>
+            <option value="Europe/London">Europa/Londres (UTC+0)</option>
+            <option value="Europe/Berlin">Europa/Berlín (UTC+1)</option>
+          </select>
         </div>
       </div>
     </div>

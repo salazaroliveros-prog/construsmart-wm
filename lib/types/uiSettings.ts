@@ -46,9 +46,54 @@ export interface ExportSettings {
   dateFormat: 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD';
 }
 
+export interface DashboardSettings {
+  visibleWidgets: string[];
+  widgetOrder: string[];
+  gridColumns: 1 | 2 | 3 | 4;
+  showCharts: boolean;
+  showCalendar: boolean;
+  showStats: boolean;
+  showBudgetSummary: boolean;
+}
+
+export interface NotificationSettings {
+  pushEnabled: boolean;
+  emailEnabled: boolean;
+  inAppEnabled: boolean;
+  notifyOnSyncComplete: boolean;
+  notifyOnError: boolean;
+  notifyOnNewProject: boolean;
+  notifyOnLowStock: boolean;
+  notifyOnBudgetExceeded: boolean;
+  notifyOnPayrollDue: boolean;
+}
+
+export interface ThemeAccentSettings {
+  borderRadius: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  spacing: 'compact' | 'normal' | 'relaxed';
+  buttonStyle: 'glass' | 'solid' | 'outline';
+  cardStyle: 'glass' | 'solid' | 'border';
+  fontScale: 0.875 | 1 | 1.125;
+}
+
+export interface LocaleSettings {
+  language: 'es' | 'en';
+  region: 'GT' | 'US' | 'EU';
+  timezone: string;
+  firstDayOfWeek: 0 | 1; // 0=Sunday, 1=Monday
+  numberFormat: 'es-GT' | 'en-US' | 'de-DE';
+}
+
 export interface UISettings {
   // Appearance
   colorPalette: string;
+  customColors?: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    backgroundStart: string;
+    backgroundEnd: string;
+  };
   glassPreset: string;
   themeMode: 'dark' | 'light' | 'auto';
   cardTransparency: number; // 0-100
@@ -69,6 +114,18 @@ export interface UISettings {
   // Sync Settings
   autoSync: boolean;
   syncInterval: number; // minutes
+  
+  // NEW: Dashboard customization
+  dashboard: DashboardSettings;
+  
+  // NEW: Notifications
+  notifications: NotificationSettings;
+  
+  // NEW: Theme Accents
+  accents: ThemeAccentSettings;
+  
+  // NEW: Locale
+  locale: LocaleSettings;
 }
 
 export const GLASS_PRESETS: GlassPreset[] = [
@@ -168,6 +225,48 @@ export const DEFAULT_UI_SETTINGS: UISettings = {
   // Sync Settings
   autoSync: true,
   syncInterval: 5,
+
+  // Dashboard customization
+  dashboard: {
+    visibleWidgets: ['stats', 'charts', 'calendar', 'budget'],
+    widgetOrder: ['stats', 'charts', 'calendar', 'budget'],
+    gridColumns: 2,
+    showCharts: true,
+    showCalendar: true,
+    showStats: true,
+    showBudgetSummary: true,
+  },
+
+  // Notifications
+  notifications: {
+    pushEnabled: false,
+    emailEnabled: false,
+    inAppEnabled: true,
+    notifyOnSyncComplete: true,
+    notifyOnError: true,
+    notifyOnNewProject: true,
+    notifyOnLowStock: true,
+    notifyOnBudgetExceeded: true,
+    notifyOnPayrollDue: true,
+  },
+
+  // Theme Accents
+  accents: {
+    borderRadius: 'lg',
+    spacing: 'normal',
+    buttonStyle: 'glass',
+    cardStyle: 'glass',
+    fontScale: 1,
+  },
+
+  // Locale
+  locale: {
+    language: 'es',
+    region: 'GT',
+    timezone: 'America/Guatemala',
+    firstDayOfWeek: 1,
+    numberFormat: 'es-GT',
+  },
 };
 
 export const COLOR_PALETTES: ColorPalette[] = [
