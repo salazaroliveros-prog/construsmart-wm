@@ -520,7 +520,7 @@ const checkOnlineStatus = () => {
           user_id: userId || undefined,
           project_id: payrollFormData.project_id,
           type: 'expense',
-          category: 'mano_de_obra',
+          category: 'Gastos Operativos / Nómina de Mano de Obra', // Updated category for Payroll integration
           description: `Nómina: ${employee.name} - ${period}`,
           quantity: payrollFormData.days_worked,
           unit: 'días',
@@ -570,7 +570,7 @@ const checkOnlineStatus = () => {
           user_id: userId || undefined,
           project_id: payrollFormData.project_id,
           type: 'expense',
-          category: 'mano_de_obra',
+          category: 'Gastos Operativos / Nómina de Mano de Obra', // Updated category for Payroll integration
           description: `Nómina: ${employee.name} - ${period}`,
           quantity: payrollFormData.days_worked,
           unit: 'días',

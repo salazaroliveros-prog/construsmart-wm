@@ -1,7 +1,40 @@
 import Dexie, { Table } from 'dexie';
 
+// ============ STRICT SYNC STATUS TYPES ============
+export type SyncStatus = 'pending' | 'syncing' | 'synced' | 'error';
+
+export interface SyncStatusTransition {
+  from: SyncStatus;
+  to: SyncStatus;
+  allowed: boolean;
+  timestamp: Date;
+}
+
+export interface SyncableEntity {
+  id?: string;
+  sync_status: SyncStatus;
+  last_sync_attempt?: string;
+  sync_error?: string;
+  validateTransition?: (newStatus: SyncStatus) => boolean;
+}
+
+// Validador de transiciones de estado
+export const validateSyncTransition = (
+  currentStatus: SyncStatus,
+  newStatus: SyncStatus
+): boolean => {
+  const allowedTransitions: Record<SyncStatus, SyncStatus[]> = {
+    pending: ['syncing', 'error'],
+    syncing: ['synced', 'error', 'pending'],
+    synced: ['pending'],
+    error: ['pending', 'syncing']
+  };
+  
+  return allowedTransitions[currentStatus]?.includes(newStatus) ?? false;
+};
+
 // Database Interfaces matching Supabase schema
-export interface LocalProject {
+export interface LocalProject extends SyncableEntity {
   id?: string;
   user_id?: string; // For tenant isolation
   code: string;
@@ -18,7 +51,6 @@ export interface LocalProject {
   estimated_end_date?: string;
   duration_days: number;
   total_budget: number;
-  sync_status: 'synced' | 'created_offline' | 'updated_offline';
   created_at?: string;
   updated_at?: string;
   // Fields populated from budget
@@ -26,7 +58,7 @@ export interface LocalProject {
   calculated_duration?: number;
 }
 
-export interface LocalBudget {
+export interface LocalBudget extends SyncableEntity {
   id?: string;
   user_id?: string; // For tenant isolation
   project_id: string;
@@ -37,12 +69,11 @@ export interface LocalBudget {
   profit_percentage: number;
   total_amount: number;
   duration_days: number;
-  sync_status: 'synced' | 'created_offline' | 'updated_offline' | 'pending' | 'sync_failed';
   created_at?: string;
   updated_at?: string;
 }
 
-export interface LocalBudgetItem {
+export interface LocalBudgetItem extends SyncableEntity {
   id?: string;
   user_id?: string; // For tenant isolation
   budget_id: string;
@@ -89,18 +120,18 @@ export interface LocalBudgetItem {
     materialUnitCost?: number;
     machineryCost?: number;
   };
-  sync_status: 'synced' | 'created_offline' | 'updated_offline' | 'pending' | 'sync_failed';
   created_at?: string;
   updated_at?: string;
 }
 
-export interface LocalFinancialTransaction {
+export interface LocalFinancialTransaction extends SyncableEntity {
   id?: string;
   user_id?: string; // For tenant isolation
   project_id?: string;
   type: 'income' | 'expense';
   category: 'materiales' | 'mano_de_obra' | 'herramienta' | 'sub_contrato' |
-           'administrativo' | 'personal' | 'transporte' | 'fijos' | 'hogar' | 'aporte' | 'trabajos_extra';
+           'administrativo' | 'personal' | 'transporte' | 'fijos' | 'hogar' | 'aporte' | 'trabajos_extra' |
+           'Gastos Operativos / Nómina de Mano de Obra'; // Agregado para integración Payroll
   description: string;
   quantity: number;
   unit: string;
@@ -108,12 +139,11 @@ export interface LocalFinancialTransaction {
   total_cost: number;
   date: string;
   receipt_url?: string;
-  sync_status: 'synced' | 'created_offline' | 'updated_offline';
   created_at?: string;
   updated_at?: string;
 }
 
-export interface LocalPayrollRecord {
+export interface LocalPayrollRecord extends SyncableEntity {
   id?: string;
   user_id?: string; // For tenant isolation
   project_id?: string;
@@ -132,12 +162,11 @@ export interface LocalPayrollRecord {
   aguinaldo_provision: number;
   vacaciones_provision: number;
   net_salary: number;
-  sync_status: 'synced' | 'created_offline' | 'updated_offline';
   created_at?: string;
   updated_at?: string;
 }
 
-export interface LocalPayrollEmployee {
+export interface LocalPayrollEmployee extends SyncableEntity {
   id?: string;
   user_id?: string; // For tenant isolation
   name: string;
@@ -147,12 +176,11 @@ export interface LocalPayrollEmployee {
   department: string;
   hire_date: string;
   active: boolean;
-  sync_status: 'synced' | 'created_offline' | 'updated_offline';
   created_at?: string;
   updated_at?: string;
 }
 
-export interface LocalWarehouseStock {
+export interface LocalWarehouseStock extends SyncableEntity {
   id?: string;
   user_id?: string; // For tenant isolation
   project_id?: string;
@@ -162,12 +190,11 @@ export interface LocalWarehouseStock {
   current_stock: number;
   minimum_threshold: number;
   unit_cost: number;
-  sync_status: 'synced' | 'created_offline' | 'updated_offline' | 'pending' | 'sync_failed';
   created_at?: string;
   updated_at?: string;
 }
 
-export interface LocalClient {
+export interface LocalClient extends SyncableEntity {
   id?: string;
   user_id?: string; // For tenant isolation
   code: string;
@@ -179,12 +206,11 @@ export interface LocalClient {
   city: string;
   client_type: 'individual' | 'corporate';
   notes?: string;
-  sync_status: 'synced' | 'created_offline' | 'updated_offline' | 'pending';
   created_at?: string;
   updated_at?: string;
 }
 
-export interface LocalProjectLog {
+export interface LocalProjectLog extends SyncableEntity {
   id?: string;
   user_id?: string; // For tenant isolation
   project_id: string;
@@ -195,12 +221,11 @@ export interface LocalProjectLog {
   financial_progress?: number;
   photos?: string[];
   created_by: string;
-  sync_status: 'synced' | 'created_offline' | 'updated_offline' | 'pending';
   created_at: string;
   updated_at?: string;
 }
 
-export interface LocalSupplier {
+export interface LocalSupplier extends SyncableEntity {
   id?: string;
   user_id?: string; // For tenant isolation
   code: string;
@@ -212,12 +237,11 @@ export interface LocalSupplier {
   city: string;
   payment_terms: string;
   notes?: string;
-  sync_status: 'synced' | 'created_offline' | 'updated_offline' | 'pending';
   created_at: string;
   updated_at?: string;
 }
 
-export interface LocalPurchaseOrder {
+export interface LocalPurchaseOrder extends SyncableEntity {
   id?: string;
   user_id?: string; // For tenant isolation
   code: string;
@@ -228,12 +252,11 @@ export interface LocalPurchaseOrder {
   status: 'pending' | 'approved' | 'ordered' | 'received' | 'cancelled';
   total_amount: number;
   notes?: string;
-  sync_status: 'synced' | 'created_offline' | 'updated_offline' | 'pending';
   created_at: string;
   updated_at?: string;
 }
 
-export interface LocalPurchaseOrderItem {
+export interface LocalPurchaseOrderItem extends SyncableEntity {
   id?: string;
   user_id?: string; // For tenant isolation
   purchase_order_id: string;
@@ -244,7 +267,6 @@ export interface LocalPurchaseOrderItem {
   unit_price: number;
   total_price: number;
   received_quantity?: number;
-  sync_status: 'synced' | 'created_offline' | 'updated_offline' | 'pending';
   created_at: string;
   updated_at?: string;
 }

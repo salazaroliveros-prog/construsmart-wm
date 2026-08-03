@@ -8,6 +8,8 @@ import { ToastProvider } from '@/components/ui/Toast';
 import { AuthProvider } from '@/lib/auth/auth-context';
 import { UISettingsProvider } from '@/lib/hooks/useUISettings';
 import AuthGuard from '@/components/auth/AuthGuard';
+import { MaterialAlertProvider } from '@/context/MaterialAlertContext';
+import { OfflineSyncIndicator } from '@/components/common/OfflineSyncIndicator';
 import { cn } from "@/lib/utils";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
@@ -70,11 +72,14 @@ export default function RootLayout({
         <AuthProvider>
           <UISettingsProvider>
             <ToastProvider>
-              <ServiceWorkerRegistration />
-              <SyncProvider />
-              <AuthGuard>
-                {children}
-              </AuthGuard>
+              <MaterialAlertProvider>
+                <ServiceWorkerRegistration />
+                <SyncProvider />
+                <AuthGuard>
+                  {children}
+                </AuthGuard>
+                <OfflineSyncIndicator />
+              </MaterialAlertProvider>
             </ToastProvider>
           </UISettingsProvider>
         </AuthProvider>

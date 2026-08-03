@@ -11,7 +11,7 @@
  */
 
 import { Table } from 'dexie';
-import { offlineDB } from '@/lib/db/offlineStore';
+import { offlineDB, validateSyncTransition, type SyncStatus } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
 import { logger } from './logger';
 
@@ -47,6 +47,45 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export function isServerId(id?: string): boolean {
   return typeof id === 'string' && UUID_RE.test(id);
 }
+
+// ============ STRICT SYNC STATUS UPDATE ============
+export const updateSyncStatus = async (
+  tableName: string,
+  recordId: string,
+  newStatus: SyncStatus
+): Promise<void> => {
+  const table = offlineDB[tableName as keyof typeof offlineDB] as Table;
+  
+  const currentRecord = await table.get(recordId);
+  if (!currentRecord) {
+    throw new Error(`Record ${recordId} not found in ${tableName}`);
+  }
+  
+  const currentStatus = currentRecord.sync_status as SyncStatus;
+  
+  // Validar transición de estado
+  if (!validateSyncTransition(currentStatus, newStatus)) {
+    throw new Error(
+      `Invalid sync status transition: ${currentStatus} → ${newStatus}`
+    );
+  }
+  
+  // Actualizar con validación
+  await table.update(recordId, {
+    sync_status: newStatus,
+    last_sync_attempt: new Date().toISOString(),
+    sync_error: newStatus === 'error' ? 'Sync failed' : undefined
+  });
+  
+  // Registrar transición para auditoría
+  logger.info('[Sync Status Transition]', {
+    table: tableName,
+    recordId,
+    from: currentStatus,
+    to: newStatus,
+    timestamp: new Date().toISOString()
+  });
+};
 
 // Statuses that mark a row as pending to be pushed to Supabase.
 export const PENDING_STATUSES = ['created_offline', 'updated_offline', 'pending'];

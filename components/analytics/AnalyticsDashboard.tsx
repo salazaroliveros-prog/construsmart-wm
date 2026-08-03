@@ -8,7 +8,8 @@ import {
   AlertTriangle, 
   Loader2, 
   Filter,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Clock
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -32,6 +33,7 @@ import {
 import { offlineDB, LocalProject, LocalFinancialTransaction, LocalWarehouseStock } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useBusinessSettings, calculateUtilityMarginHelper } from '@/lib/hooks/useBusinessSettings';
+import { useFinancialDataRealtime } from '@/hooks/useFinancialDataRealtime';
 import EmptyState from '@/components/ui/EmptyState';
 
 // ==================== TYPES & INTERFACES ====================
@@ -99,6 +101,7 @@ const COLORS = {
 export default function AnalyticsDashboard() {
   // ==================== HOOKS ====================
   const { settings } = useBusinessSettings();
+  const { cumulativeCosts, lastUpdate, isLoading: financialDataLoading } = useFinancialDataRealtime(selectedProject);
 
   // ==================== STATE ====================
   const [projects, setProjects] = useState<LocalProject[]>([]);
@@ -139,6 +142,14 @@ export default function AnalyticsDashboard() {
   useEffect(() => {
     loadAnalyticsData();
   }, [settings]);
+
+  // Recalculate S-Curve when real-time financial data changes
+  useEffect(() => {
+    if (selectedProject !== 'all' && cumulativeCosts.size > 0) {
+      const filteredProjects = projects.filter(p => p.id === selectedProject);
+      setSCurveData(generateSCurveData(filteredProjects));
+    }
+  }, [cumulativeCosts, selectedProject, projects]);
 
   useRealtimeRefresh(['projects', 'financial_transactions', 'warehouse_stock'], () => {
     loadProjects();
@@ -261,12 +272,24 @@ export default function AnalyticsDashboard() {
           totalReal += 100;
         } else if (project.status === 'execution') {
           totalPlanificado += programmedProgress;
-          const projectTransactions = transactions.filter(t => t.project_id === project.id);
-          const totalExpenses = projectTransactions
-            .filter(t => t.type === 'expense')
-            .reduce((sum, t) => sum + (t.total_cost || 0), 0);
+          
+          // Use real-time cumulative costs from financial data hook
           const budget = project.budget_total || project.total_budget || 0;
-          const financialReal = budget > 0 ? (totalExpenses / budget) * 100 : 0;
+          let financialReal = 0;
+          
+          if (selectedProject === 'all') {
+            // For all projects, use transactions as before
+            const projectTransactions = transactions.filter(t => t.project_id === project.id);
+            const totalExpenses = projectTransactions
+              .filter(t => t.type === 'expense')
+              .reduce((sum, t) => sum + (t.total_cost || 0), 0);
+            financialReal = budget > 0 ? (totalExpenses / budget) * 100 : 0;
+          } else {
+            // For single project, use real-time cumulative costs
+            const cumulativeCost = Array.from(cumulativeCosts.values()).reduce((sum, cost) => sum + cost, 0);
+            financialReal = budget > 0 ? (cumulativeCost / budget) * 100 : 0;
+          }
+          
           totalReal += Math.min(100, financialReal || programmedProgress * 0.8);
         } else {
           totalPlanificado += programmedProgress;
@@ -575,10 +598,18 @@ export default function AnalyticsDashboard() {
           
           {/* GRÁFICO 1: CURVA "S" (AVANCE FÍSICO VS. FINANCIERO ACUMULADO) */}
           <div className="bg-white/[var(--glass-opacity,0.1)] dark:bg-black/[var(--glass-opacity,0.15)] backdrop-blur-[var(--glass-blur,12px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_4px_16px_0_rgba(0,0,0,0.15)] rounded-xl p-4 sm:p-5">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-cyan-500" />
-              Curva S de Avance Acumulado
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-cyan-500" />
+                Curva S de Avance Acumulado
+              </h2>
+              {selectedProject !== 'all' && (
+                <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 text-xs">
+                  <Clock className="w-3 h-3" />
+                  Última actualización: {lastUpdate.toLocaleTimeString('es-GT')}
+                </div>
+              )}
+            </div>
             <div className="h-72 sm:h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={sCurveData}>

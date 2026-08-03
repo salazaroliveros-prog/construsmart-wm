@@ -22,7 +22,7 @@ import { getCurrentUserId } from '@/lib/auth/userId';
 interface TransactionFormData {
   project_id?: string;
   type: 'income' | 'expense';
-  category: 'materiales' | 'mano_de_obra' | 'herramienta' | 'sub_contrato' | 'administrativo' | 'personal' | 'transporte' | 'fijos' | 'hogar' | 'aporte' | 'trabajos_extra';
+  category: 'materiales' | 'mano_de_obra' | 'herramienta' | 'sub_contrato' | 'administrativo' | 'personal' | 'transporte' | 'fijos' | 'hogar' | 'aporte' | 'trabajos_extra' | 'Gastos Operativos / Nómina de Mano de Obra';
   description: string;
   quantity: number;
   unit: string;
@@ -42,7 +42,8 @@ const categoryLabels: Record<string, string> = {
   fijos: 'Fijos',
   hogar: 'Hogar',
   aporte: 'Aporte',
-  trabajos_extra: 'Trabajos Extra'
+  trabajos_extra: 'Trabajos Extra',
+  'Gastos Operativos / Nómina de Mano de Obra': 'Nómina de Mano de Obra'
 };
 
 const categoryColors: Record<string, { bg: string; text: string; border: string }> = {
@@ -56,7 +57,8 @@ const categoryColors: Record<string, { bg: string; text: string; border: string 
   fijos: { bg: 'rgba(99, 102, 241, 0.2)', text: 'rgb(129, 140, 248)', border: 'rgba(99, 102, 241, 0.3)' },
   hogar: { bg: 'rgba(34, 197, 94, 0.2)', text: 'rgb(74, 222, 128)', border: 'rgba(34, 197, 94, 0.3)' },
   aporte: { bg: 'rgba(168, 85, 247, 0.2)', text: 'rgb(192, 132, 252)', border: 'rgba(168, 85, 247, 0.3)' },
-  trabajos_extra: { bg: 'rgba(249, 115, 22, 0.2)', text: 'rgb(251, 146, 60)', border: 'rgba(249, 115, 22, 0.3)' }
+  trabajos_extra: { bg: 'rgba(249, 115, 22, 0.2)', text: 'rgb(251, 146, 60)', border: 'rgba(249, 115, 22, 0.3)' },
+  'Gastos Operativos / Nómina de Mano de Obra': { bg: 'rgba(251, 191, 36, 0.2)', text: 'rgb(253, 224, 71)', border: 'rgba(251, 191, 36, 0.3)' } // Payroll integration category
 };
 
 export default function FinanceManager() {

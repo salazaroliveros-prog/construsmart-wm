@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Calculator, Plus, Save, Download, FolderOpen, Building2, Map as MapIcon, AlertTriangle } from 'lucide-react';
+import { useMaterialAlertContext } from '@/context/MaterialAlertContext';
 import { calculateSlab, SlabDimensions, calculateSlabCost, SlabCostParams } from '@/lib/calculators/slabCalculators';
 import {
   calculateAPU,
@@ -43,6 +44,7 @@ const PDFGenerator = dynamic(() => import('@/components/pdf/PDFGenerator'), {
 export default function BudgetCalculator() {
   const { showToast } = useToast();
   const { settings, financial } = useBusinessSettings();
+  const { triggerStockCheck } = useMaterialAlertContext();
   const [items, setItems] = useState<BudgetItem[]>([]);
   const [indirectPercentage, setIndirectPercentage] = useState(financial.indirectPercentage);
   const [contingencyPercentage, setContingencyPercentage] = useState(financial.contingencyPercentage);
@@ -557,6 +559,18 @@ export default function BudgetCalculator() {
         calculatedAt: new Date().toISOString(),
       };
       budgetState.set(activeBudget);
+
+      // Trigger stock validation for warehouse integration
+      if (selectedProject && items.length > 0) {
+        try {
+          const stockAlerts = await triggerStockCheck(selectedProject, items, projectName);
+          if (stockAlerts.length > 0) {
+            showToast('warning', `${stockAlerts.length} materiales con stock insuficiente para el proyecto`);
+          }
+        } catch (error) {
+          console.error('[Budget→Warehouse Stock Check Error]', error);
+        }
+      }
 
       showToast('success', isFirstSave
         ? 'Presupuesto guardado, proyecto actualizado y materiales agregados al almacén'

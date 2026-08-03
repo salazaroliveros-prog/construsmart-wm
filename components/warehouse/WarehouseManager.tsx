@@ -16,6 +16,7 @@ import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import { warehouseStockSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
+import { useMaterialAlertContext } from '@/context/MaterialAlertContext';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -66,6 +67,7 @@ const unitColors: Record<string, { bg: string; text: string; border: string }> =
 export default function WarehouseManager() {
   const { showToast } = useToast();
   const { financial } = useFinancialSettings();
+  const { alerts, clearAlerts } = useMaterialAlertContext();
 
   // ---------------------------------------------------------------------------
   // STATE MANAGEMENT
@@ -565,6 +567,51 @@ export default function WarehouseManager() {
               </span>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Material Alerts from Budget Integration */}
+      {alerts.length > 0 && (
+        <div className="mb-6 space-y-3">
+          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-amber-400" />
+            Alertas de Stock por Proyectos
+          </h3>
+          {alerts.map((alert, index) => (
+            <div key={`${alert.projectId}-${alert.materialCode}-${index}`} 
+                 className={`glass-card p-4 rounded-xl border-l-4 ${
+                   alert.priority === 'high' ? 'border-l-red-500' : 'border-l-amber-500'
+                 }`}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <p className="text-white font-medium">{alert.projectName}</p>
+                  <p className="text-white/70 text-sm">{alert.materialDescription}</p>
+                  <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="text-white/50">Requerido</p>
+                      <p className="text-white font-medium">{alert.requiredQuantity.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-white/50">Disponible</p>
+                      <p className="text-white font-medium">{alert.availableQuantity.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-white/50">Déficit</p>
+                      <p className={alert.priority === 'high' ? 'text-red-400 font-bold' : 'text-amber-400 font-bold'}>
+                        {alert.shortage.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => clearAlerts(alert.projectId)}
+                  className="text-white/60 hover:text-white p-1"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
