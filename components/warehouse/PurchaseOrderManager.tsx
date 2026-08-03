@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { ShoppingCart, Plus, Edit, Trash2, FileText, Search, Filter, Package, DollarSign, Calendar, CheckCircle, Clock, XCircle, Building2, X } from 'lucide-react';
 import { offlineDB, LocalPurchaseOrder, LocalPurchaseOrderItem, LocalSupplier, LocalProject } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
+import { resolveSyncStatus } from '@/lib/utils/syncState';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useToast } from '@/components/ui/Toast';
 import EmptyState from '@/components/ui/EmptyState';
@@ -25,6 +26,7 @@ export default function PurchaseOrderManager() {
   const [showItemForm, setShowItemForm] = useState(false);
   const [editingOrder, setEditingOrder] = useState<LocalPurchaseOrder | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{ show: boolean; order: LocalPurchaseOrder | null }>({ show: false, order: null });
+  const [isOnline, setIsOnline] = useState(true);
 
   const [formData, setFormData] = useState<Partial<LocalPurchaseOrder>>({
     code: '',
@@ -104,7 +106,7 @@ export default function PurchaseOrderManager() {
         await offlineDB.purchaseOrders.update(editingOrder.id!, {
           ...formData,
           updated_at: now,
-          sync_status: 'updated_offline',
+          sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: editingOrder.sync_status, isOnline }),
         });
       } else {
         const newOrder: LocalPurchaseOrder = {
@@ -112,7 +114,7 @@ export default function PurchaseOrderManager() {
           code: formData.code || `OC-${Date.now()}`,
           created_at: now,
           updated_at: now,
-          sync_status: 'pending',
+          sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }),
         } as LocalPurchaseOrder;
         await offlineDB.purchaseOrders.add(newOrder);
       }
@@ -149,7 +151,7 @@ export default function PurchaseOrderManager() {
         total_price,
         created_at: now,
         updated_at: now,
-        sync_status: 'pending',
+        sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }),
       } as LocalPurchaseOrderItem;
 
       await offlineDB.purchaseOrderItems.add(newItem);
@@ -161,7 +163,7 @@ export default function PurchaseOrderManager() {
         await offlineDB.purchaseOrders.update(selectedOrder.id, {
           total_amount: newTotal,
           updated_at: now,
-          sync_status: 'updated_offline',
+          sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: selectedOrder.sync_status, isOnline }),
         });
       }
 

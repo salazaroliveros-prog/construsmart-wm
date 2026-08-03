@@ -35,7 +35,7 @@ export interface LocalBudget {
   profit_percentage: number;
   total_amount: number;
   duration_days: number;
-  sync_status: 'synced' | 'created_offline' | 'updated_offline';
+  sync_status: 'synced' | 'created_offline' | 'updated_offline' | 'pending' | 'sync_failed';
   created_at?: string;
   updated_at?: string;
 }
@@ -80,7 +80,7 @@ export interface LocalBudgetItem {
     materialUnitCost?: number;
     machineryCost?: number;
   };
-  sync_status: 'synced' | 'created_offline' | 'updated_offline';
+  sync_status: 'synced' | 'created_offline' | 'updated_offline' | 'pending' | 'sync_failed';
   created_at?: string;
   updated_at?: string;
 }
@@ -149,7 +149,7 @@ export interface LocalWarehouseStock {
   current_stock: number;
   minimum_threshold: number;
   unit_cost: number;
-  sync_status: 'synced' | 'created_offline' | 'updated_offline';
+  sync_status: 'synced' | 'created_offline' | 'updated_offline' | 'pending' | 'sync_failed';
   created_at?: string;
   updated_at?: string;
 }

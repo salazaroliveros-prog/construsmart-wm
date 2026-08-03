@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Truck, Plus, Edit, Trash2, Phone, Mail, MapPin, Building2, Search, Filter } from 'lucide-react';
 import { offlineDB, LocalSupplier } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
+import { resolveSyncStatus } from '@/lib/utils/syncState';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useToast } from '@/components/ui/Toast';
 import EmptyState from '@/components/ui/EmptyState';
@@ -19,6 +20,7 @@ export default function SupplierManager() {
   const [editingSupplier, setEditingSupplier] = useState<LocalSupplier | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteDialog, setDeleteDialog] = useState<{ show: boolean; supplier: LocalSupplier | null }>({ show: false, supplier: null });
+  const [isOnline, setIsOnline] = useState(true);
 
   const [formData, setFormData] = useState<Partial<LocalSupplier>>({
     code: '',
@@ -76,7 +78,7 @@ export default function SupplierManager() {
         await offlineDB.suppliers.update(editingSupplier.id!, {
           ...formData,
           updated_at: now,
-          sync_status: 'updated_offline',
+          sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: editingSupplier?.sync_status ?? 'synced', isOnline }),
         });
       } else {
         const newSupplier: LocalSupplier = {
@@ -84,7 +86,7 @@ export default function SupplierManager() {
           code: formData.code || `SUP-${Date.now()}`,
           created_at: now,
           updated_at: now,
-          sync_status: 'pending',
+          sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }),
         } as LocalSupplier;
         await offlineDB.suppliers.add(newSupplier);
       }

@@ -5,7 +5,7 @@ import type { Table } from 'dexie';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { offlineDB } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
-import { PENDING_STATUSES } from '@/lib/utils/offlineSync';
+import { PENDING_STATUSES, cascadeLocalDelete } from '@/lib/utils/offlineSync';
 
 /**
  * Suscribe la app a cambios en Supabase (Realtime) para reflejar en vivo los
@@ -70,6 +70,11 @@ async function applyChange(payload: {
     if (payload.eventType === 'DELETE') {
       const serverId = payload.old?.id as string | undefined;
       if (serverId) {
+        try {
+          await cascadeLocalDelete(payload.table, serverId);
+        } catch (cascadeError) {
+          console.warn(`Realtime cascade delete failed for ${payload.table} ${serverId}:`, cascadeError);
+        }
         await local.delete(serverId);
         await offlineDB.pendingDeletes.where('serverId').equals(serverId).delete();
       }

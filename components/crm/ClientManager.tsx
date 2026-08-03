@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Users, Plus, Edit, Trash2, Phone, Mail, MapPin, Building2, Search, Filter } from 'lucide-react';
 import { offlineDB, LocalClient } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
+import { resolveSyncStatus } from '@/lib/utils/syncState';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useToast } from '@/components/ui/Toast';
 import EmptyState from '@/components/ui/EmptyState';
@@ -20,6 +21,7 @@ export default function ClientManager() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'individual' | 'corporate'>('all');
   const [deleteDialog, setDeleteDialog] = useState<{ show: boolean; client: LocalClient | null }>({ show: false, client: null });
+  const [isOnline, setIsOnline] = useState(true);
 
   const [formData, setFormData] = useState<Partial<LocalClient>>({
     code: '',
@@ -82,7 +84,7 @@ const loadClients = async () => {
         await offlineDB.clients.update(editingClient.id!, {
           ...formData,
           updated_at: now,
-          sync_status: 'updated_offline',
+          sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: editingClient?.sync_status ?? 'synced', isOnline }),
         });
       } else {
         // Create new client
@@ -91,7 +93,7 @@ const loadClients = async () => {
           code: formData.code || `CLI-${Date.now()}`,
           created_at: now,
           updated_at: now,
-          sync_status: 'pending',
+          sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }),
         } as LocalClient;
         await offlineDB.clients.add(newClient);
       }

@@ -5,6 +5,7 @@ import { Plus, Edit, Trash2, Search, Users, DollarSign, Calendar, BadgeCheck, X,
 import { offlineDB, LocalPayrollEmployee, LocalPayrollRecord, LocalProject } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
 import { queueDelete, PENDING_STATUSES } from '@/lib/utils/offlineSync';
+import { resolveSyncStatus, normalizeSyncStatus } from '@/lib/utils/syncState';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useIncrementalList } from '@/lib/hooks/useIncrementalList';
 import { useFinancialSettings, formatCurrency } from '@/lib/hooks/useBusinessSettings';
@@ -290,7 +291,9 @@ const checkOnlineStatus = () => {
     try {
       const employeeData: LocalPayrollEmployee = {
         ...employeeFormData,
-        sync_status: 'created_offline',
+        sync_status: editingEmployee
+          ? resolveSyncStatus({ isNewRecord: false, previousStatus: editingEmployee.sync_status, isOnline })
+          : resolveSyncStatus({ isNewRecord: true, isOnline }),
         created_at: new Date().toISOString(),
       };
 
@@ -300,7 +303,7 @@ const checkOnlineStatus = () => {
         // Update in localStorage
         await offlineDB.payrollEmployees.update(editingEmployee.id!, {
           ...employeeData,
-          sync_status: wasSynced ? (isOnline ? 'synced' : 'updated_offline') : 'created_offline',
+          sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: editingEmployee.sync_status, isOnline }),
         });
 
         // Update in Supabase if online
@@ -321,7 +324,7 @@ const checkOnlineStatus = () => {
           if (error) {
             console.error('Error updating employee in Supabase:', error);
             await offlineDB.payrollEmployees.update(editingEmployee.id!, {
-              sync_status: 'updated_offline',
+              sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: editingEmployee.sync_status, isOnline }),
             });
           }
         }
@@ -348,7 +351,7 @@ const checkOnlineStatus = () => {
           if (error) {
             console.error('Error creating employee in Supabase:', error);
             await offlineDB.payrollEmployees.update(id, {
-              sync_status: 'created_offline',
+              sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }),
             });
           } else if (data) {
             await offlineDB.payrollEmployees.update(id, {
@@ -488,7 +491,7 @@ const checkOnlineStatus = () => {
           if (error) {
             console.error('Error updating payroll record in Supabase:', error);
             await offlineDB.payrollRecords.update(editingPayroll.id!, {
-              sync_status: 'updated_offline',
+              sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: editingPayroll.sync_status, isOnline }),
             });
           }
         }
@@ -504,7 +507,7 @@ const checkOnlineStatus = () => {
 
           if (error) {
             console.error('Error creating payroll record in Supabase:', error);
-            await offlineDB.payrollRecords.update(id, { sync_status: 'created_offline' });
+            await offlineDB.payrollRecords.update(id, { sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }) });
           } else if (data) {
             await offlineDB.payrollRecords.update(id, { id: data.id, sync_status: 'synced' });
           }

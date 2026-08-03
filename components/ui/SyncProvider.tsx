@@ -59,9 +59,12 @@ export default function SyncProvider() {
       try {
         const stats = await getSyncStats();
         const totalPending = 
-          stats.pendingProjects + stats.pendingBudgets + 
+          stats.pendingProjects + stats.pendingBudgets + stats.pendingBudgetItems +
           stats.pendingTransactions + stats.pendingPayroll +
-          stats.pendingWarehouse + stats.pendingDeletes;
+          stats.pendingWarehouse + stats.pendingClients +
+          stats.pendingProjectLogs + stats.pendingSuppliers +
+          stats.pendingPurchaseOrders + stats.pendingPurchaseOrderItems +
+          stats.pendingDeletes;
 
         // Solo hacer pull completo si no hay cambios pendientes locales
         // (para no sobrescribir datos que el usuario está editando)

@@ -51,6 +51,62 @@ export function isServerId(id?: string): boolean {
 // Statuses that mark a row as pending to be pushed to Supabase.
 export const PENDING_STATUSES = ['created_offline', 'updated_offline', 'pending'];
 
+/**
+ * Cascade delete helper that can operate against a provided DB (for tests)
+ * or the real `offlineDB` by default.
+ */
+export async function cascadeLocalDelete(
+  remoteTable: string,
+  serverId: string,
+  db = offlineDB
+): Promise<void> {
+  const deps: Record<string, (id: string) => Promise<void>> = {
+    projects: async (id: string) => {
+      const purchaseOrders = await db.purchaseOrders.where('project_id').equals(id).toArray();
+      const purchaseOrderIds = purchaseOrders
+        .map((po) => po.id)
+        .filter((pid): pid is string => typeof pid === 'string');
+
+      const budgets = await db.budgets.where('project_id').equals(id).toArray();
+      const budgetIds = budgets.map((b) => b.id).filter((bid): bid is string => typeof bid === 'string');
+
+      await Promise.all([
+        // delete children linked directly to project
+        db.financialTransactions.where('project_id').equals(id).delete(),
+        db.payrollRecords.where('project_id').equals(id).delete(),
+        db.warehouseStock.where('project_id').equals(id).delete(),
+        db.projectLogs.where('project_id').equals(id).delete(),
+        // delete purchase orders and their items
+        db.purchaseOrders.where('project_id').equals(id).delete(),
+        ...purchaseOrderIds.map((poId) => db.purchaseOrderItems.where('purchase_order_id').equals(poId).delete()),
+        // delete budgets and their items
+        db.budgets.where('project_id').equals(id).delete(),
+        ...budgetIds.map((bid) => db.budgetItems.where('budget_id').equals(bid).delete()),
+      ]);
+    },
+    suppliers: async (id: string) => {
+      const orders = await db.purchaseOrders.where('supplier_id').equals(id).toArray();
+      const orderIds = orders.map((o) => o.id).filter((oid): oid is string => typeof oid === 'string');
+      await Promise.all([
+        ...orderIds.map((oid) => db.purchaseOrderItems.where('purchase_order_id').equals(oid).delete()),
+        db.purchaseOrders.where('supplier_id').equals(id).delete(),
+      ]);
+    },
+    purchase_orders: async (id: string) => {
+      await db.purchaseOrderItems.where('purchase_order_id').equals(id).delete();
+    },
+    budgets: async (id: string) => {
+      await db.budgetItems.where('budget_id').equals(id).delete();
+    },
+    payroll_employees: async (id: string) => {
+      await db.payrollRecords.where('employee_id').equals(id).delete();
+    },
+  };
+
+  const fn = deps[remoteTable];
+  if (fn) await fn(serverId);
+}
+
 // Sync configuration with retry and limits
 const MAX_SYNC_RETRIES = 5;
 const BASE_RETRY_DELAY_MS = 1000;
@@ -335,12 +391,15 @@ export async function syncOfflineData(): Promise<SyncResult> {
     timestamp: Date.now(),
   };
 
+  emitSyncStart();
+
   if (!supabase) {
     result.success = false;
     result.errors.push('Supabase not configured. Cannot sync.');
     metrics.endTime = performance.now();
     metrics.duration = metrics.endTime - metrics.startTime;
     recordMetric(metrics);
+    emitSyncEnd(false, result.errors.join('; '));
     return result;
   }
 
@@ -349,6 +408,7 @@ export async function syncOfflineData(): Promise<SyncResult> {
     metrics.endTime = performance.now();
     metrics.duration = metrics.endTime - metrics.startTime;
     recordMetric(metrics);
+    emitSyncEnd(false, result.errors.join('; '));
     return result;
   }
   syncInProgress = true;
@@ -927,6 +987,10 @@ export async function syncOfflineData(): Promise<SyncResult> {
 
     await Promise.all([...supplierDeletePromises, ...deletePromises]);
 
+    if (result.failed > 0) {
+      result.success = false;
+    }
+
     return result;
   } catch (error) {
     result.success = false;
@@ -934,6 +998,7 @@ export async function syncOfflineData(): Promise<SyncResult> {
     return result;
   } finally {
     syncInProgress = false;
+    emitSyncEnd(result.success, result.errors.length ? result.errors.join('; ') : undefined);
   }
 }
 
@@ -1071,11 +1136,27 @@ export async function getSyncStats(): Promise<SyncStats> {
  */
 export async function queueDelete(remoteTable: string, row: { id?: string }): Promise<boolean> {
   if (!isServerId(row.id)) return false;
+
+  const existing = await offlineDB.pendingDeletes
+    .where({ table: remoteTable, serverId: row.id! })
+    .first();
+  if (existing) return true;
+
+  const cascadeDelete = LOCAL_DELETE_DEPENDENCIES[remoteTable];
+  if (cascadeDelete) {
+    try {
+      await cascadeDelete(row.id!);
+    } catch (error) {
+      console.warn(`queueDelete: failed to delete dependent local rows for ${remoteTable} ${row.id}:`, error);
+    }
+  }
+
   await offlineDB.pendingDeletes.add({
     table: remoteTable,
     serverId: row.id!,
     created_at: Date.now(),
   });
+
   if (isOnline() && supabase) {
     syncOfflineData();
   }
@@ -1096,6 +1177,17 @@ export function updateLastSyncTimestamp() {
  * still have pending changes (created_offline/updated_offline/pending). Local
  * tables are not cleared, so offline data is never lost.
  */
+async function getPendingDeleteIds(): Promise<Map<string, Set<string>>> {
+  const pendingDeletes = await offlineDB.pendingDeletes.toArray();
+  const deleteMap = new Map<string, Set<string>>();
+  for (const pd of pendingDeletes) {
+    const set = deleteMap.get(pd.table) || new Set<string>();
+    set.add(pd.serverId);
+    deleteMap.set(pd.table, set);
+  }
+  return deleteMap;
+}
+
 export async function forceFullSync(): Promise<SyncResult> {
   const result: SyncResult = {
     success: true,
@@ -1115,12 +1207,15 @@ export async function forceFullSync(): Promise<SyncResult> {
     timestamp: Date.now(),
   };
 
+  emitSyncStart();
+
   if (!supabase) {
     result.success = false;
     result.errors.push('Supabase not configured.');
     metrics.endTime = performance.now();
     metrics.duration = metrics.endTime - metrics.startTime;
     recordMetric(metrics);
+    emitSyncEnd(false, result.errors.join('; '));
     return result;
   }
 
@@ -1129,6 +1224,7 @@ export async function forceFullSync(): Promise<SyncResult> {
     metrics.endTime = performance.now();
     metrics.duration = metrics.endTime - metrics.startTime;
     recordMetric(metrics);
+    emitSyncEnd(false, result.errors.join('; '));
     return result;
   }
   syncInProgress = true;
@@ -1149,8 +1245,7 @@ export async function forceFullSync(): Promise<SyncResult> {
   ];
 
   try {
-    // OPTIMIZACIÓN: Traer solo IDs y sync_status del servidor, no todo el registro
-    // Primero obtenemos todos los IDs locales que tienen cambios pendientes
+    // OPTIMIZACIÓN: Traer solo IDs de filas con cambios locales pendientes.
     const localPendingIds = new Map<string, Set<string>>();
     for (const { local, remote } of tables) {
       const pendingRows = await local.where('sync_status').anyOf(PENDING_STATUSES).toArray();
@@ -1158,24 +1253,44 @@ export async function forceFullSync(): Promise<SyncResult> {
       localPendingIds.set(remote, ids);
     }
 
-    // OPTIMIZACIÓN: Traer del servidor y hacer bulk upserts en paralelo
+    const pendingDeleteIds = await getPendingDeleteIds();
+
     await Promise.all(tables.map(async ({ local, remote }) => {
       try {
         const { data, error } = await supabase!.from(remote).select('*');
         if (error) throw error;
 
         const pendingIds = localPendingIds.get(remote) || new Set();
+        const pendingDeletes = pendingDeleteIds.get(remote) || new Set();
+        const serverIds = new Set<string>();
         const bulkOps: Promise<void>[] = [];
 
         for (const row of data || []) {
-          // Skip si hay cambios locales pendientes
-          if (pendingIds.has(row.id)) continue;
+          const rowId = String(row.id);
+          serverIds.add(rowId);
+
+          // Skip if there are pending local changes or a pending remote delete for this row.
+          if (pendingIds.has(rowId) || pendingDeletes.has(rowId)) continue;
 
           bulkOps.push(local.put({ ...row, sync_status: 'synced' }));
         }
 
         await Promise.all(bulkOps);
         result.synced += (data || []).length;
+
+        // Remove stale server-owned local rows that were deleted remotely and have no local pending changes.
+        const localRows = await local.toArray();
+        const staleDeletes: Promise<void>[] = [];
+        for (const localRow of localRows) {
+          const localId = String(localRow.id);
+          if (!isServerId(localId)) continue;
+          if (pendingIds.has(localId)) continue;
+          if (pendingDeletes.has(localId)) continue;
+          if (!serverIds.has(localId)) {
+            staleDeletes.push(local.delete(localId));
+          }
+        }
+        await Promise.all(staleDeletes);
       } catch (error) {
         result.failed++;
         result.errors.push(`Failed to pull ${remote}: ${error}`);
@@ -1184,6 +1299,10 @@ export async function forceFullSync(): Promise<SyncResult> {
 
     updateLastSyncTimestamp();
     
+    if (result.failed > 0) {
+      result.success = false;
+    }
+
     metrics.endTime = performance.now();
     metrics.duration = metrics.endTime - metrics.startTime;
     metrics.synced = result.synced;
@@ -1191,6 +1310,7 @@ export async function forceFullSync(): Promise<SyncResult> {
     recordMetric(metrics);
     
     logger.info(`Sync completed: ${result.synced} synced, ${result.failed} failed in ${metrics.duration.toFixed(2)}ms`, undefined, 'Sync');
+    emitSyncEnd(result.success, result.errors.length ? result.errors.join('; ') : undefined);
     
     return result;
   } catch (error) {

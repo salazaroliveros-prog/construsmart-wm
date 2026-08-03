@@ -5,6 +5,7 @@ import { Plus, Edit, Trash2, Search, Package, AlertTriangle, TrendingUp, X, Save
 import { offlineDB, LocalWarehouseStock, LocalProject } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
 import { queueDelete, PENDING_STATUSES } from '@/lib/utils/offlineSync';
+import { resolveSyncStatus, normalizeSyncStatus } from '@/lib/utils/syncState';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useIncrementalList } from '@/lib/hooks/useIncrementalList';
 import { useFinancialSettings, formatCurrency } from '@/lib/hooks/useBusinessSettings';
@@ -226,16 +227,16 @@ export default function WarehouseManager() {
     try {
       const itemData: LocalWarehouseStock = {
         ...formData,
-        sync_status: 'created_offline',
+        sync_status: resolveSyncStatus({ isNewRecord: !editingItem, isOnline, previousStatus: editingItem?.sync_status }),
       };
 
       if (editingItem) {
-        const wasSynced = editingItem.sync_status === 'synced';
+        const wasSynced = normalizeSyncStatus(editingItem.sync_status) === 'synced';
 
         // Update in localStorage
         await offlineDB.warehouseStock.update(editingItem.id!, {
           ...itemData,
-          sync_status: wasSynced ? (isOnline ? 'synced' : 'updated_offline') : 'created_offline',
+          sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: editingItem.sync_status, isOnline }),
         });
 
         // Update in Supabase if online
@@ -256,7 +257,7 @@ export default function WarehouseManager() {
           if (error) {
             console.error('Error updating stock in Supabase:', error);
             await offlineDB.warehouseStock.update(editingItem.id!, {
-              sync_status: 'updated_offline',
+              sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: editingItem?.sync_status ?? 'synced', isOnline }),
             });
           }
         }
@@ -283,7 +284,7 @@ export default function WarehouseManager() {
           if (error) {
             console.error('Error creating stock in Supabase:', error);
             await offlineDB.warehouseStock.update(id, {
-              sync_status: 'created_offline',
+              sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }),
             });
           } else if (data) {
             await offlineDB.warehouseStock.update(id, {
@@ -331,11 +332,11 @@ export default function WarehouseManager() {
         return;
       }
 
-      const wasSynced = item.sync_status === 'synced';
+      const wasSynced = normalizeSyncStatus(item.sync_status) === 'synced';
 
       await offlineDB.warehouseStock.update(item.id!, {
         current_stock: newStock,
-        sync_status: wasSynced ? (isOnline ? 'synced' : 'updated_offline') : 'created_offline',
+        sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: item.sync_status, isOnline }),
       });
 
       if (isOnline && wasSynced && supabase) {

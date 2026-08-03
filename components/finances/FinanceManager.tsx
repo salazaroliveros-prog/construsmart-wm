@@ -6,6 +6,7 @@ import { offlineDB, LocalFinancialTransaction, LocalProject, LocalBudget, LocalB
 import { budgetState } from '@/lib/state/budgetState';
 import { supabase } from '@/lib/supabase/client';
 import { queueDelete, PENDING_STATUSES, isServerId } from '@/lib/utils/offlineSync';
+import { resolveSyncStatus } from '@/lib/utils/syncState';
 import { generateId } from '@/lib/utils/generateId';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useIncrementalList } from '@/lib/hooks/useIncrementalList';
@@ -315,8 +316,8 @@ export default function FinanceManager() {
         date: formData.date,
         receipt_url: formData.receipt_url,
         sync_status: editingTransaction
-          ? (editingTransaction.sync_status === 'synced' ? (isOnline ? 'synced' : 'updated_offline') : 'created_offline')
-          : 'created_offline',
+          ? resolveSyncStatus({ isNewRecord: false, previousStatus: editingTransaction.sync_status, isOnline })
+          : resolveSyncStatus({ isNewRecord: true, isOnline }),
         created_at: editingTransaction?.created_at || new Date().toISOString()
       };
 
@@ -334,7 +335,7 @@ export default function FinanceManager() {
       if (isOnline && supabase && isServerId(transactionData.id)) {
         const { error } = await supabase.from('financial_transactions').upsert([transactionData]);
         if (error) {
-          await offlineDB.financialTransactions.update(transactionData.id!, { sync_status: 'created_offline' });
+          await offlineDB.financialTransactions.update(transactionData.id!, { sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }) });
           throw error;
         }
         await offlineDB.financialTransactions.update(transactionData.id!, { sync_status: 'synced' });

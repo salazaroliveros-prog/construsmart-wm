@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { BookOpen, Plus, Edit, Trash2, Calendar, TrendingUp, AlertTriangle, Flag, MessageSquare, Filter, Search, DollarSign } from 'lucide-react';
 import { offlineDB, LocalProject, LocalProjectLog } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
+import { resolveSyncStatus } from '@/lib/utils/syncState';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useProjectProgress } from '@/lib/hooks/useProjectProgress';
 import { useToast } from '@/components/ui/Toast';
@@ -23,6 +24,7 @@ export default function ProjectLogManager() {
   const [showForm, setShowForm] = useState(false);
   const [editingLog, setEditingLog] = useState<LocalProjectLog | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{ show: boolean; log: LocalProjectLog | null }>({ show: false, log: null });
+  const [isOnline, setIsOnline] = useState(true);
 
   const [formData, setFormData] = useState<Partial<LocalProjectLog>>({
     project_id: '',
@@ -97,7 +99,7 @@ export default function ProjectLogManager() {
         await offlineDB.projectLogs.update(editingLog.id!, {
           ...formData,
           updated_at: now,
-          sync_status: 'updated_offline',
+          sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: editingLog?.sync_status ?? 'synced', isOnline }),
         });
       } else {
         const newLog: LocalProjectLog = {
@@ -105,7 +107,7 @@ export default function ProjectLogManager() {
           project_id: selectedProject,
           created_at: now,
           updated_at: now,
-          sync_status: 'pending',
+          sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }),
         } as LocalProjectLog;
         await offlineDB.projectLogs.add(newLog);
       }

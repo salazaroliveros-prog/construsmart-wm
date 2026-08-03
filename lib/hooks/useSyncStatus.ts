@@ -27,6 +27,13 @@ export function useSyncStatus() {
   }, []);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const lastSync = localStorage.getItem('lastSyncTimestamp');
+      if (lastSync) {
+        setLastSyncAt(parseInt(lastSync, 10));
+      }
+    }
+
     const onStart = () => startSync();
     const onEnd = (e: Event) => {
       const detail = (e as CustomEvent).detail;

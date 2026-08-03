@@ -17,6 +17,7 @@ import { ProjectTypology, APUFormulaParams, APUResult, TYPOLOGY_LABELS, MATERIAL
 import type { APURenglon } from '@/lib/types/apu';
 import { offlineDB, LocalProject, LocalBudgetItem } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
+import { resolveSyncStatus, normalizeSyncStatus } from '@/lib/utils/syncState';
 import { sendBudgetMaterialsToWarehouse, MaterialToWarehouseInput } from '@/lib/integrations/budgetToWarehouse';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useIncrementalList } from '@/lib/hooks/useIncrementalList';
@@ -337,7 +338,11 @@ export default function BudgetCalculator() {
           profit_percentage: profitPercentage,
           total_amount: summary.total,
           duration_days: durationDays,
-          sync_status: existingBudget.sync_status === 'synced' ? 'updated_offline' : existingBudget.sync_status,
+          sync_status: resolveSyncStatus({
+            isNewRecord: false,
+            previousStatus: existingBudget.sync_status,
+            isOnline: navigator.onLine,
+          }),
           updated_at: new Date().toISOString(),
         });
 
@@ -357,7 +362,7 @@ export default function BudgetCalculator() {
           profit_percentage: profitPercentage,
           total_amount: summary.total,
           duration_days: durationDays,
-          sync_status: 'created_offline',
+          sync_status: resolveSyncStatus({ isNewRecord: true, isOnline: navigator.onLine }),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })) as string;
@@ -366,7 +371,7 @@ export default function BudgetCalculator() {
       // Save budget items
       const warehouseInputs: MaterialToWarehouseInput[] = [];
       for (const item of items) {
-        const budgetItemData: any = {
+        const budgetItemData: LocalBudgetItem = {
           budget_id: budgetId as string,
           code: item.code,
           description: item.description,
@@ -376,7 +381,7 @@ export default function BudgetCalculator() {
           total_cost: item.totalCost,
           item_order: 0,
           is_custom: true,
-          sync_status: 'created_offline',
+          sync_status: resolveSyncStatus({ isNewRecord: true, isOnline: navigator.onLine }),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
@@ -430,11 +435,11 @@ export default function BudgetCalculator() {
         await sendBudgetMaterialsToWarehouse(warehouseInputs);
       }
 
-      // Update project with budget data
+      const project = projects.find((p) => p.id === selectedProject);
       await offlineDB.projects.update(selectedProject, {
         budget_total: summary.total,
         calculated_duration: durationDays,
-        sync_status: 'updated_offline',
+        sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: project?.sync_status ?? 'synced', isOnline: navigator.onLine }),
         updated_at: new Date().toISOString(),
       });
 

@@ -9,6 +9,7 @@
 
 import { offlineDB, LocalWarehouseStock, LocalBudget, LocalBudgetItem } from '@/lib/db/offlineStore';
 import { isServerId } from '@/lib/utils/offlineSync';
+import { resolveSyncStatus } from '@/lib/utils/syncState';
 
 export interface MaterialToWarehouseInput {
   projectId?: string;
@@ -55,7 +56,9 @@ export async function sendBudgetMaterialsToWarehouse(
           unit: input.unit,
           unit_cost: input.unitCost,
           minimum_threshold: input.quantity,
-          sync_status: isServerId(existing.id) ? 'updated_offline' : existing.sync_status,
+          sync_status: isServerId(existing.id)
+            ? resolveSyncStatus({ isNewRecord: false, previousStatus: existing.sync_status, isOnline: true })
+            : existing.sync_status,
         });
         result.updated++;
       } else {
@@ -67,7 +70,7 @@ export async function sendBudgetMaterialsToWarehouse(
           minimum_threshold: input.quantity,
           unit_cost: input.unitCost,
           project_id: input.projectId,
-          sync_status: 'created_offline',
+          sync_status: resolveSyncStatus({ isNewRecord: true, isOnline: true }),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };

@@ -10,5 +10,10 @@ module.exports = defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    // Disable worker threads on Windows CI/local where spawning may fail
+    threads: false,
+    // Run tests in the same process to avoid fork/worker issues on Windows
+    isolate: true,
+    maxConcurrency: 1,
   },
 });

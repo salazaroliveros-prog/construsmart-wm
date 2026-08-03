@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
 import UserAvatar from '@/components/ui/UserAvatar';
 import { offlineDB } from '@/lib/db/offlineStore';
+import { getSyncStats } from '@/lib/utils/offlineSync';
 import { useCompanySettings } from '@/lib/hooks/useBusinessSettings';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 
@@ -116,9 +117,25 @@ export default function DashboardNav({ activeTab, onTabChange, isCollapsed = fal
   const { company } = useCompanySettings();
   const router = useRouter();
   const [navItems, setNavItems] = useState<NavItem[]>(NAV_ITEMS_BASE);
+  const [syncPendingCount, setSyncPendingCount] = useState(0);
 
   useEffect(() => {
     loadBadges();
+  }, [syncPendingCount]);
+
+  useEffect(() => {
+    const loadSyncPending = async () => {
+      try {
+        const stats = await getSyncStats();
+        setSyncPendingCount(stats.pendingDeletes + stats.pendingProjects + stats.pendingBudgets + stats.pendingBudgetItems + stats.pendingTransactions + stats.pendingPayroll + stats.pendingWarehouse + stats.pendingClients + stats.pendingProjectLogs + stats.pendingSuppliers + stats.pendingPurchaseOrders + stats.pendingPurchaseOrderItems);
+      } catch (error) {
+        console.error('Error loading sync pending count:', error);
+      }
+    };
+
+    loadSyncPending();
+    const intervalId = window.setInterval(loadSyncPending, 30000);
+    return () => window.clearInterval(intervalId);
   }, []);
 
   const loadBadges = useCallback(async () => {
@@ -150,6 +167,12 @@ export default function DashboardNav({ activeTab, onTabChange, isCollapsed = fal
       if (warehouseItem && lowStockItems > 0) {
         warehouseItem.badge = lowStockItems;
         warehouseItem.badgeColor = 'red';
+      }
+
+      const dashboardItem = updatedItems.find(item => item.id === 'dashboard');
+      if (dashboardItem && syncPendingCount > 0) {
+        dashboardItem.badge = syncPendingCount;
+        dashboardItem.badgeColor = 'amber';
       }
 
       setNavItems(updatedItems);

@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Building2, Calendar, Clock, Wifi, WifiOff } from 'lucide-react';
+import { Building2, Calendar, Clock, Wifi, WifiOff, CheckCircle2, AlertTriangle, RefreshCcw } from 'lucide-react';
 import UserAvatar from '@/components/ui/UserAvatar';
 import { useAuth } from '@/lib/auth/auth-context';
+import { useSyncStatus } from '@/lib/hooks/useSyncStatus';
+import { getSyncStats, syncOfflineData, forceFullSync } from '@/lib/utils/offlineSync';
 
 interface DualBrandHeaderProps {
   onMenuToggle?: () => void;
@@ -15,6 +17,27 @@ export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) 
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  const { phase, lastSyncAt, errorMessage, startSync, finishSync } = useSyncStatus();
+  const [manualSyncLoading, setManualSyncLoading] = useState(false);
+
+  const handleManualSync = useCallback(async () => {
+    if (!isOnline || manualSyncLoading) return;
+    setManualSyncLoading(true);
+    startSync();
+    try {
+      const pushResult = await syncOfflineData();
+      const pullResult = await forceFullSync();
+      const success = pushResult.success && pullResult.success;
+      const errors = [...pushResult.errors, ...pullResult.errors];
+      finishSync(success, errors.length > 0 ? errors.join('; ') : undefined);
+    } catch (error) {
+      finishSync(false, error instanceof Error ? error.message : String(error));
+    } finally {
+      setManualSyncLoading(false);
+    }
+  }, [isOnline, manualSyncLoading, startSync, finishSync]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -41,6 +64,44 @@ export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) 
       clearInterval(timer);
     };
   }, []);
+
+  useEffect(() => {
+    const loadPending = async () => {
+      try {
+        const stats = await getSyncStats();
+        setPendingCount(
+          stats.pendingProjects + stats.pendingBudgets + stats.pendingBudgetItems + stats.pendingTransactions +
+          stats.pendingPayroll + stats.pendingWarehouse + stats.pendingClients + stats.pendingProjectLogs +
+          stats.pendingSuppliers + stats.pendingPurchaseOrders + stats.pendingPurchaseOrderItems + stats.pendingDeletes
+        );
+      } catch (error) {
+        console.error('Error loading sync stats:', error);
+      }
+    };
+
+    loadPending();
+
+    const intervalId = window.setInterval(loadPending, 30000);
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    if (phase === 'synced' || phase === 'error') {
+      const refreshPending = async () => {
+        try {
+          const stats = await getSyncStats();
+          setPendingCount(
+            stats.pendingProjects + stats.pendingBudgets + stats.pendingBudgetItems + stats.pendingTransactions +
+            stats.pendingPayroll + stats.pendingWarehouse + stats.pendingClients + stats.pendingProjectLogs +
+            stats.pendingSuppliers + stats.pendingPurchaseOrders + stats.pendingPurchaseOrderItems + stats.pendingDeletes
+          );
+        } catch (error) {
+          console.error('Error refreshing sync stats:', error);
+        }
+      };
+      refreshPending();
+    }
+  }, [phase]);
 
   const formatTime = useCallback((date: Date) => {
     return new Intl.DateTimeFormat('es-GT', {
@@ -85,6 +146,47 @@ export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) 
             {isOnline ? 'Online' : 'Offline'}
           </span>
         </div>
+
+        <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-slate-800/80 border border-white/10 text-white text-[10px] sm:text-xs">
+          {phase === 'syncing' ? (
+            <RefreshCcw className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-cyan-300 animate-spin" />
+          ) : phase === 'error' ? (
+            <AlertTriangle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-rose-400" />
+          ) : (
+            <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400" />
+          )}
+          <div className="hidden sm:flex flex-col gap-0">
+            <span className="font-medium">
+              {phase === 'syncing'
+                ? 'Sincronizando...'
+                : phase === 'error'
+                ? 'Sync fallida'
+                : pendingCount > 0
+                ? `${pendingCount} pendientes`
+                : 'Sincronizado'}
+            </span>
+            {lastSyncAt && phase !== 'syncing' ? (
+              <span className="text-[10px] text-white/50">
+                {new Intl.DateTimeFormat('es-GT', { hour: '2-digit', minute: '2-digit' }).format(new Date(lastSyncAt))}
+              </span>
+            ) : null}
+            {phase === 'error' && errorMessage ? (
+              <span className="text-[10px] text-rose-300 truncate max-w-[12rem]" title={errorMessage}>
+                {errorMessage}
+              </span>
+            ) : null}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={handleManualSync}
+          disabled={!isOnline || manualSyncLoading}
+          className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/20 text-cyan-200 text-[10px] sm:text-xs hover:bg-cyan-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          title={isOnline ? 'Sincronizar ahora' : 'Conéctese a internet para sincronizar'}
+        >
+          <RefreshCcw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${manualSyncLoading ? 'animate-spin' : 'text-cyan-200'}`} />
+          <span>{manualSyncLoading ? 'Sincronizando' : 'Sincronizar'}</span>
+        </button>
 
         <div className="relative flex-shrink-0">
           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 border-2 border-cyan-500/50 overflow-hidden active:scale-95 transition-transform">

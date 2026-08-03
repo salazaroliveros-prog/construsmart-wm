@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Save, X, FolderOpen } from 'lucide-react';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
 import { queueDelete, isServerId, fetchProjectsForOffline } from '@/lib/utils/offlineSync';
+import { resolveSyncStatus } from '@/lib/utils/syncState';
 import { generateId } from '@/lib/utils/generateId';
 import { createProject as serverCreateProject, updateProject as serverUpdateProject, getProjectById } from '@/app/actions/project-actions';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
@@ -215,8 +216,8 @@ export default function ProjectManager() {
         id: editingProject?.id || generateId(),
         ...formData,
         sync_status: editingProject
-          ? (editingProject.sync_status === 'synced' ? (isOnline ? 'synced' : 'updated_offline') : 'created_offline')
-          : 'created_offline',
+          ? resolveSyncStatus({ isNewRecord: false, previousStatus: editingProject.sync_status, isOnline })
+          : resolveSyncStatus({ isNewRecord: true, isOnline }),
         created_at: editingProject?.created_at || new Date().toISOString()
       };
 
@@ -239,7 +240,7 @@ export default function ProjectManager() {
 
         if (result.error) {
           // Si falla el servidor, quedar pendiente para el motor de sync offline
-          await offlineDB.projects.update(projectData.id!, { sync_status: 'created_offline' });
+          await offlineDB.projects.update(projectData.id!, { sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }) });
           showToast('warning', 'Proyecto guardado localmente; pendiente de sync');
         } else {
           await offlineDB.projects.update(projectData.id!, { sync_status: 'synced' });
