@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Truck, Plus, Edit, Trash2, Phone, Mail, MapPin, Building2, Search, Filter } from 'lucide-react';
+import { Truck, Plus, Edit, Trash2, Phone, Mail, MapPin, Building2, Search, Filter, Star, Tag } from 'lucide-react';
 import { offlineDB, LocalSupplier } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
 import { resolveSyncStatus } from '@/lib/utils/syncState';
@@ -34,6 +34,8 @@ export default function SupplierManager() {
     city: '',
     payment_terms: '',
     notes: '',
+    categories: [],
+    is_preferred: false,
   });
 
   useEffect(() => {
@@ -136,6 +138,8 @@ export default function SupplierManager() {
         city: '',
         payment_terms: '',
         notes: '',
+        categories: [],
+        is_preferred: false,
       });
       loadSuppliers();
     } catch (error) {
@@ -202,6 +206,8 @@ export default function SupplierManager() {
                 city: '',
                 payment_terms: '',
                 notes: '',
+                categories: [],
+                is_preferred: false,
               });
               setShowForm(true);
             }}
@@ -313,7 +319,26 @@ export default function SupplierManager() {
                     </span>
                   </div>
                 )}
+                {supplier.is_preferred && (
+                  <div className="flex items-center gap-2 text-amber-400">
+                    <Star className="w-4 h-4" />
+                    <span className="text-xs font-medium">Preferido</span>
+                  </div>
+                )}
               </div>
+
+              {/* Categories Display */}
+              {supplier.categories && supplier.categories.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-white/10">
+                  <div className="flex flex-wrap gap-1">
+                    {supplier.categories.map((category, index) => (
+                      <span key={index} className="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-1 rounded">
+                        {category}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex gap-2 mt-4 pt-4 border-t border-white/10">
                 <button
@@ -442,6 +467,45 @@ export default function SupplierManager() {
                   className="glass-input w-full px-4 py-2 rounded-lg text-white min-h-[100px]"
                   rows={3}
                 />
+              </div>
+
+              {/* Category and Preferred Section */}
+              <div className="pt-4 border-t border-white/10">
+                <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-cyan-400" />
+                  Categorización
+                </h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-white/70 text-sm mb-2">Categorías de Materiales</label>
+                    <input
+                      type="text"
+                      value={formData.categories?.join(', ') || ''}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        categories: e.target.value.split(',').map(c => c.trim()).filter(c => c.length > 0)
+                      })}
+                      placeholder="Ej: cemento, acero, madera, pintura"
+                      className="glass-input w-full px-4 py-2 rounded-lg text-white"
+                    />
+                    <p className="text-white/50 text-xs mt-1">Separar categorías con comas</p>
+                  </div>
+                  <div className="flex items-center gap-3 pt-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.is_preferred || false}
+                        onChange={(e) => setFormData({ ...formData, is_preferred: e.target.checked })}
+                        className="w-4 h-4 rounded"
+                      />
+                      <span className="text-white/70 text-sm flex items-center gap-1">
+                        <Star className="w-3 h-3 text-amber-400" />
+                        Proveedor Preferido
+                      </span>
+                    </label>
+                  </div>
+                </div>
               </div>
 
               <div className="flex gap-3 pt-4">

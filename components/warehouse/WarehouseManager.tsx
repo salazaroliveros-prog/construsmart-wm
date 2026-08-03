@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Package, AlertTriangle, TrendingUp, X, Save, ArrowDown, ArrowUp, PackagePlus, Warehouse, FolderOpen } from 'lucide-react';
-import { offlineDB, LocalWarehouseStock, LocalProject } from '@/lib/db/offlineStore';
+import { Plus, Edit, Trash2, Search, Package, AlertTriangle, TrendingUp, X, Save, ArrowDown, ArrowUp, PackagePlus, Warehouse, FolderOpen, ShoppingCart, RefreshCw } from 'lucide-react';
+import { offlineDB, LocalWarehouseStock, LocalProject, LocalSupplier } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
 import { queueDelete, PENDING_STATUSES } from '@/lib/utils/offlineSync';
 import { resolveSyncStatus, normalizeSyncStatus } from '@/lib/utils/syncState';
@@ -17,6 +17,7 @@ import ActionButton from '@/components/ui/ActionButton';
 import { warehouseStockSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { useMaterialAlertContext } from '@/context/MaterialAlertContext';
+import { useAutoPurchaseOrder } from '@/hooks/useAutoPurchaseOrder';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -30,6 +31,9 @@ interface StockFormData {
   current_stock: number;
   minimum_threshold: number;
   unit_cost: number;
+  preferred_supplier_id?: string;
+  auto_generate_po?: boolean;
+  category?: string;
 }
 
 // ============================================================================
@@ -68,6 +72,13 @@ export default function WarehouseManager() {
   const { showToast } = useToast();
   const { financial } = useFinancialSettings();
   const { alerts, clearAlerts } = useMaterialAlertContext();
+  const { 
+    depletionAlerts, 
+    isProcessing, 
+    checkStockDepletion, 
+    generateDraftPO, 
+    generateAllDepletedPOs 
+  } = useAutoPurchaseOrder();
 
   // ---------------------------------------------------------------------------
   // STATE MANAGEMENT
@@ -88,6 +99,7 @@ export default function WarehouseManager() {
   const [saveLoading, setSaveLoading] = useState(false);
   const [selectedProject, setSelectedProject] = useState<string>('all');
   const [availableProjects, setAvailableProjects] = useState<LocalProject[]>([]);
+  const [suppliers, setSuppliers] = useState<LocalSupplier[]>([]);
 
   const [formData, setFormData] = useState<StockFormData>({
     project_id: undefined,
@@ -97,6 +109,9 @@ export default function WarehouseManager() {
     current_stock: 0,
     minimum_threshold: 10,
     unit_cost: 0,
+    preferred_supplier_id: undefined,
+    auto_generate_po: false,
+    category: '',
   });
 
   // ---------------------------------------------------------------------------
@@ -106,6 +121,7 @@ export default function WarehouseManager() {
   useEffect(() => {
     loadStockItems();
     loadProjects();
+    loadSuppliers();
     checkOnlineStatus();
 
     const handleOnline = () => setIsOnline(true);
@@ -119,6 +135,20 @@ export default function WarehouseManager() {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  const loadSuppliers = async () => {
+    try {
+      const allSuppliers = await offlineDB.suppliers.toArray();
+      setSuppliers(allSuppliers);
+    } catch (error) {
+      console.error('Error loading suppliers:', error);
+    }
+  };
+
+  // Check for stock depletion on load and when stock changes
+  useEffect(() => {
+    checkStockDepletion();
+  }, [stockItems]);
 
   // ---------------------------------------------------------------------------
   // UTILITY FUNCTIONS
@@ -200,6 +230,9 @@ export default function WarehouseManager() {
       current_stock: 0,
       minimum_threshold: 10,
       unit_cost: 0,
+      preferred_supplier_id: undefined,
+      auto_generate_po: false,
+      category: '',
     });
     setEditingItem(null);
   };
@@ -215,6 +248,9 @@ export default function WarehouseManager() {
         current_stock: item.current_stock,
         minimum_threshold: item.minimum_threshold,
         unit_cost: item.unit_cost,
+        preferred_supplier_id: item.preferred_supplier_id,
+        auto_generate_po: item.auto_generate_po,
+        category: item.category,
       });
     } else {
       resetForm();
@@ -288,6 +324,9 @@ export default function WarehouseManager() {
               current_stock: itemData.current_stock,
               minimum_threshold: itemData.minimum_threshold,
               unit_cost: itemData.unit_cost,
+              preferred_supplier_id: itemData.preferred_supplier_id,
+              auto_generate_po: itemData.auto_generate_po,
+              category: itemData.category,
             })
             .eq('id', editingItem.id);
 
@@ -317,6 +356,9 @@ export default function WarehouseManager() {
               current_stock: itemData.current_stock,
               minimum_threshold: itemData.minimum_threshold,
               unit_cost: itemData.unit_cost,
+              preferred_supplier_id: itemData.preferred_supplier_id,
+              auto_generate_po: itemData.auto_generate_po,
+              category: itemData.category,
             })
             .select()
             .single();
@@ -615,6 +657,86 @@ export default function WarehouseManager() {
         </div>
       )}
 
+      {/* Stock Depletion & Auto-PO Alerts */}
+      {depletionAlerts.length > 0 && (
+        <div className="mt-4 glass-panel rounded-2xl p-4 sm:p-6 border-l-4 border-l-amber-500">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-white font-semibold flex items-center gap-2">
+              <ShoppingCart className="w-5 h-5 text-amber-400" />
+              Alertas de Agotamiento - {depletionAlerts.length} Materiales
+            </h3>
+            <button
+              onClick={async () => {
+                const results = await generateAllDepletedPOs();
+                if (results.length > 0) {
+                  const successCount = results.filter(r => r.success).length;
+                  showToast('success', `${successCount} órdenes de compra generadas automáticamente`);
+                }
+              }}
+              disabled={isProcessing}
+              className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-emerald-600 text-white text-sm hover:opacity-90 flex items-center gap-2 disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${isProcessing ? 'animate-spin' : ''}`} />
+              {isProcessing ? 'Generando POs...' : 'Generar POs Automáticas'}
+            </button>
+          </div>
+          
+          <div className="space-y-3">
+            {depletionAlerts.map((alert, index) => (
+              <div key={index} className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-400" />
+                      <span className="text-white font-medium">{alert.stockItem.description}</span>
+                      <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-1 rounded">
+                        {alert.stockItem.item_code}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm mt-2">
+                      <div>
+                        <p className="text-white/50">Stock Actual</p>
+                        <p className="text-red-400 font-medium">{alert.currentStock.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-white/50">Mínimo</p>
+                        <p className="text-white">{alert.minimumThreshold.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-white/50">Recomendado</p>
+                        <p className="text-cyan-400 font-medium">{alert.recommendedOrderQuantity.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-white/50">Costo Estimado</p>
+                        <p className="text-emerald-400 font-medium">{formatCurrency(alert.estimatedCost, financial)}</p>
+                      </div>
+                    </div>
+                    {alert.supplier && (
+                      <div className="mt-2 text-xs text-white/60">
+                        Proveedor: {alert.supplier.name}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={async () => {
+                      const result = await generateDraftPO(alert.stockItem);
+                      if (result.success) {
+                        showToast('success', `PO generada: ${result.purchaseOrderId}`);
+                      } else {
+                        showToast('error', result.message);
+                      }
+                    }}
+                    disabled={isProcessing}
+                    className="px-3 py-2 rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 text-xs border border-cyan-500/30 disabled:opacity-50"
+                  >
+                    Generar PO
+                  </button>
+                </div>
+              ))}
+            </div>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="glass-panel rounded-2xl p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row gap-3">
@@ -868,6 +990,56 @@ export default function WarehouseManager() {
                   onChange={(e) => setFormData({ ...formData, unit_cost: Number(e.target.value) })}
                   className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
                 />
+              </div>
+            </div>
+
+            {/* Auto-PO and Category Section */}
+            <div className="pt-4 border-t border-white/10">
+              <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
+                <ShoppingCart className="w-4 h-4 text-cyan-400" />
+                Configuración de Compras Automáticas
+              </h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-white/60 text-sm mb-1">Categoría de Material</label>
+                  <input
+                    type="text"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    placeholder="Ej: cemento, acero, madera"
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-white/60 text-sm mb-1">Proveedor Preferido</label>
+                  <select
+                    value={formData.preferred_supplier_id}
+                    onChange={(e) => setFormData({ ...formData, preferred_supplier_id: e.target.value })}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                  >
+                    <option value="">Seleccione un proveedor...</option>
+                    {suppliers.map(supplier => (
+                      <option key={supplier.id} value={supplier.id}>
+                        {supplier.name} {supplier.is_preferred ? '⭐' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 mt-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.auto_generate_po || false}
+                    onChange={(e) => setFormData({ ...formData, auto_generate_po: e.target.checked })}
+                    className="w-4 h-4 rounded"
+                  />
+                  <span className="text-white/70 text-sm flex items-center gap-1">
+                    <RefreshCw className="w-3 h-3 text-cyan-400" />
+                    Generar PO Automática
+                  </span>
+                </label>
               </div>
             </div>
 
