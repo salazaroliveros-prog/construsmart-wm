@@ -204,8 +204,35 @@ export default function DashboardNav({ activeTab, onTabChange, isCollapsed = fal
             </button>
             {!isCollapsed && (
               <div className="flex-1 min-w-0">
-                <h2 className="text-white font-bold text-sm sm:text-lg truncate">{company.shortName || company.name}</h2>
-                <p className="text-[10px] sm:text-xs text-cyan-400">Sistema ERP</p>
+                {/* Dual Logo Layout */}
+                <div className="flex items-center gap-3 mb-2">
+                  {/* Left: CONSTRUCTORA WM Logo */}
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <img 
+                      src="/assets/branding/logo-constructora-wm.jpg" 
+                      alt="CONSTRUCTORA WM" 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  
+                  {/* Divider: Vertical glass accent line */}
+                  <div className="border-r border-white/20 h-8 mx-1"></div>
+                  
+                  {/* Right: Multi Servicios Logo */}
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <img 
+                      src="/assets/branding/letterhead-multiservicios.jpg" 
+                      alt="Multi Servicios de Guatemala" 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                </div>
+                
+                {/* Company Name */}
+                <div>
+                  <h2 className="text-white font-bold text-sm sm:text-lg truncate">{company.shortName || company.name}</h2>
+                  <p className="text-[10px] sm:text-xs text-cyan-400">Sistema ERP</p>
+                </div>
               </div>
             )}
           </div>
@@ -244,7 +271,7 @@ export default function DashboardNav({ activeTab, onTabChange, isCollapsed = fal
       {/* User Info Section */}
       <div className={`px-3 sm:px-4 py-3 sm:py-4 border-t border-white/10 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
         <div className="flex items-center gap-2 sm:gap-3 mb-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center overflow-hidden flex-shrink-0">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-cyan-500/50 shadow-lg shadow-cyan-500/20">
             <UserAvatar />
           </div>
           {!isCollapsed && (

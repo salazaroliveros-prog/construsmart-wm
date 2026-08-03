@@ -67,14 +67,14 @@ export default function UserAvatar({ size = 'md', showName = false, className = 
 
   if (avatarUrl) {
     return (
-      <div onClick={handleClick} className={`${avatarSizeClass} cursor-pointer rounded-full overflow-hidden flex-shrink-0 ${className}`} title="Click para cambiar foto de perfil">
+      <div onClick={handleClick} className={`${avatarSizeClass} cursor-pointer rounded-full overflow-hidden flex-shrink-0 ring-2 ring-cyan-500/50 shadow-lg shadow-cyan-500/20 ${className}`} title="Click para cambiar foto de perfil">
         <img src={avatarUrl} alt={user?.name || 'Usuario'} className={`${avatarSizeClass} object-cover`} />
       </div>
     );
   }
 
   return (
-    <div onClick={handleClick} className={`${avatarSizeClass} rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center flex-shrink-0 ${className}`} title="Click para cambiar foto de perfil">
+    <div onClick={handleClick} className={`${avatarSizeClass} rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center flex-shrink-0 ring-2 ring-cyan-500/50 shadow-lg shadow-cyan-500/20 ${className}`} title="Click para cambiar foto de perfil">
       <User className={`${size === 'sm' ? 'w-3 h-3 sm:w-4 sm:h-4' : size === 'md' ? 'w-4 h-4 sm:w-5 sm:h-5' : 'w-5 h-5 sm:w-6 sm:h-6'} text-white`} />
     </div>
   );
