@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Building2, Calendar, Clock, Wifi, WifiOff, CheckCircle2, AlertTriangle, RefreshCcw } from 'lucide-react';
 import UserAvatar from '@/components/ui/UserAvatar';
+import FloatingCalendar from '@/components/ui/FloatingCalendar';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useSyncStatus } from '@/lib/hooks/useSyncStatus';
 import { getSyncStats, syncOfflineData, forceFullSync } from '@/lib/utils/offlineSync';
@@ -18,6 +19,7 @@ export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) 
   const [isMounted, setIsMounted] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const { phase, lastSyncAt, errorMessage, startSync, finishSync } = useSyncStatus();
   const [manualSyncLoading, setManualSyncLoading] = useState(false);
@@ -128,12 +130,18 @@ export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) 
 
       <div className="flex items-center gap-2 sm:gap-4">
         {isMounted && currentTime && (
-          <div className="hidden md:flex items-center gap-3 text-xs sm:text-sm text-white/70">
-            <div className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span>{formatTime(currentTime)}</span>
-            </div>
-          </div>
+          <button
+            onClick={() => setIsCalendarOpen(!isCalendarOpen)}
+            className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-white/70 hover:bg-white/20 transition-colors cursor-pointer"
+            title="Ver calendario"
+          >
+            <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="text-xs sm:text-sm">
+              {currentTime.toLocaleDateString('es-GT', { day: '2-digit', month: 'short', year: 'numeric' })}
+            </span>
+            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="text-xs sm:text-sm">{formatTime(currentTime)}</span>
+          </button>
         )}
 
         <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-emerald-500/20 backdrop-blur-sm border border-emerald-500/30 active:bg-emerald-500/30 transition-colors">
@@ -195,6 +203,13 @@ export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) 
           <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-emerald-500 rounded-full border-2 border-slate-900" />
         </div>
       </div>
+
+      {/* Floating Calendar */}
+      <FloatingCalendar
+        isOpen={isCalendarOpen}
+        onClose={() => setIsCalendarOpen(false)}
+        triggerDate={currentTime || undefined}
+      />
     </header>
   );
 }

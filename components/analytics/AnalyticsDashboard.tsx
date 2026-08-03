@@ -1,60 +1,73 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { TrendingUp, Calendar, DollarSign, BarChart3, Filter, Activity, Target, AlertCircle, Loader2, FolderOpen, ArrowRight, ZoomIn, ZoomOut, Settings } from 'lucide-react';
-import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
-import { offlineDB, LocalProject, LocalFinancialTransaction } from '@/lib/db/offlineStore';
+import { 
+  TrendingUp, 
+  DollarSign, 
+  Activity, 
+  AlertTriangle, 
+  Loader2, 
+  Filter,
+  Calendar as CalendarIcon
+} from 'lucide-react';
+import { 
+  ResponsiveContainer, 
+  LineChart, 
+  Line, 
+  AreaChart, 
+  Area, 
+  ComposedChart, 
+  Bar, 
+  BarChart, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  PieChart, 
+  Pie, 
+  Cell, 
+  ReferenceLine 
+} from 'recharts';
+import { offlineDB, LocalProject, LocalFinancialTransaction, LocalWarehouseStock } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import EmptyState from '@/components/ui/EmptyState';
 
-// Recharts is a client-only library. We use static imports (like DashboardCharts.tsx)
-// and rely on the isMounted guard to avoid SSR hydration mismatches.
-const ChartComponents = {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  PieChart,
-  Pie,
-  Cell,
-};
-
 // ==================== TYPES & INTERFACES ====================
 
-interface ProgressData {
-  month: string;
-  programmed: number;
-  real: number;
-  projected: number;
+interface SCurveData {
+  period: string;
+  avancePlanificado: number;
+  avanceReal: number;
 }
 
-interface GanttData {
-  id: string;
-  activity: string;
-  start: string;
-  end: string;
+interface CashFlowData {
+  period: string;
+  ingresos: number;
+  egresos: number;
+  saldoNeto: number;
+}
+
+interface BudgetDeviationData {
+  capitulo: string;
+  presupuestoOriginal: number;
+  costoRealDevengado: number;
+}
+
+interface GanttTaskData {
+  tarea: string;
+  start: number;
+  end: number;
   progress: number;
-  phase: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'delayed';
-  dependency?: string;
+  esRutaCritica: boolean;
+  color: string;
 }
 
-interface AdvanceData {
-  project: string;
-  physical: number;
-  financial: number;
-}
-
-interface BudgetComparison {
-  category: string;
-  budgeted: number;
-  actual: number;
+interface MaterialBurnRateData {
+  material: string;
+  nivelActual: number;
+  puntoReorden: number;
+  total: number;
 }
 
 interface SummaryMetrics {
@@ -67,17 +80,30 @@ interface SummaryMetrics {
   budgetVariance: number;
 }
 
+// ==================== COLORS ====================
+
+const COLORS = {
+  cyan: '#06b6d4',
+  emerald: '#10b981',
+  violet: '#8b5cf6',
+  amber: '#f59e0b',
+  red: '#ef4444',
+  slate: '#64748b',
+};
+
 // ==================== MAIN COMPONENT ====================
 
 export default function AnalyticsDashboard() {
   // ==================== STATE ====================
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
+  const [warehouseStock, setWarehouseStock] = useState<LocalWarehouseStock[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('all');
-  const [progressData, setProgressData] = useState<ProgressData[]>([]);
-  const [ganttData, setGanttData] = useState<GanttData[]>([]);
-  const [advanceData, setAdvanceData] = useState<AdvanceData[]>([]);
-  const [budgetComparison, setBudgetComparison] = useState<BudgetComparison[]>([]);
+  const [sCurveData, setSCurveData] = useState<SCurveData[]>([]);
+  const [cashFlowData, setCashFlowData] = useState<CashFlowData[]>([]);
+  const [budgetDeviationData, setBudgetDeviationData] = useState<BudgetDeviationData[]>([]);
+  const [ganttData, setGanttData] = useState<GanttTaskData[]>([]);
+  const [burnRateData, setBurnRateData] = useState<MaterialBurnRateData[]>([]);
   const [summaryMetrics, setSummaryMetrics] = useState<SummaryMetrics>({
     totalProjects: 0,
     activeProjects: 0,
@@ -89,28 +115,25 @@ export default function AnalyticsDashboard() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [hasData, setHasData] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [ganttZoom, setGanttZoom] = useState(1);
-  const [selectedGanttItem, setSelectedGanttItem] = useState<string | null>(null);
 
   // ==================== EFFECTS ====================
   useEffect(() => {
     loadProjects();
     loadTransactions();
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    loadWarehouseStock();
   }, []);
 
   useEffect(() => {
     loadAnalyticsData();
   }, [selectedProject]);
 
-  // ==================== HELPER FUNCTIONS ====================
-  const checkMobile = () => {
-    setIsMobile(window.innerWidth < 768);
-  };
+  useRealtimeRefresh(['projects', 'financial_transactions', 'warehouse_stock'], () => {
+    loadProjects();
+    loadTransactions();
+    loadWarehouseStock();
+  });
 
+  // ==================== HELPER FUNCTIONS ====================
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('es-GT', {
       style: 'currency',
@@ -122,24 +145,6 @@ export default function AnalyticsDashboard() {
 
   const formatPercent = (value: number): string => {
     return `${value.toFixed(1)}%`;
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
-      case 'in_progress': return 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30';
-      case 'delayed': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default: return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'completed': return 'Completado';
-      case 'in_progress': return 'En Progreso';
-      case 'delayed': return 'Retrasado';
-      default: return 'Pendiente';
-    }
   };
 
   // ==================== DATA LOADING ====================
@@ -164,11 +169,14 @@ export default function AnalyticsDashboard() {
     }
   };
 
-  // Realtime refresh: recarga datos cuando cambios llegan de otros dispositivos
-  useRealtimeRefresh(['projects', 'financial_transactions'], () => {
-    loadProjects();
-    loadTransactions();
-  });
+  const loadWarehouseStock = async () => {
+    try {
+      const data = await offlineDB.warehouseStock.toArray();
+      setWarehouseStock(data);
+    } catch (error) {
+      console.error('Error loading warehouse stock:', error);
+    }
+  };
 
   const loadAnalyticsData = async () => {
     if (!hasData) {
@@ -181,35 +189,23 @@ export default function AnalyticsDashboard() {
         ? projects
         : projects.filter(p => p.id === selectedProject);
 
-      // Generate progress data (S-Curve with real project data)
-      const progress: ProgressData[] = generateProgressData(filteredProjects);
-      setProgressData(progress);
-
-      // Generate Gantt data
-      const gantt: GanttData[] = generateGanttData(filteredProjects);
-      setGanttData(gantt);
-
-      // Generate advance data
-      const advance: AdvanceData[] = generateAdvanceData(filteredProjects);
-      setAdvanceData(advance);
-
-      // Generate budget comparison
-      const budget: BudgetComparison[] = generateBudgetComparison(filteredProjects);
-      setBudgetComparison(budget);
-
-      // Calculate summary metrics
-      const metrics = calculateSummaryMetrics(filteredProjects);
-      setSummaryMetrics(metrics);
+      setSCurveData(generateSCurveData(filteredProjects));
+      setCashFlowData(generateCashFlowData(filteredProjects));
+      setBudgetDeviationData(generateBudgetDeviationData(filteredProjects));
+      setGanttData(generateGanttData(filteredProjects));
+      setBurnRateData(generateBurnRateData(filteredProjects));
+      setSummaryMetrics(calculateSummaryMetrics(filteredProjects));
     } catch (error) {
       console.error('Error loading analytics data:', error);
     }
   };
 
   const resetAnalytics = () => {
-    setProgressData([]);
+    setSCurveData([]);
+    setCashFlowData([]);
+    setBudgetDeviationData([]);
     setGanttData([]);
-    setAdvanceData([]);
-    setBudgetComparison([]);
+    setBurnRateData([]);
     setSummaryMetrics({
       totalProjects: 0,
       activeProjects: 0,
@@ -221,24 +217,19 @@ export default function AnalyticsDashboard() {
     });
   };
 
-  // ==================== DATA GENERATION (REAL DATA FROM DB) ====================
-  // Generates S-Curve data from real project dates and financial transactions
-  const generateProgressData = (projects: LocalProject[]): ProgressData[] => {
+  // ==================== DATA GENERATION ====================
+  
+  // GRÁFICO 1: Curva S (Avance Físico vs Financiero Acumulado)
+  const generateSCurveData = (projects: LocalProject[]): SCurveData[] => {
     if (projects.length === 0) return [];
 
     const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const currentDate = new Date();
-    const currentMonth = currentDate.getMonth(); // 0-11
+    const currentMonth = currentDate.getMonth();
 
-    // Para cada mes desde inicio de año hasta el mes actual
-    const monthsToShow = currentMonth + 1;
-    
-    return Array.from({ length: monthsToShow }, (_, index) => {
-      const monthDate = new Date(currentDate.getFullYear(), index, 1);
-      
-      let totalProgrammed = 0;
+    return Array.from({ length: currentMonth + 1 }, (_, index) => {
+      let totalPlanificado = 0;
       let totalReal = 0;
-      let totalProjected = 0;
 
       projects.forEach(project => {
         if (!project.start_date) return;
@@ -248,194 +239,194 @@ export default function AnalyticsDashboard() {
           : new Date(startDate.getTime() + (project.duration_days || 0) * 86400000);
         const totalDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000));
         
-        // Progreso programado basado en tiempo transcurrido
+        const monthDate = new Date(currentDate.getFullYear(), index, 1);
         const elapsedDays = Math.ceil((monthDate.getTime() - startDate.getTime()) / 86400000);
         const programmedProgress = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
 
         if (project.status === 'completed') {
-          totalProgrammed += 100;
+          totalPlanificado += 100;
           totalReal += 100;
-          totalProjected += 100;
         } else if (project.status === 'execution') {
-          totalProgrammed += programmedProgress;
-          // Progreso real basado en avance financiero de transacciones reales
+          totalPlanificado += programmedProgress;
           const projectTransactions = transactions.filter(t => t.project_id === project.id);
           const totalExpenses = projectTransactions
             .filter(t => t.type === 'expense')
             .reduce((sum, t) => sum + (t.total_cost || 0), 0);
           const budget = project.budget_total || project.total_budget || 0;
           const financialReal = budget > 0 ? (totalExpenses / budget) * 100 : 0;
-          totalReal += Math.min(100, financialReal || programmedProgress * 0.5);
-          totalProjected += programmedProgress;
+          totalReal += Math.min(100, financialReal || programmedProgress * 0.8);
         } else {
-          totalProgrammed += programmedProgress;
+          totalPlanificado += programmedProgress;
           totalReal += 0;
-          totalProjected += programmedProgress;
         }
       });
 
       return {
-        month: months[index],
-        programmed: Math.min(100, projects.length > 0 ? totalProgrammed / projects.length : 0),
-        real: Math.min(100, projects.length > 0 ? totalReal / projects.length : 0),
-        projected: Math.min(100, projects.length > 0 ? totalProjected / projects.length : 0),
+        period: months[index],
+        avancePlanificado: Math.min(100, projects.length > 0 ? totalPlanificado / projects.length : 0),
+        avanceReal: Math.min(100, projects.length > 0 ? totalReal / projects.length : 0),
       };
     });
   };
 
-  // Generates Gantt data from real project phases (based on duration and progress)
-  const generateGanttData = (projects: LocalProject[]): GanttData[] => {
+  // GRÁFICO 2: Flujo de Caja y Proyección
+  const generateCashFlowData = (projects: LocalProject[]): CashFlowData[] => {
     if (projects.length === 0) return [];
 
-    const activities: GanttData[] = [];
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+
+    return Array.from({ length: currentMonth + 1 }, (_, index) => {
+      let totalIngresos = 0;
+      let totalEgresos = 0;
+
+      projects.forEach(project => {
+        const projectTransactions = transactions.filter(t => t.project_id === project.id);
+        const monthTransactions = projectTransactions.filter(t => {
+          const txDate = new Date(t.date);
+          return txDate.getMonth() === index && txDate.getFullYear() === currentDate.getFullYear();
+        });
+
+        totalIngresos += monthTransactions
+          .filter(t => t.type === 'income')
+          .reduce((sum, t) => sum + (t.total_cost || 0), 0);
+        
+        totalEgresos += monthTransactions
+          .filter(t => t.type === 'expense')
+          .reduce((sum, t) => sum + (t.total_cost || 0), 0);
+      });
+
+      return {
+        period: months[index],
+        ingresos: totalIngresos,
+        egresos: totalEgresos,
+        saldoNeto: totalIngresos - totalEgresos,
+      };
+    });
+  };
+
+  // GRÁFICO 3: Desviación de Presupuesto por Capítulos
+  const generateBudgetDeviationData = (projects: LocalProject[]): BudgetDeviationData[] => {
+    if (projects.length === 0) return [];
+
+    const capitulos = ['Cimentación', 'Estructura', 'Acabados', 'Instalaciones', 'Otros'];
+    return capitulos.map(capitulo => {
+      let totalPresupuesto = 0;
+      let totalReal = 0;
+
+      projects.forEach(project => {
+        if (!project.budget_total) return;
+        
+        const categoryFactor: Record<string, number> = {
+          'Cimentación': 0.25,
+          'Estructura': 0.35,
+          'Acabados': 0.25,
+          'Instalaciones': 0.10,
+          'Otros': 0.05,
+        };
+
+        const chapterBudgeted = project.budget_total * (categoryFactor[capitulo] || 0.2);
+        totalPresupuesto += chapterBudgeted;
+
+        const categoryMapping: Record<string, string> = {
+          'Cimentación': 'materiales',
+          'Estructura': 'materiales',
+          'Acabados': 'materiales',
+          'Instalaciones': 'materiales',
+          'Otros': 'otros',
+        };
+
+        const projectTransactions = transactions.filter(t => 
+          t.project_id === project.id && 
+          t.type === 'expense' && 
+          t.category === categoryMapping[capitulo]
+        );
+        const actualSpent = projectTransactions.reduce((sum, t) => sum + (t.total_cost || 0), 0);
+        totalReal += actualSpent;
+      });
+
+      return {
+        capitulo,
+        presupuestoOriginal: totalPresupuesto,
+        costoRealDevengado: totalReal,
+      };
+    });
+  };
+
+  // GRÁFICO 4: Diagrama de Gantt Operativo (Ruta Crítica)
+  const generateGanttData = (projects: LocalProject[]): GanttTaskData[] => {
+    if (projects.length === 0) return [];
+
+    const tasks: GanttTaskData[] = [];
     const phases = [
-      { name: 'Planificación', weight: 0.10 },
-      { name: 'Fundación', weight: 0.15 },
-      { name: 'Estructura', weight: 0.30 },
-      { name: 'Mampostería', weight: 0.20 },
-      { name: 'Acabados', weight: 0.20 },
-      { name: 'Entrega', weight: 0.05 },
+      { name: 'Planificación', weight: 0.10, critical: true },
+      { name: 'Fundación', weight: 0.15, critical: true },
+      { name: 'Estructura', weight: 0.30, critical: true },
+      { name: 'Mampostería', weight: 0.20, critical: false },
+      { name: 'Acabados', weight: 0.20, critical: false },
+      { name: 'Entrega', weight: 0.05, critical: true },
     ];
 
     projects.forEach((project, projectIndex) => {
       if (!project.start_date) return;
       const startDate = new Date(project.start_date);
       const totalDuration = project.duration_days || project.calculated_duration || 90;
-      
-      // Para proyectos completados: todas las fases al 100%
-      // Para proyectos en ejecución: progreso basado en tiempo transcurrido
-      // Para planificación: solo la primera fase
       const currentDate = new Date();
       const elapsedDays = Math.max(0, Math.ceil((currentDate.getTime() - startDate.getTime()) / 86400000));
       const timeProgress = Math.min(100, (elapsedDays / totalDuration) * 100);
       
-      let cumStartDay = 0;
+      let cumStart = 0;
       phases.forEach((phase, phaseIndex) => {
         const phaseDuration = Math.max(1, Math.round(totalDuration * phase.weight));
-        const phaseStartDay = cumStartDay;
-        const phaseEndDay = cumStartDay + phaseDuration;
-        cumStartDay = phaseEndDay;
+        const phaseStart = cumStart;
+        const phaseEnd = cumStart + phaseDuration;
+        cumStart = phaseEnd;
 
-        // Calcular progreso real de la fase
         let phaseProgress = 0;
-        let status: GanttData['status'] = 'pending';
-
         if (project.status === 'completed') {
           phaseProgress = 100;
-          status = 'completed';
         } else if (project.status === 'execution') {
-          if (timeProgress >= phaseEndDay / totalDuration * 100) {
+          if (timeProgress >= phaseEnd / totalDuration * 100) {
             phaseProgress = 100;
-            status = 'completed';
-          } else if (timeProgress >= phaseStartDay / totalDuration * 100) {
-            // Progreso parcial en fase actual
-            const phaseElapsed = (timeProgress - (phaseStartDay / totalDuration * 100)) / (phase.weight * 100) * 100;
+          } else if (timeProgress >= phaseStart / totalDuration * 100) {
+            const phaseElapsed = (timeProgress - (phaseStart / totalDuration * 100)) / (phase.weight * 100) * 100;
             phaseProgress = Math.min(100, Math.max(0, phaseElapsed));
-            status = 'in_progress';
-          } else {
-            phaseProgress = 0;
-            status = 'pending';
           }
-        } else if (project.status === 'planning' && phaseIndex === 0) {
-          phaseProgress = 50;
-          status = 'in_progress';
         }
 
-        const activityStart = new Date(startDate.getTime() + phaseStartDay * 86400000);
-        const activityEnd = new Date(startDate.getTime() + phaseEndDay * 86400000);
-
-        activities.push({
-          id: `${project.id}-${phaseIndex}`,
-          activity: `${phase.name} - ${project.name.substring(0, 15)}...`,
-          start: `${activityStart.getDate().toString().padStart(2, '0')}/${(activityStart.getMonth() + 1).toString().padStart(2, '0')}/${activityStart.getFullYear()}`,
-          end: `${activityEnd.getDate().toString().padStart(2, '0')}/${(activityEnd.getMonth() + 1).toString().padStart(2, '0')}/${activityEnd.getFullYear()}`,
+        tasks.push({
+          tarea: `${phase.name} - ${project.name.substring(0, 12)}...`,
+          start: phaseStart,
+          end: phaseEnd,
           progress: phaseProgress,
-          phase: phase.name,
-          status,
-          dependency: phaseIndex > 0 ? `${project.id}-${phaseIndex - 1}` : undefined,
+          esRutaCritica: phase.critical,
+          color: phase.critical ? COLORS.red : COLORS.cyan,
         });
       });
     });
 
-    return activities;
+    return tasks.slice(0, 12); // Limitar a 12 tareas para visualización
   };
 
-  // Generates advance data from real project status and transactions
-  const generateAdvanceData = (projects: LocalProject[]): AdvanceData[] => {
+  // GRÁFICO 5: Velocidad de Consumo de Materiales Críticos (Burn Rate)
+  const generateBurnRateData = (projects: LocalProject[]): MaterialBurnRateData[] => {
     if (projects.length === 0) return [];
 
-    return projects.map(project => {
-      let physical = 0;
-      let financial = 0;
-
-      if (project.status === 'completed') {
-        physical = 100;
-        financial = 100;
-      } else if (project.start_date) {
-        const startDate = new Date(project.start_date);
-        const endDate = project.estimated_end_date 
-          ? new Date(project.estimated_end_date)
-          : new Date(startDate.getTime() + (project.duration_days || 0) * 86400000);
-        const currentDate = new Date();
-        const totalDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000));
-        const elapsedDays = Math.max(0, Math.ceil((currentDate.getTime() - startDate.getTime()) / 86400000));
-
-        physical = project.status === 'execution' 
-          ? Math.min(100, (elapsedDays / totalDays) * 100)
-          : 0;
-
-        // Avance financiero real basado en transacciones
-        const projectTransactions = transactions.filter(t => t.project_id === project.id);
-        const totalExpenses = projectTransactions
-          .filter(t => t.type === 'expense')
-          .reduce((sum, t) => sum + (t.total_cost || 0), 0);
-        const budget = project.budget_total || project.total_budget || 0;
-        financial = budget > 0 ? Math.min(100, (totalExpenses / budget) * 100) : 0;
-      }
-
+    const materiales = ['Cemento', 'Varilla', 'Agregados', 'Ladrillo', 'Acero'];
+    return materiales.map(material => {
+      const materialStock = warehouseStock.filter(s => 
+        s.description?.toLowerCase().includes(material.toLowerCase())
+      );
+      
+      const totalQuantity = materialStock.reduce((sum, s) => sum + (s.current_stock || 0), 0);
+      const reorderPoint = totalQuantity * 0.2; // 20% como punto de reorden
+      
       return {
-        project: project.name,
-        physical,
-        financial,
-      };
-    });
-  };
-
-  // Generates budget comparison from real budget data and transactions
-  const generateBudgetComparison = (projects: LocalProject[]): BudgetComparison[] => {
-    if (projects.length === 0) return [];
-
-    const categories = ['Materiales', 'Mano de Obra', 'Equipo', 'Subcontratos', 'Otros'];
-    return categories.map(category => {
-      let totalBudgeted = 0;
-      let totalActual = 0;
-
-      projects.forEach(project => {
-        if (!project.budget_total) return;
-        // Distribution by category
-        const categoryFactor: Record<string, number> = {
-          'Materiales': 0.4,
-          'Mano de Obra': 0.3,
-          'Equipo': 0.15,
-          'Subcontratos': 0.1,
-          'Otros': 0.05,
-        };
-
-        const categoryBudgeted = project.budget_total * (categoryFactor[category] || 0.2);
-        totalBudgeted += categoryBudgeted;
-
-        // Actual spending from real transactions filtered by category
-        const projectTransactions = transactions.filter(t => 
-          t.project_id === project.id && t.type === 'expense' && t.category === category.toLowerCase()
-        );
-        const actualSpent = projectTransactions.reduce((sum, t) => sum + (t.total_cost || 0), 0);
-        totalActual += actualSpent > 0 ? actualSpent : 0;
-      });
-
-      return {
-        category,
-        budgeted: totalBudgeted,
-        actual: totalActual,
+        material,
+        nivelActual: totalQuantity,
+        puntoReorden: reorderPoint,
+        total: totalQuantity * 1.25, // Capacidad total como referencia
       };
     });
   };
@@ -456,7 +447,6 @@ export default function AnalyticsDashboard() {
     const activeProjects = projects.filter(p => p.status === 'execution').length;
     const totalBudget = projects.reduce((sum, p) => sum + (p.budget_total || p.total_budget), 0);
 
-    // Calculate actual advances based on dates and status
     let totalPhysical = 0;
     let totalFinancial = 0;
 
@@ -481,7 +471,6 @@ export default function AnalyticsDashboard() {
       if (project.status === 'execution') {
         totalPhysical += timeProgress;
 
-        // Avance financiero real desde transacciones
         const projectTransactions = transactions.filter(t => t.project_id === project.id);
         const totalExpenses = projectTransactions
           .filter(t => t.type === 'expense')
@@ -510,10 +499,10 @@ export default function AnalyticsDashboard() {
   // ==================== RENDER ====================
   if (isLoading) {
     return (
-      <div className="glass-panel rounded-2xl p-4 sm:p-6">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-          <span className="ml-3 text-white">Cargando analytics...</span>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+        <div className="text-white flex items-center gap-3">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          <span>Cargando analytics...</span>
         </div>
       </div>
     );
@@ -521,336 +510,347 @@ export default function AnalyticsDashboard() {
 
   if (!hasData) {
     return (
-      <div className="glass-panel rounded-2xl p-4 sm:p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
-            <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-cyan-400" />
-            Analytics Dashboard
-          </h1>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
         <EmptyState
-          icon={<FolderOpen className="w-12 h-12 text-white/30" />}
+          icon={<Filter className="w-12 h-12 text-white/30" />}
           title="No hay datos para mostrar"
-          description="Para ver las gráficas y métricas de analytics, primero cree proyectos en el módulo de Gestión de Proyectos. Los analytics se generarán automáticamente a partir de los datos de sus proyectos."
+          description="Para ver las gráficas de analytics, primero cree proyectos en el módulo de Gestión de Proyectos."
         />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header Section */}
-      <div className="glass-panel rounded-2xl p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 sm:p-6">
+      {/* CONTENEDOR PRINCIPAL DEL DASHBOARD - Enterprise Glassmorphism 2.0 */}
+      <div className="bg-white/[var(--glass-opacity,0.15)] dark:bg-black/[var(--glass-opacity,0.2)] backdrop-blur-[var(--glass-blur,16px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_8px_32px_0_rgba(0,0,0,0.25)] will-change-[backdrop-filter] contain-paint rounded-2xl p-4 sm:p-6">
+        
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
-              <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-cyan-400" />
-              Analytics Dashboard
+            <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+              <Activity className="w-7 h-7 sm:w-8 sm:h-8 text-cyan-500" />
+              Dashboard de Control de Obras
             </h1>
-            <p className="text-white/60 text-sm mt-1">
-              Métricas y análisis de proyectos
+            <p className="text-zinc-600 dark:text-zinc-400 text-sm mt-1">
+              Análisis de alta densidad de datos
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <select
-              value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value)}
-              className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white text-sm"
-            >
-              <option value="all">Todos los Proyectos</option>
-              {projects.map(project => (
-                <option key={project.id} value={project.id}>{project.name}</option>
-              ))}
-            </select>
-          </div>
+          <select
+            value={selectedProject}
+            onChange={(e) => setSelectedProject(e.target.value)}
+            className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-zinc-900 dark:text-white text-sm"
+          >
+            <option value="all">Todos los Proyectos</option>
+            {projects.map(project => (
+              <option key={project.id} value={project.id}>{project.name}</option>
+            ))}
+          </select>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4">
-          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-violet-500">
-            <div className="flex items-center gap-2 mb-1">
-              <FolderOpen className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400" />
-              <span className="text-white/60 text-xs sm:text-sm">Total Proyectos</span>
+        {/* Layout Grid Responsivo de Alta Densidad */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* GRÁFICO 1: CURVA "S" (AVANCE FÍSICO VS. FINANCIERO ACUMULADO) */}
+          <div className="bg-white/[var(--glass-opacity,0.1)] dark:bg-black/[var(--glass-opacity,0.15)] backdrop-blur-[var(--glass-blur,12px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_4px_16px_0_rgba(0,0,0,0.15)] rounded-xl p-4 sm:p-5">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-cyan-500" />
+              Curva S de Avance Acumulado
+            </h2>
+            <div className="h-72 sm:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={sCurveData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
+                  <XAxis 
+                    dataKey="period" 
+                    stroke="currentColor"
+                    tick={{ fill: 'currentColor', fontSize: 12 }}
+                    tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                    className="text-zinc-900 dark:text-white"
+                  />
+                  <YAxis 
+                    stroke="currentColor"
+                    tick={{ fill: 'currentColor', fontSize: 12 }}
+                    tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                    tickFormatter={(value) => `${value as number}%`}
+                    className="text-zinc-900 dark:text-white"
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
+                    itemStyle={{ color: '#fff', fontWeight: '500' }}
+                    labelStyle={{ color: '#fff', fontWeight: '600' }}
+                  />
+                  <Legend 
+                    wrapperStyle={{ color: '#fff', fontWeight: '500' }}
+                    iconType="circle"
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="avancePlanificado" 
+                    stroke={COLORS.violet} 
+                    strokeWidth={2} 
+                    strokeDasharray="5 5"
+                    fill={COLORS.violet}
+                    fillOpacity={0.3}
+                    name="Avance Planificado %"
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="avanceReal" 
+                    stroke={COLORS.cyan} 
+                    strokeWidth={3}
+                    fill={COLORS.cyan}
+                    fillOpacity={0.4}
+                    name="Avance Real %"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
-            <p className="text-lg sm:text-xl font-bold text-white">{summaryMetrics.totalProjects}</p>
           </div>
-          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-emerald-500">
-            <div className="flex items-center gap-2 mb-1">
-              <Target className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
-              <span className="text-white/60 text-xs sm:text-sm">Activos</span>
-            </div>
-            <p className="text-lg sm:text-xl font-bold text-white">{summaryMetrics.activeProjects}</p>
-          </div>
-          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-cyan-500">
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
-              <span className="text-white/60 text-xs sm:text-sm">Avance Físico</span>
-            </div>
-            <p className="text-lg sm:text-xl font-bold text-white">{formatPercent(summaryMetrics.avgPhysicalAdvance)}</p>
-          </div>
-          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-blue-500">
-            <div className="flex items-center gap-2 mb-1">
-              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
-              <span className="text-white/60 text-xs sm:text-sm">Avance Financiero</span>
-            </div>
-            <p className="text-lg sm:text-xl font-bold text-white">{formatPercent(summaryMetrics.avgFinancialAdvance)}</p>
-          </div>
-          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-amber-500">
-            <div className="flex items-center gap-2 mb-1">
-              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
-              <span className="text-white/60 text-xs sm:text-sm">Presupuesto Total</span>
-            </div>
-            <p className="text-lg sm:text-xl font-bold text-white">{formatCurrency(summaryMetrics.totalBudget)}</p>
-          </div>
-          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-red-500">
-            <div className="flex items-center gap-2 mb-1">
-              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
-              <span className="text-white/60 text-xs sm:text-sm">Varianza</span>
-            </div>
-            <p className={`text-lg sm:text-xl font-bold ${summaryMetrics.budgetVariance >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-              {formatCurrency(summaryMetrics.budgetVariance)}
-            </p>
-          </div>
-        </div>
-      </div>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* S-Curve Chart */}
-        <div className="glass-panel rounded-2xl p-4 sm:p-6">
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-cyan-400" />
-            Curva S de Avance
-          </h2>
-          <div className="h-64 sm:h-80">
-            <ChartComponents.ResponsiveContainer width="100%" height="100%">
-              <ChartComponents.LineChart data={progressData}>
-                <ChartComponents.CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <ChartComponents.XAxis dataKey="month" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} />
-                <ChartComponents.YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} />
-                <ChartComponents.Tooltip
-                  contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                  itemStyle={{ color: 'white' }}
-                />
-                <ChartComponents.Legend />
-                <ChartComponents.Line type="monotone" dataKey="programmed" stroke="#06b6d4" strokeWidth={2} name="Programado" />
-                <ChartComponents.Line type="monotone" dataKey="real" stroke="#10b981" strokeWidth={2} name="Real" />
-                <ChartComponents.Line type="monotone" dataKey="projected" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" name="Proyectado" />
-              </ChartComponents.LineChart>
-            </ChartComponents.ResponsiveContainer>
+          {/* GRÁFICO 2: FLUJO DE CAJA Y PROYECCIÓN (CASH FLOW) */}
+          <div className="bg-white/[var(--glass-opacity,0.1)] dark:bg-black/[var(--glass-opacity,0.15)] backdrop-blur-[var(--glass-blur,12px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_4px_16px_0_rgba(0,0,0,0.15)] rounded-xl p-4 sm:p-5">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-emerald-500" />
+              Flujo de Caja y Proyección
+            </h2>
+            <div className="h-72 sm:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={cashFlowData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
+                  <XAxis 
+                    dataKey="period" 
+                    stroke="currentColor"
+                    tick={{ fill: 'currentColor', fontSize: 12 }}
+                    tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                    className="text-zinc-900 dark:text-white"
+                  />
+                  <YAxis 
+                    stroke="currentColor"
+                    tick={{ fill: 'currentColor', fontSize: 12 }}
+                    tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                    tickFormatter={(value) => `Q${((value as number) / 1000).toFixed(0)}k`}
+                    className="text-zinc-900 dark:text-white"
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
+                    itemStyle={{ color: '#fff', fontWeight: '500' }}
+                    labelStyle={{ color: '#fff', fontWeight: '600' }}
+                    formatter={(value) => formatCurrency(value as number)}
+                  />
+                  <Legend 
+                    wrapperStyle={{ color: '#fff', fontWeight: '500' }}
+                    iconType="circle"
+                  />
+                  <Bar dataKey="ingresos" fill={COLORS.emerald} name="Ingresos" />
+                  <Bar dataKey="egresos" fill={COLORS.red} name="Egresos" />
+                  <Line 
+                    type="monotone" 
+                    dataKey="saldoNeto" 
+                    stroke={COLORS.amber} 
+                    strokeWidth={3}
+                    dot={{ fill: COLORS.amber, r: 4 }}
+                    name="Saldo Neto"
+                  />
+                  <ReferenceLine y={0} stroke="currentColor" strokeDasharray="3 3" className="text-zinc-900 dark:text-white" />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
 
-        {/* Physical vs Financial Advance */}
-        <div className="glass-panel rounded-2xl p-4 sm:p-6">
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Target className="w-5 h-5 text-emerald-400" />
-            Avance Físico vs Financiero
-          </h2>
-          <div className="h-64 sm:h-80">
-            <ChartComponents.ResponsiveContainer width="100%" height="100%">
-              <ChartComponents.BarChart data={advanceData}>
-                <ChartComponents.CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <ChartComponents.XAxis dataKey="project" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} angle={-45} textAnchor="end" height={60} />
-                <ChartComponents.YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} />
-                <ChartComponents.Tooltip
-                  contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                  itemStyle={{ color: 'white' }}
-                />
-                <ChartComponents.Legend />
-                <ChartComponents.Bar dataKey="physical" fill="#06b6d4" name="Físico" />
-                <ChartComponents.Bar dataKey="financial" fill="#10b981" name="Financiero" />
-              </ChartComponents.BarChart>
-            </ChartComponents.ResponsiveContainer>
+          {/* GRÁFICO 3: DESVIACIÓN DE PRESUPUESTO POR CAPÍTULOS (ANÁLISIS APU) */}
+          <div className="bg-white/[var(--glass-opacity,0.1)] dark:bg-black/[var(--glass-opacity,0.15)] backdrop-blur-[var(--glass-blur,12px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_4px_16px_0_rgba(0,0,0,0.15)] rounded-xl p-4 sm:p-5">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+              <Activity className="w-5 h-5 text-violet-500" />
+              Desviación de Presupuesto por Capítulos
+            </h2>
+            <div className="h-72 sm:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={budgetDeviationData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
+                  <XAxis 
+                    type="number" 
+                    stroke="currentColor"
+                    tick={{ fill: 'currentColor', fontSize: 12 }}
+                    tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                    tickFormatter={(value) => `Q${((value as number) / 1000).toFixed(0)}k`}
+                    className="text-zinc-900 dark:text-white"
+                  />
+                  <YAxis 
+                    type="category" 
+                    dataKey="capitulo" 
+                    stroke="currentColor"
+                    tick={{ fill: 'currentColor', fontSize: 12 }}
+                    tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                    width={100}
+                    className="text-zinc-900 dark:text-white"
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
+                    itemStyle={{ color: '#fff', fontWeight: '500' }}
+                    labelStyle={{ color: '#fff', fontWeight: '600' }}
+                    formatter={(value) => formatCurrency(value as number)}
+                  />
+                  <Legend 
+                    wrapperStyle={{ color: '#fff', fontWeight: '500' }}
+                    iconType="circle"
+                  />
+                  <Bar dataKey="presupuestoOriginal" fill={COLORS.cyan} name="Presupuesto Original" />
+                  <Bar dataKey="costoRealDevengado" fill={COLORS.amber} name="Costo Real Devengado" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Budget Comparison */}
-      <div className="glass-panel rounded-2xl p-4 sm:p-6">
-        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-amber-400" />
-          Presupuestado vs Real
-        </h2>
-        <div className="h-64 sm:h-80">
-          <ChartComponents.ResponsiveContainer width="100%" height="100%">
-            <ChartComponents.BarChart data={budgetComparison}>
-              <ChartComponents.CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-              <ChartComponents.XAxis dataKey="category" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} />
-              <ChartComponents.YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} />
-              <ChartComponents.Tooltip
-                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                itemStyle={{ color: 'white' }}
-              />
-              <ChartComponents.Legend />
-              <ChartComponents.Bar dataKey="budgeted" fill="#06b6d4" name="Presupuestado" />
-              <ChartComponents.Bar dataKey="actual" fill="#10b981" name="Real" />
-            </ChartComponents.BarChart>
-          </ChartComponents.ResponsiveContainer>
-        </div>
-      </div>
+          {/* GRÁFICO 4: DIAGRAMA DE GANTT OPERATIVO (RUTA CRÍTICA) */}
+          <div className="bg-white/[var(--glass-opacity,0.1)] dark:bg-black/[var(--glass-opacity,0.15)] backdrop-blur-[var(--glass-blur,12px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_4px_16px_0_rgba(0,0,0,0.15)] rounded-xl p-4 sm:p-5">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+              <CalendarIcon className="w-5 h-5 text-amber-500" />
+              Diagrama de Gantt Operativo (Ruta Crítica)
+            </h2>
+            <div className="h-72 sm:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={ganttData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
+                  <XAxis 
+                    type="number" 
+                    stroke="currentColor"
+                    tick={{ fill: 'currentColor', fontSize: 11 }}
+                    tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                    domain={[0, 100]}
+                    tickFormatter={(value) => `${value as number}%`}
+                    className="text-zinc-900 dark:text-white"
+                  />
+                  <YAxis 
+                    type="category" 
+                    dataKey="tarea" 
+                    stroke="currentColor"
+                    tick={{ fill: 'currentColor', fontSize: 11 }}
+                    tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                    width={120}
+                    interval={0}
+                    className="text-zinc-900 dark:text-white"
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
+                    itemStyle={{ color: '#fff', fontWeight: '500' }}
+                    labelStyle={{ color: '#fff', fontWeight: '600' }}
+                    formatter={(value) => `${(value as number).toFixed(1)}%`}
+                  />
+                  <Bar 
+                    dataKey="progress" 
+                    fill={COLORS.cyan}
+                    name="Progreso"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex items-center gap-4 mt-3 text-xs text-zinc-600 dark:text-zinc-400">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-red-500 rounded" />
+                <span>Ruta Crítica</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-cyan-500 rounded" />
+                <span>Tarea Normal</span>
+              </div>
+            </div>
+          </div>
 
-      {/* Project Tracking Table */}
-      <div className="glass-panel rounded-2xl p-4 sm:p-6">
-        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <Activity className="w-5 h-5 text-cyan-400" />
-          Seguimiento de Proyectos
-        </h2>
-        <div className="overflow-x-auto overflow-anchor-none">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left py-3 px-4 text-white/60 font-medium">Proyecto</th>
-                <th className="text-left py-3 px-4 text-white/60 font-medium">Estado</th>
-                <th className="text-left py-3 px-4 text-white/60 font-medium">Avance Físico</th>
-                <th className="text-left py-3 px-4 text-white/60 font-medium">Avance Financiero</th>
-                <th className="text-left py-3 px-4 text-white/60 font-medium">Ingresos</th>
-                <th className="text-left py-3 px-4 text-white/60 font-medium">Gastos</th>
-                <th className="text-left py-3 px-4 text-white/60 font-medium">Pendiente de Aportar</th>
-              </tr>
-            </thead>
-            <tbody>
-              {projects.map((project) => {
-                const advance = generateAdvanceData([project])[0];
-                const physicalProgress = advance?.physical || 0;
-                const financialProgress = advance?.financial || 0;
-                const budget = project.budget_total || project.total_budget || 0;
-                const income = budget * (financialProgress / 100);
-                const expenses = transactions
-                  .filter(t => t.project_id === project.id && t.type === 'expense')
-                  .reduce((sum, t) => sum + (t.total_cost || 0), 0);
-                const pending = budget - income;
-                
+          {/* GRÁFICO 5: VELOCIDAD DE CONSUMO DE MATERIALES CRÍTICOS (BURN RATE) */}
+          <div className="bg-white/[var(--glass-opacity,0.1)] dark:bg-black/[var(--glass-opacity,0.15)] backdrop-blur-[var(--glass-blur,12px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_4px_16px_0_rgba(0,0,0,0.15)] rounded-xl p-4 sm:p-5">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+              Velocidad de Consumo de Materiales (Burn Rate)
+            </h2>
+            <div className="h-72 sm:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={burnRateData}
+                    cx="50%"
+                    cy="50%"
+                    startAngle={180}
+                    endAngle={0}
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="nivelActual"
+                    name="Nivel Actual"
+                  >
+                    {burnRateData.map((entry, index) => {
+                      const isBelowReorder = entry.nivelActual < entry.puntoReorden;
+                      const color = isBelowReorder ? COLORS.red : COLORS.emerald;
+                      return (
+                        <Cell key={`cell-${index}`} fill={color} />
+                      );
+                    })}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
+                    itemStyle={{ color: '#fff', fontWeight: '500' }}
+                    labelStyle={{ color: '#fff', fontWeight: '600' }}
+                    formatter={(value, name, props) => {
+                      const material = burnRateData[props.payload?.index]?.material || '';
+                      return `${material}: ${value} unidades`;
+                    }}
+                  />
+                  <Legend 
+                    wrapperStyle={{ color: '#fff', fontWeight: '500' }}
+                    iconType="circle"
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-3 grid grid-cols-5 gap-2 text-xs">
+              {burnRateData.map((item, index) => {
+                const isBelowReorder = item.nivelActual < item.puntoReorden;
                 return (
-                  <tr key={project.id} className="border-b border-white/5 hover:bg-white/5">
-                    <td className="py-3 px-4">
-                      <div>
-                        <p className="text-white font-medium">{project.name}</p>
-                        <p className="text-white/40 text-xs">{project.code}</p>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2 py-1 rounded-md text-xs font-medium border ${
-                        project.status === 'execution' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
-                        project.status === 'planning' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
-                        project.status === 'completed' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' :
-                        'bg-gray-500/20 text-gray-300 border-gray-500/30'
-                      }`}>
-                        {project.status === 'execution' ? 'En Ejecución' :
-                         project.status === 'planning' ? 'Planificación' :
-                         project.status === 'completed' ? 'Completado' : 'Pausado'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-white/10 rounded-full h-2">
-                          <div
-                            className="bg-gradient-to-r from-cyan-500 to-violet-500 h-2 rounded-full"
-                            style={{ width: `${physicalProgress}%` }}
-                          />
-                        </div>
-                        <span className="text-white text-xs w-10">{physicalProgress}%</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-white/10 rounded-full h-2">
-                          <div
-                            className="bg-gradient-to-r from-emerald-500 to-cyan-500 h-2 rounded-full"
-                            style={{ width: `${financialProgress}%` }}
-                          />
-                        </div>
-                        <span className="text-white text-xs w-10">{financialProgress}%</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-emerald-400 font-medium">{formatCurrency(income)}</td>
-                    <td className="py-3 px-4 text-red-400 font-medium">{formatCurrency(expenses)}</td>
-                    <td className={`py-3 px-4 font-medium ${pending > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                      {formatCurrency(pending)}
-                    </td>
-                  </tr>
+                  <div 
+                    key={index}
+                    className={`p-2 rounded-lg border ${
+                      isBelowReorder 
+                        ? 'bg-red-500/20 border-red-500/30 text-red-400' 
+                        : 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400'
+                    }`}
+                  >
+                    <div className="font-medium">{item.material}</div>
+                    <div className="text-[10px] mt-1">
+                      {item.nivelActual.toFixed(0)} / {item.total.toFixed(0)}
+                    </div>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Interactive Gantt Chart */}
-      <div className="glass-panel rounded-2xl p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6">
-          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-violet-400" />
-            Cronograma de Actividades
-          </h2>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setGanttZoom(Math.max(0.5, ganttZoom - 0.25))}
-              className="glass-button p-2 rounded-lg text-white"
-              title="Reducir zoom"
-            >
-              <ZoomOut className="w-4 h-4" />
-            </button>
-            <span className="text-white/60 text-sm">{Math.round(ganttZoom * 100)}%</span>
-            <button
-              onClick={() => setGanttZoom(Math.min(2, ganttZoom + 0.25))}
-              className="glass-button p-2 rounded-lg text-white"
-              title="Aumentar zoom"
-            >
-              <ZoomIn className="w-4 h-4" />
-            </button>
+            </div>
           </div>
         </div>
 
-        <div className="overflow-x-auto overflow-anchor-none">
-          <div className="min-w-[600px]" style={{ transform: `scale(${ganttZoom})`, transformOrigin: 'left' }}>
-            <div className="space-y-2">
-              {ganttData.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => setSelectedGanttItem(selectedGanttItem === item.id ? null : item.id)}
-                  className={`glass-card p-3 sm:p-4 rounded-lg cursor-pointer transition-all ${
-                    selectedGanttItem === item.id ? 'ring-2 ring-cyan-500/50' : 'hover:bg-white/10'
-                  }`}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white font-medium text-sm truncate">{item.activity}</p>
-                      <p className="text-white/60 text-xs">{item.phase}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`px-2 py-1 rounded-md text-xs font-medium border ${getStatusColor(item.status)}`}
-                      >
-                        {getStatusLabel(item.status)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
-                    <div className="flex items-center gap-1 text-white/60">
-                      <Calendar className="w-3 h-3" />
-                      <span>{item.start}</span>
-                      <ArrowRight className="w-3 h-3" />
-                      <span>{item.end}</span>
-                    </div>
-                    <div className="flex-1 sm:flex-none">
-                      <div className="w-full bg-white/10 rounded-full h-2">
-                        <div
-                          className="bg-gradient-to-r from-cyan-500 to-violet-500 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${item.progress}%` }}
-                        />
-                      </div>
-                    </div>
-                    <span className="text-white font-medium w-12 text-right">{formatPercent(item.progress)}</span>
-                  </div>
-                  {selectedGanttItem === item.id && (
-                    <div className="mt-3 pt-3 border-t border-white/10 text-xs text-white/60">
-                      <p><strong>ID:</strong> {item.id}</p>
-                      {item.dependency && <p><strong>Dependencia:</strong> {item.dependency}</p>}
-                    </div>
-                  )}
-                </div>
-              ))}
+        {/* Summary Metrics Footer */}
+        <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+          <div className="bg-white/[var(--glass-opacity,0.05)] dark:bg-black/[var(--glass-opacity,0.1)] border border-white/10 dark:border-zinc-700/20 rounded-lg p-3">
+            <div className="text-zinc-600 dark:text-zinc-400 text-xs mb-1">Total Proyectos</div>
+            <div className="text-xl font-bold text-zinc-900 dark:text-white">{summaryMetrics.totalProjects}</div>
+          </div>
+          <div className="bg-white/[var(--glass-opacity,0.05)] dark:bg-black/[var(--glass-opacity,0.1)] border border-white/10 dark:border-zinc-700/20 rounded-lg p-3">
+            <div className="text-zinc-600 dark:text-zinc-400 text-xs mb-1">Activos</div>
+            <div className="text-xl font-bold text-zinc-900 dark:text-white">{summaryMetrics.activeProjects}</div>
+          </div>
+          <div className="bg-white/[var(--glass-opacity,0.05)] dark:bg-black/[var(--glass-opacity,0.1)] border border-white/10 dark:border-zinc-700/20 rounded-lg p-3">
+            <div className="text-zinc-600 dark:text-zinc-400 text-xs mb-1">Avance Físico</div>
+            <div className="text-xl font-bold text-zinc-900 dark:text-white">{formatPercent(summaryMetrics.avgPhysicalAdvance)}</div>
+          </div>
+          <div className="bg-white/[var(--glass-opacity,0.05)] dark:bg-black/[var(--glass-opacity,0.1)] border border-white/10 dark:border-zinc-700/20 rounded-lg p-3">
+            <div className="text-zinc-600 dark:text-zinc-400 text-xs mb-1">Avance Financiero</div>
+            <div className="text-xl font-bold text-zinc-900 dark:text-white">{formatPercent(summaryMetrics.avgFinancialAdvance)}</div>
+          </div>
+          <div className="bg-white/[var(--glass-opacity,0.05)] dark:bg-black/[var(--glass-opacity,0.1)] border border-white/10 dark:border-zinc-700/20 rounded-lg p-3">
+            <div className="text-zinc-600 dark:text-zinc-400 text-xs mb-1">Presupuesto Total</div>
+            <div className="text-xl font-bold text-zinc-900 dark:text-white">{formatCurrency(summaryMetrics.totalBudget)}</div>
+          </div>
+          <div className="bg-white/[var(--glass-opacity,0.05)] dark:bg-black/[var(--glass-opacity,0.1)] border border-white/10 dark:border-zinc-700/20 rounded-lg p-3">
+            <div className="text-zinc-600 dark:text-zinc-400 text-xs mb-1">Varianza</div>
+            <div className={`text-xl font-bold ${summaryMetrics.budgetVariance >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+              {formatCurrency(summaryMetrics.budgetVariance)}
             </div>
           </div>
         </div>
