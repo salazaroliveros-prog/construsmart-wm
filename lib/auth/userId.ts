@@ -28,18 +28,3 @@ export async function getCurrentUserId(): Promise<string | null> {
     return null;
   }
 }
-
-/**
- * Obtiene el user_id del usuario autenticado actualmente (síncrono).
- * Retorna null si no hay usuario autenticado o si el user no está en caché.
- * Use esta versión solo si tienes certeza de que el usuario está autenticado.
- */
-export function getCurrentUserIdSync(): string | null {
-  try {
-    const { data: { user } } = supabase.auth.getUser();
-    return user?.id || null;
-  } catch (error) {
-    console.error('Error getting current user sync:', error);
-    return null;
-  }
-}
