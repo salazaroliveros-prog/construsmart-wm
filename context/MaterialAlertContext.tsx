@@ -73,7 +73,7 @@ export const MaterialAlertProvider = ({ children }: { children: ReactNode }) => 
     });
     
     // Obtener stock actual del almacén
-    const warehouseStock = await offlineDB.warehouse_stock.toArray();
+    const warehouseStock = await offlineDB.warehouseStock.toArray();
     const stockMap = new Map<string, number>();
     
     warehouseStock.forEach(item => {
