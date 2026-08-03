@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Users, DollarSign, Calendar, BadgeCheck, X, Save, UserPlus, Wallet, FolderOpen } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Users, DollarSign, Calendar, BadgeCheck, X, Save, UserPlus, Wallet, FolderOpen, AlertTriangle, TrendingUp } from 'lucide-react';
 import { offlineDB, LocalPayrollEmployee, LocalPayrollRecord, LocalProject, LocalFinancialTransaction } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
 import { queueDelete, PENDING_STATUSES } from '@/lib/utils/offlineSync';
@@ -16,6 +16,7 @@ import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import { payrollEmployeeSchema, payrollRecordSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
+import { useLaborCostOverrun } from '@/hooks/useLaborCostOverrun';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -64,6 +65,13 @@ const categoryColors: Record<string, { bg: string; text: string; border: string 
 export default function PayrollManager() {
   const { showToast } = useToast();
   const { financial } = useFinancialSettings();
+  const { 
+    alerts: overrunAlerts, 
+    isDetecting, 
+    detectOverrun, 
+    detectAllOverruns,
+    getOverrunRecords 
+  } = useLaborCostOverrun();
 
   // ---------------------------------------------------------------------------
   // STATE MANAGEMENT
@@ -126,6 +134,13 @@ export default function PayrollManager() {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  // Detect labor cost overruns when payroll records change
+  useEffect(() => {
+    if (selectedProject && selectedProject !== 'all') {
+      detectAllOverruns(selectedProject);
+    }
+  }, [payrollRecords, selectedProject]);
 
   // ---------------------------------------------------------------------------
   // UTILITY FUNCTIONS
@@ -500,6 +515,9 @@ const checkOnlineStatus = () => {
         aguinaldo_provision: benefits.aguinaldo,
         vacaciones_provision: benefits.vacaciones,
         net_salary: netSalary,
+        total_hours: payrollFormData.days_worked * 8 + payrollFormData.overtime_hours, // Assuming 8-hour workday
+        hourly_rate: employee.daily_rate / 8, // Calculate hourly rate from daily rate
+        planned_hours: payrollFormData.days_worked * 8, // Planned hours (8h per day)
         sync_status: editingPayroll
           ? resolveSyncStatus({ isNewRecord: false, previousStatus: editingPayroll.sync_status, isOnline })
           : resolveSyncStatus({ isNewRecord: true, isOnline }),
@@ -548,7 +566,12 @@ const checkOnlineStatus = () => {
         if (isOnline && wasSynced && supabase) {
           const { error } = await supabase
             .from('payroll_records')
-            .update(payrollData)
+            .update({
+              ...payrollData,
+              total_hours: payrollData.total_hours,
+              hourly_rate: payrollData.hourly_rate,
+              planned_hours: payrollData.planned_hours,
+            })
             .eq('id', editingPayroll.id);
 
           if (error) {
@@ -587,7 +610,12 @@ const checkOnlineStatus = () => {
         if (isOnline && supabase) {
           const { data, error } = await supabase
             .from('payroll_records')
-            .insert(payrollData)
+            .insert({
+              ...payrollData,
+              total_hours: payrollData.total_hours,
+              hourly_rate: payrollData.hourly_rate,
+              planned_hours: payrollData.planned_hours,
+            })
             .select()
             .single();
 
@@ -609,6 +637,15 @@ const checkOnlineStatus = () => {
           ? 'Registro de nómina actualizado'
           : 'Registro de nómina creado'
       );
+
+      // Detect labor cost overrun for the new/updated payroll record
+      const savedRecord = await offlineDB.payrollRecords.get(payrollData.id!);
+      if (savedRecord) {
+        const overrunResult = await detectOverrun(savedRecord);
+        if (overrunResult.hasOverrun) {
+          showToast('warning', `Alerta de exceso de mano de obra detectada: ${overrunResult.alerts[0].message}`);
+        }
+      }
     } catch (error) {
       console.error('Error saving payroll:', error);
       showToast('error', 'Error al guardar el registro de nómina');
@@ -787,6 +824,79 @@ const checkOnlineStatus = () => {
             Registros de Pago
           </button>
         </div>
+
+        {/* Labor Cost Overrun Alerts */}
+        {overrunAlerts.length > 0 && (
+          <div className="mt-4 glass-panel rounded-2xl p-4 sm:p-6 border-l-4 border-l-amber-500">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-semibold flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-400" />
+                Alertas de Exceso de Mano de Obra - {overrunAlerts.length} Registros
+              </h3>
+              <button
+                onClick={async () => {
+                  const results = await detectAllOverruns(selectedProject);
+                  if (results.length > 0) {
+                    const warningCount = results.filter(r => r.hasOverrun).length;
+                    showToast('warning', `${warningCount} alertas de exceso de mano de obra detectadas`);
+                  }
+                }}
+                disabled={isDetecting}
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 text-white text-sm hover:opacity-90 flex items-center gap-2 disabled:opacity-50"
+              >
+                <TrendingUp className={`w-4 h-4 ${isDetecting ? 'animate-pulse' : ''}`} />
+                {isDetecting ? 'Analizando...' : 'Revisar Todo'}
+              </button>
+            </div>
+            
+            <div className="space-y-3">
+              {overrunAlerts.map((alert, index) => (
+                <div key={index} className={`bg-amber-500/10 border ${alert.severity === 'critical' ? 'border-red-500/30' : 'border-amber-500/30'} rounded-lg p-4`}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertTriangle className={`w-4 h-4 ${alert.severity === 'critical' ? 'text-red-400' : 'text-amber-400'}`} />
+                        <span className="text-white font-medium">
+                          {alert.payrollRecord.employee_id} - {alert.overtimeHours.toFixed(1)}h extra
+                        </span>
+                        <span className={`text-xs px-2 py-1 rounded ${alert.severity === 'critical' ? 'bg-red-500/20 text-red-300' : 'bg-amber-500/20 text-amber-300'}`}>
+                          {alert.severity === 'critical' ? 'CRÍTICO' : 'ALERTA'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-sm mt-2">
+                        <div>
+                          <p className="text-white/50">Horas Planificadas</p>
+                          <p className="text-white">{alert.plannedHours.toFixed(1)}h</p>
+                        </div>
+                        <div>
+                          <p className="text-white/50">Horas Reales</p>
+                          <p className={`font-medium ${alert.actualHours > alert.plannedHours ? 'text-amber-400' : 'text-white'}`}>
+                            {alert.actualHours.toFixed(1)}h
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-white/50">Costo Planificado</p>
+                          <p className="text-white">{formatCurrency(alert.plannedHours * 50, financial)}</p>
+                        </div>
+                        <div>
+                          <p className="text-white/50">Exceso de Costo</p>
+                          <p className={`font-medium ${alert.costOverrunAmount > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                            {formatCurrency(alert.costOverrunAmount, financial)}
+                          </p>
+                        </div>
+                      </div>
+                      {alert.budgetItem && (
+                        <div className="mt-2 text-xs text-white/60">
+                          Ítem de Presupuesto: {alert.budgetItem.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {activeTab === 'employees' ? (
           filteredEmployees.length === 0 ? (
