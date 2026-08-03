@@ -727,7 +727,7 @@ export default function BudgetCalculator() {
         {selectedClient && (() => {
           const client = clients.find(c => c.id === selectedClient);
           if (!client) return null;
-          
+
           return (
             <div className="glass-card p-3 rounded-lg border border-white/10">
               <div className="flex items-center justify-between">
@@ -759,7 +759,6 @@ export default function BudgetCalculator() {
             </div>
           );
         })()}
-        </div>
 
         {projects.length === 0 && (
           <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">

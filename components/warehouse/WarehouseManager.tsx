@@ -732,8 +732,9 @@ export default function WarehouseManager() {
                     Generar PO
                   </button>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
