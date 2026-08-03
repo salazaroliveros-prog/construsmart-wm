@@ -41,7 +41,7 @@ export const usePayrollToFinanceSync = () => {
       unit_cost: totalAmount,
       total_cost: totalAmount,
       date: new Date().toISOString().split('T')[0],
-      receipt_url: null,
+      receipt_url: undefined,
       sync_status: 'pending',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
