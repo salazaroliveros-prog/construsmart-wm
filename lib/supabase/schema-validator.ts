@@ -44,7 +44,7 @@ const EXPECTED_COLUMNS = {
     'id', 'project_id', 'item_code', 'description', 'unit', 'current_stock',
     'minimum_threshold', 'unit_cost', 'created_at', 'updated_at', 'sync_status',
     'preferred_supplier_id', 'auto_generate_po', 'last_po_date', 'category', 'user_id'
-  ],
+  ], // Note: preferred_supplier_id is UUID type
   suppliers: [
     'id', 'code', 'name', 'contact_person', 'phone', 'email', 'address',
     'city', 'payment_terms', 'notes', 'created_at', 'updated_at', 'sync_status',
@@ -57,7 +57,7 @@ const EXPECTED_COLUMNS = {
     'aguinaldo_provision', 'vacaciones_provision', 'net_salary', 'created_at',
     'updated_at', 'sync_status', 'total_hours', 'hourly_rate', 'planned_hours',
     'budget_item_id', 'cost_overrun_amount', 'is_overrun_warning_fired', 'user_id'
-  ],
+  ], // Note: budget_item_id is UUID type
   project_logs: [
     'id', 'project_id', 'log_date', 'activity_type', 'description',
     'progress_percentage', 'notes', 'created_at', 'updated_at', 'sync_status',

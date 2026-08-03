@@ -39,7 +39,7 @@ CREATE INDEX IF NOT EXISTS idx_clients_is_delinquent ON clients(is_delinquent);
 -- ============================================
 
 ALTER TABLE warehouse_stock
-ADD COLUMN IF NOT EXISTS preferred_supplier_id TEXT,
+ADD COLUMN IF NOT EXISTS preferred_supplier_id UUID,
 ADD COLUMN IF NOT EXISTS auto_generate_po BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS last_po_date DATE,
 ADD COLUMN IF NOT EXISTS category TEXT;
@@ -50,6 +50,20 @@ CREATE INDEX IF NOT EXISTS idx_warehouse_stock_auto_generate_po ON warehouse_sto
 CREATE INDEX IF NOT EXISTS idx_warehouse_stock_category ON warehouse_stock(category);
 
 -- Add foreign key constraint for preferred supplier
+-- Note: Type conversion from TEXT to UUID if needed
+DO $$
+BEGIN
+  -- Check if column is TEXT type and convert to UUID
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'warehouse_stock' 
+    AND column_name = 'preferred_supplier_id' 
+    AND data_type = 'text'
+  ) THEN
+    ALTER TABLE warehouse_stock ALTER COLUMN preferred_supplier_id TYPE UUID USING preferred_supplier_id::uuid;
+  END IF;
+END $$;
+
 ALTER TABLE warehouse_stock
 ADD CONSTRAINT fk_warehouse_stock_supplier 
 FOREIGN KEY (preferred_supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL;
@@ -74,7 +88,7 @@ ALTER TABLE payroll_records
 ADD COLUMN IF NOT EXISTS total_hours DECIMAL(10,2) DEFAULT 0.00,
 ADD COLUMN IF NOT EXISTS hourly_rate DECIMAL(10,2) DEFAULT 0.00,
 ADD COLUMN IF NOT EXISTS planned_hours DECIMAL(10,2) DEFAULT 0.00,
-ADD COLUMN IF NOT EXISTS budget_item_id TEXT,
+ADD COLUMN IF NOT EXISTS budget_item_id UUID,
 ADD COLUMN IF NOT EXISTS cost_overrun_amount DECIMAL(15,2) DEFAULT 0.00,
 ADD COLUMN IF NOT EXISTS is_overrun_warning_fired BOOLEAN DEFAULT FALSE;
 
@@ -83,6 +97,20 @@ CREATE INDEX IF NOT EXISTS idx_payroll_records_budget_item ON payroll_records(bu
 CREATE INDEX IF NOT EXISTS idx_payroll_records_overrun_warning ON payroll_records(is_overrun_warning_fired);
 
 -- Add foreign key constraint for budget item
+-- Note: Type conversion from TEXT to UUID if needed
+DO $$
+BEGIN
+  -- Check if column is TEXT type and convert to UUID
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'payroll_records' 
+    AND column_name = 'budget_item_id' 
+    AND data_type = 'text'
+  ) THEN
+    ALTER TABLE payroll_records ALTER COLUMN budget_item_id TYPE UUID USING budget_item_id::uuid;
+  END IF;
+END $$;
+
 ALTER TABLE payroll_records
 ADD CONSTRAINT fk_payroll_records_budget_item 
 FOREIGN KEY (budget_item_id) REFERENCES budget_items(id) ON DELETE SET NULL;

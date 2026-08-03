@@ -173,7 +173,7 @@ export interface LocalPayrollRecord extends SyncableEntity {
   // Labor cost overrun detection fields
   task_allocation_id?: string; // Reference to budget item being worked on
   planned_hours?: number; // Planned hours for the task
-  budget_item_id?: string; // Budget item this payroll is tracking
+  budget_item_id?: string; // UUID reference to budget_items table
   cost_overrun_amount?: number; // Calculated overrun amount
   is_overrun_warning_fired?: boolean; // Flag to prevent duplicate warnings
 }
@@ -205,7 +205,7 @@ export interface LocalWarehouseStock extends SyncableEntity {
   created_at?: string;
   updated_at?: string;
   // Auto-PO integration fields
-  preferred_supplier_id?: string;
+  preferred_supplier_id?: string; // UUID reference to suppliers table
   auto_generate_po?: boolean;
   last_po_date?: string;
   category?: string; // For supplier routing
