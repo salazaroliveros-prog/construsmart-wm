@@ -119,25 +119,6 @@ export default function DashboardNav({ activeTab, onTabChange, isCollapsed = fal
   const [navItems, setNavItems] = useState<NavItem[]>(NAV_ITEMS_BASE);
   const [syncPendingCount, setSyncPendingCount] = useState(0);
 
-  useEffect(() => {
-    loadBadges();
-  }, [syncPendingCount]);
-
-  useEffect(() => {
-    const loadSyncPending = async () => {
-      try {
-        const stats = await getSyncStats();
-        setSyncPendingCount(stats.pendingDeletes + stats.pendingProjects + stats.pendingBudgets + stats.pendingBudgetItems + stats.pendingTransactions + stats.pendingPayroll + stats.pendingWarehouse + stats.pendingClients + stats.pendingProjectLogs + stats.pendingSuppliers + stats.pendingPurchaseOrders + stats.pendingPurchaseOrderItems);
-      } catch (error) {
-        console.error('Error loading sync pending count:', error);
-      }
-    };
-
-    loadSyncPending();
-    const intervalId = window.setInterval(loadSyncPending, 30000);
-    return () => window.clearInterval(intervalId);
-  }, []);
-
   const loadBadges = useCallback(async () => {
     try {
       const [projects, budgets, warehouseStock] = await Promise.all([
@@ -179,6 +160,25 @@ export default function DashboardNav({ activeTab, onTabChange, isCollapsed = fal
     } catch (error) {
       console.error('Error loading badges:', error);
     }
+  }, [syncPendingCount]);
+
+  useEffect(() => {
+    void loadBadges();
+  }, [loadBadges]);
+
+  useEffect(() => {
+    const loadSyncPending = async () => {
+      try {
+        const stats = await getSyncStats();
+        setSyncPendingCount(stats.pendingDeletes + stats.pendingProjects + stats.pendingBudgets + stats.pendingBudgetItems + stats.pendingTransactions + stats.pendingPayroll + stats.pendingWarehouse + stats.pendingClients + stats.pendingProjectLogs + stats.pendingSuppliers + stats.pendingPurchaseOrders + stats.pendingPurchaseOrderItems);
+      } catch (error) {
+        console.error('Error loading sync pending count:', error);
+      }
+    };
+
+    loadSyncPending();
+    const intervalId = window.setInterval(loadSyncPending, 30000);
+    return () => window.clearInterval(intervalId);
   }, []);
 
   const handleSignOut = useCallback(() => {
@@ -231,13 +231,14 @@ export default function DashboardNav({ activeTab, onTabChange, isCollapsed = fal
 
       {/* Admin Section */}
       <div className={`px-3 sm:px-4 py-3 sm:py-4 border-t border-white/10 ${isCollapsed ? 'flex justify-center' : ''}`}>
-        <a
-          href="/admin/database-cleaner"
+        <button
+          type="button"
+          onClick={() => router.push('/admin/database-cleaner')}
           className={`flex items-center gap-2 sm:gap-3 text-white/60 active:text-white transition-colors group ${isCollapsed ? 'justify-center' : ''}`}
         >
           <Database className="w-4 h-4 sm:w-5 sm:h-5 active:text-red-400 flex-shrink-0" />
           {!isCollapsed && <span className="text-[10px] sm:text-xs">Limpiar BD</span>}
-        </a>
+        </button>
       </div>
 
       {/* User Info Section */}

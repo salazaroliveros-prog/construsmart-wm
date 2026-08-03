@@ -88,11 +88,11 @@ export interface UISettings {
   // Appearance
   colorPalette: string;
   customColors?: {
-    primary: string;
-    secondary: string;
-    accent: string;
-    backgroundStart: string;
-    backgroundEnd: string;
+    primary?: string;
+    secondary?: string;
+    accent?: string;
+    backgroundStart?: string;
+    backgroundEnd?: string;
   };
   glassPreset: string;
   themeMode: 'dark' | 'light' | 'auto';

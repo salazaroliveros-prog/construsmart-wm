@@ -62,7 +62,7 @@ export default function DatabaseCleaner() {
     setIsClearing(true);
 
     try {
-      const response = await fetch('/admin/database-cleaner', {
+      const response = await fetch('/api/admin/database-cleaner', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

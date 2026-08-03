@@ -128,6 +128,25 @@ const saveSettings = () => {
     setHasChanges(true);
   };
 
+  const updateCustomColor = <K extends keyof NonNullable<UISettings['customColors']>>(key: K, value: NonNullable<UISettings['customColors']>[K]) => {
+    setSettings(prev => ({
+      ...prev,
+      customColors: {
+        ...(prev.customColors ?? {}),
+        [key]: value,
+      },
+    }));
+    setHasChanges(true);
+  };
+
+  const resetCustomColors = () => {
+    setSettings(prev => ({
+      ...prev,
+      customColors: undefined,
+    }));
+    setHasChanges(true);
+  };
+
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -236,7 +255,14 @@ const saveSettings = () => {
 
       {/* Tab Content */}
       <div className="glass-panel rounded-2xl p-4 sm:p-6">
-{activeTab === 'appearance' && <AppearanceTab settings={settings} updateSetting={updateSetting} />}
+        {activeTab === 'appearance' && (
+          <AppearanceTab
+            settings={settings}
+            updateSetting={updateSetting}
+            updateCustomColor={updateCustomColor}
+            resetCustomColors={resetCustomColors}
+          />
+        )}
         {activeTab === 'glass' && <GlassTab settings={settings} updateSetting={updateSetting} applyPreset={applyGlassPreset} />}
         {activeTab === 'dashboard' && <DashboardTab settings={settings} updateSetting={updateDashboardSetting} />}
         {activeTab === 'notifications' && <NotificationsTab settings={settings} updateSetting={updateNotificationSetting} />}
@@ -251,7 +277,17 @@ const saveSettings = () => {
   );
 }
 
-function AppearanceTab({ settings, updateSetting }: { settings: UISettings; updateSetting: <K extends keyof UISettings>(key: K, value: UISettings[K]) => void }) {
+function AppearanceTab({
+  settings,
+  updateSetting,
+  updateCustomColor,
+  resetCustomColors,
+}: {
+  settings: UISettings;
+  updateSetting: <K extends keyof UISettings>(key: K, value: UISettings[K]) => void;
+  updateCustomColor: <K extends keyof NonNullable<UISettings['customColors']>>(key: K, value: NonNullable<UISettings['customColors']>[K]) => void;
+  resetCustomColors: () => void;
+}) {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div>
@@ -263,9 +299,12 @@ function AppearanceTab({ settings, updateSetting }: { settings: UISettings; upda
           {COLOR_PALETTES.map(palette => (
             <button
               key={palette.id}
-              onClick={() => updateSetting('colorPalette', palette.id)}
+              onClick={() => {
+                updateSetting('colorPalette', palette.id);
+                resetCustomColors();
+              }}
               className={`relative group rounded-xl overflow-hidden transition-all ${
-                settings.colorPalette === palette.id
+                settings.colorPalette === palette.id && !settings.customColors
                   ? 'ring-2 ring-cyan-500 ring-offset-2 ring-offset-[#0f172a]'
                   : 'hover:scale-105'
               }`}
@@ -295,6 +334,53 @@ function AppearanceTab({ settings, updateSetting }: { settings: UISettings; upda
               )}
             </button>
           ))}
+        </div>
+
+        <div className="mt-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-white">Colores personalizados</p>
+              <p className="text-[10px] sm:text-xs text-white/60">Define valores hex directos para toda la suite.</p>
+            </div>
+            <button
+              onClick={resetCustomColors}
+              className="px-3 py-2 rounded-lg border border-white/10 text-xs text-white/70 hover:bg-white/5"
+            >
+              Restablecer
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {[
+              { label: 'Primario', key: 'primary' as const },
+              { label: 'Secundario', key: 'secondary' as const },
+              { label: 'Acento', key: 'accent' as const },
+              { label: 'Fondo inicio', key: 'backgroundStart' as const },
+              { label: 'Fondo fin', key: 'backgroundEnd' as const },
+            ].map(color => (
+              <label key={color.key} className="space-y-2">
+                <span className="block text-[10px] sm:text-xs text-white/70">{color.label}</span>
+                <input
+                  type="color"
+                  value={settings.customColors?.[color.key] ?? '#000000'}
+                  onChange={e => updateCustomColor(color.key, e.target.value)}
+                  className="w-full h-12 rounded-xl border border-white/10 bg-[#0f172a] p-0"
+                />
+              </label>
+            ))}
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-3 sm:p-4">
+            <p className="text-xs sm:text-sm font-medium text-white mb-2">Previsualización</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 rounded-xl" style={{ background: `linear-gradient(135deg, ${settings.customColors?.primary ?? 'var(--primary-color)'}, ${settings.customColors?.secondary ?? 'var(--secondary-color)'})` }}>
+                <p className="text-xs text-white">Primario → Secundario</p>
+              </div>
+              <div className="p-3 rounded-xl" style={{ background: `linear-gradient(135deg, ${settings.customColors?.backgroundStart ?? 'var(--background-start)'}, ${settings.customColors?.backgroundEnd ?? 'var(--background-end)'})` }}>
+                <p className="text-xs text-white">Fondo</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
