@@ -88,7 +88,7 @@ export const updateSyncStatus = async (
 };
 
 // Statuses that mark a row as pending to be pushed to Supabase.
-export const PENDING_STATUSES = ['created_offline', 'updated_offline', 'pending'];
+export const PENDING_STATUSES = ['pending', 'syncing', 'error'];
 
 /**
  * Cascade delete helper that can operate against a provided DB (for tests)
