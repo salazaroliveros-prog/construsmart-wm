@@ -76,7 +76,13 @@ export default function WarehouseManager() {
   const [editingItem, setEditingItem] = useState<LocalWarehouseStock | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isOnline, setIsOnline] = useState(true);
-  const [deleteConfirm, setDeleteConfirm] = useState<LocalWarehouseStock | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    show: boolean;
+    item: LocalWarehouseStock;
+    action?: 'delete' | 'adjust';
+    adjustment?: number;
+    newStock?: number;
+  } | null>(null);
   const [saveLoading, setSaveLoading] = useState(false);
   const [selectedProject, setSelectedProject] = useState<string>('all');
   const [availableProjects, setAvailableProjects] = useState<LocalProject[]>([]);
@@ -345,15 +351,60 @@ export default function WarehouseManager() {
   };
 
   const handleDeleteItem = async (item: LocalWarehouseStock) => {
+    setDeleteConfirm({
+      show: true,
+      item,
+      action: 'delete'
+    });
+  };
+
+  const confirmDeleteItem = async () => {
+    if (!deleteConfirm) return;
+    
     try {
-      await queueDelete('warehouse_stock', item);
-      await offlineDB.warehouseStock.delete(item.id!);
+      await queueDelete('warehouse_stock', deleteConfirm.item);
+      await offlineDB.warehouseStock.delete(deleteConfirm.item.id!);
 
       await loadStockItems();
-      showToast('info', `Material "${item.description}" eliminado del inventario`);
+      showToast('info', `Material "${deleteConfirm.item.description}" eliminado del inventario`);
     } catch (error) {
       console.error('Error deleting stock item:', error);
       showToast('error', 'Error al eliminar el material');
+    } finally {
+      setDeleteConfirm(null);
+    }
+  };
+
+  const confirmStockAdjustment = async () => {
+    if (!deleteConfirm || !deleteConfirm.adjustment || deleteConfirm.newStock === undefined) return;
+
+    try {
+      const item = deleteConfirm.item;
+      const newStock = deleteConfirm.newStock;
+      const wasSynced = normalizeSyncStatus(item.sync_status) === 'synced';
+
+      await offlineDB.warehouseStock.update(item.id!, {
+        current_stock: newStock,
+        sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: item.sync_status, isOnline }),
+      });
+
+      if (isOnline && wasSynced && supabase) {
+        await supabase
+          .from('warehouse_stock')
+          .update({ current_stock: newStock })
+          .eq('id', item.id);
+      }
+
+      await loadStockItems();
+      showToast(
+        'success',
+        `Stock de "${item.description}" ${deleteConfirm.adjustment > 0 ? 'aumentado' : 'disminuido'} en ${Math.abs(deleteConfirm.adjustment)}`
+      );
+    } catch (error) {
+      console.error('Error adjusting stock:', error);
+      showToast('error', 'Error al ajustar el stock');
+    } finally {
+      setDeleteConfirm(null);
     }
   };
 
@@ -795,12 +846,21 @@ export default function WarehouseManager() {
       )}
 
       <ConfirmDialog
-        isOpen={!!deleteConfirm}
-        title="Eliminar material"
-        message={`¿Está seguro de eliminar "${deleteConfirm?.description}" del inventario? Esta acción no se puede deshacer.`}
+        isOpen={!!deleteConfirm?.show}
+        title={deleteConfirm?.action === 'adjust' ? 'Ajustar stock' : 'Eliminar material'}
+        message={deleteConfirm?.action === 'adjust' 
+          ? `¿Está seguro de ajustar el stock de "${deleteConfirm.item.description}" en ${Math.abs(deleteConfirm.adjustment || 0)} unidades?` 
+          : `¿Está seguro de eliminar "${deleteConfirm?.item.description}" del inventario? Esta acción no se puede deshacer.`
+        }
         variant="danger"
-        confirmLabel="Eliminar"
-        onConfirm={() => { if (deleteConfirm) handleDeleteItem(deleteConfirm); setDeleteConfirm(null); }}
+        confirmLabel={deleteConfirm?.action === 'adjust' ? 'Ajustar' : 'Eliminar'}
+        onConfirm={() => {
+          if (deleteConfirm?.action === 'adjust') {
+            confirmStockAdjustment();
+          } else {
+            confirmDeleteItem();
+          }
+        }}
         onCancel={() => setDeleteConfirm(null)}
       />
     </div>

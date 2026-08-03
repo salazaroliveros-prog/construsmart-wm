@@ -89,6 +89,10 @@ const loadClients = async () => {
 
       // Validar unicidad de código (solo para nuevos clientes)
       if (!editingClient) {
+        if (!formData.code) {
+          showToast('error', 'El código de cliente es requerido');
+          return;
+        }
         const existingClient = await offlineDB.clients
           .where('code')
           .equals(formData.code)

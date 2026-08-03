@@ -84,6 +84,10 @@ export default function SupplierManager() {
 
       // Validar unicidad de código (solo para nuevos proveedores)
       if (!editingSupplier) {
+        if (!formData.code) {
+          showToast('error', 'El código de proveedor es requerido');
+          return;
+        }
         const existingSupplier = await offlineDB.suppliers
           .where('code')
           .equals(formData.code)
