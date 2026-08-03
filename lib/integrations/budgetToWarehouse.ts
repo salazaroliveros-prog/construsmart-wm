@@ -146,3 +146,52 @@ export async function syncActiveBudgetToWarehouse(projectId?: string): Promise<S
   const inputs = await buildWarehouseInputsFromBudget(budget.id!, projectId);
   return sendBudgetMaterialsToWarehouse(inputs);
 }
+
+/**
+ * Record material consumption from warehouse back to budget items
+ * This closes the loop: warehouse → budget impact tracking
+ */
+export async function recordMaterialConsumption(
+  itemCode: string,
+  quantity: number,
+  projectId?: string
+): Promise<{ updated: number; skipped: number }> {
+  const result = { updated: 0, skipped: 0 };
+
+  try {
+    // Find related budget items by item code
+    const budgetItems = await offlineDB.budgetItems
+      .where('code')
+      .equals(itemCode)
+      .and(item => projectId ? item.project_id === projectId : true)
+      .toArray();
+
+    for (const item of budgetItems) {
+      if (!item.id) continue;
+
+      const currentConsumption = item.actual_consumption || 0;
+      const newConsumption = currentConsumption + quantity;
+      const estimatedQuantity = item.unidades_comerciales_estimadas || item.quantity;
+      
+      const variance = estimatedQuantity - newConsumption;
+
+      await offlineDB.budgetItems.update(item.id, {
+        actual_consumption: newConsumption,
+        consumption_variance: variance,
+        updated_at: new Date().toISOString(),
+        sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: item.sync_status, isOnline: true }),
+      });
+
+      result.updated++;
+    }
+
+    // Notify realtime refresh
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('wm-dexie-changed', { detail: { table: 'budget_items' } }));
+    }
+  } catch (error) {
+    console.error('Error recording material consumption:', error);
+  }
+
+  return result;
+}
