@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Save, X, FolderOpen } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Save, X, FolderOpen, AlertTriangle } from 'lucide-react';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
 import { queueDelete, isServerId, fetchProjectsForOffline } from '@/lib/utils/offlineSync';
 import { resolveSyncStatus } from '@/lib/utils/syncState';
@@ -15,6 +15,7 @@ import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import { projectSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
+import { calculateCompletionBuffer, getBufferSeverity } from '@/lib/config/app.config';
 
 interface ProjectFormData {
   code: string;
@@ -423,12 +424,20 @@ export default function ProjectManager() {
                     <th className="text-left text-white/60 py-3 px-4">Tipología</th>
                     <th className="text-left text-white/60 py-3 px-4">Área (m²)</th>
                     <th className="text-left text-white/60 py-3 px-4">Estado</th>
+                    <th className="text-left text-white/60 py-3 px-4">Alertas</th>
                     <th className="text-left text-white/60 py-3 px-4">Presupuesto</th>
                     <th className="text-right text-white/60 py-3 px-4">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProjects.map((project) => (
+                  {filteredProjects.map((project) => {
+                    // Calculate buffer days and severity
+                    const bufferDays = project.estimated_end_date 
+                      ? calculateCompletionBuffer(project.estimated_end_date)
+                      : 0;
+                    const bufferSeverity = getBufferSeverity(bufferDays);
+                    
+                    return (
                     <tr key={project.id} className="border-b border-white/10 hover:bg-white/5">
                       <td className="py-3 px-4 text-white font-medium">{project.code}</td>
                       <td className="py-3 px-4 text-white">{project.name}</td>
@@ -447,6 +456,38 @@ export default function ProjectManager() {
                         >
                           {statusLabels[project.status]}
                         </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        {project.has_critical_roadblock ? (
+                          <Tooltip content={`⚠️ ${project.roadblock_type?.toUpperCase()}: ${project.roadblock_description?.substring(0, 50)}... | Buffer: ${bufferDays} días`}>
+                            <div className="flex items-center gap-1.5">
+                              <AlertTriangle className="w-4 h-4 text-red-400" />
+                              <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30">
+                                {project.roadblock_type}
+                              </span>
+                            </div>
+                          </Tooltip>
+                        ) : bufferSeverity === 'critical' ? (
+                          <Tooltip content={`⚠️ Buffer crítico: Solo ${bufferDays} días restantes`}>
+                            <div className="flex items-center gap-1.5">
+                              <AlertTriangle className="w-4 h-4 text-amber-400" />
+                              <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                Buffer: {bufferDays}d
+                              </span>
+                            </div>
+                          </Tooltip>
+                        ) : bufferSeverity === 'warning' ? (
+                          <Tooltip content={`⚠️ Buffer bajo: ${bufferDays} días restantes`}>
+                            <div className="flex items-center gap-1.5">
+                              <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                              <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                                Buffer: {bufferDays}d
+                              </span>
+                            </div>
+                          </Tooltip>
+                        ) : (
+                          <span className="text-white/40 text-xs">-</span>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-white font-medium">
                         {formatCurrency(project.total_budget)}
@@ -470,14 +511,22 @@ export default function ProjectManager() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
             {/* Cards Móvil (<768px) */}
             <div className="md:hidden space-y-3">
-              {filteredProjects.map((project) => (
+              {filteredProjects.map((project) => {
+                // Calculate buffer days and severity
+                const bufferDays = project.estimated_end_date 
+                  ? calculateCompletionBuffer(project.estimated_end_date)
+                  : 0;
+                const bufferSeverity = getBufferSeverity(bufferDays);
+                
+                return (
                 <div
                   key={project.id}
                   className="glass-card rounded-xl p-4 active:bg-white/5 touch-manipulation"
@@ -496,6 +545,11 @@ export default function ProjectManager() {
                         >
                           {statusLabels[project.status]}
                         </span>
+                        {project.has_critical_roadblock && (
+                          <Tooltip content={`⚠️ ${project.roadblock_type?.toUpperCase()}: ${project.roadblock_description?.substring(0, 30)}...`}>
+                            <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                          </Tooltip>
+                        )}
                       </div>
                       <h3 className="text-white font-semibold text-sm truncate">{project.name}</h3>
                       <p className="text-xs text-white/60 truncate mt-0.5">{project.client_name}</p>
@@ -535,9 +589,16 @@ export default function ProjectManager() {
                       <p className="text-[10px] text-white/40 truncate">Presupuesto</p>
                       <p className="text-xs font-medium text-emerald-400 truncate">{formatCurrency(project.total_budget)}</p>
                     </div>
+                    {project.has_critical_roadblock && (
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-white/40 truncate">Alerta</p>
+                        <p className="text-xs font-medium text-red-400 truncate">{project.roadblock_type}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}

@@ -7,6 +7,7 @@ import { queueDelete } from '@/lib/utils/offlineSync';
 import { resolveSyncStatus } from '@/lib/utils/syncState';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useProjectProgress } from '@/lib/hooks/useProjectProgress';
+import { useRoadblockDetection } from '@/hooks/useRoadblockDetection';
 import { useToast } from '@/components/ui/Toast';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -38,6 +39,9 @@ export default function ProjectLogManager() {
 
   // Hook compartido para sincronizar con ProgressTracker
   const { updateProgress } = useProjectProgress(selectedProject);
+  
+  // Roadblock detection hook
+  const { detectRoadblocks } = useRoadblockDetection();
 
   useEffect(() => {
     loadProjects();
@@ -95,9 +99,40 @@ export default function ProjectLogManager() {
     try {
       const now = new Date().toISOString();
 
+      // Detect roadblock keywords in description
+      const description = formData.description?.toLowerCase() || '';
+      const isCriticalIssue = formData.activity_type === 'issue';
+      
+      // Determine severity based on keywords
+      let severity: 'low' | 'medium' | 'high' | 'critical' = 'low';
+      let roadblockCategory: 'clima' | 'material' | 'personal' | 'técnico' | 'permiso' | 'financiero' | 'otro' | undefined = undefined;
+      let isCriticalRoadblock = false;
+      
+      const criticalKeywords = ['retraso por clima', 'falta de cemento', 'falta de material', 'sin material', 'problema técnico', 'permiso denegado', 'problema financiero', 'huelga', 'personal', 'accidente'];
+      
+      if (isCriticalIssue) {
+        if (criticalKeywords.some(keyword => description.includes(keyword))) {
+          severity = 'critical';
+          isCriticalRoadblock = true;
+          
+          // Determine category
+          if (description.includes('clima') || description.includes('lluvia')) roadblockCategory = 'clima';
+          else if (description.includes('material') || description.includes('cemento')) roadblockCategory = 'material';
+          else if (description.includes('personal') || description.includes('huelga')) roadblockCategory = 'personal';
+          else if (description.includes('técnico')) roadblockCategory = 'técnico';
+          else if (description.includes('permiso')) roadblockCategory = 'permiso';
+          else if (description.includes('financiero') || description.includes('dinero')) roadblockCategory = 'financiero';
+        } else {
+          severity = 'high';
+        }
+      }
+
       if (editingLog) {
         await offlineDB.projectLogs.update(editingLog.id!, {
           ...formData,
+          is_critical_roadblock: isCriticalRoadblock,
+          roadblock_category: roadblockCategory,
+          severity: severity,
           updated_at: now,
           sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: editingLog?.sync_status ?? 'synced', isOnline }),
         });
@@ -105,6 +140,9 @@ export default function ProjectLogManager() {
         const newLog: LocalProjectLog = {
           ...formData,
           project_id: selectedProject,
+          is_critical_roadblock: isCriticalRoadblock,
+          roadblock_category: roadblockCategory,
+          severity: severity,
           created_at: now,
           updated_at: now,
           sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }),
@@ -128,6 +166,12 @@ export default function ProjectLogManager() {
       // Actualizar progreso en ProgressTracker
       if (selectedProject) {
         updateProgress(selectedProject);
+      }
+      
+      // Trigger roadblock detection if critical issue
+      if (isCriticalRoadblock && selectedProject) {
+        await detectRoadblocks();
+        showToast('warning', '¡Obstáculo crítico detectado! Se ha actualizado el estado del proyecto.');
       }
     } catch (error) {
       console.error('Error saving log:', error);

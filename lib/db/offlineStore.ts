@@ -56,6 +56,12 @@ export interface LocalProject extends SyncableEntity {
   // Fields populated from budget
   budget_total?: number;
   calculated_duration?: number;
+  // Roadblock and warning flags from bitácoras
+  has_critical_roadblock?: boolean;
+  roadblock_type?: 'clima' | 'material' | 'personal' | 'técnico' | 'permiso' | 'financiero' | 'otro';
+  roadblock_description?: string;
+  roadblock_date?: string;
+  completion_buffer_days?: number; // Calculated buffer days remaining
 }
 
 export interface LocalBudget extends SyncableEntity {
@@ -164,6 +170,12 @@ export interface LocalPayrollRecord extends SyncableEntity {
   net_salary: number;
   created_at?: string;
   updated_at?: string;
+  // Labor cost overrun detection fields
+  task_allocation_id?: string; // Reference to budget item being worked on
+  planned_hours?: number; // Planned hours for the task
+  budget_item_id?: string; // Budget item this payroll is tracking
+  cost_overrun_amount?: number; // Calculated overrun amount
+  is_overrun_warning_fired?: boolean; // Flag to prevent duplicate warnings
 }
 
 export interface LocalPayrollEmployee extends SyncableEntity {
@@ -192,6 +204,11 @@ export interface LocalWarehouseStock extends SyncableEntity {
   unit_cost: number;
   created_at?: string;
   updated_at?: string;
+  // Auto-PO integration fields
+  preferred_supplier_id?: string;
+  auto_generate_po?: boolean;
+  last_po_date?: string;
+  category?: string; // For supplier routing
 }
 
 export interface LocalClient extends SyncableEntity {
@@ -208,6 +225,11 @@ export interface LocalClient extends SyncableEntity {
   notes?: string;
   created_at?: string;
   updated_at?: string;
+  // Account balance and credit fields for budget integration
+  account_balance?: number; // Current account balance in GTQ
+  credit_limit?: number; // Credit limit for the client
+  payment_terms_days?: number; // Payment terms in days
+  is_delinquent?: boolean; // Flag for overdue payments
 }
 
 export interface LocalProjectLog extends SyncableEntity {
@@ -223,6 +245,10 @@ export interface LocalProjectLog extends SyncableEntity {
   created_by: string;
   created_at: string;
   updated_at?: string;
+  // Roadblock detection fields
+  is_critical_roadblock?: boolean;
+  roadblock_category?: 'clima' | 'material' | 'personal' | 'técnico' | 'permiso' | 'financiero' | 'otro';
+  severity?: 'low' | 'medium' | 'high' | 'critical';
 }
 
 export interface LocalSupplier extends SyncableEntity {
@@ -239,6 +265,9 @@ export interface LocalSupplier extends SyncableEntity {
   notes?: string;
   created_at: string;
   updated_at?: string;
+  // Auto-PO routing fields
+  categories?: string[]; // Material categories this supplier handles
+  is_preferred?: boolean; // Mark as preferred for auto-PO
 }
 
 export interface LocalPurchaseOrder extends SyncableEntity {
@@ -298,17 +327,17 @@ export class WMDatabase extends Dexie {
 
   constructor() {
     super('ConstructoraWM_OfflineDB');
-    this.version(7).stores({
-      projects: 'id, code, name, sync_status, status, typology, created_at, updated_at, budget_total, calculated_duration',
+    this.version(8).stores({
+      projects: 'id, code, name, sync_status, status, typology, created_at, updated_at, budget_total, calculated_duration, has_critical_roadblock, roadblock_type, roadblock_date',
       budgets: 'id, project_id, version, sync_status, created_at, updated_at',
       budgetItems: 'id, budget_id, project_id, parent_id, code, sync_status, item_order, created_at, updated_at, actual_consumption, consumption_variance',
       financialTransactions: 'id, project_id, type, category, date, sync_status, created_at, updated_at',
       payrollEmployees: 'id, name, position, category, department, sync_status, created_at, updated_at',
-      payrollRecords: 'id, project_id, employee_id, period_start, period_end, sync_status, created_at, updated_at',
-      warehouseStock: 'id, project_id, item_code, sync_status, created_at, updated_at',
-      clients: 'id, code, name, client_type, sync_status, created_at, updated_at',
-      projectLogs: 'id, project_id, log_date, activity_type, sync_status, created_at, updated_at',
-      suppliers: 'id, code, name, sync_status, created_at, updated_at',
+      payrollRecords: 'id, project_id, employee_id, period_start, period_end, sync_status, created_at, updated_at, budget_item_id, is_overrun_warning_fired',
+      warehouseStock: 'id, project_id, item_code, sync_status, created_at, updated_at, preferred_supplier_id, auto_generate_po, category',
+      clients: 'id, code, name, client_type, sync_status, created_at, updated_at, account_balance, credit_limit, is_delinquent',
+      projectLogs: 'id, project_id, log_date, activity_type, sync_status, created_at, updated_at, is_critical_roadblock, roadblock_category, severity',
+      suppliers: 'id, code, name, sync_status, created_at, updated_at, categories, is_preferred',
       purchaseOrders: 'id, code, supplier_id, project_id, status, order_date, sync_status, created_at, updated_at',
       purchaseOrderItems: 'id, purchase_order_id, item_code, sync_status, created_at, updated_at',
       pendingDeletes: '++id, table, serverId, created_at'
