@@ -1,19 +1,29 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Building2, Mail, Lock, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Building2, Mail, Lock, ArrowRight, AlertCircle, Loader2, Shield } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useToast } from '@/components/ui/Toast';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signIn } = useAuth();
   const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Verificar si hay error de autorización en la URL
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    if (errorParam === 'unauthorized') {
+      setError('Acceso no autorizado. Solo el administrador puede acceder al sistema.');
+      showToast('error', 'Acceso no autorizado');
+    }
+  }, [searchParams, showToast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,11 +64,19 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {/* Admin Badge */}
+        <div className="flex items-center justify-center gap-2 p-3 bg-violet-500/10 border border-violet-500/30 rounded-lg mb-6">
+          <Shield className="w-4 h-4 text-violet-400 flex-shrink-0" />
+          <p className="text-violet-400 text-sm">
+            Acceso exclusivo para administrador
+          </p>
+        </div>
+
         {/* Info Message */}
         <div className="flex items-center gap-2 p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg mb-6">
           <AlertCircle className="w-4 h-4 text-cyan-400 flex-shrink-0" />
           <p className="text-cyan-400 text-sm">
-            Login local. Las credenciales se guardarán en su navegador.
+            Sesión persistente. No pedirá login hasta que cierre sesión.
           </p>
         </div>
 
@@ -76,7 +94,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="ejemplo@constructora.com"
+                placeholder="salazaroliveros@gmail.com"
                 required
                 className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all"
               />
