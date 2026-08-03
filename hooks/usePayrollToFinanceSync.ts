@@ -47,10 +47,10 @@ export const usePayrollToFinanceSync = () => {
       updated_at: new Date().toISOString()
     };
     
-    await offlineDB.financial_transactions.add(financialTransaction);
+    await offlineDB.financialTransactions.add(financialTransaction);
     
     // Trigger sync status update
-    await offlineDB.financial_transactions.update(financialTransaction.id!, {
+    await offlineDB.financialTransactions.update(financialTransaction.id!, {
       sync_status: 'pending'
     });
     
