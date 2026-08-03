@@ -72,11 +72,11 @@ export async function cascadeLocalDelete(
 
       // SET NULL en lugar de DELETE para alinear con comportamiento del servidor
       await Promise.all([
-        db.financialTransactions.where('project_id').equals(id).modify({ project_id: null }),
-        db.payrollRecords.where('project_id').equals(id).modify({ project_id: null }),
-        db.warehouseStock.where('project_id').equals(id).modify({ project_id: null }),
+        db.financialTransactions.where('project_id').equals(id).modify({ project_id: undefined }),
+        db.payrollRecords.where('project_id').equals(id).modify({ project_id: undefined }),
+        db.warehouseStock.where('project_id').equals(id).modify({ project_id: undefined }),
         db.projectLogs.where('project_id').equals(id).delete(), // Logs sí se borran (CASCADE en servidor)
-        db.purchaseOrders.where('project_id').equals(id).modify({ project_id: null }),
+        db.purchaseOrders.where('project_id').equals(id).modify({ project_id: undefined }),
         ...purchaseOrderIds.map((poId) => db.purchaseOrderItems.where('purchase_order_id').equals(poId).delete()), // Items de PO se borran (CASCADE en servidor)
         db.budgets.where('project_id').equals(id).delete(), // Budgets se borran (CASCADE en servidor)
         ...budgetIds.map((bid) => db.budgetItems.where('budget_id').equals(bid).delete()), // Items de budget se borran (CASCADE en servidor)
