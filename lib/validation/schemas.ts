@@ -26,29 +26,23 @@ export const projectSchema = z.object({
     .min(2, 'Nombre del cliente debe tener al menos 2 caracteres')
     .max(100, 'Nombre del cliente no puede exceder 100 caracteres'),
   client_phone: z.string()
-    .optional()
     .regex(/^\+?[0-9\s-()]{8,20}$/, 'Teléfono inválido')
+    .optional()
     .or(z.literal('')),
   client_email: z.string()
     .email('Email inválido')
-    .or(z.literal(''))
-    .optional(),
+    .optional()
+    .or(z.literal('')),
   location: z.string()
     .min(1, 'Ubicación es requerida')
     .min(3, 'Ubicación debe tener al menos 3 caracteres')
     .max(200, 'Ubicación no puede exceder 200 caracteres'),
-  typology: z.enum(['residential', 'commercial', 'industrial', 'civil', 'public'], {
-    errorMap: () => ({ message: 'Tipología inválida' })
-  }),
+  typology: z.enum(['residential', 'commercial', 'industrial', 'civil', 'public']),
   area_m2: z.number()
     .min(1, 'Área debe ser mayor a 0')
     .max(100000, 'Área no puede exceder 100,000 m²'),
-  quality_level: z.enum(['basic', 'moderate', 'premium'], {
-    errorMap: () => ({ message: 'Nivel de calidad inválido' })
-  }),
-  status: z.enum(['planning', 'execution', 'paused', 'completed'], {
-    errorMap: () => ({ message: 'Estado inválido' })
-  }),
+  quality_level: z.enum(['basic', 'moderate', 'premium']),
+  status: z.enum(['planning', 'execution', 'paused', 'completed']),
   start_date: z.string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha debe estar en formato YYYY-MM-DD')
     .optional()
@@ -73,16 +67,12 @@ export type ProjectFormData = z.infer<typeof projectSchema>;
 // ============================================================================
 export const financialTransactionSchema = z.object({
   project_id: z.string().uuid('ID de proyecto inválido').optional().or(z.literal('')),
-  type: z.enum(['income', 'expense'], {
-    errorMap: () => ({ message: 'Tipo debe ser ingreso o gasto' })
-  }),
+  type: z.enum(['income', 'expense']),
   category: z.enum([
     'materiales', 'mano_de_obra', 'herramienta', 'sub_contrato',
     'administrativo', 'personal', 'transporte', 'fijos', 'hogar',
     'aporte', 'trabajos_extra'
-  ], {
-    errorMap: () => ({ message: 'Categoría inválida' })
-  }),
+  ]),
   description: z.string()
     .min(1, 'Descripción es requerida')
     .min(3, 'Descripción debe tener al menos 3 caracteres')
@@ -126,9 +116,7 @@ export const payrollEmployeeSchema = z.object({
   daily_rate: z.number()
     .min(0, 'Tarifa diaria no puede ser negativa')
     .max(99999.99, 'Tarifa diaria excede el máximo permitido'),
-  category: z.enum(['obrero', 'empleado'], {
-    errorMap: () => ({ message: 'Categoría debe ser obrero o empleado' })
-  }),
+  category: z.enum(['obrero', 'empleado']),
   department: z.string()
     .min(1, 'Departamento es requerido')
     .min(2, 'Departamento debe tener al menos 2 caracteres')
@@ -244,9 +232,7 @@ export const clientSchema = z.object({
     .min(1, 'Ciudad es requerida')
     .min(2, 'Ciudad debe tener al menos 2 caracteres')
     .max(100, 'Ciudad no puede exceder 100 caracteres'),
-  client_type: z.enum(['individual', 'corporate'], {
-    errorMap: () => ({ message: 'Tipo de cliente debe ser individual o corporativo' })
-  }),
+  client_type: z.enum(['individual', 'corporate']),
   notes: z.string()
     .max(1000, 'Notas no pueden exceder 1000 caracteres')
     .optional()
@@ -380,9 +366,7 @@ export const projectLogSchema = z.object({
       const today = new Date();
       return parsed <= today;
     }, 'Fecha del log no puede ser futura'),
-  activity_type: z.enum(['progress', 'issue', 'milestone', 'note'], {
-    errorMap: () => ({ message: 'Tipo de actividad inválido' })
-  }),
+  activity_type: z.enum(['progress', 'issue', 'milestone', 'note']),
   description: z.string()
     .min(1, 'Descripción es requerida')
     .min(3, 'Descripción debe tener al menos 3 caracteres')
