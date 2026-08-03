@@ -21,8 +21,17 @@ export const usePayrollToFinanceSync = () => {
                        payrollRecord.aguinaldo_provision + 
                        payrollRecord.vacaciones_provision;
 
+    // Generate UUID using a compatible method
+    const generateUUID = () => {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    };
+
     const financialTransaction: LocalFinancialTransaction = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       project_id: payrollRecord.project_id,
       type: 'expense',
       category: 'Gastos Operativos / Nómina de Mano de Obra',
