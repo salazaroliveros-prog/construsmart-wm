@@ -234,11 +234,11 @@ export const DEFAULT_UI_SETTINGS: UISettings = {
 
   // Dashboard customization
   dashboard: {
-    visibleWidgets: ['stats', 'charts', 'calendar', 'budget'],
-    widgetOrder: ['stats', 'charts', 'calendar', 'budget'],
+    visibleWidgets: ['stats', 'charts', 'budget'],
+    widgetOrder: ['stats', 'charts', 'budget'],
     gridColumns: 2,
     showCharts: true,
-    showCalendar: true,
+    showCalendar: false,
     showStats: true,
     showBudgetSummary: true,
   },

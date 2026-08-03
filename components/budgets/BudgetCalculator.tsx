@@ -32,6 +32,7 @@ import BudgetSummaryPanel from '@/components/budgets/BudgetSummaryPanel';
 import type { BudgetItem } from './types';
 import { PRESETS_POR_TIPOLOGIA, ElementPreset, TYPOLOGY_LABELS as PRESET_LABELS } from '@/lib/config/elementPresets';
 import { calculateCommercialUnits, validateCostPerSquareMeter, CostValidationResult } from '@/lib/calculators/financialUtils';
+import { useBusinessSettings } from '@/lib/hooks/useBusinessSettings';
 
 // Dynamic imports for heavy components
 const PDFGenerator = dynamic(() => import('@/components/pdf/PDFGenerator'), {
@@ -41,10 +42,11 @@ const PDFGenerator = dynamic(() => import('@/components/pdf/PDFGenerator'), {
 
 export default function BudgetCalculator() {
   const { showToast } = useToast();
+  const { settings, financial } = useBusinessSettings();
   const [items, setItems] = useState<BudgetItem[]>([]);
-  const [indirectPercentage, setIndirectPercentage] = useState(15);
-  const [contingencyPercentage, setContingencyPercentage] = useState(5);
-  const [profitPercentage, setProfitPercentage] = useState(10);
+  const [indirectPercentage, setIndirectPercentage] = useState(financial.indirectPercentage);
+  const [contingencyPercentage, setContingencyPercentage] = useState(financial.contingencyPercentage);
+  const [profitPercentage, setProfitPercentage] = useState(financial.profitPercentage);
   const [projectName, setProjectName] = useState('Proyecto Sample');
   const [clientName, setClientName] = useState('Cliente Sample');
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; desc: string } | null>(null);
@@ -53,6 +55,13 @@ export default function BudgetCalculator() {
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [durationDays, setDurationDays] = useState(180);
   const [showPDFModal, setShowPDFModal] = useState(false);
+
+  // Sync financial percentages with settings
+  useEffect(() => {
+    setIndirectPercentage(financial.indirectPercentage);
+    setContingencyPercentage(financial.contingencyPercentage);
+    setProfitPercentage(financial.profitPercentage);
+  }, [financial]);
   
   // Topography Integration State
   const [topographyData, setTopographyData] = useState({

@@ -31,6 +31,7 @@ import {
 } from 'recharts';
 import { offlineDB, LocalProject, LocalFinancialTransaction, LocalWarehouseStock } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
+import { useBusinessSettings, calculateUtilityMarginHelper } from '@/lib/hooks/useBusinessSettings';
 import EmptyState from '@/components/ui/EmptyState';
 
 // ==================== TYPES & INTERFACES ====================
@@ -78,6 +79,8 @@ interface SummaryMetrics {
   totalBudget: number;
   totalExecuted: number;
   budgetVariance: number;
+  utilityMarginPercentage?: number;
+  utilityMarginTarget?: number;
 }
 
 // ==================== COLORS ====================
@@ -94,6 +97,9 @@ const COLORS = {
 // ==================== MAIN COMPONENT ====================
 
 export default function AnalyticsDashboard() {
+  // ==================== HOOKS ====================
+  const { settings } = useBusinessSettings();
+
   // ==================== STATE ====================
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
@@ -112,6 +118,8 @@ export default function AnalyticsDashboard() {
     totalBudget: 0,
     totalExecuted: 0,
     budgetVariance: 0,
+    utilityMarginPercentage: 0,
+    utilityMarginTarget: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [hasData, setHasData] = useState(false);
@@ -126,6 +134,11 @@ export default function AnalyticsDashboard() {
   useEffect(() => {
     loadAnalyticsData();
   }, [selectedProject]);
+
+  // Recalculate analytics when financial settings change
+  useEffect(() => {
+    loadAnalyticsData();
+  }, [settings]);
 
   useRealtimeRefresh(['projects', 'financial_transactions', 'warehouse_stock'], () => {
     loadProjects();
@@ -441,6 +454,8 @@ export default function AnalyticsDashboard() {
         totalBudget: 0,
         totalExecuted: 0,
         budgetVariance: 0,
+        utilityMarginPercentage: 0,
+        utilityMarginTarget: 0,
       };
     }
 
@@ -449,6 +464,7 @@ export default function AnalyticsDashboard() {
 
     let totalPhysical = 0;
     let totalFinancial = 0;
+    let totalExpenses = 0;
 
     projects.forEach(project => {
       if (project.status === 'completed') {
@@ -459,7 +475,7 @@ export default function AnalyticsDashboard() {
 
       if (!project.start_date) return;
       const startDate = new Date(project.start_date);
-      const endDate = project.estimated_end_date 
+      const endDate = project.estimated_end_date
         ? new Date(project.estimated_end_date)
         : new Date(startDate.getTime() + (project.duration_days || 0) * 86400000);
       const currentDate = new Date();
@@ -472,11 +488,12 @@ export default function AnalyticsDashboard() {
         totalPhysical += timeProgress;
 
         const projectTransactions = transactions.filter(t => t.project_id === project.id);
-        const totalExpenses = projectTransactions
+        const projectExpenses = projectTransactions
           .filter(t => t.type === 'expense')
           .reduce((sum, t) => sum + (t.total_cost || 0), 0);
+        totalExpenses += projectExpenses;
         const budget = project.budget_total || project.total_budget || 0;
-        totalFinancial += budget > 0 ? Math.min(100, (totalExpenses / budget) * 100) : 0;
+        totalFinancial += budget > 0 ? Math.min(100, (projectExpenses / budget) * 100) : 0;
       }
     });
 
@@ -484,6 +501,9 @@ export default function AnalyticsDashboard() {
     const avgFinancialAdvance = projects.length > 0 ? totalFinancial / projects.length : 0;
     const totalExecuted = totalBudget * (avgFinancialAdvance / 100);
     const budgetVariance = totalBudget - totalExecuted;
+
+    // Calculate utility margin using settings
+    const utilityMargin = calculateUtilityMarginHelper(totalBudget, totalExpenses, settings);
 
     return {
       totalProjects: projects.length,
@@ -493,6 +513,8 @@ export default function AnalyticsDashboard() {
       totalBudget,
       totalExecuted,
       budgetVariance,
+      utilityMarginPercentage: utilityMargin.marginPercentage,
+      utilityMarginTarget: utilityMargin.targetMargin,
     };
   };
 

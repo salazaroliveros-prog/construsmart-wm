@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { PieChart as PieChartIcon, BarChart3, TrendingUp, Calendar, Layers } from 'lucide-react';
-import { useFinancialSettings, formatCurrency, calculateUtilityMarginHelper } from '@/lib/hooks/useBusinessSettings';
+import { PieChart as PieChartIcon, BarChart3, TrendingUp, Layers } from 'lucide-react';
+import { useBusinessSettings, useFinancialSettings, formatCurrency, calculateUtilityMarginHelper } from '@/lib/hooks/useBusinessSettings';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
-import { useBusinessSettings } from '@/lib/hooks/useBusinessSettings';
 import { offlineDB, LocalProject, LocalFinancialTransaction } from '@/lib/db/offlineStore';
 import {
   ResponsiveContainer,
@@ -23,9 +22,6 @@ import {
   AreaChart,
   Area,
   ComposedChart,
-  ScatterChart,
-  Scatter,
-  ReferenceLine,
 } from 'recharts';
 
 export default function DashboardCharts() {

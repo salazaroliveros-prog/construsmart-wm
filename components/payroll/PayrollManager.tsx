@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Users, DollarSign, Calendar, BadgeCheck, X, Save, UserPlus, Wallet, FolderOpen } from 'lucide-react';
-import { offlineDB, LocalPayrollEmployee, LocalPayrollRecord, LocalProject } from '@/lib/db/offlineStore';
+import { offlineDB, LocalPayrollEmployee, LocalPayrollRecord, LocalProject, LocalFinancialTransaction } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
 import { queueDelete, PENDING_STATUSES } from '@/lib/utils/offlineSync';
 import { resolveSyncStatus, normalizeSyncStatus } from '@/lib/utils/syncState';
@@ -514,6 +514,37 @@ const checkOnlineStatus = () => {
           sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: editingPayroll.sync_status, isOnline }),
         });
 
+        // Create or update corresponding financial transaction
+        const period = `${new Date(payrollFormData.period_start).toLocaleDateString('es-GT')} - ${new Date(payrollFormData.period_end).toLocaleDateString('es-GT')}`;
+        const transaction: LocalFinancialTransaction = {
+          user_id: userId || undefined,
+          project_id: payrollFormData.project_id,
+          type: 'expense',
+          category: 'mano_de_obra',
+          description: `Nómina: ${employee.name} - ${period}`,
+          quantity: payrollFormData.days_worked,
+          unit: 'días',
+          unit_cost: grossSalary / Math.max(payrollFormData.days_worked, 1),
+          total_cost: grossSalary,
+          date: payrollFormData.period_end,
+          sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        // Check if transaction already exists for this payroll record
+        const existingTx = await offlineDB.financialTransactions
+          .where('project_id')
+          .equals(payrollFormData.project_id || '')
+          .and(tx => tx.description.includes(editingPayroll.id!))
+          .first();
+
+        if (existingTx) {
+          await offlineDB.financialTransactions.update(existingTx.id!, transaction);
+        } else {
+          await offlineDB.financialTransactions.add(transaction);
+        }
+
         if (isOnline && wasSynced && supabase) {
           const { error } = await supabase
             .from('payroll_records')
@@ -532,6 +563,26 @@ const checkOnlineStatus = () => {
         }
       } else {
         const id = await offlineDB.payrollRecords.add(payrollData);
+
+        // Create corresponding financial transaction for new payroll record
+        const period = `${new Date(payrollFormData.period_start).toLocaleDateString('es-GT')} - ${new Date(payrollFormData.period_end).toLocaleDateString('es-GT')}`;
+        const transaction: LocalFinancialTransaction = {
+          user_id: userId || undefined,
+          project_id: payrollFormData.project_id,
+          type: 'expense',
+          category: 'mano_de_obra',
+          description: `Nómina: ${employee.name} - ${period}`,
+          quantity: payrollFormData.days_worked,
+          unit: 'días',
+          unit_cost: grossSalary / Math.max(payrollFormData.days_worked, 1),
+          total_cost: grossSalary,
+          date: payrollFormData.period_end,
+          sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        await offlineDB.financialTransactions.add(transaction);
 
         if (isOnline && supabase) {
           const { data, error } = await supabase

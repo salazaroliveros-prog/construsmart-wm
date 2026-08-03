@@ -30,28 +30,63 @@ export function calculateUtilityMargin(
   totalSpent: number,
   financialSettings: FinancialSettings
 ): UtilityMarginResult {
+  // Validate inputs
+  if (!totalBudget || totalBudget <= 0) {
+    return {
+      margin: 0,
+      marginPercentage: 0,
+      targetMargin: financialSettings.profitPercentage,
+      variance: -financialSettings.profitPercentage,
+      isOnTarget: false,
+      directCost: totalSpent || 0,
+      indirectCost: 0,
+      contingencyCost: 0,
+      totalCost: totalSpent || 0,
+    };
+  }
+
+  if (!totalSpent || totalSpent < 0) {
+    const indirectCost = totalBudget * (financialSettings.indirectPercentage / 100);
+    const contingencyCost = totalBudget * (financialSettings.contingencyPercentage / 100);
+    const totalCost = indirectCost + contingencyCost;
+    const margin = totalBudget - totalCost;
+    const marginPercentage = (margin / totalBudget) * 100;
+
+    return {
+      margin,
+      marginPercentage,
+      targetMargin: financialSettings.profitPercentage,
+      variance: marginPercentage - financialSettings.profitPercentage,
+      isOnTarget: Math.abs(marginPercentage - financialSettings.profitPercentage) <= 5,
+      directCost: 0,
+      indirectCost,
+      contingencyCost,
+      totalCost,
+    };
+  }
+
   // Calculate indirect costs based on settings
   const indirectCost = totalBudget * (financialSettings.indirectPercentage / 100);
-  
+
   // Calculate contingency based on settings
   const contingencyCost = totalBudget * (financialSettings.contingencyPercentage / 100);
-  
+
   // Target profit from settings
   const targetProfit = totalBudget * (financialSettings.profitPercentage / 100);
-  
+
   // Total costs including indirects and contingency
   const totalCost = totalSpent + indirectCost + contingencyCost;
-  
+
   // Actual margin
   const margin = totalBudget - totalCost;
   const marginPercentage = totalBudget > 0 ? (margin / totalBudget) * 100 : 0;
-  
+
   // Variance from target
   const variance = marginPercentage - financialSettings.profitPercentage;
-  
+
   // Check if on target (within ±5% tolerance)
   const isOnTarget = Math.abs(variance) <= 5;
-  
+
   return {
     margin,
     marginPercentage,
