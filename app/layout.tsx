@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Geist } from 'next/font/google';
 import './globals.css';
 import { APP_CONFIG } from '@/lib/config/app.config';
 import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration';
@@ -8,6 +8,9 @@ import { ToastProvider } from '@/components/ui/Toast';
 import { AuthProvider } from '@/lib/auth/auth-context';
 import { UISettingsProvider } from '@/lib/hooks/useUISettings';
 import AuthGuard from '@/components/auth/AuthGuard';
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -52,7 +55,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
+    <html lang="es" className={cn("font-sans", geist.variable)}>
       <head>
         <link rel="icon" href="/assets/branding/logo-constructora-wm.jpg" />
         <link rel="apple-touch-icon" href="/assets/branding/logo-constructora-wm.jpg" />

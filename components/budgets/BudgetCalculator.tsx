@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Calculator, Plus, Save, Download, FolderOpen, Building2, Map as MapIcon } from 'lucide-react';
+import { Calculator, Plus, Save, Download, FolderOpen, Building2, Map as MapIcon, AlertTriangle } from 'lucide-react';
 import { calculateSlab, SlabDimensions, calculateSlabCost, SlabCostParams } from '@/lib/calculators/slabCalculators';
-import { 
-  calculateAPU, 
-  formatQuetzales, 
+import {
+  calculateAPU,
+  formatQuetzales,
   getVolumetricFactor,
   calculateLocalBudgetSummary,
   type LocalBudgetSummary,
@@ -30,6 +30,8 @@ import { RenglonCalculator, ProjectRenglon } from '@/lib/calculators/renglonCalc
 import BudgetItemsTable from '@/components/budgets/BudgetItemsTable';
 import BudgetSummaryPanel from '@/components/budgets/BudgetSummaryPanel';
 import type { BudgetItem } from './types';
+import { PRESETS_POR_TIPOLOGIA, ElementPreset, TYPOLOGY_LABELS as PRESET_LABELS } from '@/lib/config/elementPresets';
+import { calculateCommercialUnits, validateCostPerSquareMeter, CostValidationResult } from '@/lib/calculators/financialUtils';
 
 // Dynamic imports for heavy components
 const PDFGenerator = dynamic(() => import('@/components/pdf/PDFGenerator'), {
@@ -194,16 +196,29 @@ export default function BudgetCalculator() {
   };
 
   const addSlabCalculation = () => {
-    const result = calculateSlab(slabDimensions);
+    // Use preset if selected in preset mode
+    let dimensions = { ...slabDimensions };
+
+    if (usePresetMode && selectedElementPreset) {
+      const preset = PRESETS_POR_TIPOLOGIA[selectedTypologyPreset]?.find(p => p.id === selectedElementPreset);
+      if (preset) {
+        dimensions = {
+          ...dimensions,
+          thickness: preset.espesor,
+        };
+      }
+    }
+
+    const result = calculateSlab(dimensions);
     const cost = calculateSlabCost(result, slabCostParams);
-    
+
     const newItem: BudgetItem = {
       id: Date.now().toString(),
-      code: `LOS-${slabDimensions.slabType.toUpperCase()}-${Date.now().toString().slice(-4)}`,
+      code: `LOS-${dimensions.slabType.toUpperCase()}-${Date.now().toString().slice(-4)}`,
       description: result.description,
       unit: 'm²',
-      quantity: slabDimensions.length * slabDimensions.width,
-      unitCost: cost / (slabDimensions.length * slabDimensions.width),
+      quantity: dimensions.length * dimensions.width,
+      unitCost: cost / (dimensions.length * dimensions.width),
       totalCost: cost,
       category: 'Estructura',
     };
@@ -251,6 +266,14 @@ export default function BudgetCalculator() {
   };
 
   const [renglonConfirm, setRenglonConfirm] = useState<APURenglon | null>(null);
+
+  // Preset and Typology State for Smart Input
+  const [selectedTypologyPreset, setSelectedTypologyPreset] = useState<string>('Residencial');
+  const [selectedElementPreset, setSelectedElementPreset] = useState<string>('');
+  const [usePresetMode, setUsePresetMode] = useState<boolean>(true);
+
+  // Cost Validation State
+  const [costValidation, setCostValidation] = useState<CostValidationResult | null>(null);
 
   const confirmAddRenglon = () => {
     if (renglonConfirm) {
@@ -319,6 +342,26 @@ export default function BudgetCalculator() {
     try {
       const summary = calculateSummary();
 
+      // Get project for validation and update
+      const project = projects.find(p => p.id === selectedProject);
+
+      // Validate cost per square meter against project category
+      if (project && project.area_m2 > 0) {
+        const costPerM2 = summary.total / project.area_m2;
+        const validation = validateCostPerSquareMeter(
+          costPerM2,
+          project.quality_level === 'basic' ? 'Básico' :
+          project.quality_level === 'moderate' ? 'Moderado' : 'Premium',
+          15 // 15% tolerance
+        );
+        setCostValidation(validation);
+
+        if (!validation.isValid) {
+          showToast('warning', validation.warningMessage || 'Alerta de coherencia comercial');
+          // Don't block save, just warn
+        }
+      }
+
       // Look up an existing budget for this project so saves are idempotent
       const existingBudget = await offlineDB.budgets
         .where('project_id')
@@ -371,6 +414,19 @@ export default function BudgetCalculator() {
       // Save budget items
       const warehouseInputs: MaterialToWarehouseInput[] = [];
       for (const item of items) {
+        // Calculate commercial units for materials
+        let unidadesComerciales: number | undefined;
+        if (item.unit === 'kg' || item.unit === 'kilogramos') {
+          // Assume cement or steel based on description
+          if (item.description.toLowerCase().includes('cemento')) {
+            unidadesComerciales = calculateCommercialUnits('cement', item.quantity, item.unit);
+          } else if (item.description.toLowerCase().includes('acero') ||
+                     item.description.toLowerCase().includes('varilla') ||
+                     item.description.toLowerCase().includes('hierro')) {
+            unidadesComerciales = calculateCommercialUnits('steel', item.quantity, item.unit);
+          }
+        }
+
         const budgetItemData: LocalBudgetItem = {
           budget_id: budgetId as string,
           code: item.code,
@@ -381,6 +437,7 @@ export default function BudgetCalculator() {
           total_cost: item.totalCost,
           item_order: 0,
           is_custom: true,
+          unidades_comerciales_estimadas: unidadesComerciales,
           sync_status: resolveSyncStatus({ isNewRecord: true, isOnline: navigator.onLine }),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -436,13 +493,15 @@ export default function BudgetCalculator() {
         showToast('info', `${warehouseInputs.length} materiales sincronizados con el almacén`);
       }
 
-      const project = projects.find((p) => p.id === selectedProject);
-      await offlineDB.projects.update(selectedProject, {
-        budget_total: summary.total,
-        calculated_duration: durationDays,
-        sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: project?.sync_status ?? 'synced', isOnline: navigator.onLine }),
-        updated_at: new Date().toISOString(),
-      });
+      // Reuse the project variable from validation above
+      if (project) {
+        await offlineDB.projects.update(selectedProject, {
+          budget_total: summary.total,
+          calculated_duration: durationDays,
+          sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: project.sync_status ?? 'synced', isOnline: navigator.onLine }),
+          updated_at: new Date().toISOString(),
+        });
+      }
 
       // Calculate and store time data for Gantt and progress tracking
       const projectRenglones: ProjectRenglon[] = items.map(item => {
@@ -517,10 +576,10 @@ export default function BudgetCalculator() {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="glass-panel rounded-2xl p-4 sm:p-6">
+      <div className="bg-white/[var(--glass-opacity,0.15)] dark:bg-black/[var(--glass-opacity,0.2)] backdrop-blur-[var(--glass-blur,16px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_8px_32px_0_rgba(0,0,0,0.25)] will-change-[backdrop-filter] contain-paint rounded-2xl p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
               <Calculator className="w-6 h-6 sm:w-8 sm:h-8 text-cyan-400" />
               Calculadora de Presupuestos
             </h1>
@@ -607,46 +666,59 @@ export default function BudgetCalculator() {
       </div>
 
       {/* Project Info */}
-      <div className="glass-panel rounded-2xl p-4 sm:p-6">
+      <div className="bg-white/[var(--glass-opacity,0.15)] dark:bg-black/[var(--glass-opacity,0.2)] backdrop-blur-[var(--glass-blur,16px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_8px_32px_0_rgba(0,0,0,0.25)] will-change-[backdrop-filter] contain-paint rounded-2xl p-4 sm:p-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
-            <label className="block text-white/60 text-xs sm:text-sm mb-1">Nombre del Proyecto</label>
+            <label className="block text-zinc-900 dark:text-white text-xs sm:text-sm mb-1 font-semibold">Nombre del Proyecto</label>
             <input
               type="text"
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
-              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+              className="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-cyan-500/50"
               placeholder="Nombre del proyecto"
             />
           </div>
           <div>
-            <label className="block text-white/60 text-xs sm:text-sm mb-1">Cliente</label>
+            <label className="block text-zinc-900 dark:text-white text-xs sm:text-sm mb-1 font-semibold">Cliente</label>
             <input
               type="text"
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
-              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+              className="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-cyan-500/50"
               placeholder="Nombre del cliente"
             />
           </div>
         </div>
         <div>
-          <label className="block text-white/60 text-xs sm:text-sm mb-1">Duración Estimada (días)</label>
+          <label className="block text-zinc-900 dark:text-white text-xs sm:text-sm mb-1 font-semibold">Duración Estimada (días)</label>
           <input
             type="number"
             value={durationDays}
             onChange={(e) => setDurationDays(Number(e.target.value))}
-            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+            className="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-cyan-500/50"
             placeholder="Duración en días"
           />
           <p className="text-white/40 text-xs mt-1">Este valor se usará para calcular la fecha fin del proyecto</p>
         </div>
       </div>
 
+      {/* Cost Validation Warning Banner */}
+      {costValidation && !costValidation.isValid && (
+        <div className="bg-amber-500/10 backdrop-blur-md text-amber-600 dark:text-amber-400 border border-amber-500/20 px-4 py-3 rounded-xl flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-semibold text-sm">{costValidation.warningMessage}</p>
+            <p className="text-xs mt-1 opacity-80">
+              Considere revisar los costos o la categoría del proyecto antes de proceder.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* APU & Typology Section */}
-      <div className="glass-panel rounded-2xl p-4 sm:p-6">
+      <div className="bg-white/[var(--glass-opacity,0.15)] dark:bg-black/[var(--glass-opacity,0.2)] backdrop-blur-[var(--glass-blur,16px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_8px_32px_0_rgba(0,0,0,0.25)] will-change-[backdrop-filter] contain-paint rounded-2xl p-4 sm:p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
             <Building2 className="w-5 h-5 text-cyan-400" />
             Análisis de Precios Unitarios (APU)
           </h2>
@@ -654,7 +726,7 @@ export default function BudgetCalculator() {
             <select
               value={selectedTypology}
               onChange={(e) => setSelectedTypology(e.target.value as ProjectTypology)}
-              className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500/50"
+              className="bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-cyan-500/50"
             >
               {Object.entries(TYPOLOGY_LABELS).map(([key, label]) => (
                 <option key={key} value={key}>
@@ -935,44 +1007,129 @@ export default function BudgetCalculator() {
       </div>
 
       {/* Slab Calculator Section */}
-      <div className="glass-panel rounded-2xl p-4 sm:p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Calculadora de Losas</h2>
-        
+      <div className="bg-white/[var(--glass-opacity,0.15)] dark:bg-black/[var(--glass-opacity,0.2)] backdrop-blur-[var(--glass-blur,16px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_8px_32px_0_rgba(0,0,0,0.25)] will-change-[backdrop-filter] contain-paint rounded-2xl p-4 sm:p-6">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Calculadora de Losas</h2>
+
+        {/* Preset Mode Toggle */}
+        <div className="mb-4 flex items-center gap-3">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={usePresetMode}
+              onChange={(e) => setUsePresetMode(e.target.checked)}
+              className="w-4 h-4 rounded"
+            />
+            <span className="text-zinc-900 dark:text-white text-sm">Modo Presets Inteligentes</span>
+          </label>
+        </div>
+
+        {/* Preset Selection */}
+        {usePresetMode && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-zinc-900 dark:text-white text-xs sm:text-sm mb-1 font-semibold">Tipología de Obra</label>
+              <select
+                value={selectedTypologyPreset}
+                onChange={(e) => {
+                  setSelectedTypologyPreset(e.target.value);
+                  setSelectedElementPreset(''); // Reset element preset when typology changes
+                }}
+                className="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-cyan-500/50"
+              >
+                {Object.keys(PRESETS_POR_TIPOLOGIA).map(typology => (
+                  <option key={typology} value={typology}>
+                    {PRESET_LABELS[typology] || typology}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-zinc-900 dark:text-white text-xs sm:text-sm mb-1 font-semibold">Preset del Elemento</label>
+              <select
+                value={selectedElementPreset}
+                onChange={(e) => setSelectedElementPreset(e.target.value)}
+                className="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-cyan-500/50"
+              >
+                <option value="">Seleccione un preset...</option>
+                {PRESETS_POR_TIPOLOGIA[selectedTypologyPreset]?.map(preset => (
+                  <option key={preset.id} value={preset.id}>
+                    {preset.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
+        {/* Preset Info Display */}
+        {usePresetMode && selectedElementPreset && (() => {
+          const preset = PRESETS_POR_TIPOLOGIA[selectedTypologyPreset]?.find(p => p.id === selectedElementPreset);
+          if (!preset) return null;
+          return (
+            <div className="mb-4 p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
+              <p className="text-cyan-400 text-xs font-semibold mb-2">Parámetros del Preset:</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                <div>
+                  <span className="text-white/60">Espesor:</span>
+                  <span className="text-zinc-900 dark:text-white font-semibold ml-1">{preset.espesor}m</span>
+                </div>
+                <div>
+                  <span className="text-white/60">Desperdicio:</span>
+                  <span className="text-zinc-900 dark:text-white font-semibold ml-1">{(preset.desperdicio - 1) * 100}%</span>
+                </div>
+                <div>
+                  <span className="text-white/60">Acero:</span>
+                  <span className="text-zinc-900 dark:text-white font-semibold ml-1">{preset.densidadAcero} kg/m²</span>
+                </div>
+                {preset.factorCompactacion && (
+                  <div>
+                    <span className="text-white/60">Compactación:</span>
+                    <span className="text-zinc-900 dark:text-white font-semibold ml-1">{(preset.factorCompactacion - 1) * 100}%</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           <div>
-            <label className="block text-white/60 text-xs sm:text-sm mb-1">Longitud (m)</label>
+            <label className="block text-zinc-900 dark:text-white text-xs sm:text-sm mb-1 font-semibold">Longitud (m)</label>
             <input
               type="number"
               value={slabDimensions.length}
               onChange={(e) => setSlabDimensions({ ...slabDimensions, length: Number(e.target.value) })}
-              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+              className="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-cyan-500/50"
             />
           </div>
           <div>
-            <label className="block text-white/60 text-xs sm:text-sm mb-1">Ancho (m)</label>
+            <label className="block text-zinc-900 dark:text-white text-xs sm:text-sm mb-1 font-semibold">Ancho (m)</label>
             <input
               type="number"
               value={slabDimensions.width}
               onChange={(e) => setSlabDimensions({ ...slabDimensions, width: Number(e.target.value) })}
-              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+              className="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-cyan-500/50"
             />
           </div>
           <div>
-            <label className="block text-white/60 text-xs sm:text-sm mb-1">Espesor (m)</label>
+            <label className="block text-zinc-900 dark:text-white text-xs sm:text-sm mb-1 font-semibold">
+              Espesor (m) {usePresetMode && selectedElementPreset && <span className="text-cyan-400 text-xs">(Auto)</span>}
+            </label>
             <input
               type="number"
               step="0.01"
               value={slabDimensions.thickness}
               onChange={(e) => setSlabDimensions({ ...slabDimensions, thickness: Number(e.target.value) })}
-              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+              disabled={usePresetMode && selectedElementPreset !== ''}
+              className={`w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-cyan-500/50 ${usePresetMode && selectedElementPreset !== '' ? 'opacity-50 cursor-not-allowed' : ''}`}
             />
           </div>
           <div>
-            <label className="block text-white/60 text-xs sm:text-sm mb-1">Tipo de Losa</label>
+            <label className="block text-zinc-900 dark:text-white text-xs sm:text-sm mb-1 font-semibold">Tipo de Losa</label>
             <select
               value={slabDimensions.slabType}
               onChange={(e) => setSlabDimensions({ ...slabDimensions, slabType: e.target.value as any })}
-              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+              className="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-cyan-500/50"
             >
               <option value="solid">Sólida Traditional</option>
               <option value="prefabricated">Prefabricada</option>
@@ -1011,15 +1168,17 @@ export default function BudgetCalculator() {
       />
 
       {/* Budget Summary */}
-      <BudgetSummaryPanel
-        summary={summary}
-        indirectPercentage={indirectPercentage}
-        contingencyPercentage={contingencyPercentage}
-        profitPercentage={profitPercentage}
-        onIndirectChange={setIndirectPercentage}
-        onContingencyChange={setContingencyPercentage}
-        onProfitChange={setProfitPercentage}
-      />
+      <div className="bg-white/[var(--glass-opacity,0.15)] dark:bg-black/[var(--glass-opacity,0.2)] backdrop-blur-[var(--glass-blur,16px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_8px_32px_0_rgba(0,0,0,0.25)] will-change-[backdrop-filter] contain-paint rounded-2xl p-4 sm:p-6">
+        <BudgetSummaryPanel
+          summary={summary}
+          indirectPercentage={indirectPercentage}
+          contingencyPercentage={contingencyPercentage}
+          profitPercentage={profitPercentage}
+          onIndirectChange={setIndirectPercentage}
+          onContingencyChange={setContingencyPercentage}
+          onProfitChange={setProfitPercentage}
+        />
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
@@ -1044,9 +1203,9 @@ export default function BudgetCalculator() {
       {/* PDF Export Modal */}
       {showPDFModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="glass-panel rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto overflow-anchor-none">
+          <div className="bg-white/[var(--glass-opacity,0.15)] dark:bg-black/[var(--glass-opacity,0.2)] backdrop-blur-[var(--glass-blur,16px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_8px_32px_0_rgba(0,0,0,0.25)] will-change-[backdrop-filter] contain-paint rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto overflow-anchor-none">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-white">Exportar Presupuesto a PDF</h2>
+              <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Exportar Presupuesto a PDF</h2>
               <button
                 onClick={() => setShowPDFModal(false)}
                 className="text-white/60 hover:text-white"

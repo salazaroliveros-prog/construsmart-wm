@@ -3,6 +3,8 @@
  * Guatemalan Standards
  */
 
+import { roundMoney, validateDimensions, validateWasteFactor } from './financialUtils';
+
 export interface VolumeResult {
   volume: number;
   surfaceArea: number;
@@ -23,9 +25,20 @@ export interface DimensionalParams {
  */
 export function calculateRectangularVolume(params: DimensionalParams): VolumeResult {
   const { length, width, depth = 0, height = 0 } = params;
-  const volume = length * width * (depth || height);
-  const surfaceArea = 2 * (length * width + length * (depth || height) + width * (depth || height));
-  const perimeter = 2 * (length + width);
+
+  // Short-circuit validation
+  if (!validateDimensions(length, width, depth, height)) {
+    return {
+      volume: 0,
+      surfaceArea: 0,
+      perimeter: 0,
+      description: 'Volumen Rectangular - Dimensiones inválidas',
+    };
+  }
+
+  const volume = roundMoney(length * width * (depth || height));
+  const surfaceArea = roundMoney(2 * (length * width + length * (depth || height) + width * (depth || height)));
+  const perimeter = roundMoney(2 * (length + width));
 
   return {
     volume,
@@ -40,10 +53,21 @@ export function calculateRectangularVolume(params: DimensionalParams): VolumeRes
  */
 export function calculateCylindricalVolume(params: DimensionalParams): VolumeResult {
   const { diameter = 0, depth = 0, height = 0 } = params;
+
+  // Short-circuit validation
+  if (diameter <= 0 || (depth <= 0 && height <= 0)) {
+    return {
+      volume: 0,
+      surfaceArea: 0,
+      perimeter: 0,
+      description: 'Volumen Cilíndrico - Dimensiones inválidas',
+    };
+  }
+
   const radius = diameter / 2;
-  const volume = Math.PI * radius * radius * (depth || height);
-  const surfaceArea = 2 * Math.PI * radius * (radius + (depth || height));
-  const perimeter = 2 * Math.PI * radius;
+  const volume = roundMoney(Math.PI * radius * radius * (depth || height));
+  const surfaceArea = roundMoney(2 * Math.PI * radius * (radius + (depth || height)));
+  const perimeter = roundMoney(2 * Math.PI * radius);
 
   return {
     volume,
@@ -67,11 +91,22 @@ export interface TrapezoidalParams {
 
 export function calculateTrapezoidalVolume(params: TrapezoidalParams): VolumeResult {
   const { baseLength, baseWidth, topLength, topWidth, height } = params;
+
+  // Short-circuit validation
+  if (baseLength <= 0 || baseWidth <= 0 || topLength <= 0 || topWidth <= 0 || height <= 0) {
+    return {
+      volume: 0,
+      surfaceArea: 0,
+      perimeter: 0,
+      description: 'Volumen Trapezoidal - Dimensiones inválidas',
+    };
+  }
+
   const baseArea = baseLength * baseWidth;
   const topArea = topLength * topWidth;
-  const volume = (height / 3) * (baseArea + topArea + Math.sqrt(baseArea * topArea));
-  const surfaceArea = baseArea + topArea + (baseLength + topLength) * height / 2 + (baseWidth + topWidth) * height / 2;
-  const perimeter = 2 * (baseLength + baseWidth + topLength + topWidth);
+  const volume = roundMoney((height / 3) * (baseArea + topArea + Math.sqrt(baseArea * topArea)));
+  const surfaceArea = roundMoney(baseArea + topArea + (baseLength + topLength) * height / 2 + (baseWidth + topWidth) * height / 2);
+  const perimeter = roundMoney(2 * (baseLength + baseWidth + topLength + topWidth));
 
   return {
     volume,
@@ -90,9 +125,29 @@ export function calculateExcavationVolume(
   expansionFactor: number = 1.2
 ): VolumeResult {
   const { length, width, depth = 0 } = params;
-  const volume = length * width * depth * expansionFactor;
-  const surfaceArea = length * width;
-  const perimeter = 2 * (length + width);
+
+  // Short-circuit validation
+  if (!validateDimensions(length, width, depth)) {
+    return {
+      volume: 0,
+      surfaceArea: 0,
+      perimeter: 0,
+      description: 'Excavación - Dimensiones inválidas',
+    };
+  }
+
+  if (!validateWasteFactor(expansionFactor)) {
+    return {
+      volume: 0,
+      surfaceArea: 0,
+      perimeter: 0,
+      description: 'Excavación - Factor de expansión inválido',
+    };
+  }
+
+  const volume = roundMoney(length * width * depth * expansionFactor);
+  const surfaceArea = roundMoney(length * width);
+  const perimeter = roundMoney(2 * (length + width));
 
   return {
     volume,
@@ -107,8 +162,19 @@ export function calculateExcavationVolume(
  */
 export function calculateWallArea(params: DimensionalParams): VolumeResult {
   const { length, height = 0 } = params;
-  const area = length * height;
-  const perimeter = length * 2; // Assuming both sides
+
+  // Short-circuit validation
+  if (length <= 0 || height <= 0) {
+    return {
+      volume: 0,
+      surfaceArea: 0,
+      perimeter: 0,
+      description: 'Área de Muro - Dimensiones inválidas',
+    };
+  }
+
+  const area = roundMoney(length * height);
+  const perimeter = roundMoney(length * 2); // Assuming both sides
 
   return {
     volume: area, // Using volume field for area
@@ -127,7 +193,15 @@ export function calculatePaintArea(
   coats: number = 2,
   wasteFactor: number = 1.1
 ): number {
-  return baseArea * coats * wasteFactor;
+  if (baseArea <= 0 || coats <= 0) {
+    return 0;
+  }
+
+  if (!validateWasteFactor(wasteFactor)) {
+    return 0;
+  }
+
+  return roundMoney(baseArea * coats * wasteFactor);
 }
 
 /**
@@ -139,8 +213,27 @@ export function calculateFlooringArea(
   width: number,
   wasteFactor: number = 1.1
 ): VolumeResult {
-  const area = length * width * wasteFactor;
-  const perimeter = 2 * (length + width);
+  // Short-circuit validation
+  if (!validateDimensions(length, width)) {
+    return {
+      volume: 0,
+      surfaceArea: 0,
+      perimeter: 0,
+      description: 'Área de Piso - Dimensiones inválidas',
+    };
+  }
+
+  if (!validateWasteFactor(wasteFactor)) {
+    return {
+      volume: 0,
+      surfaceArea: 0,
+      perimeter: 0,
+      description: 'Área de Piso - Factor de desperdicio inválido',
+    };
+  }
+
+  const area = roundMoney(length * width * wasteFactor);
+  const perimeter = roundMoney(2 * (length + width));
 
   return {
     volume: area,
@@ -163,15 +256,25 @@ export interface StairParams {
 
 export function calculateStairs(params: StairParams): VolumeResult {
   const { totalHeight, totalRun, treadDepth, riserHeight, width } = params;
-  
+
+  // Short-circuit validation
+  if (totalHeight <= 0 || treadDepth <= 0 || riserHeight <= 0 || width <= 0) {
+    return {
+      volume: 0,
+      surfaceArea: 0,
+      perimeter: 0,
+      description: 'Escalera - Dimensiones inválidas',
+    };
+  }
+
   const numberOfSteps = Math.floor(totalHeight / riserHeight);
-  const actualHeight = numberOfSteps * riserHeight;
-  const actualRun = numberOfSteps * treadDepth;
-  
+  const actualHeight = roundMoney(numberOfSteps * riserHeight);
+  const actualRun = roundMoney(numberOfSteps * treadDepth);
+
   // Approximate volume (simplified)
-  const volume = (actualRun * width * actualHeight) / 2; // Triangular prism approximation
-  const surfaceArea = (actualRun * width) + (numberOfSteps * treadDepth * width) + (numberOfSteps * riserHeight * width);
-  const perimeter = 2 * (actualRun + width);
+  const volume = roundMoney((actualRun * width * actualHeight) / 2); // Triangular prism approximation
+  const surfaceArea = roundMoney((actualRun * width) + (numberOfSteps * treadDepth * width) + (numberOfSteps * riserHeight * width));
+  const perimeter = roundMoney(2 * (actualRun + width));
 
   return {
     volume,
@@ -192,6 +295,16 @@ export interface ConcreteMix {
 }
 
 export function calculateConcreteMix(volume: number, strength: '1500' | '2000' | '2500' | '3000'): ConcreteMix {
+  // Short-circuit validation
+  if (volume <= 0) {
+    return {
+      cement: 0,
+      sand: 0,
+      gravel: 0,
+      water: 0,
+    };
+  }
+
   // Standard Guatemalan mixes (approximate)
   const mixes = {
     '1500': { cement: 5.5, sand: 0.45, gravel: 0.65, water: 140 }, // per m³
@@ -202,10 +315,10 @@ export function calculateConcreteMix(volume: number, strength: '1500' | '2000' |
 
   const mix = mixes[strength];
   return {
-    cement: (mix.cement * volume).toFixed(1) as unknown as number,
-    sand: mix.sand * volume,
-    gravel: mix.gravel * volume,
-    water: mix.water * volume,
+    cement: roundMoney(mix.cement * volume),
+    sand: roundMoney(mix.sand * volume),
+    gravel: roundMoney(mix.gravel * volume),
+    water: roundMoney(mix.water * volume),
   };
 }
 
@@ -213,13 +326,23 @@ export function calculateConcreteMix(volume: number, strength: '1500' | '2000' |
  * Calculate mortar mix for masonry
  */
 export function calculateMortarMix(area: number, thickness: number = 0.02): ConcreteMix {
-  const volume = area * thickness;
+  // Short-circuit validation
+  if (area <= 0 || thickness <= 0) {
+    return {
+      cement: 0,
+      sand: 0,
+      gravel: 0,
+      water: 0,
+    };
+  }
+
+  const volume = roundMoney(area * thickness);
   // Standard mortar mix (1:4 cement:sand)
   return {
-    cement: (volume * 250).toFixed(1) as unknown as number, // ~250 kg cement per m³
-    sand: volume * 0.8,
+    cement: roundMoney(volume * 250), // ~250 kg cement per m³
+    sand: roundMoney(volume * 0.8),
     gravel: 0,
-    water: volume * 100,
+    water: roundMoney(volume * 100),
   };
 }
 
@@ -231,17 +354,26 @@ export function calculateRebar(diameterMM: number, length: number, quantity: num
   totalLength: number;
   description: string;
 } {
+  // Short-circuit validation
+  if (diameterMM <= 0 || length <= 0 || quantity <= 0) {
+    return {
+      weight: 0,
+      totalLength: 0,
+      description: 'Acero - Dimensiones inválidas',
+    };
+  }
+
   // Steel density: 7850 kg/m³
   const radius = diameterMM / 2000; // convert to meters
   const crossSectionArea = Math.PI * radius * radius;
   const weightPerMeter = crossSectionArea * 7850;
-  const totalWeight = weightPerMeter * length * quantity;
-  const totalLength = length * quantity;
+  const totalWeight = roundMoney(weightPerMeter * length * quantity);
+  const totalLength = roundMoney(length * quantity);
 
   return {
     weight: totalWeight,
     totalLength,
-    description: `Acero #${diameterMM}: ${quantity} varillas de ${length}m (${totalWeight.toFixed(2)} kg)`,
+    description: `Acero #${diameterMM}: ${quantity} varillas de ${length}m (${totalWeight} kg)`,
   };
 }
 
@@ -256,16 +388,33 @@ export function calculateFormwork(
   lumber: number;
   description: string;
 } {
+  // Short-circuit validation
+  if (surfaceArea <= 0) {
+    return {
+      plywoodSheets: 0,
+      lumber: 0,
+      description: 'Encofrado - Área inválida',
+    };
+  }
+
+  if (!validateWasteFactor(reuseFactor)) {
+    return {
+      plywoodSheets: 0,
+      lumber: 0,
+      description: 'Encofrado - Factor de reuso inválido',
+    };
+  }
+
   // Standard plywood sheet: 1.22m × 2.44m = 2.98m²
   const plywoodArea = 2.98;
-  const plywoodSheets = (surfaceArea / plywoodArea) * reuseFactor;
-  
+  const plywoodSheets = Math.ceil((surfaceArea / plywoodArea) * reuseFactor);
+
   // Lumber for supports (approximate)
-  const lumber = surfaceArea * 0.1; // linear meters per m²
+  const lumber = roundMoney(surfaceArea * 0.1); // linear meters per m²
 
   return {
-    plywoodSheets: Math.ceil(plywoodSheets),
-    lumber: lumber.toFixed(1) as unknown as number,
-    description: `Encofrado: ${Math.ceil(plywoodSheets)} láminas de plywood, ${lumber.toFixed(1)}m madera`,
+    plywoodSheets,
+    lumber,
+    description: `Encofrado: ${plywoodSheets} láminas de plywood, ${lumber}m madera`,
   };
 }

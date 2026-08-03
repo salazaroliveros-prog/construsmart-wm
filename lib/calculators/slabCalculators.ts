@@ -3,6 +3,8 @@
  * Based on INSTRUCCIONES_SISTEMA_WM_MS-v2.md specifications
  */
 
+import { roundMoney, validateDimensions, validateWasteFactor } from './financialUtils';
+
 export interface SlabCalculationResult {
   concreteVolume: number;
   steelWeight: number;
@@ -29,16 +31,37 @@ export interface SlabDimensions {
  */
 export function calculateSolidSlab(dimensions: SlabDimensions): SlabCalculationResult {
   const { length, width, thickness = 0.10 } = dimensions;
+
+  // Short-circuit validation
+  if (!validateDimensions(length, width, thickness)) {
+    return {
+      concreteVolume: 0,
+      steelWeight: 0,
+      formworkArea: 0,
+      description: 'Losa Sólida - Dimensiones inválidas',
+    };
+  }
+
+  const WASTE_FACTOR = 1.05;
+  if (!validateWasteFactor(WASTE_FACTOR)) {
+    return {
+      concreteVolume: 0,
+      steelWeight: 0,
+      formworkArea: 0,
+      description: 'Losa Sólida - Factor de desperdicio inválido',
+    };
+  }
+
   const area = length * width;
-  const concreteVolume = area * thickness * 1.05; // 5% waste
-  const steelWeight = area * 8.5; // kg/m²
-  const formworkArea = area * 1.15;
+  const concreteVolume = roundMoney(area * thickness * WASTE_FACTOR);
+  const steelWeight = roundMoney(area * 8.5); // kg/m²
+  const formworkArea = roundMoney(area * 1.15);
 
   return {
     concreteVolume,
     steelWeight,
     formworkArea,
-    description: `Losa Sólida ${thickness}m - ${area.toFixed(2)}m²`,
+    description: `Losa Sólida ${thickness}m - ${roundMoney(area)}m²`,
   };
 }
 
@@ -51,13 +74,34 @@ export function calculateSolidSlab(dimensions: SlabDimensions): SlabCalculationR
  */
 export function calculatePrefabricatedSlab(dimensions: SlabDimensions): SlabCalculationResult {
   const { length, width } = dimensions;
+
+  // Short-circuit validation
+  if (!validateDimensions(length, width)) {
+    return {
+      concreteVolume: 0,
+      steelWeight: 0,
+      formworkArea: 0,
+      description: 'Losa Prefabricada - Dimensiones inválidas',
+    };
+  }
+
+  const WASTE_FACTOR = 1.05;
+  if (!validateWasteFactor(WASTE_FACTOR)) {
+    return {
+      concreteVolume: 0,
+      steelWeight: 0,
+      formworkArea: 0,
+      description: 'Losa Prefabricada - Factor de desperdicio inválido',
+    };
+  }
+
   const area = length * width;
   const compressionLayerThickness = 0.05;
-  
-  const viguetasLength = area / 0.70;
-  const bovedillasCount = area * 5.2;
-  const compressionLayerVolume = area * compressionLayerThickness * 1.05;
-  const electroweldedMeshArea = area * 1.10;
+
+  const viguetasLength = roundMoney(area / 0.70);
+  const bovedillasCount = roundMoney(area * 5.2);
+  const compressionLayerVolume = roundMoney(area * compressionLayerThickness * WASTE_FACTOR);
+  const electroweldedMeshArea = roundMoney(area * 1.10);
 
   return {
     concreteVolume: compressionLayerVolume,
@@ -67,7 +111,7 @@ export function calculatePrefabricatedSlab(dimensions: SlabDimensions): SlabCalc
     electroweldedMeshArea,
     viguetasLength,
     bovedillasCount,
-    description: `Losa Prefabricada Vigueta y Bovedilla - ${area.toFixed(2)}m²`,
+    description: `Losa Prefabricada Vigueta y Bovedilla - ${roundMoney(area)}m²`,
   };
 }
 
@@ -78,16 +122,26 @@ export function calculatePrefabricatedSlab(dimensions: SlabDimensions): SlabCalc
  */
 export function calculateMetalPergola(dimensions: SlabDimensions): SlabCalculationResult {
   const { length, width } = dimensions;
+
+  // Short-circuit validation
+  if (!validateDimensions(length, width)) {
+    return {
+      concreteVolume: 0,
+      steelWeight: 0,
+      formworkArea: 0,
+      description: 'Pérgola Metálica - Dimensiones inválidas',
+    };
+  }
+
   const area = length * width;
-  
-  const mainBeamsLength = area * 0.85;
-  const secondaryJoistsLength = area * 1.80;
+  const mainBeamsLength = roundMoney(area * 0.85);
+  const secondaryJoistsLength = roundMoney(area * 1.80);
 
   return {
     concreteVolume: 0,
-    steelWeight: mainBeamsLength + secondaryJoistsLength, // Approximate steel weight
+    steelWeight: roundMoney(mainBeamsLength + secondaryJoistsLength), // Approximate steel weight
     formworkArea: 0,
-    description: `Pérgola Metálica - ${area.toFixed(2)}m²`,
+    description: `Pérgola Metálica - ${roundMoney(area)}m²`,
   };
 }
 
@@ -97,15 +151,25 @@ export function calculateMetalPergola(dimensions: SlabDimensions): SlabCalculati
  */
 export function calculateWoodPergola(dimensions: SlabDimensions): SlabCalculationResult {
   const { length, width } = dimensions;
+
+  // Short-circuit validation
+  if (!validateDimensions(length, width)) {
+    return {
+      concreteVolume: 0,
+      steelWeight: 0,
+      formworkArea: 0,
+      description: 'Pérgola de Madera - Dimensiones inválidas',
+    };
+  }
+
   const area = length * width;
-  
-  const boardFeet = area * 12;
+  const boardFeet = roundMoney(area * 12);
 
   return {
     concreteVolume: 0,
     steelWeight: 0,
     formworkArea: 0,
-    description: `Pérgola de Madera - ${area.toFixed(2)}m² (${boardFeet.toFixed(0)} pies tablares)`,
+    description: `Pérgola de Madera - ${roundMoney(area)}m² (${boardFeet} pies tablares)`,
   };
 }
 
@@ -115,15 +179,25 @@ export function calculateWoodPergola(dimensions: SlabDimensions): SlabCalculatio
  */
 export function calculateClayTileRoof(dimensions: SlabDimensions): SlabCalculationResult {
   const { length, width } = dimensions;
+
+  // Short-circuit validation
+  if (!validateDimensions(length, width)) {
+    return {
+      concreteVolume: 0,
+      steelWeight: 0,
+      formworkArea: 0,
+      description: 'Tejado Teja de Barro - Dimensiones inválidas',
+    };
+  }
+
   const area = length * width;
-  
-  const tilesCount = area * 34; // Average of 32-36
+  const tilesCount = roundMoney(area * 34); // Average of 32-36
 
   return {
     concreteVolume: 0,
     steelWeight: 0,
     formworkArea: 0,
-    description: `Tejado Teja de Barro - ${area.toFixed(2)}m² (${tilesCount.toFixed(0)} tejas)`,
+    description: `Tejado Teja de Barro - ${roundMoney(area)}m² (${tilesCount} tejas)`,
   };
 }
 
@@ -209,5 +283,5 @@ export function calculateSlabCost(
     totalCost += tiles * params.tilePricePerUnit;
   }
 
-  return totalCost;
+  return roundMoney(totalCost);
 }

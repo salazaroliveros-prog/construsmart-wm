@@ -60,6 +60,8 @@ export interface LocalBudgetItem {
   depth_m?: number;
   height_m?: number;
   slab_type?: string;
+  // Commercial conversion field for warehouse integration
+  unidades_comerciales_estimadas?: number; // Stores commercial units (bags, quintales, etc.)
   // APU Integration Fields
   apu_result?: {
     totalMaterialQuantity: number;
