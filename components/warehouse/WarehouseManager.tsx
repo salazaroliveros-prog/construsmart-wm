@@ -702,7 +702,7 @@ export default function WarehouseManager() {
                           variant="primary"
                         />
                         <ActionButton
-                          onClick={() => setDeleteConfirm(item)}
+                          onClick={() => setDeleteConfirm({ show: true, item, action: 'delete' })}
                           icon={<Trash2 className="w-4 h-4" />}
                           label="Eliminar material"
                           tooltip="Eliminar material del inventario"
