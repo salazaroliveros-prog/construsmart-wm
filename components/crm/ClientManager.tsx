@@ -11,6 +11,8 @@ import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
+import { clientSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
+import { getCurrentUserId } from '@/lib/auth/userId';
 
 export default function ClientManager() {
   const { showToast } = useToast();
@@ -77,25 +79,50 @@ const loadClients = async () => {
     e.preventDefault();
 
     try {
+      // Validar con Zod schema
+      const validation = validateSchema(clientSchema, formData);
+      if (!validation.success) {
+        const errorMessages = formatValidationErrors(validation.errors);
+        showToast('error', errorMessages.join(', '));
+        return;
+      }
+
+      // Validar unicidad de código (solo para nuevos clientes)
+      if (!editingClient) {
+        const existingClient = await offlineDB.clients
+          .where('code')
+          .equals(formData.code)
+          .first();
+        if (existingClient) {
+          showToast('error', 'El código de cliente ya existe');
+          return;
+        }
+      }
+
       const now = new Date().toISOString();
+      
+      // Obtener user_id para tenencia
+      const userId = await getCurrentUserId();
 
       if (editingClient) {
-        // Update existing client
         await offlineDB.clients.update(editingClient.id!, {
+          user_id: userId || undefined,
           ...formData,
           updated_at: now,
-          sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: editingClient?.sync_status ?? 'synced', isOnline }),
+          sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: editingClient?.sync_status ?? 'synced', isOnline: navigator.onLine }),
         });
+        showToast('success', 'Cliente actualizado exitosamente');
       } else {
-        // Create new client
         const newClient: LocalClient = {
+          user_id: userId || undefined,
           ...formData,
           code: formData.code || `CLI-${Date.now()}`,
           created_at: now,
           updated_at: now,
-          sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }),
+          sync_status: resolveSyncStatus({ isNewRecord: true, isOnline: navigator.onLine }),
         } as LocalClient;
         await offlineDB.clients.add(newClient);
+        showToast('success', 'Cliente creado exitosamente');
       }
 
       setShowForm(false);
@@ -114,6 +141,7 @@ const loadClients = async () => {
       loadClients();
     } catch (error) {
       console.error('Error saving client:', error);
+      showToast('error', 'Error al guardar el cliente');
     }
   };
 

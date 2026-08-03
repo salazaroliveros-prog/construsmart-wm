@@ -13,6 +13,8 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
+import { projectSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
+import { getCurrentUserId } from '@/lib/auth/userId';
 
 interface ProjectFormData {
   code: string;
@@ -212,8 +214,34 @@ export default function ProjectManager() {
     setSaveLoading(true);
 
     try {
+      // Validar con Zod schema
+      const validation = validateSchema(projectSchema, formData);
+      if (!validation.success) {
+        const errorMessages = formatValidationErrors(validation.errors);
+        showToast('error', errorMessages.join(', '));
+        setSaveLoading(false);
+        return;
+      }
+
+      // Validar unicidad de código (solo para nuevos proyectos)
+      if (!editingProject) {
+        const existingProject = await offlineDB.projects
+          .where('code')
+          .equals(formData.code)
+          .first();
+        if (existingProject) {
+          showToast('error', 'El código de proyecto ya existe');
+          setSaveLoading(false);
+          return;
+        }
+      }
+
+      // Obtener user_id para tenencia
+      const userId = await getCurrentUserId();
+
       const projectData: LocalProject = {
         id: editingProject?.id || generateId(),
+        user_id: userId || undefined,
         ...formData,
         sync_status: editingProject
           ? resolveSyncStatus({ isNewRecord: false, previousStatus: editingProject.sync_status, isOnline })

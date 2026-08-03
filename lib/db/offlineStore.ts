@@ -3,6 +3,7 @@ import Dexie, { Table } from 'dexie';
 // Database Interfaces matching Supabase schema
 export interface LocalProject {
   id?: string;
+  user_id?: string; // For tenant isolation
   code: string;
   name: string;
   client_name: string;
@@ -27,6 +28,7 @@ export interface LocalProject {
 
 export interface LocalBudget {
   id?: string;
+  user_id?: string; // For tenant isolation
   project_id: string;
   version: number;
   direct_cost: number;
@@ -42,6 +44,7 @@ export interface LocalBudget {
 
 export interface LocalBudgetItem {
   id?: string;
+  user_id?: string; // For tenant isolation
   budget_id: string;
   parent_id?: string;
   item_order: number;
@@ -87,6 +90,7 @@ export interface LocalBudgetItem {
 
 export interface LocalFinancialTransaction {
   id?: string;
+  user_id?: string; // For tenant isolation
   project_id?: string;
   type: 'income' | 'expense';
   category: 'materiales' | 'mano_de_obra' | 'herramienta' | 'sub_contrato' |
@@ -105,6 +109,7 @@ export interface LocalFinancialTransaction {
 
 export interface LocalPayrollRecord {
   id?: string;
+  user_id?: string; // For tenant isolation
   project_id?: string;
   employee_id: string;
   period_start: string;
@@ -128,6 +133,7 @@ export interface LocalPayrollRecord {
 
 export interface LocalPayrollEmployee {
   id?: string;
+  user_id?: string; // For tenant isolation
   name: string;
   position: string;
   daily_rate: number;
@@ -142,6 +148,7 @@ export interface LocalPayrollEmployee {
 
 export interface LocalWarehouseStock {
   id?: string;
+  user_id?: string; // For tenant isolation
   project_id?: string;
   item_code: string;
   description: string;
@@ -156,6 +163,7 @@ export interface LocalWarehouseStock {
 
 export interface LocalClient {
   id?: string;
+  user_id?: string; // For tenant isolation
   code: string;
   name: string;
   company_name?: string;
@@ -172,6 +180,7 @@ export interface LocalClient {
 
 export interface LocalProjectLog {
   id?: string;
+  user_id?: string; // For tenant isolation
   project_id: string;
   log_date: string;
   activity_type: 'progress' | 'issue' | 'milestone' | 'note';
@@ -187,6 +196,7 @@ export interface LocalProjectLog {
 
 export interface LocalSupplier {
   id?: string;
+  user_id?: string; // For tenant isolation
   code: string;
   name: string;
   contact_person: string;
@@ -203,6 +213,7 @@ export interface LocalSupplier {
 
 export interface LocalPurchaseOrder {
   id?: string;
+  user_id?: string; // For tenant isolation
   code: string;
   supplier_id: string;
   project_id?: string;
@@ -218,6 +229,7 @@ export interface LocalPurchaseOrder {
 
 export interface LocalPurchaseOrderItem {
   id?: string;
+  user_id?: string; // For tenant isolation
   purchase_order_id: string;
   item_code: string;
   description: string;

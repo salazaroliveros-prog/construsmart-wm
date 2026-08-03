@@ -16,6 +16,8 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
+import { financialTransactionSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
+import { getCurrentUserId } from '@/lib/auth/userId';
 
 interface TransactionFormData {
   project_id?: string;
@@ -302,9 +304,23 @@ export default function FinanceManager() {
     setSaveLoading(true);
 
     try {
+      // Validar con Zod schema
+      const validation = validateSchema(financialTransactionSchema, formData);
+      if (!validation.success) {
+        const errorMessages = formatValidationErrors(validation.errors);
+        showToast('error', errorMessages.join(', '));
+        setSaveLoading(false);
+        return;
+      }
+
       const totalCost = formData.quantity * formData.unit_cost;
+      
+      // Obtener user_id para tenencia
+      const userId = await getCurrentUserId();
+
       const transactionData: LocalFinancialTransaction = {
         id: editingTransaction?.id || generateId(),
+        user_id: userId || undefined,
         project_id: formData.project_id,
         type: formData.type,
         category: formData.category,
@@ -336,9 +352,10 @@ export default function FinanceManager() {
         const { error } = await supabase.from('financial_transactions').upsert([transactionData]);
         if (error) {
           await offlineDB.financialTransactions.update(transactionData.id!, { sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }) });
-          throw error;
+          showToast('warning', 'Transacción guardada localmente; pendiente de sync');
+        } else {
+          await offlineDB.financialTransactions.update(transactionData.id!, { sync_status: 'synced' });
         }
-        await offlineDB.financialTransactions.update(transactionData.id!, { sync_status: 'synced' });
       }
     } catch (error) {
       console.error('Error saving transaction:', error);

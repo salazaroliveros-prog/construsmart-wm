@@ -70,35 +70,39 @@ export async function cascadeLocalDelete(
       const budgets = await db.budgets.where('project_id').equals(id).toArray();
       const budgetIds = budgets.map((b) => b.id).filter((bid): bid is string => typeof bid === 'string');
 
+      // SET NULL en lugar de DELETE para alinear con comportamiento del servidor
       await Promise.all([
-        // delete children linked directly to project
-        db.financialTransactions.where('project_id').equals(id).delete(),
-        db.payrollRecords.where('project_id').equals(id).delete(),
-        db.warehouseStock.where('project_id').equals(id).delete(),
-        db.projectLogs.where('project_id').equals(id).delete(),
-        // delete purchase orders and their items
-        db.purchaseOrders.where('project_id').equals(id).delete(),
-        ...purchaseOrderIds.map((poId) => db.purchaseOrderItems.where('purchase_order_id').equals(poId).delete()),
-        // delete budgets and their items
-        db.budgets.where('project_id').equals(id).delete(),
-        ...budgetIds.map((bid) => db.budgetItems.where('budget_id').equals(bid).delete()),
+        db.financialTransactions.where('project_id').equals(id).modify({ project_id: null }),
+        db.payrollRecords.where('project_id').equals(id).modify({ project_id: null }),
+        db.warehouseStock.where('project_id').equals(id).modify({ project_id: null }),
+        db.projectLogs.where('project_id').equals(id).delete(), // Logs sí se borran (CASCADE en servidor)
+        db.purchaseOrders.where('project_id').equals(id).modify({ project_id: null }),
+        ...purchaseOrderIds.map((poId) => db.purchaseOrderItems.where('purchase_order_id').equals(poId).delete()), // Items de PO se borran (CASCADE en servidor)
+        db.budgets.where('project_id').equals(id).delete(), // Budgets se borran (CASCADE en servidor)
+        ...budgetIds.map((bid) => db.budgetItems.where('budget_id').equals(bid).delete()), // Items de budget se borran (CASCADE en servidor)
       ]);
     },
     suppliers: async (id: string) => {
       const orders = await db.purchaseOrders.where('supplier_id').equals(id).toArray();
       const orderIds = orders.map((o) => o.id).filter((oid): oid is string => typeof oid === 'string');
+      
+      // SET NULL en lugar de DELETE para alinear con comportamiento del servidor (RESTRICT en servidor)
+      // Nota: Como el servidor tiene RESTRICT, no podemos mantener las POs, así que las borramos localmente
       await Promise.all([
         ...orderIds.map((oid) => db.purchaseOrderItems.where('purchase_order_id').equals(oid).delete()),
         db.purchaseOrders.where('supplier_id').equals(id).delete(),
       ]);
     },
     purchase_orders: async (id: string) => {
+      // Items de PO se borran (CASCADE en servidor)
       await db.purchaseOrderItems.where('purchase_order_id').equals(id).delete();
     },
     budgets: async (id: string) => {
+      // Items de budget se borran (CASCADE en servidor)
       await db.budgetItems.where('budget_id').equals(id).delete();
     },
     payroll_employees: async (id: string) => {
+      // Registros de nómina se borran (CASCADE en servidor)
       await db.payrollRecords.where('employee_id').equals(id).delete();
     },
   };

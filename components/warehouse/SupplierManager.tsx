@@ -11,6 +11,8 @@ import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
+import { supplierSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
+import { getCurrentUserId } from '@/lib/auth/userId';
 
 export default function SupplierManager() {
   const { showToast } = useToast();
@@ -72,16 +74,42 @@ export default function SupplierManager() {
     e.preventDefault();
 
     try {
+      // Validar con Zod schema
+      const validation = validateSchema(supplierSchema, formData);
+      if (!validation.success) {
+        const errorMessages = formatValidationErrors(validation.errors);
+        showToast('error', errorMessages.join(', '));
+        return;
+      }
+
+      // Validar unicidad de código (solo para nuevos proveedores)
+      if (!editingSupplier) {
+        const existingSupplier = await offlineDB.suppliers
+          .where('code')
+          .equals(formData.code)
+          .first();
+        if (existingSupplier) {
+          showToast('error', 'El código de proveedor ya existe');
+          return;
+        }
+      }
+
       const now = new Date().toISOString();
+      
+      // Obtener user_id para tenencia
+      const userId = await getCurrentUserId();
 
       if (editingSupplier) {
         await offlineDB.suppliers.update(editingSupplier.id!, {
+          user_id: userId || undefined,
           ...formData,
           updated_at: now,
           sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: editingSupplier?.sync_status ?? 'synced', isOnline }),
         });
+        showToast('success', 'Proveedor actualizado exitosamente');
       } else {
         const newSupplier: LocalSupplier = {
+          user_id: userId || undefined,
           ...formData,
           code: formData.code || `SUP-${Date.now()}`,
           created_at: now,
@@ -89,6 +117,7 @@ export default function SupplierManager() {
           sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }),
         } as LocalSupplier;
         await offlineDB.suppliers.add(newSupplier);
+        showToast('success', 'Proveedor creado exitosamente');
       }
 
       setShowForm(false);
@@ -105,7 +134,7 @@ export default function SupplierManager() {
         notes: '',
       });
       loadSuppliers();
-} catch (error) {
+    } catch (error) {
       console.error('Error saving supplier:', error);
       showToast('error', 'Error al guardar proveedor');
     }

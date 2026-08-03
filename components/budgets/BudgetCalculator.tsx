@@ -429,10 +429,11 @@ export default function BudgetCalculator() {
         }
       }
 
-      // Enviar materiales al almacén de forma centralizada (solo en el primer
-      // guardado para evitar inflar el stock en ediciones posteriores)
-      if (isFirstSave && warehouseInputs.length > 0) {
+      // Enviar materiales al almacén de forma centralizada
+      // Ahora envía materiales incrementales en cada guardado (upsert para evitar duplicados)
+      if (warehouseInputs.length > 0) {
         await sendBudgetMaterialsToWarehouse(warehouseInputs);
+        showToast('info', `${warehouseInputs.length} materiales sincronizados con el almacén`);
       }
 
       const project = projects.find((p) => p.id === selectedProject);

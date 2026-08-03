@@ -14,6 +14,8 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
+import { payrollEmployeeSchema, payrollRecordSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
+import { getCurrentUserId } from '@/lib/auth/userId';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -289,7 +291,20 @@ const checkOnlineStatus = () => {
     setSaveLoading(true);
 
     try {
+      // Validar con Zod schema
+      const validation = validateSchema(payrollEmployeeSchema, employeeFormData);
+      if (!validation.success) {
+        const errorMessages = formatValidationErrors(validation.errors);
+        showToast('error', errorMessages.join(', '));
+        setSaveLoading(false);
+        return;
+      }
+
+      // Obtener user_id para tenencia
+      const userId = await getCurrentUserId();
+
       const employeeData: LocalPayrollEmployee = {
+        user_id: userId || undefined,
         ...employeeFormData,
         sync_status: editingEmployee
           ? resolveSyncStatus({ isNewRecord: false, previousStatus: editingEmployee.sync_status, isOnline })
@@ -326,6 +341,9 @@ const checkOnlineStatus = () => {
             await offlineDB.payrollEmployees.update(editingEmployee.id!, {
               sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: editingEmployee.sync_status, isOnline }),
             });
+            showToast('warning', 'Empleado actualizado localmente; pendiente de sync');
+          } else {
+            await offlineDB.payrollEmployees.update(editingEmployee.id!, { sync_status: 'synced' });
           }
         }
       } else {
@@ -353,6 +371,7 @@ const checkOnlineStatus = () => {
             await offlineDB.payrollEmployees.update(id, {
               sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }),
             });
+            showToast('warning', 'Empleado creado localmente; pendiente de sync');
           } else if (data) {
             await offlineDB.payrollEmployees.update(id, {
               id: data.id,
@@ -442,6 +461,15 @@ const checkOnlineStatus = () => {
     setSaveLoading(true);
 
     try {
+      // Validar con Zod schema
+      const validation = validateSchema(payrollRecordSchema, payrollFormData);
+      if (!validation.success) {
+        const errorMessages = formatValidationErrors(validation.errors);
+        showToast('error', errorMessages.join(', '));
+        setSaveLoading(false);
+        return;
+      }
+
       const employee = employees.find(e => e.id === payrollFormData.employee_id);
       if (!employee) return;
 
@@ -451,7 +479,11 @@ const checkOnlineStatus = () => {
       const benefits = calculateGuatemalanBenefits(grossSalary);
       const netSalary = grossSalary - benefits.igss - payrollFormData.deductions;
 
+      // Obtener user_id para tenencia
+      const userId = await getCurrentUserId();
+
       const payrollData: LocalPayrollRecord = {
+        user_id: userId || undefined,
         project_id: payrollFormData.project_id,
         employee_id: payrollFormData.employee_id,
         period_start: payrollFormData.period_start,
@@ -469,17 +501,17 @@ const checkOnlineStatus = () => {
         vacaciones_provision: benefits.vacaciones,
         net_salary: netSalary,
         sync_status: editingPayroll
-          ? (editingPayroll.sync_status === 'synced' ? (isOnline ? 'synced' : 'updated_offline') : 'created_offline')
-          : 'created_offline',
+          ? resolveSyncStatus({ isNewRecord: false, previousStatus: editingPayroll.sync_status, isOnline })
+          : resolveSyncStatus({ isNewRecord: true, isOnline }),
         created_at: new Date().toISOString(),
       };
 
       if (editingPayroll) {
-        const wasSynced = editingPayroll.sync_status === 'synced';
+        const wasSynced = normalizeSyncStatus(editingPayroll.sync_status) === 'synced';
 
         await offlineDB.payrollRecords.update(editingPayroll.id!, {
           ...payrollData,
-          sync_status: wasSynced ? (isOnline ? 'synced' : 'updated_offline') : 'created_offline',
+          sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: editingPayroll.sync_status, isOnline }),
         });
 
         if (isOnline && wasSynced && supabase) {
@@ -493,6 +525,9 @@ const checkOnlineStatus = () => {
             await offlineDB.payrollRecords.update(editingPayroll.id!, {
               sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: editingPayroll.sync_status, isOnline }),
             });
+            showToast('warning', 'Registro de nómina actualizado localmente; pendiente de sync');
+          } else {
+            await offlineDB.payrollRecords.update(editingPayroll.id!, { sync_status: 'synced' });
           }
         }
       } else {
@@ -508,6 +543,7 @@ const checkOnlineStatus = () => {
           if (error) {
             console.error('Error creating payroll record in Supabase:', error);
             await offlineDB.payrollRecords.update(id, { sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }) });
+            showToast('warning', 'Registro de nómina creado localmente; pendiente de sync');
           } else if (data) {
             await offlineDB.payrollRecords.update(id, { id: data.id, sync_status: 'synced' });
           }

@@ -1,43 +1,57 @@
-import { cookies } from 'next/headers';
+// ============================================================================
+// SUPABASE SERVER CLIENT
+// CONSTRUCTORA WM/M&S - "CONSTRUYENDO EL FUTURO"
+//
+// Cliente de Supabase para usar en Server Actions y componentes de servidor.
+// Este cliente incluye el user_id automáticamente para tenencia por auth.uid()
+// ============================================================================
+
 import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 /**
- * CONSTRUCTORA WM/M&S - SUPABASE SERVER CLIENT
- * "CONSTRUYENDO EL FUTURO"
- *
- * Cliente seguro para Server Components, Server Actions y Route Handlers.
- * Usa cookies de Next.js para gestionar la sesión de Supabase (SSR).
- * Requiere variables de entorno:
- *   - NEXT_PUBLIC_SUPABASE_URL
- *   - NEXT_PUBLIC_SUPABASE_ANON_KEY
+ * Crea un cliente de Supabase para usar en el servidor (Server Actions, RSC, etc.)
+ * Incluye automáticamente el user_id para tenencia por auth.uid()
  */
-export async function createSupabaseServerClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
+export function createSupabaseServerClient() {
+  const cookieStore = cookies();
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-      'Variables de entorno NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY son requeridas.'
-    );
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+      },
+    }
+  );
+}
+
+/**
+ * Obtiene el user_id del usuario autenticado en el servidor
+ * Retorna null si no hay usuario autenticado
+ */
+export async function getServerUserId(): Promise<string | null> {
+  const supabase = createSupabaseServerClient();
+  const { data: { user }, error } = await supabase.auth.getUser();
+  
+  if (error) {
+    console.error('Error getting server user:', error);
+    return null;
   }
+  
+  return user?.id || null;
+}
 
-  const cookieStore = await cookies();
-
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll();
-      },
-      setAll(cookiesToSet) {
-        try {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
-        } catch {
-          // Si se llama desde un Server Component, solo se puede leer
-          // (la sesión se persistirá en el siguiente render/Server Action).
-        }
-      },
-    },
-  });
+/**
+ * Helper para verificar si el usuario está autenticado en el servidor
+ * Lanza un error si no está autenticado
+ */
+export async function requireServerAuth(): Promise<string> {
+  const userId = await getServerUserId();
+  if (!userId) {
+    throw new Error('Usuario no autenticado');
+  }
+  return userId;
 }

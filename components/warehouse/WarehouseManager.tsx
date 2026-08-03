@@ -14,6 +14,8 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
+import { warehouseStockSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
+import { getCurrentUserId } from '@/lib/auth/userId';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -225,7 +227,34 @@ export default function WarehouseManager() {
     setSaveLoading(true);
 
     try {
+      // Validar con Zod schema
+      const validation = validateSchema(warehouseStockSchema, formData);
+      if (!validation.success) {
+        const errorMessages = formatValidationErrors(validation.errors);
+        showToast('error', errorMessages.join(', '));
+        setSaveLoading(false);
+        return;
+      }
+
+      // Validar unicidad de item_code dentro del mismo proyecto
+      if (!editingItem) {
+        const existingItem = await offlineDB.warehouseStock
+          .where('item_code')
+          .equals(formData.item_code)
+          .and(item => item.project_id === formData.project_id)
+          .first();
+        if (existingItem) {
+          showToast('error', 'El código de item ya existe en este proyecto');
+          setSaveLoading(false);
+          return;
+        }
+      }
+
+      // Obtener user_id para tenencia
+      const userId = await getCurrentUserId();
+
       const itemData: LocalWarehouseStock = {
+        user_id: userId || undefined,
         ...formData,
         sync_status: resolveSyncStatus({ isNewRecord: !editingItem, isOnline, previousStatus: editingItem?.sync_status }),
       };
@@ -259,6 +288,9 @@ export default function WarehouseManager() {
             await offlineDB.warehouseStock.update(editingItem.id!, {
               sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: editingItem?.sync_status ?? 'synced', isOnline }),
             });
+            showToast('warning', 'Material actualizado localmente; pendiente de sync');
+          } else {
+            await offlineDB.warehouseStock.update(editingItem.id!, { sync_status: 'synced' });
           }
         }
       } else {
@@ -286,6 +318,7 @@ export default function WarehouseManager() {
             await offlineDB.warehouseStock.update(id, {
               sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }),
             });
+            showToast('warning', 'Material creado localmente; pendiente de sync');
           } else if (data) {
             await offlineDB.warehouseStock.update(id, {
               id: data.id,
@@ -329,6 +362,19 @@ export default function WarehouseManager() {
       const newStock = item.current_stock + adjustment;
       if (newStock < 0) {
         showToast('warning', 'El stock no puede ser negativo');
+        return;
+      }
+
+      // Confirmación para ajustes significativos (> 10% del stock actual)
+      const percentageChange = Math.abs(adjustment) / (item.current_stock || 1) * 100;
+      if (percentageChange > 10) {
+        setDeleteConfirm({
+          show: true,
+          item,
+          action: 'adjust',
+          adjustment,
+          newStock
+        });
         return;
       }
 
