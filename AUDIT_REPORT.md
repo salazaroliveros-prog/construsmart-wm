@@ -10,12 +10,12 @@
 
 | Severity | Total | Fixed | Pending |
 |----------|-------|-------|---------|
-| **Critical** | 3 | 2 | 1 |
-| **Major** | 4 | 3 | 1 |
+| **Critical** | 3 | 3 | 0 |
+| **Major** | 4 | 4 | 0 |
 | **Minor** | 5 | 5 | 0 |
 | **Type Safety** | 2 | 0 | 2 |
 | **Visual/UI** | 2 | 0 | 2 |
-| **TOTAL** | 16 | 10 | 6 |
+| **TOTAL** | 16 | 12 | 4 |
 
 ---
 
