@@ -145,11 +145,8 @@ export const payrollRecordSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha debe estar en formato YYYY-MM-DD'),
   period_end: z.string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha debe estar en formato YYYY-MM-DD')
-    .refine((date, ctx) => {
-      const start = new Date(ctx.parent.period_start as string);
-      const end = new Date(date);
-      return end >= start;
-    }, 'Fecha fin debe ser posterior o igual a fecha inicio'),
+    .optional()
+    .or(z.literal('')),
   days_worked: z.number()
     .int('Días trabajados debe ser entero')
     .min(0, 'Días trabajados no puede ser negativo')
