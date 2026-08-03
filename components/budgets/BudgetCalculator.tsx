@@ -14,6 +14,7 @@ import {
 } from '@/lib/calculators/apuCalculator';
 import { RENGLONES_BY_TYPOLOGY } from '@/lib/data/apuRenglones';
 import { RENGLONES_BY_TYPOLOGY_DETAILED } from '@/lib/data/apuRenglonesDetailed';
+import { APU_LIBRARY_BY_TYPOLOGY } from '@/lib/data/apuLibrary';
 import { ProjectTypology, APUFormulaParams, APUResult, TYPOLOGY_LABELS, MATERIAL_FACTORS } from '@/lib/types/apu';
 import type { APURenglon } from '@/lib/types/apu';
 import { offlineDB, LocalProject, LocalBudgetItem, LocalClient } from '@/lib/db/offlineStore';
@@ -876,6 +877,42 @@ export default function BudgetCalculator() {
               <option value="moderate">Moderado (Q.3,500-4,000/m²)</option>
               <option value="premium">Premium (Q.4,000-5,000/m²)</option>
             </select>
+            <Tooltip content="Cargar biblioteca APU estándar de 40 items para esta tipología">
+              <button
+                onClick={() => {
+                  const library = APU_LIBRARY_BY_TYPOLOGY[selectedTypology];
+                  library.forEach((renglon) => {
+                    const apuResult = calculateAPU({
+                      theoreticalQuantity: 100,
+                      wastePercentage: renglon.materialFormula?.wastePercentage || 5,
+                      volumetricFactor: 1.05,
+                      crewDailySalary: renglon.laborFormula?.dailySalary || 350,
+                      dailyPerformance: renglon.laborFormula?.dailyPerformance || 25,
+                      indirectPercentage: 15,
+                      materialUnitCost: renglon.materialFormula?.materialUnitCost || 45,
+                      machineryCost: renglon.machineryFormula?.hourlyCost || 0,
+                    });
+                    const newItem: BudgetItem = {
+                      id: Date.now().toString() + Math.random().toString(),
+                      code: renglon.code,
+                      description: renglon.description,
+                      unit: renglon.unit,
+                      quantity: 100,
+                      unitCost: apuResult.totalCost / 100,
+                      totalCost: apuResult.totalCost,
+                      timeRequired: apuResult.totalCost / (renglon.laborFormula?.dailySalary || 350),
+                      apuResult,
+                    };
+                    setItems(prev => [...prev, newItem]);
+                  });
+                  showToast('success', `Cargados ${library.length} renglones APU de la biblioteca estándar`);
+                }}
+                className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+              >
+                <FolderOpen className="w-4 h-4" />
+                Cargar Biblioteca
+              </button>
+            </Tooltip>
             <Tooltip content="Abrir calculadora de Análisis de Precios Unitarios">
               <button
                 onClick={() => setShowAPUCalculator(!showAPUCalculator)}
