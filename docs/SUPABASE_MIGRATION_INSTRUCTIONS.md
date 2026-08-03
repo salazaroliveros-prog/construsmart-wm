@@ -31,27 +31,27 @@ Las siguientes tablas han sido creadas exitosamente en la base de datos remota:
 ### 1. `clients` (CRM)
 - id, code, name, client_type, contact_person, phone, email, address, city, tax_id, notes
 - Índices: code, name, type, sync_status
-- RLS Policies: authenticated users pueden CRUD
+- RLS Policies: authenticated users pueden CRUD, y el cliente también requiere acceso anon para sincronización offline/Realtime.
 
 ### 2. `project_logs` (Bitácora)
 - id, project_id, activity_type, description, physical_progress, financial_progress, log_date, created_by, notes
 - Índices: project_id, activity_type, log_date, sync_status
-- RLS Policies: authenticated users pueden CRUD
+- RLS Policies: authenticated users pueden CRUD, y el cliente también requiere acceso anon para sincronización offline/Realtime.
 
 ### 3. `suppliers` (Proveedores)
 - id, code, name, contact_person, phone, email, address, city, payment_terms, notes
 - Índices: code, name, sync_status
-- RLS Policies: authenticated users pueden CRUD
+- RLS Policies: authenticated users pueden CRUD, y el cliente también requiere acceso anon para sincronización offline/Realtime.
 
 ### 4. `purchase_orders` (Órdenes de Compra)
 - id, code, supplier_id, project_id, order_date, expected_delivery_date, status, total_amount, notes
 - Índices: code, supplier_id, project_id, status, order_date, sync_status
-- RLS Policies: authenticated users pueden CRUD
+- RLS Policies: authenticated users pueden CRUD, y el cliente también requiere acceso anon para sincronización offline/Realtime.
 
 ### 5. `purchase_order_items` (Items de Órdenes)
 - id, purchase_order_id, item_code, description, quantity, unit, unit_price, total_price, notes
 - Índices: purchase_order_id, item_code, sync_status
-- RLS Policies: authenticated users pueden CRUD
+- RLS Policies: authenticated users pueden CRUD, y el cliente también requiere acceso anon para sincronización offline/Realtime.
 
 ---
 
@@ -74,7 +74,7 @@ Para verificar manualmente que las tablas existen:
 3. **Verificar Estructura:**
    - Haz clic en cada tabla para ver su estructura
    - Confirma que los índices están creados
-   - Confirma que las RLS policies están activas
+   - Confirma que las RLS policies están activas y, si corresponde, que las tablas están incluidas en la publicación `supabase_realtime`.
 
 ---
 
@@ -104,27 +104,27 @@ Si en el futuro necesitas ejecutar otra migración manualmente:
 ### 1. `clients` (CRM)
 - id, code, name, client_type, contact_person, phone, email, address, city, tax_id, notes
 - Índices: code, name, type, sync_status
-- RLS Policies: authenticated users pueden CRUD
+- RLS Policies: authenticated users pueden CRUD, y el cliente también requiere acceso anon para sincronización offline/Realtime.
 
 ### 2. `project_logs` (Bitácora)
 - id, project_id, activity_type, description, physical_progress, financial_progress, log_date, created_by, notes
 - Índices: project_id, activity_type, log_date, sync_status
-- RLS Policies: authenticated users pueden CRUD
+- RLS Policies: authenticated users pueden CRUD, y el cliente también requiere acceso anon para sincronización offline/Realtime.
 
 ### 3. `suppliers` (Proveedores)
 - id, code, name, contact_person, phone, email, address, city, payment_terms, notes
 - Índices: code, name, sync_status
-- RLS Policies: authenticated users pueden CRUD
+- RLS Policies: authenticated users pueden CRUD, y el cliente también requiere acceso anon para sincronización offline/Realtime.
 
 ### 4. `purchase_orders` (Órdenes de Compra)
 - id, code, supplier_id, project_id, order_date, expected_delivery_date, status, total_amount, notes
 - Índices: code, supplier_id, project_id, status, order_date, sync_status
-- RLS Policies: authenticated users pueden CRUD
+- RLS Policies: authenticated users pueden CRUD, y el cliente también requiere acceso anon para sincronización offline/Realtime.
 
 ### 5. `purchase_order_items` (Items de Órdenes)
 - id, purchase_order_id, item_code, description, quantity, unit, unit_price, total_price, notes
 - Índices: purchase_order_id, item_code, sync_status
-- RLS Policies: authenticated users pueden CRUD
+- RLS Policies: authenticated users pueden CRUD, y el cliente también requiere acceso anon para sincronización offline/Realtime.
 
 ---
 

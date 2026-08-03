@@ -126,14 +126,17 @@ export default function Dashboard() {
   }, [isMounted, syncTabFromUrl]);
 
   const handleTabChange = useCallback((tabId: string) => {
-    if (tabId !== activeTab) {
-      setIsTabLoading(true);
-      setActiveTab(tabId);
-      setTabIndex(getTabIndex(tabId));
-      // Persistir la tab en la URL sin recargar (shallow routing)
-      router.replace(`/?tab=${tabId}`, { scroll: false });
-      setTimeout(() => setIsTabLoading(false), 150);
-    }
+    if (tabId === activeTab) return;
+
+    setIsTabLoading(true);
+    setActiveTab(tabId);
+    setTabIndex(getTabIndex(tabId));
+    router.replace(`/?tab=${tabId}`, { scroll: false });
+
+    window.clearTimeout((window as Window & { __tabLoadingTimer?: number }).__tabLoadingTimer);
+    (window as Window & { __tabLoadingTimer?: number }).__tabLoadingTimer = window.setTimeout(() => {
+      setIsTabLoading(false);
+    }, 150);
   }, [activeTab, router]);
 
   const loadRecentActivity = async () => {
@@ -311,26 +314,29 @@ return (
 
         {/* Tab navigation - right below header, centered */}
         <Suspense fallback={<div className="py-2 text-white/60 text-xs text-center">Cargando…</div>}>
-          <nav className="flex-shrink-0 bg-slate-900/60 border-b border-white/10 overflow-x-auto overflow-anchor-none">
-            <div className="flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5">
+          <nav
+            className="flex-shrink-0 bg-slate-900/60 border-b border-white/10"
+            aria-label="Módulos principales"
+          >
+            <div
+              className="flex items-center gap-1 overflow-x-auto px-2 py-1.5 sm:gap-2 sm:px-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              style={{ touchAction: 'pan-x', scrollSnapType: 'x proximity' }}
+            >
               {NAVIGATION_TABS.map(tab => {
                 const isTabActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => {
-                      if (tab.id !== activeTab) {
-                        setIsTabLoading(true);
-                        setActiveTab(tab.id);
-                        setTimeout(() => setIsTabLoading(false), 150);
-                      }
-                    }}
-                    className={`px-4 sm:px-4 py-3 sm:py-1.5 min-h-[44px] rounded-lg transition-all whitespace-nowrap text-xs sm:text-sm font-medium ${
+                    type="button"
+                    onClick={() => handleTabChange(tab.id)}
+                    className={`shrink-0 min-h-[44px] rounded-lg border px-3 py-2.5 text-[11px] font-medium transition-all duration-200 whitespace-nowrap sm:px-4 sm:text-sm ${
                       isTabActive
-                        ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/40 text-white'
-                        : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                        ? 'border-cyan-500/40 bg-gradient-to-r from-cyan-500/20 to-violet-500/20 text-white shadow-[0_0_0_1px_rgba(34,211,238,0.18)]'
+                        : 'border-transparent text-gray-400 hover:bg-white/5 hover:text-white'
                     }`}
                     aria-current={isTabActive ? 'page' : undefined}
+                    title={tab.label}
+                    style={{ scrollSnapAlign: 'start' }}
                   >
                     {tab.label}
                   </button>

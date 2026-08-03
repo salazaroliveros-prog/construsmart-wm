@@ -25,7 +25,7 @@ Esto instalará:
 1. Ir a: https://supabase.com/dashboard/project/yibjsruoxjlgdnkgylld/editor
 2. Click en **"SQL Editor"** en el menú lateral
 3. Click en **"New query"**
-4. Copiar y pegar el contenido de `supabase/migrations/APPLY_MANUAL.sql`
+4. Copiar y pegar el contenido de los archivos de migración que están en `supabase/migrations/`
 5. Click en **"Run"** para ejecutar
 6. Verificar que aparezca el mensaje de éxito
 
@@ -40,6 +40,8 @@ supabase db push
 ```
 
 Si falla, usar la Opción A.
+
+> Nota: la forma recomendada en este proyecto es mantener las migraciones actualizadas en `supabase/migrations/` y ejecutar `supabase db push` desde la raíz del proyecto.
 
 ---
 
