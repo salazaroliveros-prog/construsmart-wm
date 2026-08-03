@@ -13,8 +13,8 @@ import { cookies } from 'next/headers';
  * Crea un cliente de Supabase para usar en el servidor (Server Actions, RSC, etc.)
  * Incluye automáticamente el user_id para tenencia por auth.uid()
  */
-export function createSupabaseServerClient() {
-  const cookieStore = cookies();
+export async function createSupabaseServerClient() {
+  const cookieStore = await cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -34,7 +34,7 @@ export function createSupabaseServerClient() {
  * Retorna null si no hay usuario autenticado
  */
 export async function getServerUserId(): Promise<string | null> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data: { user }, error } = await supabase.auth.getUser();
   
   if (error) {
