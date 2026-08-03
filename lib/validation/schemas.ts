@@ -402,9 +402,9 @@ export function validateSchema<T>(
   }
   
   const errors: Record<string, string> = {};
-  result.error.errors.forEach((error) => {
-    const path = error.path.join('.');
-    errors[path] = error.message;
+  result.error.issues.forEach((issue) => {
+    const path = issue.path.join('.');
+    errors[path] = issue.message;
   });
   
   return { success: false, errors };
