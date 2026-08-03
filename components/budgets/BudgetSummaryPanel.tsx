@@ -7,6 +7,8 @@
 // ============================================================================
 
 import { LocalBudgetSummary, formatQuetzales } from '@/lib/calculators/apuCalculator';
+import { checkBudgetMarginWarning, formatGTQ, GUATEMALA_CONFIG } from '@/lib/config/app.config';
+import { AlertTriangle, TrendingUp } from 'lucide-react';
 
 interface BudgetSummaryPanelProps {
   summary: LocalBudgetSummary;
@@ -16,6 +18,8 @@ interface BudgetSummaryPanelProps {
   onIndirectChange: (value: number) => void;
   onContingencyChange: (value: number) => void;
   onProfitChange: (value: number) => void;
+  projectAreaM2?: number;
+  qualityLevel?: 'basic' | 'moderate' | 'premium';
 }
 
 export default function BudgetSummaryPanel({
@@ -26,10 +30,25 @@ export default function BudgetSummaryPanel({
   onIndirectChange,
   onContingencyChange,
   onProfitChange,
+  projectAreaM2,
+  qualityLevel = 'moderate',
 }: BudgetSummaryPanelProps) {
+  // Calculate budget margin warning if project area is available
+  const marginWarning = projectAreaM2 && projectAreaM2 > 0
+    ? checkBudgetMarginWarning(projectAreaM2, summary.total, qualityLevel)
+    : null;
+
   return (
     <div className="glass-panel rounded-2xl p-4 sm:p-6">
-      <h2 className="text-lg font-semibold text-white mb-4">Resumen del Presupuesto</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-white">Resumen del Presupuesto</h2>
+        {marginWarning && marginWarning.exceeds && (
+          <div className="flex items-center gap-2 bg-amber-500/20 text-amber-300 px-3 py-1.5 rounded-lg border border-amber-500/30">
+            <AlertTriangle className="w-4 h-4" />
+            <span className="text-xs font-medium">Excede Matriz Guatemala</span>
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <div>
@@ -93,6 +112,58 @@ export default function BudgetSummaryPanel({
           </p>
         </div>
       </div>
+
+      {/* Budget Margin Warning Section */}
+      {projectAreaM2 && projectAreaM2 > 0 && marginWarning && (
+        <div className={`mt-4 p-4 rounded-lg border ${
+          marginWarning.exceeds 
+            ? 'bg-amber-500/10 border-amber-500/30' 
+            : 'bg-emerald-500/10 border-emerald-500/30'
+        }`}>
+          <div className="flex items-start gap-3">
+            <div className={`p-2 rounded-lg ${
+              marginWarning.exceeds ? 'bg-amber-500/20' : 'bg-emerald-500/20'
+            }`}>
+              {marginWarning.exceeds ? (
+                <AlertTriangle className="w-5 h-5 text-amber-400" />
+              ) : (
+                <TrendingUp className="w-5 h-5 text-emerald-400" />
+              )}
+            </div>
+            <div className="flex-1">
+              <h4 className={`font-semibold mb-1 ${
+                marginWarning.exceeds ? 'text-amber-300' : 'text-emerald-300'
+              }`}>
+                {marginWarning.exceeds 
+                  ? 'Alerta: Presupuesto Excede Matriz Guatemala' 
+                  : 'Presupuesto Dentro de Rango Aceptable'}
+              </h4>
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-white/70">Costo por m²:</span>
+                  <span className={`font-medium ${
+                    marginWarning.exceeds ? 'text-amber-300' : 'text-emerald-300'
+                  }`}>
+                    {formatGTQ(summary.total / projectAreaM2)}/m²
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/70">Rango Recomendado:</span>
+                  <span className="text-white">{marginWarning.recommendedMargin}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/70">Margen Actual:</span>
+                  <span className={`font-medium ${
+                    marginWarning.exceeds ? 'text-amber-300' : 'text-emerald-300'
+                  }`}>
+                    {marginWarning.marginPercentage.toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

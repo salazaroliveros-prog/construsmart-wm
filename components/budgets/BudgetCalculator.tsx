@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Calculator, Plus, Save, Download, FolderOpen, Building2, Map as MapIcon, AlertTriangle } from 'lucide-react';
+import { Calculator, Plus, Save, Download, FolderOpen, Building2, Map as MapIcon, AlertTriangle, Wallet, TrendingUp, CreditCard } from 'lucide-react';
 import { useMaterialAlertContext } from '@/context/MaterialAlertContext';
 import { calculateSlab, SlabDimensions, calculateSlabCost, SlabCostParams } from '@/lib/calculators/slabCalculators';
 import {
@@ -16,7 +16,7 @@ import { RENGLONES_BY_TYPOLOGY } from '@/lib/data/apuRenglones';
 import { RENGLONES_BY_TYPOLOGY_DETAILED } from '@/lib/data/apuRenglonesDetailed';
 import { ProjectTypology, APUFormulaParams, APUResult, TYPOLOGY_LABELS, MATERIAL_FACTORS } from '@/lib/types/apu';
 import type { APURenglon } from '@/lib/types/apu';
-import { offlineDB, LocalProject, LocalBudgetItem } from '@/lib/db/offlineStore';
+import { offlineDB, LocalProject, LocalBudgetItem, LocalClient } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
 import { resolveSyncStatus, normalizeSyncStatus } from '@/lib/utils/syncState';
 import { sendBudgetMaterialsToWarehouse, MaterialToWarehouseInput } from '@/lib/integrations/budgetToWarehouse';
@@ -34,6 +34,7 @@ import type { BudgetItem } from './types';
 import { PRESETS_POR_TIPOLOGIA, ElementPreset, TYPOLOGY_LABELS as PRESET_LABELS } from '@/lib/config/elementPresets';
 import { calculateCommercialUnits, validateCostPerSquareMeter, CostValidationResult } from '@/lib/calculators/financialUtils';
 import { useBusinessSettings } from '@/lib/hooks/useBusinessSettings';
+import { checkBudgetMarginWarning, formatGTQ, GUATEMALA_CONFIG } from '@/lib/config/app.config';
 
 // Dynamic imports for heavy components
 const PDFGenerator = dynamic(() => import('@/components/pdf/PDFGenerator'), {
@@ -55,6 +56,8 @@ export default function BudgetCalculator() {
   const [saveLoading, setSaveLoading] = useState(false);
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('');
+  const [clients, setClients] = useState<LocalClient[]>([]);
+  const [selectedClient, setSelectedClient] = useState<string>('');
   const [durationDays, setDurationDays] = useState(180);
   const [showPDFModal, setShowPDFModal] = useState(false);
 
@@ -64,6 +67,30 @@ export default function BudgetCalculator() {
     setContingencyPercentage(financial.contingencyPercentage);
     setProfitPercentage(financial.profitPercentage);
   }, [financial]);
+
+  // Load projects and clients
+  useEffect(() => {
+    loadProjects();
+    loadClients();
+  }, []);
+
+  const loadProjects = async () => {
+    try {
+      const allProjects = await offlineDB.projects.toArray();
+      setProjects(allProjects);
+    } catch (error) {
+      console.error('Error loading projects:', error);
+    }
+  };
+
+  const loadClients = async () => {
+    try {
+      const allClients = await offlineDB.clients.toArray();
+      setClients(allClients);
+    } catch (error) {
+      console.error('Error loading clients:', error);
+    }
+  };
   
   // Topography Integration State
   const [topographyData, setTopographyData] = useState({
@@ -679,6 +706,61 @@ export default function BudgetCalculator() {
           </select>
         </div>
 
+        {/* Client Selector with Balance Display */}
+        <div className="flex items-center gap-3">
+          <Wallet className="w-5 h-5 text-emerald-400" />
+          <select
+            value={selectedClient}
+            onChange={(e) => setSelectedClient(e.target.value)}
+            className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500/50"
+          >
+            <option value="">Seleccione un cliente...</option>
+            {clients.map(client => (
+              <option key={client.id} value={client.id}>
+                {client.name} {client.is_delinquent ? '⚠️' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Client Balance Display */}
+        {selectedClient && (() => {
+          const client = clients.find(c => c.id === selectedClient);
+          if (!client) return null;
+          
+          return (
+            <div className="glass-card p-3 rounded-lg border border-white/10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Wallet className="w-4 h-4 text-emerald-400" />
+                  <span className="text-white/70 text-sm">Saldo Cliente:</span>
+                </div>
+                <span className={`font-semibold ${client.account_balance && client.account_balance < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                  {formatGTQ(client.account_balance || 0)}
+                </span>
+              </div>
+              {client.credit_limit && client.credit_limit > 0 && (
+                <div className="flex items-center justify-between mt-1">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-cyan-400" />
+                    <span className="text-white/70 text-xs">Límite Crédito:</span>
+                  </div>
+                  <span className="font-medium text-cyan-400 text-sm">
+                    {formatGTQ(client.credit_limit)}
+                  </span>
+                </div>
+              )}
+              {client.is_delinquent && (
+                <div className="flex items-center gap-2 mt-2 text-xs bg-red-500/20 text-red-300 px-2 py-1 rounded">
+                  <AlertTriangle className="w-3 h-3" />
+                  <span>Cliente Moroso - Verificar pagos pendientes</span>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+        </div>
+
         {projects.length === 0 && (
           <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
             <p className="text-amber-400 text-sm">
@@ -1200,6 +1282,8 @@ export default function BudgetCalculator() {
           onIndirectChange={setIndirectPercentage}
           onContingencyChange={setContingencyPercentage}
           onProfitChange={setProfitPercentage}
+          projectAreaM2={projects.find(p => p.id === selectedProject)?.area_m2}
+          qualityLevel={projects.find(p => p.id === selectedProject)?.quality_level}
         />
       </div>
 

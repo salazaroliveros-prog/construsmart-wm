@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Plus, Edit, Trash2, Phone, Mail, MapPin, Building2, Search, Filter } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, Phone, Mail, MapPin, Building2, Search, Filter, Wallet, CreditCard, AlertTriangle } from 'lucide-react';
 import { offlineDB, LocalClient } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
 import { resolveSyncStatus } from '@/lib/utils/syncState';
@@ -13,6 +13,7 @@ import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import { clientSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
+import { formatGTQ } from '@/lib/config/app.config';
 
 export default function ClientManager() {
   const { showToast } = useToast();
@@ -35,6 +36,10 @@ export default function ClientManager() {
     city: '',
     client_type: 'individual',
     notes: '',
+    account_balance: 0,
+    credit_limit: 0,
+    payment_terms_days: 30,
+    is_delinquent: false,
   });
 
   useEffect(() => {
@@ -347,6 +352,36 @@ const loadClients = async () => {
                 </div>
               </div>
 
+              {/* Financial Information Display */}
+              <div className="mt-4 pt-4 border-t border-white/10 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2 text-white/70">
+                    <Wallet className="w-4 h-4" />
+                    <span>Saldo:</span>
+                  </div>
+                  <span className={`font-medium ${client.account_balance && client.account_balance < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                    {formatGTQ(client.account_balance || 0)}
+                  </span>
+                </div>
+                {client.credit_limit && client.credit_limit > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-white/70">
+                      <CreditCard className="w-4 h-4" />
+                      <span>Crédito:</span>
+                    </div>
+                    <span className="font-medium text-cyan-400">
+                      {formatGTQ(client.credit_limit)}
+                    </span>
+                  </div>
+                )}
+                {client.is_delinquent && (
+                  <div className="flex items-center gap-2 text-xs bg-red-500/20 text-red-300 px-2 py-1 rounded-lg">
+                    <AlertTriangle className="w-3 h-3" />
+                    <span>Cliente Moroso</span>
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-2 mt-4 pt-4 border-t border-white/10">
                 <button
                   onClick={() => handleEdit(client)}
@@ -476,6 +511,67 @@ const loadClients = async () => {
                   className="glass-input w-full px-4 py-2 rounded-lg text-white min-h-[100px]"
                   rows={3}
                 />
+              </div>
+
+              {/* Financial Information Section */}
+              <div className="pt-4 border-t border-white/10">
+                <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
+                  <Wallet className="w-4 h-4 text-cyan-400" />
+                  Información Financiera
+                </h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-white/70 text-sm mb-2">Saldo de Cuenta (GTQ)</label>
+                    <input
+                      type="number"
+                      value={formData.account_balance || 0}
+                      onChange={(e) => setFormData({ ...formData, account_balance: parseFloat(e.target.value) || 0 })}
+                      className="glass-input w-full px-4 py-2 rounded-lg text-white"
+                      step="0.01"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-white/70 text-sm mb-2">Límite de Crédito (GTQ)</label>
+                    <input
+                      type="number"
+                      value={formData.credit_limit || 0}
+                      onChange={(e) => setFormData({ ...formData, credit_limit: parseFloat(e.target.value) || 0 })}
+                      className="glass-input w-full px-4 py-2 rounded-lg text-white"
+                      step="0.01"
+                      min="0"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="block text-white/70 text-sm mb-2">Plazo de Pago (días)</label>
+                    <input
+                      type="number"
+                      value={formData.payment_terms_days || 30}
+                      onChange={(e) => setFormData({ ...formData, payment_terms_days: parseInt(e.target.value) || 30 })}
+                      className="glass-input w-full px-4 py-2 rounded-lg text-white"
+                      min="0"
+                      max="365"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3 pt-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.is_delinquent || false}
+                        onChange={(e) => setFormData({ ...formData, is_delinquent: e.target.checked })}
+                        className="w-4 h-4 rounded"
+                      />
+                      <span className="text-white/70 text-sm flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3 text-amber-400" />
+                        Cliente Moroso
+                      </span>
+                    </label>
+                  </div>
+                </div>
               </div>
 
               <div className="flex gap-3 pt-4">
