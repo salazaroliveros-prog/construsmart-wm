@@ -34,7 +34,7 @@ import type { BudgetItem } from './types';
 import { PRESETS_POR_TIPOLOGIA, ElementPreset, TYPOLOGY_LABELS as PRESET_LABELS } from '@/lib/config/elementPresets';
 import { calculateCommercialUnits, validateCostPerSquareMeter, CostValidationResult } from '@/lib/calculators/financialUtils';
 import { useBusinessSettings } from '@/lib/hooks/useBusinessSettings';
-import { checkBudgetMarginWarning, formatGTQ, GUATEMALA_CONFIG } from '@/lib/config/app.config';
+import { checkBudgetMarginWarning, formatGTQ, GUATEMALA_CONFIG, validateBudgetAgainstStandards } from '@/lib/config/app.config';
 
 // Dynamic imports for heavy components
 const PDFGenerator = dynamic(() => import('@/components/pdf/PDFGenerator'), {
@@ -60,6 +60,8 @@ export default function BudgetCalculator() {
   const [selectedClient, setSelectedClient] = useState<string>('');
   const [durationDays, setDurationDays] = useState(180);
   const [showPDFModal, setShowPDFModal] = useState(false);
+  const [qualityLevel, setQualityLevel] = useState<'basic' | 'moderate' | 'premium'>('moderate');
+  const [budgetValidation, setBudgetValidation] = useState<{ isValid: boolean; recommendation: string; severity: 'info' | 'warning' | 'critical' } | null>(null);
 
   // Sync financial percentages with settings
   useEffect(() => {
@@ -232,6 +234,27 @@ export default function BudgetCalculator() {
   const calculateSummary = (): LocalBudgetSummary => {
     return calculateLocalBudgetSummary(items, indirectPercentage, contingencyPercentage, profitPercentage);
   };
+
+  // Validate budget against standards when summary changes
+  useEffect(() => {
+    const summary = calculateSummary();
+    if (selectedProject) {
+      const project = projects.find(p => p.id === selectedProject);
+      if (project && project.area_m2 > 0) {
+        const validation = validateBudgetAgainstStandards(
+          project.area_m2,
+          summary.total,
+          selectedTypology,
+          qualityLevel
+        );
+        setBudgetValidation({
+          isValid: validation.isValid,
+          recommendation: validation.recommendation,
+          severity: validation.severity
+        });
+      }
+    }
+  }, [items, indirectPercentage, contingencyPercentage, profitPercentage, selectedProject, selectedTypology, qualityLevel, projects]);
 
   const addSlabCalculation = () => {
     // Use preset if selected in preset mode
@@ -806,14 +829,20 @@ export default function BudgetCalculator() {
         </div>
       </div>
 
-      {/* Cost Validation Warning Banner */}
-      {costValidation && !costValidation.isValid && (
-        <div className="bg-amber-500/10 backdrop-blur-md text-amber-600 dark:text-amber-400 border border-amber-500/20 px-4 py-3 rounded-xl flex items-start gap-3">
+      {/* Budget Validation Warning Banner */}
+      {budgetValidation && !budgetValidation.isValid && (
+        <div className={`backdrop-blur-md border px-4 py-3 rounded-xl flex items-start gap-3 ${
+          budgetValidation.severity === 'critical'
+            ? 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20'
+            : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+        }`}>
           <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="font-semibold text-sm">{costValidation.warningMessage}</p>
+            <p className="font-semibold text-sm">
+              {budgetValidation.severity === 'critical' ? 'Advertencia Crítica' : 'Advertencia'} - Validación de Presupuesto
+            </p>
             <p className="text-xs mt-1 opacity-80">
-              Considere revisar los costos o la categoría del proyecto antes de proceder.
+              {budgetValidation.recommendation}
             </p>
           </div>
         </div>
@@ -838,6 +867,15 @@ export default function BudgetCalculator() {
                 </option>
               ))}
             </select>
+            <select
+              value={qualityLevel}
+              onChange={(e) => setQualityLevel(e.target.value as 'basic' | 'moderate' | 'premium')}
+              className="bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-cyan-500/50"
+            >
+              <option value="basic">Básico (Q.3,000-3,500/m²)</option>
+              <option value="moderate">Moderado (Q.3,500-4,000/m²)</option>
+              <option value="premium">Premium (Q.4,000-5,000/m²)</option>
+            </select>
             <Tooltip content="Abrir calculadora de Análisis de Precios Unitarios">
               <button
                 onClick={() => setShowAPUCalculator(!showAPUCalculator)}
@@ -854,7 +892,7 @@ export default function BudgetCalculator() {
         <div className="mb-4 p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-cyan-400 font-medium flex items-center gap-2">
-<MapIcon className="w-4 h-4" />
+              <MapIcon className="w-4 h-4" />
               Datos de Topografía / CivilCAD
             </h4>
             <Tooltip content="Aplicar factores volumétricos a la calculadora APU">
@@ -916,7 +954,13 @@ export default function BudgetCalculator() {
                 <label className="block text-white/60 text-xs mb-1">Tipo de Suelo</label>
                 <select
                   value={topographyData.soilType}
-                  onChange={(e) => setTopographyData({ ...topographyData, soilType: e.target.value as keyof typeof MATERIAL_FACTORS })}
+                  onChange={(e) => {
+                    const newSoilType = e.target.value as keyof typeof MATERIAL_FACTORS;
+                    setTopographyData({ ...topographyData, soilType: newSoilType });
+                    // Auto-update volumetric factor when soil type changes
+                    const cutFactor = getVolumetricFactor(newSoilType, 'corte');
+                    setApuParams({ ...apuParams, volumetricFactor: cutFactor });
+                  }}}
                   className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-xs"
                 >
                   {Object.entries(MATERIAL_FACTORS).map(([key, factor]) => (

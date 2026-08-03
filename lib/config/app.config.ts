@@ -185,3 +185,50 @@ export function getBufferSeverity(bufferDays: number): 'safe' | 'warning' | 'cri
   }
   return 'safe';
 }
+
+// Helper function to validate budget against standard costs by typology
+export function validateBudgetAgainstStandards(
+  areaM2: number,
+  totalBudget: number,
+  typology: 'residential' | 'commercial' | 'industrial' | 'civil' | 'public',
+  qualityLevel: 'basic' | 'moderate' | 'premium'
+): {
+  isValid: boolean;
+  costPerM2: number;
+  standardRange: { min: number; max: number };
+  deviationPercentage: number;
+  recommendation: string;
+  severity: 'info' | 'warning' | 'critical';
+} {
+  const costMatrix = GUATEMALA_CONFIG.costMatrices[qualityLevel];
+  const costPerM2 = totalBudget / areaM2;
+
+  // Calculate deviation from standard range
+  const deviationPercentage = ((costPerM2 - costMatrix.min) / (costMatrix.max - costMatrix.min)) * 100;
+
+  let isValid = true;
+  let recommendation = '';
+  let severity: 'info' | 'warning' | 'critical' = 'info';
+
+  if (costPerM2 < costMatrix.min) {
+    isValid = false;
+    recommendation = `El presupuesto está por debajo del estándar mínimo (${formatGTQ(costMatrix.min)}/m²). Riesgo de costos adicionales no cubiertos.`;
+    severity = costPerM2 < costMatrix.min * 0.9 ? 'critical' : 'warning';
+  } else if (costPerM2 > costMatrix.max) {
+    isValid = false;
+    recommendation = `El presupuesto excede el estándar máximo (${formatGTQ(costMatrix.max)}/m²). Revisar precios unitarios o consideraciones especiales.`;
+    severity = costPerM2 > costMatrix.max * 1.2 ? 'critical' : 'warning';
+  } else {
+    recommendation = `El presupuesto está dentro del rango estándar (${formatGTQ(costMatrix.min)} - ${formatGTQ(costMatrix.max)}/m²).`;
+    severity = 'info';
+  }
+
+  return {
+    isValid,
+    costPerM2,
+    standardRange: costMatrix,
+    deviationPercentage: Math.round(deviationPercentage),
+    recommendation,
+    severity
+  };
+}
