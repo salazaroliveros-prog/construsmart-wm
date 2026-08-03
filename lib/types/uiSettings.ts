@@ -35,6 +35,9 @@ export interface FinancialSettings {
   vatRate: number; // IVA percentage
   profitMargin: number; // Default profit margin percentage
   includeVatInPrices: boolean;
+  indirectPercentage: number; // Indirect costs percentage
+  contingencyPercentage: number; // Contingency percentage
+  profitPercentage: number; // Target profit percentage
 }
 
 export interface ExportSettings {
@@ -212,6 +215,9 @@ export const DEFAULT_UI_SETTINGS: UISettings = {
     vatRate: 12,
     profitMargin: 20,
     includeVatInPrices: false,
+    indirectPercentage: 15,
+    contingencyPercentage: 10,
+    profitPercentage: 20,
   },
   export: {
     pdfIncludeLogo: true,

@@ -862,6 +862,48 @@ function FinancialTab({ settings, updateSetting }: {
             />
           </button>
         </div>
+
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-white mb-2">Porcentaje de Indirectos (%)</label>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="0.1"
+            value={settings.financial.indirectPercentage}
+            onChange={e => updateSetting('indirectPercentage', Number(e.target.value))}
+            className="w-full glass-input px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-white text-sm"
+            placeholder="15"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-white mb-2">Porcentaje de Contingencia (%)</label>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="0.1"
+            value={settings.financial.contingencyPercentage}
+            onChange={e => updateSetting('contingencyPercentage', Number(e.target.value))}
+            className="w-full glass-input px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-white text-sm"
+            placeholder="10"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-white mb-2">Porcentaje de Utilidad Objetivo (%)</label>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="0.1"
+            value={settings.financial.profitPercentage}
+            onChange={e => updateSetting('profitPercentage', Number(e.target.value))}
+            className="w-full glass-input px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-white text-sm"
+            placeholder="20"
+          />
+        </div>
       </div>
     </div>
   );

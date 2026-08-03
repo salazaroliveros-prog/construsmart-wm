@@ -216,20 +216,20 @@ const renderTabContent = () => {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <div className="flex flex-col gap-3 min-h-full">
-            {/* KPIs Full width */}
-            <div className="w-full">
+          <div className="flex flex-col gap-3 h-full">
+            {/* KPIs Full width - fixed height */}
+            <div className="flex-shrink-0">
               <DashboardStats />
             </div>
 
-            {/* Grid: Left (overview + activity) | Right (charts + calendar) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 w-full">
-              {/* Left column */}
-              <div className="flex flex-col gap-3">
-                <div className="glass-panel rounded-xl p-2 md:p-3">
+            {/* Grid: Left (overview + activity) | Right (charts) - with intelligent scrolling */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 min-h-0">
+              {/* Left column - scrollable */}
+              <div className="flex flex-col gap-3 min-h-0 overflow-y-auto">
+                <div className="glass-panel rounded-xl p-2 md:p-3 flex-shrink-0">
                   <ProjectOverview />
                 </div>
-                <div className="glass-panel rounded-xl p-3 md:p-3">
+                <div className="glass-panel rounded-xl p-3 md:p-3 flex-shrink-0">
                   <h3 className="text-xs md:text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
                     Actividad Reciente
@@ -250,12 +250,9 @@ const renderTabContent = () => {
                 </div>
               </div>
 
-              {/* Right column: charts + calendar */}
-              <div className="flex flex-col gap-3">
+              {/* Right column: charts - scrollable */}
+              <div className="flex flex-col gap-3 min-h-0 overflow-y-auto">
                 <DashboardCharts />
-                <div className="min-h-[250px]">
-                  <InteractiveCalendar />
-                </div>
               </div>
             </div>
           </div>

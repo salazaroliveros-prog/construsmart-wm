@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { DEFAULT_UI_SETTINGS, UISettings, CompanySettings, FinancialSettings, ExportSettings } from '@/lib/types/uiSettings';
+import { calculateUtilityMargin } from '@/lib/calculators/utilityMargin';
 
 // Módulo-singleton para evitar múltiples lecturas de localStorage y múltiples
 // instancias de estado cuando varios componentes usan useBusinessSettings.
@@ -201,4 +202,18 @@ export function calculatePriceWithVAT(basePrice: number, settings?: FinancialSet
 export function calculatePriceWithMargin(basePrice: number, settings?: FinancialSettings): number {
   const financial = settings || DEFAULT_UI_SETTINGS.financial;
   return basePrice * (1 + financial.profitMargin / 100);
+}
+
+// Helper function to calculate utility margin
+export function calculateUtilityMarginHelper(
+  totalBudget: number,
+  totalSpent: number,
+  settings?: UISettings
+) {
+  const financial = settings?.financial || DEFAULT_UI_SETTINGS.financial;
+  return calculateUtilityMargin(totalBudget, totalSpent, {
+    indirectPercentage: financial.indirectPercentage,
+    contingencyPercentage: financial.contingencyPercentage,
+    profitPercentage: financial.profitPercentage,
+  });
 }

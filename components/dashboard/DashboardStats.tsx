@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Building2, DollarSign, TrendingUp, Users, Hammer, Calendar } from 'lucide-react';
+import { Building2, DollarSign, TrendingUp, Users, Hammer, Calendar, Target } from 'lucide-react';
 import { offlineDB, LocalProject, LocalFinancialTransaction, LocalPayrollEmployee, LocalWarehouseStock } from '@/lib/db/offlineStore';
-import { useFinancialSettings, formatCurrency } from '@/lib/hooks/useBusinessSettings';
+import { useFinancialSettings, formatCurrency, calculateUtilityMarginHelper } from '@/lib/hooks/useBusinessSettings';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
+import { useBusinessSettings } from '@/lib/hooks/useBusinessSettings';
 import TierCards from './TierCards';
 
 interface StatCardProps {
@@ -56,6 +57,7 @@ const MemoizedStatCard = React.memo(StatCard);
 
 export default function DashboardStats() {
   const { financial } = useFinancialSettings();
+  const { settings } = useBusinessSettings();
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
   const [employees, setEmployees] = useState<LocalPayrollEmployee[]>([]);
@@ -93,6 +95,9 @@ export default function DashboardStats() {
     .reduce((sum, t) => sum + (t.total_cost || 0), 0);
   const activeEmployees = employees.filter(e => e.active).length;
   const lowStockItems = stockItems.filter(s => s.current_stock <= s.minimum_threshold).length;
+
+  // Calculate utility margin dynamically from settings
+  const utilityMargin = calculateUtilityMarginHelper(totalBudget, totalSpent, settings);
 
   useRealtimeRefresh(
     ['projects', 'financial_transactions', 'payroll_employees', 'warehouse_stock'],
@@ -147,13 +152,13 @@ export default function DashboardStats() {
               trendUp={false}
             />
             <MemoizedStatCard
-              title="Transacciones"
-              value={transactions.length.toString()}
-              subtitle="Últimos 30 días"
-              icon={<Calendar className="w-4 h-4" />}
-              color="blue"
-              trend="+15"
-              trendUp={true}
+              title="Margen Utilidad"
+              value={`${utilityMargin.marginPercentage.toFixed(1)}%`}
+              subtitle={`Objetivo: ${utilityMargin.targetMargin}%`}
+              icon={<Target className="w-4 h-4" />}
+              color={utilityMargin.isOnTarget ? 'emerald' : utilityMargin.variance > 0 ? 'cyan' : 'red'}
+              trend={utilityMargin.variance > 0 ? `+${utilityMargin.variance.toFixed(1)}%` : `${utilityMargin.variance.toFixed(1)}%`}
+              trendUp={utilityMargin.variance >= 0}
             />
           </>
         ) : (
