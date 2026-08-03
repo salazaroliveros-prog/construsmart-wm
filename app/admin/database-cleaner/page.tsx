@@ -66,6 +66,7 @@ export default function DatabaseCleaner() {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          'x-user-email': user?.email || '',
         },
       });
 
@@ -166,11 +167,27 @@ export default function DatabaseCleaner() {
                 </li>
                 <li className="flex items-center gap-2">
                   <Trash2 className="w-4 h-4 text-red-400" />
+                  Clientes (clients)
+                </li>
+                <li className="flex items-center gap-2">
+                  <Trash2 className="w-4 h-4 text-red-400" />
+                  Proveedores (suppliers)
+                </li>
+                <li className="flex items-center gap-2">
+                  <Trash2 className="w-4 h-4 text-red-400" />
                   Presupuestos (budgets)
                 </li>
                 <li className="flex items-center gap-2">
                   <Trash2 className="w-4 h-4 text-red-400" />
                   Items de Presupuesto (budget_items)
+                </li>
+                <li className="flex items-center gap-2">
+                  <Trash2 className="w-4 h-4 text-red-400" />
+                  Órdenes de Compra (purchase_orders)
+                </li>
+                <li className="flex items-center gap-2">
+                  <Trash2 className="w-4 h-4 text-red-400" />
+                  Items de Órdenes de Compra (purchase_order_items)
                 </li>
                 <li className="flex items-center gap-2">
                   <Trash2 className="w-4 h-4 text-red-400" />
@@ -187,6 +204,10 @@ export default function DatabaseCleaner() {
                 <li className="flex items-center gap-2">
                   <Trash2 className="w-4 h-4 text-red-400" />
                   Inventario (warehouse_stock)
+                </li>
+                <li className="flex items-center gap-2">
+                  <Trash2 className="w-4 h-4 text-red-400" />
+                  Logs de Proyectos (project_logs)
                 </li>
               </ul>
             </div>
