@@ -318,8 +318,8 @@ return (
             aria-label="Módulos principales"
           >
             <div
-              className="flex items-center gap-1 overflow-x-auto px-2 py-1.5 sm:gap-2 sm:px-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              style={{ touchAction: 'pan-x', scrollSnapType: 'x proximity' }}
+              className="flex items-center gap-1 overflow-x-auto px-2 py-1.5 sm:gap-2 sm:px-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden select-none"
+              style={{ touchAction: 'manipulation' }}
             >
               {NAVIGATION_TABS.map(tab => {
                 const isTabActive = activeTab === tab.id;
@@ -335,7 +335,6 @@ return (
                     }`}
                     aria-current={isTabActive ? 'page' : undefined}
                     title={tab.label}
-                    style={{ scrollSnapAlign: 'start' }}
                   >
                     {tab.label}
                   </button>
