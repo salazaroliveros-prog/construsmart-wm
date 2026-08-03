@@ -74,7 +74,3 @@ Las políticas RLS permiten acceso total a la anon key en las 12 tablas
 (`USING (true)`), requerido para que el motor de sync y Realtime funcionen sin login.
 La migración 00006 agregó estas políticas a `clients`, `project_logs`, `suppliers`,
 `purchase_orders` y `purchase_order_items`.
-
-> Nota: en el despliegue actual también existe una migración adicional
-> `20260803000000_allow_anon_sync_for_app_tables.sql` que restaura el acceso anon
-> necesario para la app y mantiene el esquema sincronizado con el diseño offline-first.
