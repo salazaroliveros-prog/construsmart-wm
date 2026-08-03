@@ -6,11 +6,24 @@
 
 ---
 
+## CORRECTION STATUS
+
+| Severity | Total | Fixed | Pending |
+|----------|-------|-------|---------|
+| **Critical** | 3 | 2 | 1 |
+| **Major** | 4 | 3 | 1 |
+| **Minor** | 5 | 5 | 0 |
+| **Type Safety** | 2 | 0 | 2 |
+| **Visual/UI** | 2 | 0 | 2 |
+| **TOTAL** | 16 | 10 | 6 |
+
+---
+
 ## CRITICAL ISSUES
 
-| Severity | File Path & Line Range | Inconsistency Description | Root Cause Analysis | Concrete Refactoring Fix |
-|----------|----------------------|-------------------------|---------------------|------------------------|
-| **CRITICAL** | `components/payroll/PayrollManager.tsx` (lines 1-1162) | **MISSING INTEGRATION: Payroll → Financial Transactions** | Payroll records (`payroll_records`) are NOT automatically converted to financial expense transactions in `financial_transactions`. This breaks the business logic pipeline where payroll expenses should reflect in the financial ledger. | The `savePayrollRecord` function only saves to `offlineDB.payrollRecords` without creating a corresponding entry in `offlineDB.financialTransactions`. Financial reports and dashboard KPIs will not include payroll expenses. | **Fix:** Add automatic financial transaction creation in `savePayrollRecord`: <br>```typescript<br>const transaction: LocalFinancialTransaction = {<br>  type: 'expense',<br>  category: 'mano_de_obra',<br>  description: `Nómina: ${employee.name} - ${period}`,<br>  quantity: days_worked,<br>  unit: 'días',<br>  unit_cost: gross_salary / days_worked,<br>  total_cost: gross_salary,<br>  date: period_end,<br>  project_id: selectedProject,<br>  sync_status: resolveSyncStatus({ isNewRecord: true, isOnline: navigator.onLine }),<br>};<br>await offlineDB.financialTransactions.add(transaction);<br>``` |
+| Severity | File Path & Line Range | Inconsistency Description | Root Cause Analysis | Concrete Refactoring Fix | Status |
+|----------|----------------------|-------------------------|---------------------|------------------------|--------|
+| **CRITICAL** | `components/payroll/PayrollManager.tsx` (lines 1-1162) | **MISSING INTEGRATION: Payroll → Financial Transactions** | Payroll records (`payroll_records`) are NOT automatically converted to financial expense transactions in `financial_transactions`. This breaks the business logic pipeline where payroll expenses should reflect in the financial ledger. | The `savePayrollRecord` function only saves to `offlineDB.payrollRecords` without creating a corresponding entry in `offlineDB.financialTransactions`. Financial reports and dashboard KPIs will not include payroll expenses. | **Fix:** Add automatic financial transaction creation in `savePayrollRecord`: <br>```typescript<br>const transaction: LocalFinancialTransaction = {<br>  type: 'expense',<br>  category: 'mano_de_obra',<br>  description: `Nómina: ${employee.name} - ${period}`,<br>  quantity: days_worked,<br>  unit: 'días',<br>  unit_cost: gross_salary / days_worked,<br>  total_cost: gross_salary,<br>  date: period_end,<br>  project_id: selectedProject,<br>  sync_status: resolveSyncStatus({ isNewRecord: true, isOnline: navigator.onLine }),<br>};<br>await offlineDB.financialTransactions.add(transaction);<br>``` | ✅ **FIXED** |
 | **CRITICAL** | `components/finances/FinanceManager.tsx` (lines 76-88) | **HARDCODED BUDGET COMPARISON PERCENTAGES** | Budget comparison uses hardcoded defaults: `60% materials, 30% labor, 10% machinery` instead of pulling actual APU breakdown data from `budgetItems[].apu_result.breakdown`. | The `budgetComparison` state is calculated with static percentages instead of reading from the actual budget's APU results, causing inaccurate variance reporting. | **Fix:** Replace hardcoded percentages with actual APU data: <br>```typescript<br>const breakdown = budgetItems.reduce((acc, item) => {<br>  const apu = item.apu_result?.breakdown;<br>  if (apu) {<br>    acc.materials.estimated += apu.materials;<br>    acc.labor.estimated += apu.labor;<br>    acc.machinery.estimated += apu.machinery;<br>  }<br>  return acc;<br>}, { materiales: { estimated: 0, actual: 0 }, mano_de_obra: { estimated: 0, actual: 0 }, otros: { estimated: 0, actual: 0 } });<br>``` |
 | **CRITICAL** | `components/budgets/BudgetCalculator.tsx` (lines 45-47) | **DUPLICATE STATE: HARDCODED FINANCIAL PERCENTAGES** | `indirectPercentage`, `contingencyPercentage`, `profitPercentage` are hardcoded to 15%, 5%, 10% instead of reading from `useBusinessSettings().financial`. This violates the single-source-of-truth principle and ignores user configuration in Settings Manager. | BudgetCalculator has local state for financial percentages that doesn't sync with the global `useBusinessSettings` hook. When users modify these values in Settings → Financial, the budget calculations don't update. | **Fix:** Remove local state and read from hook: <br>```typescript<br>const { financial } = useBusinessSettings();<br>const [indirectPercentage, setIndirectPercentage] = useState(financial.indirectPercentage);<br>const [contingencyPercentage, setContingencyPercentage] = useState(financial.contingencyPercentage);<br>const [profitPercentage, setProfitPercentage] = useState(financial.profitPercentage);<br><br>// Add useEffect to sync when settings change<br>useEffect(() => {<br>  setIndirectPercentage(financial.indirectPercentage);<br>  setContingencyPercentage(financial.contingencyPercentage);<br>  setProfitPercentage(financial.profitPercentage);<br>}, [financial]);<br>``` |
 
