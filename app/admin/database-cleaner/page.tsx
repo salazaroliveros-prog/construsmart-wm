@@ -55,13 +55,28 @@ export default function DatabaseCleaner() {
   }
 
   const clearDatabase = async () => {
-    if (!confirm('⚠️ ¿Está seguro de eliminar TODOS los datos locales?\n\nEsta acción:\n- Eliminará todos los proyectos\n- Eliminará todos los presupuestos\n- Eliminará todas las transacciones\n- Eliminará toda la nómina\n- Eliminará todo el inventario\n\nLa base de datos se recreará automáticamente con el nuevo schema.\n\nEsta acción NO se puede deshacer.')) {
+    if (!confirm('⚠️ ¿Está seguro de eliminar TODOS los datos locales y remotos?\n\nEsta acción:\n- Eliminará todos los datos de la base de datos local (IndexedDB)\n- Eliminará todos los datos de la base de datos remota de Supabase\n\nEsta acción NO se puede deshacer.')) {
       return;
     }
 
     setIsClearing(true);
 
     try {
+      const response = await fetch('/admin/database-cleaner', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        console.error('Error al limpiar la base de datos remota:', result.error);
+        showToast('error', `Error al limpiar la base remota: ${result.error || response.statusText}`);
+        setIsClearing(false);
+        return;
+      }
+
       // Eliminar la base de datos IndexedDB
       const deleteRequest = indexedDB.deleteDatabase('ConstructoraWM_OfflineDB');
 
@@ -73,17 +88,17 @@ export default function DatabaseCleaner() {
       localStorage.removeItem('wm_presupuesto_activo');
 
       deleteRequest.onsuccess = () => {
-        console.log('✅ Base de datos eliminada exitosamente');
+        console.log('✅ Base de datos local eliminada exitosamente');
         setCleared(true);
-        showToast('success', 'Base de datos local eliminada. Recargando...');
+        showToast('success', 'Base remota y local eliminadas. Recargando...');
         setTimeout(() => {
           location.reload();
         }, 1500);
       };
 
       deleteRequest.onerror = () => {
-        console.error('❌ Error al eliminar la base de datos');
-        showToast('error', 'Error al eliminar la base de datos');
+        console.error('❌ Error al eliminar la base de datos local');
+        showToast('error', 'Error al eliminar la base de datos local');
         setIsClearing(false);
       };
 
