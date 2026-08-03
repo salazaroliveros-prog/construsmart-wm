@@ -99,15 +99,15 @@ const COLORS = {
 // ==================== MAIN COMPONENT ====================
 
 export default function AnalyticsDashboard() {
-  // ==================== HOOKS ====================
-  const { settings } = useBusinessSettings();
-  const { cumulativeCosts, lastUpdate, isLoading: financialDataLoading } = useFinancialDataRealtime(selectedProject);
-
   // ==================== STATE ====================
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
   const [warehouseStock, setWarehouseStock] = useState<LocalWarehouseStock[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('all');
+
+  // ==================== HOOKS ====================
+  const { settings } = useBusinessSettings();
+  const { cumulativeCosts, lastUpdate, isLoading: financialDataLoading } = useFinancialDataRealtime(selectedProject);
   const [sCurveData, setSCurveData] = useState<SCurveData[]>([]);
   const [cashFlowData, setCashFlowData] = useState<CashFlowData[]>([]);
   const [budgetDeviationData, setBudgetDeviationData] = useState<BudgetDeviationData[]>([]);
