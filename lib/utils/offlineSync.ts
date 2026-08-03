@@ -1142,13 +1142,10 @@ export async function queueDelete(remoteTable: string, row: { id?: string }): Pr
     .first();
   if (existing) return true;
 
-  const cascadeDelete = LOCAL_DELETE_DEPENDENCIES[remoteTable];
-  if (cascadeDelete) {
-    try {
-      await cascadeDelete(row.id!);
-    } catch (error) {
-      console.warn(`queueDelete: failed to delete dependent local rows for ${remoteTable} ${row.id}:`, error);
-    }
+  try {
+    await cascadeLocalDelete(remoteTable, row.id!);
+  } catch (error) {
+    console.warn(`queueDelete: failed to delete dependent local rows for ${remoteTable} ${row.id}:`, error);
   }
 
   await offlineDB.pendingDeletes.add({
