@@ -9,7 +9,10 @@ import {
   Loader2, 
   Filter,
   Calendar as CalendarIcon,
-  Clock
+  Clock,
+  BarChart3,
+  Target,
+  Zap
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -34,6 +37,7 @@ import { offlineDB, LocalProject, LocalFinancialTransaction, LocalWarehouseStock
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useBusinessSettings, calculateUtilityMarginHelper } from '@/lib/hooks/useBusinessSettings';
 import { useFinancialDataRealtime } from '@/hooks/useFinancialDataRealtime';
+import { useEarnedValueManagement } from '@/hooks/useEarnedValueManagement';
 import EmptyState from '@/components/ui/EmptyState';
 
 // ==================== TYPES & INTERFACES ====================
@@ -83,6 +87,10 @@ interface SummaryMetrics {
   budgetVariance: number;
   utilityMarginPercentage?: number;
   utilityMarginTarget?: number;
+  evmSPI?: number; // Schedule Performance Index
+  evmCPI?: number; // Cost Performance Index
+  evmSV?: number; // Schedule Variance
+  evmCV?: number; // Cost Variance
 }
 
 // ==================== COLORS ====================
@@ -108,6 +116,12 @@ export default function AnalyticsDashboard() {
   // ==================== HOOKS ====================
   const { settings } = useBusinessSettings();
   const { cumulativeCosts, lastUpdate, isLoading: financialDataLoading } = useFinancialDataRealtime(selectedProject);
+  const { 
+    metrics: evmMetrics, 
+    analysis: evmAnalysis, 
+    isCalculating: evmCalculating, 
+    analyzeProject 
+  } = useEarnedValueManagement();
   const [sCurveData, setSCurveData] = useState<SCurveData[]>([]);
   const [cashFlowData, setCashFlowData] = useState<CashFlowData[]>([]);
   const [budgetDeviationData, setBudgetDeviationData] = useState<BudgetDeviationData[]>([]);
@@ -123,9 +137,14 @@ export default function AnalyticsDashboard() {
     budgetVariance: 0,
     utilityMarginPercentage: 0,
     utilityMarginTarget: 0,
+    evmSPI: 1,
+    evmCPI: 1,
+    evmSV: 0,
+    evmCV: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [hasData, setHasData] = useState(false);
+  const [showEVM, setShowEVM] = useState(false);
 
   // ==================== EFFECTS ====================
   useEffect(() => {
@@ -142,6 +161,13 @@ export default function AnalyticsDashboard() {
   useEffect(() => {
     loadAnalyticsData();
   }, [settings]);
+
+  // Trigger EVM analysis when project is selected
+  useEffect(() => {
+    if (selectedProject && selectedProject !== 'all') {
+      analyzeProject(selectedProject);
+    }
+  }, [selectedProject]);
 
   // Recalculate S-Curve when real-time financial data changes
   useEffect(() => {
@@ -238,6 +264,12 @@ export default function AnalyticsDashboard() {
       totalBudget: 0,
       totalExecuted: 0,
       budgetVariance: 0,
+      utilityMarginPercentage: 0,
+      utilityMarginTarget: 0,
+      evmSPI: 1,
+      evmCPI: 1,
+      evmSV: 0,
+      evmCV: 0,
     });
   };
 
@@ -479,6 +511,10 @@ export default function AnalyticsDashboard() {
         budgetVariance: 0,
         utilityMarginPercentage: 0,
         utilityMarginTarget: 0,
+        evmSPI: 1,
+        evmCPI: 1,
+        evmSV: 0,
+        evmCV: 0,
       };
     }
 
@@ -528,6 +564,12 @@ export default function AnalyticsDashboard() {
     // Calculate utility margin using settings
     const utilityMargin = calculateUtilityMarginHelper(totalBudget, totalExpenses, settings);
 
+    // Integrate EVM metrics if available
+    const evmSPI = evmMetrics?.schedulePerformanceIndex || 1;
+    const evmCPI = evmMetrics?.costPerformanceIndex || 1;
+    const evmSV = evmMetrics?.scheduleVariance || 0;
+    const evmCV = evmMetrics?.costVariance || 0;
+
     return {
       totalProjects: projects.length,
       activeProjects,
@@ -538,6 +580,10 @@ export default function AnalyticsDashboard() {
       budgetVariance,
       utilityMarginPercentage: utilityMargin.marginPercentage,
       utilityMarginTarget: utilityMargin.targetMargin,
+      evmSPI,
+      evmCPI,
+      evmSV,
+      evmCV,
     };
   };
 
@@ -879,7 +925,7 @@ export default function AnalyticsDashboard() {
         </div>
 
         {/* Summary Metrics Footer */}
-        <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+        <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3">
           <div className="bg-white/[var(--glass-opacity,0.05)] dark:bg-black/[var(--glass-opacity,0.1)] border border-white/10 dark:border-zinc-700/20 rounded-lg p-3">
             <div className="text-zinc-600 dark:text-zinc-400 text-xs mb-1">Total Proyectos</div>
             <div className="text-xl font-bold text-zinc-900 dark:text-white">{summaryMetrics.totalProjects}</div>
@@ -904,6 +950,25 @@ export default function AnalyticsDashboard() {
             <div className="text-zinc-600 dark:text-zinc-400 text-xs mb-1">Varianza</div>
             <div className={`text-xl font-bold ${summaryMetrics.budgetVariance >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
               {formatCurrency(summaryMetrics.budgetVariance)}
+            </div>
+          </div>
+          {/* EVM Metrics */}
+          <div className={`bg-white/[var(--glass-opacity,0.05)] dark:bg-black/[var(--glass-opacity,0.1)] border border-white/10 dark:border-zinc-700/20 rounded-lg p-3 ${summaryMetrics.evmSPI && summaryMetrics.evmSPI < 0.9 ? 'border-amber-500/30' : ''}`}>
+            <div className="text-zinc-600 dark:text-zinc-400 text-xs mb-1 flex items-center gap-1">
+              <Target className="w-3 h-3" />
+              SPI
+            </div>
+            <div className={`text-xl font-bold ${summaryMetrics.evmSPI && summaryMetrics.evmSPI >= 1 ? 'text-emerald-500' : summaryMetrics.evmSPI && summaryMetrics.evmSPI < 0.9 ? 'text-amber-500' : 'text-zinc-900 dark:text-white'}`}>
+              {summaryMetrics.evmSPI?.toFixed(2) || '1.00'}
+            </div>
+          </div>
+          <div className={`bg-white/[var(--glass-opacity,0.05)] dark:bg-black/[var(--glass-opacity,0.1)] border border-white/10 dark:border-zinc-700/20 rounded-lg p-3 ${summaryMetrics.evmCPI && summaryMetrics.evmCPI < 0.9 ? 'border-amber-500/30' : ''}`}>
+            <div className="text-zinc-600 dark:text-zinc-400 text-xs mb-1 flex items-center gap-1">
+              <Zap className="w-3 h-3" />
+              CPI
+            </div>
+            <div className={`text-xl font-bold ${summaryMetrics.evmCPI && summaryMetrics.evmCPI >= 1 ? 'text-emerald-500' : summaryMetrics.evmCPI && summaryMetrics.evmCPI < 0.9 ? 'text-amber-500' : 'text-zinc-900 dark:text-white'}`}>
+              {summaryMetrics.evmCPI?.toFixed(2) || '1.00'}
             </div>
           </div>
         </div>
