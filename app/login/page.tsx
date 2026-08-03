@@ -33,6 +33,8 @@ function LoginForm() {
     try {
       await signIn(email, password);
       showToast('success', 'Inicio de sesión exitoso');
+      // Usar router.push para navegación client-side
+      // El AuthGuard detectará el cambio de estado y permitirá el acceso
       router.push('/');
     } catch (err: any) {
       setError(err.message || 'Error al iniciar sesión');

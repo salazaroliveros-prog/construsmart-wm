@@ -7,6 +7,7 @@ import SyncProvider from '@/components/ui/SyncProvider';
 import { ToastProvider } from '@/components/ui/Toast';
 import { AuthProvider } from '@/lib/auth/auth-context';
 import { UISettingsProvider } from '@/lib/hooks/useUISettings';
+import AuthGuard from '@/components/auth/AuthGuard';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -68,7 +69,9 @@ export default function RootLayout({
             <ToastProvider>
               <ServiceWorkerRegistration />
               <SyncProvider />
-              {children}
+              <AuthGuard>
+                {children}
+              </AuthGuard>
             </ToastProvider>
           </UISettingsProvider>
         </AuthProvider>

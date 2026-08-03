@@ -88,18 +88,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      console.log('[AuthContext] Attempting sign in for:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error('[AuthContext] Sign in error:', error);
         throw new Error(error.message || 'Credenciales inválidas');
       }
 
       if (data.user) {
+        console.log('[AuthContext] Sign in successful for:', data.user.email);
         const userName = data.user.email?.split('@')[0] || 'Usuario';
-        
+
         setUser({
           id: data.user.id,
           email: data.user.email || '',
@@ -108,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAuthenticated(true);
       }
     } catch (error: any) {
+      console.error('[AuthContext] Sign in failed:', error);
       throw new Error(error.message || 'Error al iniciar sesión');
     }
   };

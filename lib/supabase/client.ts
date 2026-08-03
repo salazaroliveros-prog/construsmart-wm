@@ -14,9 +14,17 @@ if (typeof window === 'undefined') {
   }
 }
 
-// Client-side: crear cliente solo si las variables están presentes
-export const supabase: SupabaseClient | null = supabaseUrl && supabaseAnonKey 
-  ? createClient(supabaseUrl, supabaseAnonKey)
+// Client-side: crear cliente con configuración estándar
+// Supabase maneja las cookies automáticamente con localStorage por defecto
+export const supabase: SupabaseClient | null = supabaseUrl && supabaseAnonKey
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false,
+        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      },
+    })
   : null;
 
 // Diagnóstico: verificar inicialización del cliente en runtime
