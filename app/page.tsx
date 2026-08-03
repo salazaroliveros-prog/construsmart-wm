@@ -260,29 +260,29 @@ const renderTabContent = () => {
           </div>
         );
       case 'projects':
-        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><ProjectManager /></div>;
+        return isTabLoading ? <TabSkeleton /> : <ProjectManager />;
       case 'budgets':
-        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><BudgetCalculator /></div>;
+        return isTabLoading ? <TabSkeleton /> : <BudgetCalculator />;
       case 'progress':
-        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><ProgressTracker /></div>;
+        return isTabLoading ? <TabSkeleton /> : <ProgressTracker />;
       case 'finances':
-        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><FinanceManager /></div>;
+        return isTabLoading ? <TabSkeleton /> : <FinanceManager />;
       case 'payroll':
-        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><PayrollManager /></div>;
+        return isTabLoading ? <TabSkeleton /> : <PayrollManager />;
       case 'warehouse':
-        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><WarehouseManager /></div>;
+        return isTabLoading ? <TabSkeleton /> : <WarehouseManager />;
       case 'suppliers':
-        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><SupplierManager /></div>;
+        return isTabLoading ? <TabSkeleton /> : <SupplierManager />;
       case 'orders':
-        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><PurchaseOrderManager /></div>;
+        return isTabLoading ? <TabSkeleton /> : <PurchaseOrderManager />;
       case 'analytics':
-        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><AnalyticsDashboard /></div>;
+        return isTabLoading ? <TabSkeleton /> : <AnalyticsDashboard />;
       case 'clients':
-        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><ClientManager /></div>;
+        return isTabLoading ? <TabSkeleton /> : <ClientManager />;
       case 'logs':
-        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><ProjectLogManager /></div>;
+        return isTabLoading ? <TabSkeleton /> : <ProjectLogManager />;
       case 'settings':
-        return isTabLoading ? <TabSkeleton /> : <div className="h-full"><SettingsManager /></div>;
+        return isTabLoading ? <TabSkeleton /> : <SettingsManager />;
       default:
         return null;
     }
@@ -379,7 +379,7 @@ return (
             />
           )}
 
-          {/* Main content - full width con scroll inteligente */}
+          {/* Main content - full width con scroll automático */}
           <main
             className="flex-1 min-w-0 overflow-hidden"
             id="main-content"
@@ -387,7 +387,7 @@ return (
             aria-label="Contenido principal"
           >
             <div
-              className="w-full h-full flex flex-col px-2 sm:px-3 py-2"
+              className="w-full h-full flex flex-col px-2 sm:px-3 py-2 overflow-y-auto overflow-anchor-none"
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
             >
