@@ -19,10 +19,15 @@ interface SyncStatus {
 
 export const OfflineSyncIndicator = () => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({
-    isOnline: navigator.onLine,
+    isOnline: true, // Default to true to avoid hydration mismatch
     syncStatus: 'idle',
     syncProgress: 0
   });
+
+  // Initialize isOnline after mount to avoid hydration mismatch
+  useEffect(() => {
+    setSyncStatus(prev => ({ ...prev, isOnline: navigator.onLine }));
+  }, []);
 
   useEffect(() => {
     const handleOnline = () => {

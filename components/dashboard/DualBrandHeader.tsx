@@ -17,6 +17,7 @@ export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) 
   const [isOnline, setIsOnline] = useState(true);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -43,26 +44,21 @@ export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) 
 
   useEffect(() => {
     setIsMounted(true);
+    setIsClient(true);
     setCurrentTime(new Date());
     
     const updateOnlineStatus = () => {
-      if (typeof window !== 'undefined') {
-        setIsOnline(navigator.onLine);
-      }
+      setIsOnline(navigator.onLine);
     };
     
-    if (typeof window !== 'undefined') {
-      window.addEventListener('online', updateOnlineStatus);
-      window.addEventListener('offline', updateOnlineStatus);
-    }
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
     
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     
     return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('online', updateOnlineStatus);
-        window.removeEventListener('offline', updateOnlineStatus);
-      }
+      window.removeEventListener('online', updateOnlineStatus);
+      window.removeEventListener('offline', updateOnlineStatus);
       clearInterval(timer);
     };
   }, []);
@@ -129,7 +125,7 @@ export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) 
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">
-        {isMounted && currentTime && (
+        {isClient && isMounted && currentTime && (
           <button
             onClick={() => setIsCalendarOpen(!isCalendarOpen)}
             className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-white/70 hover:bg-white/20 transition-colors cursor-pointer"
