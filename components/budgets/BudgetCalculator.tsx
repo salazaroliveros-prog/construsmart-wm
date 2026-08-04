@@ -72,17 +72,14 @@ export default function BudgetCalculator() {
   }, [financial]);
 
   // Load projects and clients
-  useEffect(() => {
-    loadProjects();
-    loadClients();
-  }, []);
-
   const loadProjects = async () => {
     try {
       const allProjects = await offlineDB.projects.toArray();
-      setProjects(allProjects);
+      const planningProjects = allProjects.filter(p => p.status === 'planning');
+      setProjects(planningProjects);
     } catch (error) {
       console.error('Error loading projects:', error);
+      showToast('error', 'Error al cargar proyectos');
     }
   };
 
@@ -94,6 +91,11 @@ export default function BudgetCalculator() {
       console.error('Error loading clients:', error);
     }
   };
+
+  useEffect(() => {
+    loadProjects();
+    loadClients();
+  }, []);
   
   // Topography Integration State
   const [topographyData, setTopographyData] = useState({
@@ -145,22 +147,6 @@ export default function BudgetCalculator() {
     increment: 20,
     resetOnItemsChange: true,
   });
-
-  // Load projects in planning status
-  useEffect(() => {
-    loadProjects();
-  }, []);
-
-  const loadProjects = async () => {
-    try {
-      const allProjects = await offlineDB.projects.toArray();
-      const planningProjects = allProjects.filter(p => p.status === 'planning');
-      setProjects(planningProjects);
-    } catch (error) {
-      console.error('Error loading projects:', error);
-      showToast('error', 'Error al cargar proyectos');
-    }
-  };
 
   const handleProjectChange = async (projectId: string) => {
     setSelectedProject(projectId);
@@ -900,6 +886,7 @@ export default function BudgetCalculator() {
                       quantity: 100,
                       unitCost: apuResult.totalCost / 100,
                       totalCost: apuResult.totalCost,
+                      category: renglon.category || 'general',
                       timeRequired: apuResult.totalCost / (renglon.laborFormula?.dailySalary || 350),
                       apuResult,
                     };
@@ -997,7 +984,7 @@ export default function BudgetCalculator() {
                     // Auto-update volumetric factor when soil type changes
                     const cutFactor = getVolumetricFactor(newSoilType, 'corte');
                     setApuParams({ ...apuParams, volumetricFactor: cutFactor });
-                  }}}
+                  }}
                   className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-xs"
                 >
                   {Object.entries(MATERIAL_FACTORS).map(([key, factor]) => (

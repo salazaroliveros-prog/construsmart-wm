@@ -18,7 +18,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Área_terreno',
     category: 'Preparación del Sitio',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Área_terreno',
       wastePercentage: 0,
@@ -41,7 +41,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Área_planta. Estacas y cordel.',
     category: 'Preparación del Sitio',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Área_planta',
       wastePercentage: 5,
@@ -70,7 +70,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'm³',
     formula: 'Ancho × Profundidad × Largo',
     category: 'Cimentación',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Volumen_corte',
       wastePercentage: 15,
@@ -99,7 +99,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'm³',
     formula: 'Concreto + Acero por metro lineal',
     category: 'Cimentación',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Volumen_concreto',
       wastePercentage: 5,
@@ -122,7 +122,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'kg',
     formula: 'Longitud varilla × peso nominal',
     category: 'Cimentación',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Peso_acero',
       wastePercentage: 10,
@@ -145,7 +145,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Área de contacto con el suelo',
     category: 'Cimentación',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Área_superficie',
       wastePercentage: 10,
@@ -168,7 +168,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Unidades/m² (considerando sisa de 1.5cm)',
     category: 'Mampostería',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Área_muro',
       wastePercentage: 10,
@@ -191,7 +191,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'm',
     formula: 'Concreto y acero transversal',
     category: 'Mampostería',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Longitud_solera',
       wastePercentage: 5,
@@ -214,7 +214,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'm³',
     formula: 'Volumen × Factor_abundamiento',
     category: 'Mampostería',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Volumen_relleno',
       wastePercentage: 10,
@@ -243,7 +243,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'ml',
     formula: 'Longitud de tubería + % accesorios',
     category: 'Instalaciones',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Longitud_tuberia',
       wastePercentage: 15,
@@ -266,7 +266,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'ml',
     formula: 'Pendiente mínima y excavación por tramo',
     category: 'Instalaciones',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Longitud_drenaje',
       wastePercentage: 15,
@@ -289,7 +289,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'm³',
     formula: 'Acero longitudinal + estribos',
     category: 'Estructura',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Volumen_viga',
       wastePercentage: 5,
@@ -312,7 +312,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Espesor × área (acero 2 direcciones)',
     category: 'Estructura',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Área_losa',
       wastePercentage: 5,
@@ -335,7 +335,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'Punto',
     formula: 'Ducto y cable por salida',
     category: 'Instalaciones',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Cantidad_puntos',
       wastePercentage: 20,
@@ -358,7 +358,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Área neta (descontando vanos)',
     category: 'Acabados Interiores',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Área_relleno',
       wastePercentage: 10,
@@ -381,7 +381,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Rendimiento por saco de mezcla fina',
     category: 'Acabados Interiores',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Área_cernido',
       wastePercentage: 15,
@@ -404,7 +404,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Área × (1 + %Desperdicio) + pegamento',
     category: 'Acabados Interiores',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Área_piso',
       wastePercentage: 15,
@@ -427,7 +427,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Altura instalación × perímetro',
     category: 'Acabados Interiores',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Área_azulejo',
       wastePercentage: 20,
@@ -450,7 +450,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Suspensión y estructura de soporte',
     category: 'Acabados Interiores',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Área_cielo',
       wastePercentage: 10,
@@ -473,7 +473,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'Unidad',
     formula: 'Marco, chapa y bisagras',
     category: 'Carpintería y Herrería',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Cantidad_puertas',
       wastePercentage: 5,
@@ -496,7 +496,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Medidas de vano en plano',
     category: 'Carpintería y Herrería',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Área_ventana',
       wastePercentage: 10,
@@ -519,7 +519,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'm²',
     formula: 'Área × Num_manos / Rendimiento galón',
     category: 'Acabados Interiores',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Área_pintura',
       wastePercentage: 15,
@@ -542,7 +542,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'Unidad',
     formula: 'Inodoro, lavamanos, grifería',
     category: 'Instalaciones',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Cantidad_artefactos',
       wastePercentage: 5,
@@ -565,7 +565,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'Unidad',
     formula: 'Lámparas según diseño eléctrico',
     category: 'Instalaciones',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: 'Cantidad_lamparas',
       wastePercentage: 5,
@@ -588,7 +588,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'Global',
     formula: 'Retiro de ripio y limpieza de vidrios',
     category: 'Final de Obra',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: undefined,
     laborFormula: {
       crewSize: 3,
@@ -608,7 +608,7 @@ export const APU_LIBRARY_RESIDENTIAL: APURenglon[] = [
     unit: 'unid',
     formula: 'Fórmula estándar',
     category: 'General',
-    typology: 'residential',
+    typology: 'residential' as const,
     materialFormula: {
       baseQuantity: '1',
       wastePercentage: 5,
@@ -637,7 +637,7 @@ export const APU_LIBRARY_COMMERCIAL: APURenglon[] = [
     unit: 'ml',
     formula: 'Perímetro del local/terreno',
     category: 'Preparación del Sitio',
-    typology: 'commercial',
+    typology: 'commercial' as const,
     materialFormula: {
       baseQuantity: 'Perimetro_cerramiento',
       wastePercentage: 5,
@@ -660,7 +660,7 @@ export const APU_LIBRARY_COMMERCIAL: APURenglon[] = [
     unit: 'm³',
     formula: 'Volumen × 1.30 (Esponjamiento)',
     category: 'Preparación del Sitio',
-    typology: 'commercial',
+    typology: 'commercial' as const,
     materialFormula: {
       baseQuantity: 'Volumen_demolicion',
       wastePercentage: 30,
@@ -690,7 +690,7 @@ export const APU_LIBRARY_COMMERCIAL: APURenglon[] = [
     unit: 'unid',
     formula: 'Fórmula estándar',
     category: 'General',
-    typology: 'commercial',
+    typology: 'commercial' as const,
     materialFormula: {
       baseQuantity: '1',
       wastePercentage: 5,
@@ -719,7 +719,7 @@ export const APU_LIBRARY_INDUSTRIAL: APURenglon[] = [
     unit: 'm³',
     formula: 'Área × Altura × Factor_compactación',
     category: 'Movimiento de Tierras',
-    typology: 'industrial',
+    typology: 'industrial' as const,
     materialFormula: {
       baseQuantity: 'Volumen_movimiento',
       wastePercentage: 20,
@@ -749,7 +749,7 @@ export const APU_LIBRARY_INDUSTRIAL: APURenglon[] = [
     unit: 'unid',
     formula: 'Fórmula estándar',
     category: 'General',
-    typology: 'industrial',
+    typology: 'industrial' as const,
     materialFormula: {
       baseQuantity: '1',
       wastePercentage: 5,
@@ -778,7 +778,7 @@ export const APU_LIBRARY_CIVIL: APURenglon[] = [
     unit: 'm²',
     formula: 'Área faja de terreno a intervenir',
     category: 'Preparación del Sitio',
-    typology: 'civil',
+    typology: 'civil' as const,
     materialFormula: {
       baseQuantity: 'Área_via',
       wastePercentage: 0,
@@ -802,7 +802,7 @@ export const APU_LIBRARY_CIVIL: APURenglon[] = [
     unit: 'unid',
     formula: 'Fórmula estándar',
     category: 'General',
-    typology: 'civil',
+    typology: 'civil' as const,
     materialFormula: {
       baseQuantity: '1',
       wastePercentage: 5,
@@ -831,7 +831,7 @@ export const APU_LIBRARY_PUBLIC: APURenglon[] = [
     unit: 'Unidad',
     formula: 'Dimensiones exigidas por el ente contratista estatal',
     category: 'Preparación del Sitio',
-    typology: 'public',
+    typology: 'public' as const,
     materialFormula: {
       baseQuantity: '1',
       wastePercentage: 0,
@@ -855,7 +855,7 @@ export const APU_LIBRARY_PUBLIC: APURenglon[] = [
     unit: 'unid',
     formula: 'Fórmula estándar',
     category: 'General',
-    typology: 'public',
+    typology: 'public' as const,
     materialFormula: {
       baseQuantity: '1',
       wastePercentage: 5,

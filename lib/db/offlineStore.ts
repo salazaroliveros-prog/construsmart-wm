@@ -168,6 +168,8 @@ export interface LocalPayrollRecord extends SyncableEntity {
   aguinaldo_provision: number;
   vacaciones_provision: number;
   net_salary: number;
+  total_hours?: number; // Total hours worked (regular + overtime)
+  hourly_rate?: number; // Hourly rate calculated from daily rate
   created_at?: string;
   updated_at?: string;
   // Labor cost overrun detection fields

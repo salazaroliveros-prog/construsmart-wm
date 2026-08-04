@@ -54,8 +54,9 @@ export const useLaborCostOverrun = () => {
       const warningThreshold = BUSINESS_CONFIG.laborOverrun.warning_threshold; // Default: 10%
 
       // Calculate overtime hours
-      const overtimeHours = Math.max(0, payrollRecord.total_hours - 8); // Assuming 8-hour workday
-      const actualHours = payrollRecord.total_hours;
+      const totalHours = payrollRecord.total_hours || 8; // Default to 8 hours if not set
+      const overtimeHours = Math.max(0, totalHours - 8); // Assuming 8-hour workday
+      const actualHours = totalHours;
       const plannedHours = payrollRecord.planned_hours || 8;
 
       // Get linked budget item if available
@@ -106,12 +107,14 @@ export const useLaborCostOverrun = () => {
         const warningTransaction: LocalFinancialTransaction = {
           id: generateId(),
           project_id: payrollRecord.project_id,
-          type: 'warning',
-          category: 'labor_overrun',
+          type: 'expense',
+          category: 'mano_de_obra',
           description: alert.message,
-          amount: costOverrunAmount,
+          quantity: 1,
+          unit: 'Q',
+          unit_cost: costOverrunAmount,
+          total_cost: costOverrunAmount,
           date: new Date().toISOString().split('T')[0],
-          reference: payrollRecord.id,
           sync_status: resolveSyncStatus({ isNewRecord: true, isOnline: navigator.onLine }),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -183,7 +186,8 @@ export const useLaborCostOverrun = () => {
    */
   const checkOvertimeLimit = (payrollRecord: LocalPayrollRecord): boolean => {
     const overtimeDailyLimit = BUSINESS_CONFIG.laborOverrun.overtime_daily_limit;
-    const overtimeHours = Math.max(0, payrollRecord.total_hours - 8);
+    const totalHours = payrollRecord.total_hours || 8;
+    const overtimeHours = Math.max(0, totalHours - 8);
     return overtimeHours > overtimeDailyLimit;
   };
 
@@ -192,7 +196,7 @@ export const useLaborCostOverrun = () => {
    */
   const calculateCostOverrun = (payrollRecord: LocalPayrollRecord): number => {
     const plannedHours = payrollRecord.planned_hours || 8;
-    const actualHours = payrollRecord.total_hours;
+    const actualHours = payrollRecord.total_hours || 8;
     const hourlyRate = payrollRecord.hourly_rate || 50;
 
     const plannedCost = plannedHours * hourlyRate;
@@ -215,10 +219,8 @@ export const useLaborCostOverrun = () => {
           .and(record => record.is_overrun_warning_fired === true)
           .toArray();
       } else {
-        records = await offlineDB.payrollRecords
-          .where('is_overrun_warning_fired')
-          .equals(true)
-          .toArray();
+        const allRecords = await offlineDB.payrollRecords.toArray();
+        records = allRecords.filter(record => record.is_overrun_warning_fired === true);
       }
 
       return records;

@@ -14,5 +14,6 @@ export interface BudgetItem {
   totalCost: number;
   category: string;
   apuResult?: APUResult;
+  timeRequired?: number;
 }
 

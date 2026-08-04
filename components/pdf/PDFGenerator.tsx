@@ -274,26 +274,26 @@ export default function PDFGenerator({
     
     // Resumen de costos y tiempo
     currentY += 10;
-    
+
     doc.setFillColor(secondaryColor, secondaryGreen, secondaryBlue);
     doc.rect(15, currentY, pageWidth - 30, rowHeight, 'F');
-    
+
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.text('RESUMEN DEL PRESUPUESTO', pageWidth / 2, currentY + 5, { align: 'center' });
-    
+
     currentY += rowHeight + 5;
-    
+
     doc.setTextColor(textColorRed, textColorGreen, textColorBlue);
     doc.setFont('helvetica', 'normal');
-    
+
     const summaryItems = [
       { label: 'Costo Directo', value: summary.directCost },
       { label: `Indirectos (${indirectPercentage}%)`, value: summary.indirectCost },
       { label: `Contingencia (${contingencyPercentage}%)`, value: summary.contingency },
       { label: `Utilidad (${profitPercentage}%)`, value: summary.profit },
     ];
-    
+
     summaryItems.forEach((item) => {
       doc.text(item.label, 15, currentY);
       doc.text(formatCurrency(item.value), pageWidth - 45, currentY);

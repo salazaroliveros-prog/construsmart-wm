@@ -54,8 +54,8 @@ export const useEarnedValueManagement = () => {
 
       // Calculate Actual Cost (AC)
       const actualCost = transactions.reduce((sum, tx) => {
-        if (tx.type === 'expense' || tx.type === 'payment') {
-          return sum + (tx.amount || 0);
+        if (tx.type === 'expense') {
+          return sum + (tx.total_cost || 0);
         }
         return sum;
       }, 0);
@@ -68,8 +68,8 @@ export const useEarnedValueManagement = () => {
 
       // Calculate progress based on logs and physical completion
       const totalLogs = logs.length;
-      const completedActivities = logs.filter(log => 
-        log.activity_type === 'completion' || log.activity_type === 'milestone'
+      const completedActivities = logs.filter(log =>
+        log.activity_type === 'milestone'
       ).length;
       
       const progress = totalLogs > 0 ? (completedActivities / totalLogs) * 100 : 0;

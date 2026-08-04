@@ -132,13 +132,14 @@ export const useAutoPurchaseOrder = () => {
       
       // Generate PO code
       const poCode = `PO-${new Date().getFullYear()}-${String(allSuppliers.length + 1).padStart(4, '0')}`;
-      
+
       // Create Purchase Order
       const purchaseOrder: LocalPurchaseOrder = {
         id: generateId(),
         code: poCode,
-        supplier_id: supplier.id,
+        supplier_id: supplier.id || '',
         project_id: stockItem.project_id,
+        total_amount: estimatedCost,
         order_date: new Date().toISOString().split('T')[0],
         expected_delivery_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days
         status: 'pending',
@@ -157,8 +158,8 @@ export const useAutoPurchaseOrder = () => {
         description: stockItem.description,
         quantity: orderQuantity,
         unit: stockItem.unit,
-        unit_cost: stockItem.unit_cost * 1.5, // Include markup
-        total_cost: estimatedCost,
+        unit_price: stockItem.unit_cost * 1.5, // Include markup
+        total_price: estimatedCost,
         sync_status: resolveSyncStatus({ isNewRecord: true, isOnline: navigator.onLine }),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()

@@ -100,6 +100,11 @@ const EXPECTED_COLUMNS = {
  */
 async function getTableColumns(tableName: string): Promise<string[]> {
   try {
+    if (!supabase) {
+      console.error('Supabase client is not initialized');
+      return [];
+    }
+
     // Query a single row to get column structure
     const { data, error } = await supabase
       .from(tableName)
