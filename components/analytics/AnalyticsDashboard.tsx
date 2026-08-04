@@ -33,7 +33,7 @@ import {
   Cell, 
   ReferenceLine 
 } from 'recharts';
-import { offlineDB, LocalProject, LocalFinancialTransaction, LocalWarehouseStock, LocalProjectLog } from '@/lib/db/offlineStore';
+import { offlineDB, LocalProject, LocalFinancialTransaction, LocalWarehouseStock, LocalProjectLog, LocalBudgetItem, LocalBudget } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useBusinessSettings, calculateUtilityMarginHelper } from '@/lib/hooks/useBusinessSettings';
 import { useFinancialDataRealtime } from '@/hooks/useFinancialDataRealtime';
@@ -112,6 +112,8 @@ export default function AnalyticsDashboard() {
   const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
   const [warehouseStock, setWarehouseStock] = useState<LocalWarehouseStock[]>([]);
   const [projectLogs, setProjectLogs] = useState<LocalProjectLog[]>([]);
+  const [budgetItems, setBudgetItems] = useState<LocalBudgetItem[]>([]);
+  const [budgets, setBudgets] = useState<LocalBudget[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('all');
 
   // ==================== HOOKS ====================
@@ -153,6 +155,8 @@ export default function AnalyticsDashboard() {
     loadTransactions();
     loadWarehouseStock();
     loadProjectLogs();
+    loadBudgetItems();
+    loadBudgets();
   }, []);
 
   useEffect(() => {
@@ -179,11 +183,13 @@ export default function AnalyticsDashboard() {
     }
   }, [cumulativeCosts, selectedProject, projects]);
 
-  useRealtimeRefresh(['projects', 'financial_transactions', 'warehouse_stock', 'project_logs'], () => {
+  useRealtimeRefresh(['projects', 'financial_transactions', 'warehouse_stock', 'project_logs', 'budget_items', 'budgets'], () => {
     loadProjects();
     loadTransactions();
     loadWarehouseStock();
     loadProjectLogs();
+    loadBudgetItems();
+    loadBudgets();
   });
 
   // ==================== HELPER FUNCTIONS ====================
@@ -240,6 +246,24 @@ export default function AnalyticsDashboard() {
     }
   };
 
+  const loadBudgetItems = async () => {
+    try {
+      const data = await offlineDB.budgetItems.toArray();
+      setBudgetItems(data);
+    } catch (error) {
+      console.error('Error loading budget items:', error);
+    }
+  };
+
+  const loadBudgets = async () => {
+    try {
+      const data = await offlineDB.budgets.toArray();
+      setBudgets(data);
+    } catch (error) {
+      console.error('Error loading budgets:', error);
+    }
+  };
+
   const loadAnalyticsData = async () => {
     if (!hasData) {
       resetAnalytics();
@@ -287,7 +311,7 @@ export default function AnalyticsDashboard() {
 
   // ==================== DATA GENERATION ====================
   
-  // GRÁFICO 1: Curva S (Avance Físico vs Financiero Acumulado)
+  // GRÁFICO 1: Curva S (Avance Físico vs Financiero Acumulado) - usando datos reales de transactions y project_logs
   const generateSCurveData = (projects: LocalProject[]): SCurveData[] => {
     if (projects.length === 0) return [];
 
@@ -302,11 +326,11 @@ export default function AnalyticsDashboard() {
       projects.forEach(project => {
         if (!project.start_date) return;
         const startDate = new Date(project.start_date);
-        const endDate = project.estimated_end_date 
+        const endDate = project.estimated_end_date
           ? new Date(project.estimated_end_date)
           : new Date(startDate.getTime() + (project.duration_days || 0) * 86400000);
         const totalDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000));
-        
+
         const monthDate = new Date(currentDate.getFullYear(), index, 1);
         const elapsedDays = Math.ceil((monthDate.getTime() - startDate.getTime()) / 86400000);
         const programmedProgress = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
@@ -316,25 +340,28 @@ export default function AnalyticsDashboard() {
           totalReal += 100;
         } else if (project.status === 'execution') {
           totalPlanificado += programmedProgress;
-          
-          // Use real-time cumulative costs from financial data hook
-          const budget = project.budget_total || project.total_budget || 0;
-          let financialReal = 0;
-          
-          if (selectedProject === 'all') {
-            // For all projects, use transactions as before
-            const projectTransactions = transactions.filter(t => t.project_id === project.id);
-            const totalExpenses = projectTransactions
-              .filter(t => t.type === 'expense')
-              .reduce((sum, t) => sum + (t.total_cost || 0), 0);
-            financialReal = budget > 0 ? (totalExpenses / budget) * 100 : 0;
-          } else {
-            // For single project, use real-time cumulative costs
-            const cumulativeCost = Array.from(cumulativeCosts.values()).reduce((sum, cost) => sum + cost, 0);
-            financialReal = budget > 0 ? (cumulativeCost / budget) * 100 : 0;
+
+          // Usar physical_progress de project_logs para avance físico real
+          const projectLogsData = projectLogs.filter(l => l.project_id === project.id);
+          let physicalProgress = programmedProgress;
+          if (projectLogsData.length > 0) {
+            const latestLog = projectLogsData
+              .filter(log => log.physical_progress !== undefined && log.physical_progress !== null)
+              .sort((a, b) => new Date(b.log_date).getTime() - new Date(a.log_date).getTime())[0];
+            if (latestLog && latestLog.physical_progress !== undefined) {
+              physicalProgress = latestLog.physical_progress;
+            }
           }
-          
-          totalReal += Math.min(100, financialReal || programmedProgress * 0.8);
+
+          // Usar transactions para avance financiero real
+          const budget = project.budget_total || project.total_budget || 0;
+          const projectTransactions = transactions.filter(t => t.project_id === project.id);
+          const totalExpenses = projectTransactions
+            .filter(t => t.type === 'expense')
+            .reduce((sum, t) => sum + (t.total_cost || 0), 0);
+          const financialReal = budget > 0 ? (totalExpenses / budget) * 100 : 0;
+
+          totalReal += Math.min(100, (physicalProgress + financialReal) / 2);
         } else {
           totalPlanificado += programmedProgress;
           totalReal += 0;
@@ -386,29 +413,43 @@ export default function AnalyticsDashboard() {
     });
   };
 
-  // GRÁFICO 3: Desviación de Presupuesto por Capítulos
+  // GRÁFICO 3: Desviación de Presupuesto por Capítulos (usando budget_items reales)
   const generateBudgetDeviationData = (projects: LocalProject[]): BudgetDeviationData[] => {
     if (projects.length === 0) return [];
 
+    // Agrupar budget_items por descripción/categoría
     const capitulos = ['Cimentación', 'Estructura', 'Acabados', 'Instalaciones', 'Otros'];
     return capitulos.map(capitulo => {
       let totalPresupuesto = 0;
       let totalReal = 0;
 
       projects.forEach(project => {
-        if (!project.budget_total) return;
-        
-        const categoryFactor: Record<string, number> = {
-          'Cimentación': 0.25,
-          'Estructura': 0.35,
-          'Acabados': 0.25,
-          'Instalaciones': 0.10,
-          'Otros': 0.05,
+        // Obtener budget_items del proyecto
+        const projectBudgetItems = budgetItems.filter(bi => {
+          // Obtener budget_id del proyecto
+          const projectBudget = budgets.find(b => b.project_id === project.id);
+          return projectBudget && bi.budget_id === projectBudget.id;
+        });
+
+        // Mapear descripciones a capítulos
+        const capituloKeywords: Record<string, string[]> = {
+          'Cimentación': ['cimentación', 'fundación', 'cemento', 'zapata', 'losa', 'concreto'],
+          'Estructura': ['estructura', 'acero', 'varilla', 'columna', 'viga', 'hierro'],
+          'Acabados': ['acabado', 'piso', 'muro', 'yeso', 'pintura', 'revestimiento'],
+          'Instalaciones': ['instalación', 'eléctrico', 'sanitario', 'plomería', 'tubería'],
+          'Otros': []
         };
 
-        const chapterBudgeted = project.budget_total * (categoryFactor[capitulo] || 0.2);
-        totalPresupuesto += chapterBudgeted;
+        // Sumar presupuesto de items que coinciden con el capítulo
+        projectBudgetItems.forEach(item => {
+          const description = item.description?.toLowerCase() || '';
+          const keywords = capituloKeywords[capitulo] || [];
+          if (keywords.some(kw => description.includes(kw))) {
+            totalPresupuesto += item.total_cost || 0;
+          }
+        });
 
+        // Sumar gastos reales por categoría de transacción
         const categoryMapping: Record<string, string> = {
           'Cimentación': 'materiales',
           'Estructura': 'materiales',
@@ -417,9 +458,9 @@ export default function AnalyticsDashboard() {
           'Otros': 'otros',
         };
 
-        const projectTransactions = transactions.filter(t => 
-          t.project_id === project.id && 
-          t.type === 'expense' && 
+        const projectTransactions = transactions.filter(t =>
+          t.project_id === project.id &&
+          t.type === 'expense' &&
           t.category === categoryMapping[capitulo]
         );
         const actualSpent = projectTransactions.reduce((sum, t) => sum + (t.total_cost || 0), 0);
@@ -428,7 +469,7 @@ export default function AnalyticsDashboard() {
 
       return {
         capitulo,
-        presupuestoOriginal: totalPresupuesto,
+        presupuestoOriginal: totalPresupuesto || 0,
         costoRealDevengado: totalReal,
       };
     });
@@ -489,24 +530,38 @@ export default function AnalyticsDashboard() {
     return tasks.slice(0, 12); // Limitar a 12 tareas para visualización
   };
 
-  // GRÁFICO 5: Velocidad de Consumo de Materiales Críticos (Burn Rate)
+  // GRÁFICO 5: Velocidad de Consumo de Materiales Críticos (Burn Rate) - usando datos reales de warehouse_stock
   const generateBurnRateData = (projects: LocalProject[]): MaterialBurnRateData[] => {
     if (projects.length === 0) return [];
 
-    const materiales = ['Cemento', 'Varilla', 'Agregados', 'Ladrillo', 'Acero'];
+    // Mapear descripciones de materiales reales en almacén
+    const materialKeywords: Record<string, string[]> = {
+      'Cemento': ['cemento', 'progreso', 'holcim'],
+      'Varilla': ['varilla', 'acero', 'hierro', 'refuerzo'],
+      'Agregados': ['arena', 'grava', 'piedra', 'agregado'],
+      'Ladrillo': ['ladrillo', 'bloque', 'block'],
+      'Acero': ['acero', 'perfil', 'estructura']
+    };
+
+    const materiales = Object.keys(materialKeywords);
     return materiales.map(material => {
-      const materialStock = warehouseStock.filter(s => 
-        s.description?.toLowerCase().includes(material.toLowerCase())
-      );
+      const keywords = materialKeywords[material] || [];
+      
+      // Filtrar stock por descripción que contenga keywords
+      const materialStock = warehouseStock.filter(s => {
+        const description = s.description?.toLowerCase() || '';
+        return keywords.some(kw => description.includes(kw));
+      });
       
       const totalQuantity = materialStock.reduce((sum, s) => sum + (s.current_stock || 0), 0);
-      const reorderPoint = totalQuantity * 0.2; // 20% como punto de reorden
+      const minThreshold = materialStock.reduce((sum, s) => sum + (s.minimum_threshold || 0), 0);
+      const maxStock = materialStock.reduce((sum, s) => sum + (s.minimum_threshold || 0) * 5, 0); // Estimado como 5x el mínimo
       
       return {
         material,
         nivelActual: totalQuantity,
-        puntoReorden: reorderPoint,
-        total: totalQuantity * 1.25, // Capacidad total como referencia
+        puntoReorden: minThreshold || (totalQuantity * 0.2),
+        total: maxStock || (totalQuantity * 1.25),
       };
     });
   };
