@@ -19,6 +19,7 @@ import ActionButton from '@/components/ui/ActionButton';
 import { financialTransactionSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { FINANCIAL_CATEGORY_COLORS, getFinancialCategoryColor } from '@/lib/config/colorPalettes';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 interface TransactionFormData {
   project_id?: string;
@@ -835,10 +836,11 @@ export default function FinanceManager() {
                 <button
                   type="submit"
                   disabled={saveLoading}
-                  className="flex-1 glass-button px-4 py-2 rounded-lg text-white bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 disabled:opacity-50"
+                  className="flex-1 glass-button px-4 py-2 rounded-lg text-white bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 disabled:opacity-50 flex items-center justify-center gap-2"
                   aria-label={editingTransaction ? 'Actualizar transacción existente' : 'Crear nueva transacción'}
                 >
-                  {saveLoading ? 'Guardando...' : (editingTransaction ? 'Actualizar' : 'Crear')}
+                  <Save className="w-4 h-4" />
+                  {saveLoading ? <LoadingSpinner size={16} /> : (editingTransaction ? 'Actualizar' : 'Crear')}
                 </button>
               </div>
             </form>

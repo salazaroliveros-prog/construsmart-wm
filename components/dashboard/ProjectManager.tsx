@@ -17,6 +17,7 @@ import { projectSchema, validateSchema, formatValidationErrors } from '@/lib/val
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { calculateCompletionBuffer, getBufferSeverity } from '@/lib/config/app.config';
 import { formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 interface ProjectFormData {
   code: string;
@@ -800,9 +801,10 @@ export default function ProjectManager() {
                   <button
                     type="submit"
                     disabled={saveLoading}
-                    className="flex-1 glass-button px-4 py-2 rounded-lg text-white bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 disabled:opacity-50"
+                    className="flex-1 glass-button px-4 py-2 rounded-lg text-white bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    {saveLoading ? 'Guardando...' : (editingProject ? 'Actualizar' : 'Crear')}
+                    <Save className="w-4 h-4" />
+                    {saveLoading ? <LoadingSpinner size={16} /> : (editingProject ? 'Actualizar' : 'Crear')}
                   </button>
                 </Tooltip>
               </div>

@@ -18,6 +18,7 @@ import { payrollEmployeeSchema, payrollRecordSchema, validateSchema, formatValid
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { useLaborCostOverrun } from '@/hooks/useLaborCostOverrun';
 import { PAYROLL_CATEGORY_COLORS, getPayrollCategoryColor } from '@/lib/config/colorPalettes';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 // Configuration: Hours per workday (configurable per organization)
 const HOURS_PER_WORKDAY = 8;
@@ -1212,7 +1213,7 @@ const checkOnlineStatus = () => {
                 aria-label={editingEmployee ? 'Actualizar empleado existente' : 'Guardar nuevo empleado'}
               >
                 <Save className="w-4 h-4" />
-                {saveLoading ? 'Guardando...' : 'Guardar'}
+                {saveLoading ? <LoadingSpinner size={16} /> : 'Guardar'}
               </button>
             </div>
           </div>
@@ -1350,7 +1351,7 @@ const checkOnlineStatus = () => {
                 aria-label={editingPayroll ? 'Actualizar registro de nómina existente' : 'Guardar nuevo registro de nómina'}
               >
                 <Save className="w-4 h-4" />
-                {saveLoading ? 'Guardando...' : 'Guardar'}
+                {saveLoading ? <LoadingSpinner size={16} /> : 'Guardar'}
               </button>
             </div>
           </div>

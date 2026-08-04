@@ -19,6 +19,7 @@ import { getCurrentUserId } from '@/lib/auth/userId';
 import { useMaterialAlertContext } from '@/context/MaterialAlertContext';
 import { useAutoPurchaseOrder } from '@/hooks/useAutoPurchaseOrder';
 import { WAREHOUSE_UNIT_COLORS, getWarehouseUnitColor } from '@/lib/config/colorPalettes';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -1083,7 +1084,7 @@ export default function WarehouseManager() {
                 aria-label={editingItem ? 'Actualizar material existente' : 'Guardar nuevo material'}
               >
                 <Save className="w-4 h-4" />
-                <span>{saveLoading ? 'Guardando...' : 'Guardar'}</span>
+                {saveLoading ? <LoadingSpinner size={16} /> : 'Guardar'}
               </button>
             </div>
           </div>
