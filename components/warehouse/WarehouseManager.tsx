@@ -18,6 +18,7 @@ import { warehouseStockSchema, validateSchema, formatValidationErrors } from '@/
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { useMaterialAlertContext } from '@/context/MaterialAlertContext';
 import { useAutoPurchaseOrder } from '@/hooks/useAutoPurchaseOrder';
+import { WAREHOUSE_UNIT_COLORS, getWarehouseUnitColor } from '@/lib/config/colorPalettes';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -52,16 +53,33 @@ const unitLabels: Record<string, string> = {
   galón: 'Galón'
 };
 
+// Helper para convertir color hex a rgba
+const hexToRgba = (hex: string, alpha: number): string => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+// Helper para obtener color RGB más claro
+const hexToLightRgb = (hex: string): string => {
+  const r = Math.min(255, parseInt(hex.slice(1, 3), 16) + 80);
+  const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + 80);
+  const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + 80);
+  return `rgb(${r}, ${g}, ${b})`;
+};
+
+// Colores de unidades basados en paleta centralizada
 const unitColors: Record<string, { bg: string; text: string; border: string }> = {
-  unid: { bg: 'rgba(59, 130, 246, 0.2)', text: 'rgb(147, 197, 253)', border: 'rgba(59, 130, 246, 0.3)' },
-  kg: { bg: 'rgba(16, 185, 129, 0.2)', text: 'rgb(134, 239, 172)', border: 'rgba(16, 185, 129, 0.3)' },
-  m: { bg: 'rgba(245, 158, 11, 0.2)', text: 'rgb(253, 186, 116)', border: 'rgba(245, 158, 11, 0.3)' },
-  m2: { bg: 'rgba(139, 92, 246, 0.2)', text: 'rgb(196, 181, 253)', border: 'rgba(139, 92, 246, 0.3)' },
-  m3: { bg: 'rgba(236, 72, 153, 0.2)', text: 'rgb(244, 114, 182)', border: 'rgba(236, 72, 153, 0.3)' },
-  litro: { bg: 'rgba(20, 184, 166, 0.2)', text: 'rgb(45, 212, 191)', border: 'rgba(20, 184, 166, 0.3)' },
-  bolsa: { bg: 'rgba(99, 102, 241, 0.2)', text: 'rgb(129, 140, 248)', border: 'rgba(99, 102, 241, 0.3)' },
-  rollo: { bg: 'rgba(34, 197, 94, 0.2)', text: 'rgb(74, 222, 128)', border: 'rgba(34, 197, 94, 0.3)' },
-  galón: { bg: 'rgba(168, 85, 247, 0.2)', text: 'rgb(192, 132, 252)', border: 'rgba(168, 85, 247, 0.3)' }
+  unid: { bg: hexToRgba(getWarehouseUnitColor('unidad'), 0.2), text: hexToLightRgb(getWarehouseUnitColor('unidad')), border: hexToRgba(getWarehouseUnitColor('unidad'), 0.3) },
+  kg: { bg: hexToRgba(getWarehouseUnitColor('kg'), 0.2), text: hexToLightRgb(getWarehouseUnitColor('kg')), border: hexToRgba(getWarehouseUnitColor('kg'), 0.3) },
+  m: { bg: hexToRgba(getWarehouseUnitColor('m'), 0.2), text: hexToLightRgb(getWarehouseUnitColor('m')), border: hexToRgba(getWarehouseUnitColor('m'), 0.3) },
+  m2: { bg: hexToRgba(getWarehouseUnitColor('m2'), 0.2), text: hexToLightRgb(getWarehouseUnitColor('m2')), border: hexToRgba(getWarehouseUnitColor('m2'), 0.3) },
+  m3: { bg: hexToRgba(getWarehouseUnitColor('m3'), 0.2), text: hexToLightRgb(getWarehouseUnitColor('m3')), border: hexToRgba(getWarehouseUnitColor('m3'), 0.3) },
+  litro: { bg: hexToRgba(getWarehouseUnitColor('litro'), 0.2), text: hexToLightRgb(getWarehouseUnitColor('litro')), border: hexToRgba(getWarehouseUnitColor('litro'), 0.3) },
+  bolsa: { bg: hexToRgba(getWarehouseUnitColor('bolsa'), 0.2), text: hexToLightRgb(getWarehouseUnitColor('bolsa')), border: hexToRgba(getWarehouseUnitColor('bolsa'), 0.3) },
+  rollo: { bg: hexToRgba(getWarehouseUnitColor('rollo'), 0.2), text: hexToLightRgb(getWarehouseUnitColor('rollo')), border: hexToRgba(getWarehouseUnitColor('rollo'), 0.3) },
+  galón: { bg: hexToRgba(getWarehouseUnitColor('galón'), 0.2), text: hexToLightRgb(getWarehouseUnitColor('galón')), border: hexToRgba(getWarehouseUnitColor('galón'), 0.3) }
 };
 
 // ============================================================================

@@ -18,6 +18,7 @@ import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import { financialTransactionSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
+import { FINANCIAL_CATEGORY_COLORS, getFinancialCategoryColor } from '@/lib/config/colorPalettes';
 
 interface TransactionFormData {
   project_id?: string;
@@ -46,19 +47,36 @@ const categoryLabels: Record<string, string> = {
   'Gastos Operativos / Nómina de Mano de Obra': 'Nómina de Mano de Obra'
 };
 
+// Helper para convertir color hex a rgba
+const hexToRgba = (hex: string, alpha: number): string => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+// Helper para obtener color RGB más claro
+const hexToLightRgb = (hex: string): string => {
+  const r = Math.min(255, parseInt(hex.slice(1, 3), 16) + 80);
+  const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + 80);
+  const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + 80);
+  return `rgb(${r}, ${g}, ${b})`;
+};
+
+// Colores de categorías basados en paleta centralizada
 const categoryColors: Record<string, { bg: string; text: string; border: string }> = {
-  materiales: { bg: 'rgba(59, 130, 246, 0.2)', text: 'rgb(147, 197, 253)', border: 'rgba(59, 130, 246, 0.3)' },
-  mano_de_obra: { bg: 'rgba(16, 185, 129, 0.2)', text: 'rgb(134, 239, 172)', border: 'rgba(16, 185, 129, 0.3)' },
-  herramienta: { bg: 'rgba(245, 158, 11, 0.2)', text: 'rgb(253, 186, 116)', border: 'rgba(245, 158, 11, 0.3)' },
-  sub_contrato: { bg: 'rgba(139, 92, 246, 0.2)', text: 'rgb(196, 181, 253)', border: 'rgba(139, 92, 246, 0.3)' },
-  administrativo: { bg: 'rgba(236, 72, 153, 0.2)', text: 'rgb(244, 114, 182)', border: 'rgba(236, 72, 153, 0.3)' },
-  personal: { bg: 'rgba(239, 68, 68, 0.2)', text: 'rgb(248, 113, 113)', border: 'rgba(239, 68, 68, 0.3)' },
-  transporte: { bg: 'rgba(20, 184, 166, 0.2)', text: 'rgb(45, 212, 191)', border: 'rgba(20, 184, 166, 0.3)' },
-  fijos: { bg: 'rgba(99, 102, 241, 0.2)', text: 'rgb(129, 140, 248)', border: 'rgba(99, 102, 241, 0.3)' },
-  hogar: { bg: 'rgba(34, 197, 94, 0.2)', text: 'rgb(74, 222, 128)', border: 'rgba(34, 197, 94, 0.3)' },
-  aporte: { bg: 'rgba(168, 85, 247, 0.2)', text: 'rgb(192, 132, 252)', border: 'rgba(168, 85, 247, 0.3)' },
-  trabajos_extra: { bg: 'rgba(249, 115, 22, 0.2)', text: 'rgb(251, 146, 60)', border: 'rgba(249, 115, 22, 0.3)' },
-  'Gastos Operativos / Nómina de Mano de Obra': { bg: 'rgba(251, 191, 36, 0.2)', text: 'rgb(253, 224, 71)', border: 'rgba(251, 191, 36, 0.3)' } // Payroll integration category
+  materiales: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.materiales, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.materiales), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.materiales, 0.3) },
+  mano_de_obra: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.mano_de_obra, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.mano_de_obra), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.mano_de_obra, 0.3) },
+  herramienta: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.herramienta, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.herramienta), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.herramienta, 0.3) },
+  sub_contrato: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.sub_contrato, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.sub_contrato), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.sub_contrato, 0.3) },
+  administrativo: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.administrativo, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.administrativo), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.administrativo, 0.3) },
+  personal: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.personal, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.personal), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.personal, 0.3) },
+  transporte: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.transporte, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.transporte), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.transporte, 0.3) },
+  fijos: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.fijos, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.fijos), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.fijos, 0.3) },
+  hogar: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.hogar, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.hogar), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.hogar, 0.3) },
+  aporte: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.aporte, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.aporte), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.aporte, 0.3) },
+  trabajos_extra: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.trabajos_extra, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.trabajos_extra), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.trabajos_extra, 0.3) },
+  'Gastos Operativos / Nómina de Mano de Obra': { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS['Gastos Operativos / Nómina de Mano de Obra'], 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS['Gastos Operativos / Nómina de Mano de Obra']), border: hexToRgba(FINANCIAL_CATEGORY_COLORS['Gastos Operativos / Nómina de Mano de Obra'], 0.3) }
 };
 
 export default function FinanceManager() {

@@ -9,10 +9,11 @@
 export type ProjectStatus = 'planning' | 'execution' | 'paused' | 'completed';
 export type ProjectTypology = 'residential' | 'commercial' | 'industrial' | 'civil' | 'public';
 export type QualityLevel = 'basic' | 'moderate' | 'premium';
-export type SyncStatus = 'synced' | 'created_offline' | 'updated_offline' | 'pending' | 'sync_failed';
+export type SyncStatus = 'synced' | 'created_offline' | 'updated_offline' | 'syncing' | 'pending' | 'sync_failed';
 
 export interface ProjectRow {
   id: string;
+  user_id: string;
   code: string;
   name: string;
   client_name: string;
@@ -29,6 +30,11 @@ export interface ProjectRow {
   total_budget: number;
   budget_total: number | null;
   calculated_duration: number | null;
+  has_critical_roadblock: boolean;
+  roadblock_type: string | null;
+  roadblock_description: string | null;
+  roadblock_date: string | null;
+  completion_buffer_days: number | null;
   sync_status: SyncStatus;
   created_at: string;
   updated_at: string;
@@ -39,6 +45,7 @@ export type ProjectUpdate = Partial<Omit<ProjectRow, 'id' | 'created_at' | 'upda
 
 export interface BudgetRow {
   id: string;
+  user_id: string;
   project_id: string;
   version: number;
   direct_cost: number;

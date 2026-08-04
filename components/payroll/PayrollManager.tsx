@@ -17,6 +17,7 @@ import ActionButton from '@/components/ui/ActionButton';
 import { payrollEmployeeSchema, payrollRecordSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { useLaborCostOverrun } from '@/hooks/useLaborCostOverrun';
+import { PAYROLL_CATEGORY_COLORS, getPayrollCategoryColor } from '@/lib/config/colorPalettes';
 
 // Configuration: Hours per workday (configurable per organization)
 const HOURS_PER_WORKDAY = 8;
@@ -56,9 +57,26 @@ const categoryLabels: Record<string, string> = {
   empleado: 'Empleado'
 };
 
+// Helper para convertir color hex a rgba
+const hexToRgba = (hex: string, alpha: number): string => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+// Helper para obtener color RGB más claro
+const hexToLightRgb = (hex: string): string => {
+  const r = Math.min(255, parseInt(hex.slice(1, 3), 16) + 80);
+  const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + 80);
+  const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + 80);
+  return `rgb(${r}, ${g}, ${b})`;
+};
+
+// Colores de categorías basados en paleta centralizada
 const categoryColors: Record<string, { bg: string; text: string; border: string }> = {
-  obrero: { bg: 'rgba(59, 130, 246, 0.2)', text: 'rgb(147, 197, 253)', border: 'rgba(59, 130, 246, 0.3)' },
-  empleado: { bg: 'rgba(139, 92, 246, 0.2)', text: 'rgb(196, 181, 253)', border: 'rgba(139, 92, 246, 0.3)' }
+  obrero: { bg: hexToRgba(getPayrollCategoryColor('obrero'), 0.2), text: hexToLightRgb(getPayrollCategoryColor('obrero')), border: hexToRgba(getPayrollCategoryColor('obrero'), 0.3) },
+  empleado: { bg: hexToRgba(getPayrollCategoryColor('empleado'), 0.2), text: hexToLightRgb(getPayrollCategoryColor('empleado')), border: hexToRgba(getPayrollCategoryColor('empleado'), 0.3) }
 };
 
 // ============================================================================

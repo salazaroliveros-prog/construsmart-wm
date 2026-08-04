@@ -1,7 +1,8 @@
 import Dexie, { Table } from 'dexie';
 
 // ============ STRICT SYNC STATUS TYPES ============
-export type SyncStatus = 'pending' | 'syncing' | 'synced' | 'error';
+// Alineado con Supabase schema: 'synced' | 'created_offline' | 'updated_offline' | 'syncing' | 'pending' | 'sync_failed'
+export type SyncStatus = 'synced' | 'created_offline' | 'updated_offline' | 'syncing' | 'pending' | 'sync_failed';
 
 export interface SyncStatusTransition {
   from: SyncStatus;
@@ -12,7 +13,7 @@ export interface SyncStatusTransition {
 
 export interface SyncableEntity {
   id?: string;
-  sync_status: SyncStatus;
+  sync_status: SyncStatus; // Default: 'synced'
   last_sync_attempt?: string;
   sync_error?: string;
   validateTransition?: (newStatus: SyncStatus) => boolean;
@@ -24,12 +25,14 @@ export const validateSyncTransition = (
   newStatus: SyncStatus
 ): boolean => {
   const allowedTransitions: Record<SyncStatus, SyncStatus[]> = {
-    pending: ['syncing', 'error'],
-    syncing: ['synced', 'error', 'pending'],
-    synced: ['pending'],
-    error: ['pending', 'syncing']
+    synced: ['updated_offline', 'syncing'],
+    created_offline: ['syncing', 'sync_failed'],
+    updated_offline: ['syncing', 'sync_failed'],
+    syncing: ['synced', 'sync_failed', 'pending'],
+    pending: ['syncing', 'sync_failed'],
+    sync_failed: ['syncing', 'pending']
   };
-  
+
   return allowedTransitions[currentStatus]?.includes(newStatus) ?? false;
 };
 
@@ -98,6 +101,7 @@ export interface LocalBudgetItem extends SyncableEntity {
   depth_m?: number;
   height_m?: number;
   slab_type?: string;
+  category?: string; // For warehouse integration
   // Commercial conversion field for warehouse integration
   unidades_comerciales_estimadas?: number; // Stores commercial units (bags, quintales, etc.)
   // Warehouse consumption tracking
@@ -330,18 +334,18 @@ export class WMDatabase extends Dexie {
   constructor() {
     super('ConstructoraWM_OfflineDB');
     this.version(8).stores({
-      projects: 'id, code, name, sync_status, status, typology, created_at, updated_at, budget_total, calculated_duration, has_critical_roadblock, roadblock_type, roadblock_date',
-      budgets: 'id, project_id, version, sync_status, created_at, updated_at',
-      budgetItems: 'id, budget_id, project_id, parent_id, code, sync_status, item_order, created_at, updated_at, actual_consumption, consumption_variance',
-      financialTransactions: 'id, project_id, type, category, date, sync_status, created_at, updated_at',
-      payrollEmployees: 'id, name, position, category, department, sync_status, created_at, updated_at',
-      payrollRecords: 'id, project_id, employee_id, period_start, period_end, sync_status, created_at, updated_at, budget_item_id, is_overrun_warning_fired',
-      warehouseStock: 'id, project_id, item_code, sync_status, created_at, updated_at, preferred_supplier_id, auto_generate_po, category',
-      clients: 'id, code, name, client_type, sync_status, created_at, updated_at, account_balance, credit_limit, is_delinquent',
-      projectLogs: 'id, project_id, log_date, activity_type, sync_status, created_at, updated_at, is_critical_roadblock, roadblock_category, severity',
-      suppliers: 'id, code, name, sync_status, created_at, updated_at, categories, is_preferred',
-      purchaseOrders: 'id, code, supplier_id, project_id, status, order_date, sync_status, created_at, updated_at',
-      purchaseOrderItems: 'id, purchase_order_id, item_code, sync_status, created_at, updated_at',
+      projects: 'id, user_id, code, name, sync_status, status, typology, created_at, updated_at, budget_total, calculated_duration, has_critical_roadblock, roadblock_type, roadblock_date',
+      budgets: 'id, user_id, project_id, version, sync_status, created_at, updated_at',
+      budgetItems: 'id, user_id, budget_id, project_id, parent_id, code, sync_status, item_order, created_at, updated_at, actual_consumption, consumption_variance, category',
+      financialTransactions: 'id, user_id, project_id, type, category, date, sync_status, created_at, updated_at',
+      payrollEmployees: 'id, user_id, name, position, category, department, sync_status, created_at, updated_at',
+      payrollRecords: 'id, user_id, project_id, employee_id, period_start, period_end, sync_status, created_at, updated_at, budget_item_id, is_overrun_warning_fired',
+      warehouseStock: 'id, user_id, project_id, item_code, sync_status, created_at, updated_at, preferred_supplier_id, auto_generate_po, category',
+      clients: 'id, user_id, code, name, client_type, sync_status, created_at, updated_at, account_balance, credit_limit, is_delinquent',
+      projectLogs: 'id, user_id, project_id, log_date, activity_type, sync_status, created_at, updated_at, is_critical_roadblock, roadblock_category, severity',
+      suppliers: 'id, user_id, code, name, sync_status, created_at, updated_at, categories, is_preferred',
+      purchaseOrders: 'id, user_id, code, supplier_id, project_id, status, order_date, sync_status, created_at, updated_at',
+      purchaseOrderItems: 'id, user_id, purchase_order_id, item_code, sync_status, created_at, updated_at',
       pendingDeletes: '++id, table, serverId, created_at'
     });
   }
