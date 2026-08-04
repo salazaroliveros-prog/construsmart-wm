@@ -334,8 +334,8 @@ export default function FinanceManager() {
         return;
       }
 
-      const totalCost = formData.quantity * formData.unit_cost;
-      
+      const total_cost = formData.quantity * formData.unit_cost;
+
       // Obtener user_id para tenencia
       const userId = await getCurrentUserId();
 
@@ -349,7 +349,7 @@ export default function FinanceManager() {
         quantity: formData.quantity,
         unit: formData.unit,
         unit_cost: formData.unit_cost,
-        total_cost: totalCost,
+        total_cost: total_cost,
         date: formData.date,
         receipt_url: formData.receipt_url,
         sync_status: editingTransaction

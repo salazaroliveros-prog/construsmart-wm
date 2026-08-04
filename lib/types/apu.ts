@@ -59,7 +59,7 @@ export interface APUResult {
   unitLaborCost: number;             // Costo Unitario Mano de Obra
   directCost: number;                // Costo Directo (CD)
   indirectCost: number;              // Costo Indirecto (CI)
-  totalCost: number;                 // Costo Total del Renglón
+  total_cost: number;                // Costo Total del Renglón
   breakdown: {
     materials: number;
     labor: number;
@@ -78,7 +78,7 @@ export interface APUProjectData {
   };
   totalDirectCost: number;
   totalIndirectCost: number;
-  totalCost: number;
+  total_cost: number;
   calculatedAt: string;
 }
 

@@ -239,49 +239,49 @@ export function calculateSlabCost(
   result: SlabCalculationResult,
   params: SlabCostParams
 ): number {
-  let totalCost = 0;
+  let total_cost = 0;
 
   // Concrete cost
   if (result.concreteVolume > 0) {
-    totalCost += result.concreteVolume * params.concretePricePerM3;
+    total_cost += result.concreteVolume * params.concretePricePerM3;
   }
 
   // Steel cost
   if (result.steelWeight > 0) {
-    totalCost += result.steelWeight * params.steelPricePerKg;
+    total_cost += result.steelWeight * params.steelPricePerKg;
   }
 
   // Formwork cost
   if (result.formworkArea > 0) {
-    totalCost += result.formworkArea * params.formworkPricePerM2;
+    total_cost += result.formworkArea * params.formworkPricePerM2;
   }
 
   // Electrowelded mesh cost
   if (result.electroweldedMeshArea && params.meshPricePerM2) {
-    totalCost += result.electroweldedMeshArea * params.meshPricePerM2;
+    total_cost += result.electroweldedMeshArea * params.meshPricePerM2;
   }
 
   // Viguetas cost
   if (result.viguetasLength && params.viguetaPricePerM) {
-    totalCost += result.viguetasLength * params.viguetaPricePerM;
+    total_cost += result.viguetasLength * params.viguetaPricePerM;
   }
 
   // Bovedillas cost
   if (result.bovedillasCount && params.bovedillaPricePerUnit) {
-    totalCost += result.bovedillasCount * params.bovedillaPricePerUnit;
+    total_cost += result.bovedillasCount * params.bovedillaPricePerUnit;
   }
 
   // Wood cost
   if (params.woodPricePerBoardFoot && result.description.includes('pies tablares')) {
     const boardFeet = parseFloat(result.description.match(/\d+/)?.[0] || '0');
-    totalCost += boardFeet * params.woodPricePerBoardFoot;
+    total_cost += boardFeet * params.woodPricePerBoardFoot;
   }
 
   // Tiles cost
   if (params.tilePricePerUnit && result.description.includes('tejas')) {
     const tiles = parseFloat(result.description.match(/\d+/)?.[0] || '0');
-    totalCost += tiles * params.tilePricePerUnit;
+    total_cost += tiles * params.tilePricePerUnit;
   }
 
-  return roundMoney(totalCost);
+  return roundMoney(total_cost);
 }

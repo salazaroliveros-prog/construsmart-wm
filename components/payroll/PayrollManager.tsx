@@ -204,7 +204,7 @@ const checkOnlineStatus = () => {
       totalEmployees: activeEmployees.length,
       totalMonthlyPayroll,
       totalBenefits,
-      totalCost: totalMonthlyPayroll + totalBenefits,
+      total_cost: totalMonthlyPayroll + totalBenefits,
     };
   };
 
@@ -796,7 +796,7 @@ const checkOnlineStatus = () => {
               <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
               <span className="text-white/60 text-xs sm:text-sm">Costo Total</span>
             </div>
-            <p className="text-lg sm:text-xl font-bold text-amber-400">{formatCurrency(summary.totalCost, financial)}</p>
+            <p className="text-lg sm:text-xl font-bold text-amber-400">{formatCurrency(summary.total_cost, financial)}</p>
           </div>
         </div>
       </div>

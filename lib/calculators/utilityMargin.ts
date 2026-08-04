@@ -12,7 +12,7 @@ export interface UtilityMarginResult {
   directCost: number;
   indirectCost: number;
   contingencyCost: number;
-  totalCost: number;
+  total_cost: number;
 }
 
 export interface FinancialSettings {
@@ -41,15 +41,15 @@ export function calculateUtilityMargin(
       directCost: totalSpent || 0,
       indirectCost: 0,
       contingencyCost: 0,
-      totalCost: totalSpent || 0,
+      total_cost: totalSpent || 0,
     };
   }
 
   if (!totalSpent || totalSpent < 0) {
     const indirectCost = totalBudget * (financialSettings.indirectPercentage / 100);
     const contingencyCost = totalBudget * (financialSettings.contingencyPercentage / 100);
-    const totalCost = indirectCost + contingencyCost;
-    const margin = totalBudget - totalCost;
+    const total_cost = indirectCost + contingencyCost;
+    const margin = totalBudget - total_cost;
     const marginPercentage = (margin / totalBudget) * 100;
 
     return {
@@ -61,7 +61,7 @@ export function calculateUtilityMargin(
       directCost: 0,
       indirectCost,
       contingencyCost,
-      totalCost,
+      total_cost,
     };
   }
 
@@ -75,10 +75,10 @@ export function calculateUtilityMargin(
   const targetProfit = totalBudget * (financialSettings.profitPercentage / 100);
 
   // Total costs including indirects and contingency
-  const totalCost = totalSpent + indirectCost + contingencyCost;
+  const total_cost = totalSpent + indirectCost + contingencyCost;
 
   // Actual margin
-  const margin = totalBudget - totalCost;
+  const margin = totalBudget - total_cost;
   const marginPercentage = totalBudget > 0 ? (margin / totalBudget) * 100 : 0;
 
   // Variance from target
@@ -96,7 +96,7 @@ export function calculateUtilityMargin(
     directCost: totalSpent,
     indirectCost,
     contingencyCost,
-    totalCost,
+    total_cost,
   };
 }
 

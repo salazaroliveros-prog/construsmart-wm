@@ -113,7 +113,7 @@ export interface LocalBudgetItem extends SyncableEntity {
     unitLaborCost: number;
     directCost: number;
     indirectCost: number;
-    totalCost: number;
+    total_cost: number;
     breakdown: {
       materials: number;
       labor: number;

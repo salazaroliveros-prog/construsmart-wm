@@ -105,14 +105,14 @@ export function calculateAPU(params: APUFormulaParams): APUResult {
   const indirectCost = calculateIndirectCost(directCost, indirectPercentage);
 
   // Calculate total cost
-  const totalCost = calculateTotalCost(directCost, indirectPercentage);
+  const total_cost = calculateTotalCost(directCost, indirectPercentage);
 
   return {
     totalMaterialQuantity,
     unitLaborCost,
     directCost,
     indirectCost,
-    totalCost,
+    total_cost,
     breakdown: {
       materials,
       labor,
@@ -231,12 +231,12 @@ export function localBudgetSummaryFromBudgetSummary(bs: BudgetSummary): LocalBud
 }
 
 export function calculateLocalBudgetSummary(
-  items: { totalCost: number }[],
+  items: { total_cost: number }[],
   indirectPercentage: number,
   contingencyPercentage: number,
   profitPercentage: number,
 ): LocalBudgetSummary {
-  const directCost = items.reduce((sum, item) => sum + item.totalCost, 0);
+  const directCost = items.reduce((sum, item) => sum + item.total_cost, 0);
   const indirectCost = directCost * (indirectPercentage / 100);
   const contingency = directCost * (contingencyPercentage / 100);
   const profit = directCost * (profitPercentage / 100);
@@ -307,11 +307,11 @@ export function calculateBudgetSummary(
  * Used for comparison with residential cost matrix
  */
 export function calculateCostPerM2(
-  totalCost: number,
+  total_cost: number,
   area: number
 ): number {
   if (area <= 0) return 0;
-  return totalCost / area;
+  return total_cost / area;
 }
 
 /**
