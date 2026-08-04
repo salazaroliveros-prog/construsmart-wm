@@ -133,11 +133,16 @@ export default function Dashboard() {
     setTabIndex(getTabIndex(tabId));
     router.replace(`/?tab=${tabId}`, { scroll: false });
 
+    // Cerrar menú móvil si está abierto
+    if (isMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
+    }
+
     window.clearTimeout((window as Window & { __tabLoadingTimer?: number }).__tabLoadingTimer);
     (window as Window & { __tabLoadingTimer?: number }).__tabLoadingTimer = window.setTimeout(() => {
       setIsTabLoading(false);
     }, 150);
-  }, [activeTab, router]);
+  }, [activeTab, router, isMobileMenuOpen]);
 
   const loadRecentActivity = async () => {
     try {
@@ -361,10 +366,7 @@ return (
           >
             <DashboardNav
               activeTab={activeTab}
-              onTabChange={(tab) => {
-                setActiveTab(tab);
-                setIsMobileMenuOpen(false);
-              }}
+              onTabChange={handleTabChange}
               isCollapsed={isMobile ? false : isSidebarCollapsed}
               onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             />
