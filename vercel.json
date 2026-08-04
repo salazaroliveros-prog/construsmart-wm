@@ -4,6 +4,9 @@
   "devCommand": "next dev",
   "installCommand": "npm install",
   "framework": "nextjs",
+  "domains": [
+    "control-constructora-wm.vercel.app"
+  ],
   "headers": [
     {
       "source": "/sw.js",
