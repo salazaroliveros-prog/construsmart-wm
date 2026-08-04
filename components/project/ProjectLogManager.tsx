@@ -99,29 +99,35 @@ export default function ProjectLogManager() {
     try {
       const now = new Date().toISOString();
 
-      // Detect roadblock keywords in description
+      // Detect roadblock keywords in description (multilingual)
       const description = formData.description?.toLowerCase() || '';
       const isCriticalIssue = formData.activity_type === 'issue';
-      
+
       // Determine severity based on keywords
       let severity: 'low' | 'medium' | 'high' | 'critical' = 'low';
       let roadblockCategory: 'clima' | 'material' | 'personal' | 'técnico' | 'permiso' | 'financiero' | 'otro' | undefined = undefined;
       let isCriticalRoadblock = false;
-      
-      const criticalKeywords = ['retraso por clima', 'falta de cemento', 'falta de material', 'sin material', 'problema técnico', 'permiso denegado', 'problema financiero', 'huelga', 'personal', 'accidente'];
-      
+
+      // Multilingual critical keywords (Spanish + English)
+      const criticalKeywords = [
+        'retraso por clima', 'falta de cemento', 'falta de material', 'sin material',
+        'problema técnico', 'permiso denegado', 'problema financiero', 'huelga', 'personal', 'accidente',
+        'weather delay', 'cement shortage', 'material shortage', 'out of stock',
+        'technical issue', 'permit denied', 'financial problem', 'strike', 'staff', 'accident'
+      ];
+
       if (isCriticalIssue) {
         if (criticalKeywords.some(keyword => description.includes(keyword))) {
           severity = 'critical';
           isCriticalRoadblock = true;
-          
-          // Determine category
-          if (description.includes('clima') || description.includes('lluvia')) roadblockCategory = 'clima';
-          else if (description.includes('material') || description.includes('cemento')) roadblockCategory = 'material';
-          else if (description.includes('personal') || description.includes('huelga')) roadblockCategory = 'personal';
-          else if (description.includes('técnico')) roadblockCategory = 'técnico';
-          else if (description.includes('permiso')) roadblockCategory = 'permiso';
-          else if (description.includes('financiero') || description.includes('dinero')) roadblockCategory = 'financiero';
+
+          // Determine category (multilingual)
+          if (description.includes('clima') || description.includes('lluvia') || description.includes('weather') || description.includes('rain') || description.includes('storm')) roadblockCategory = 'clima';
+          else if (description.includes('material') || description.includes('cemento') || description.includes('cement')) roadblockCategory = 'material';
+          else if (description.includes('personal') || description.includes('huelga') || description.includes('strike') || description.includes('staff') || description.includes('worker') || description.includes('labor')) roadblockCategory = 'personal';
+          else if (description.includes('técnico') || description.includes('technical')) roadblockCategory = 'técnico';
+          else if (description.includes('permiso') || description.includes('permit')) roadblockCategory = 'permiso';
+          else if (description.includes('financiero') || description.includes('dinero') || description.includes('financial') || description.includes('money') || description.includes('budget') || description.includes('cost')) roadblockCategory = 'financiero';
         } else {
           severity = 'high';
         }
@@ -162,13 +168,13 @@ export default function ProjectLogManager() {
         created_by: '',
       });
       loadLogs();
-      
-      // Actualizar progreso en ProgressTracker
+
+      // Actualizar progreso en ProgressTracker (await to ensure completion)
       if (selectedProject) {
-        updateProgress(selectedProject);
+        await updateProgress(selectedProject);
       }
-      
-      // Trigger roadblock detection if critical issue
+
+      // Trigger roadblock detection if critical issue (await to ensure completion)
       if (isCriticalRoadblock && selectedProject) {
         await detectRoadblocks();
         showToast('warning', '¡Obstáculo crítico detectado! Se ha actualizado el estado del proyecto.');

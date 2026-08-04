@@ -70,10 +70,20 @@ export default function PurchaseOrderManager() {
       setOrderItems(localOrderItems);
       setSuppliers(localSuppliers);
       setProjects(localProjects);
-} catch (error) {
+    } catch (error) {
       console.error('Error loading data:', error);
       showToast('error', 'Error al cargar datos');
     }
+  };
+
+  const getSupplierName = (supplierId: string) => {
+    const supplier = suppliers.find((s) => s.id === supplierId);
+    return supplier?.name || 'Proveedor desconocido';
+  };
+
+  const getProjectName = (projectId: string) => {
+    const project = projects.find((p) => p.id === projectId);
+    return project?.name || 'Sin proyecto';
   };
 
   const filterOrders = () => {
@@ -87,7 +97,7 @@ export default function PurchaseOrderManager() {
       filtered = filtered.filter(
         (order) =>
           order.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          order.supplier_id.toLowerCase().includes(searchTerm.toLowerCase())
+          getSupplierName(order.supplier_id).toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -243,16 +253,6 @@ export default function PurchaseOrderManager() {
       default:
         return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
     }
-  };
-
-  const getSupplierName = (supplierId: string) => {
-    const supplier = suppliers.find((s) => s.id === supplierId);
-    return supplier?.name || 'Proveedor desconocido';
-  };
-
-  const getProjectName = (projectId: string) => {
-    const project = projects.find((p) => p.id === projectId);
-    return project?.name || 'Sin proyecto';
   };
 
   const formatCurrency = (amount: number): string => {

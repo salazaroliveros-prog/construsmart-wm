@@ -18,6 +18,9 @@ import { payrollEmployeeSchema, payrollRecordSchema, validateSchema, formatValid
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { useLaborCostOverrun } from '@/hooks/useLaborCostOverrun';
 
+// Configuration: Hours per workday (configurable per organization)
+const HOURS_PER_WORKDAY = 8;
+
 // ============================================================================
 // TYPE DEFINITIONS
 // ============================================================================
@@ -488,6 +491,13 @@ const checkOnlineStatus = () => {
       const employee = employees.find(e => e.id === payrollFormData.employee_id);
       if (!employee) return;
 
+      // Validate daily_rate > 0 before calculating hourly_rate
+      if (employee.daily_rate <= 0) {
+        showToast('error', 'La tarifa diaria del empleado debe ser mayor a 0');
+        setSaveLoading(false);
+        return;
+      }
+
       const baseSalary = payrollFormData.days_worked * employee.daily_rate;
       const overtimePay = payrollFormData.overtime_hours * payrollFormData.overtime_rate;
       const grossSalary = baseSalary + overtimePay + payrollFormData.bonuses;
@@ -515,9 +525,9 @@ const checkOnlineStatus = () => {
         aguinaldo_provision: benefits.aguinaldo,
         vacaciones_provision: benefits.vacaciones,
         net_salary: netSalary,
-        total_hours: payrollFormData.days_worked * 8 + payrollFormData.overtime_hours, // Assuming 8-hour workday
-        hourly_rate: employee.daily_rate / 8, // Calculate hourly rate from daily rate
-        planned_hours: payrollFormData.days_worked * 8, // Planned hours (8h per day)
+        total_hours: payrollFormData.days_worked * HOURS_PER_WORKDAY + payrollFormData.overtime_hours,
+        hourly_rate: employee.daily_rate / HOURS_PER_WORKDAY,
+        planned_hours: payrollFormData.days_worked * HOURS_PER_WORKDAY,
         sync_status: editingPayroll
           ? resolveSyncStatus({ isNewRecord: false, previousStatus: editingPayroll.sync_status, isOnline })
           : resolveSyncStatus({ isNewRecord: true, isOnline }),

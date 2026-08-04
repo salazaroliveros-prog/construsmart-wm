@@ -280,15 +280,14 @@ export default function WarehouseManager() {
         return;
       }
 
-      // Validar unicidad de item_code dentro del mismo proyecto
+      // Validar unicidad global de item_code (evita duplicados entre proyectos)
       if (!editingItem) {
         const existingItem = await offlineDB.warehouseStock
           .where('item_code')
           .equals(formData.item_code)
-          .and(item => item.project_id === formData.project_id)
           .first();
         if (existingItem) {
-          showToast('error', 'El código de item ya existe en este proyecto');
+          showToast('error', 'El código de item ya existe en el sistema. Use un código único global.');
           setSaveLoading(false);
           return;
         }

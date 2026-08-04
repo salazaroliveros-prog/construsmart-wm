@@ -33,7 +33,7 @@ import {
   Cell, 
   ReferenceLine 
 } from 'recharts';
-import { offlineDB, LocalProject, LocalFinancialTransaction, LocalWarehouseStock } from '@/lib/db/offlineStore';
+import { offlineDB, LocalProject, LocalFinancialTransaction, LocalWarehouseStock, LocalProjectLog } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useBusinessSettings, calculateUtilityMarginHelper } from '@/lib/hooks/useBusinessSettings';
 import { useFinancialDataRealtime } from '@/hooks/useFinancialDataRealtime';
@@ -111,6 +111,7 @@ export default function AnalyticsDashboard() {
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
   const [warehouseStock, setWarehouseStock] = useState<LocalWarehouseStock[]>([]);
+  const [projectLogs, setProjectLogs] = useState<LocalProjectLog[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('all');
 
   // ==================== HOOKS ====================
@@ -151,6 +152,7 @@ export default function AnalyticsDashboard() {
     loadProjects();
     loadTransactions();
     loadWarehouseStock();
+    loadProjectLogs();
   }, []);
 
   useEffect(() => {
@@ -177,10 +179,11 @@ export default function AnalyticsDashboard() {
     }
   }, [cumulativeCosts, selectedProject, projects]);
 
-  useRealtimeRefresh(['projects', 'financial_transactions', 'warehouse_stock'], () => {
+  useRealtimeRefresh(['projects', 'financial_transactions', 'warehouse_stock', 'project_logs'], () => {
     loadProjects();
     loadTransactions();
     loadWarehouseStock();
+    loadProjectLogs();
   });
 
   // ==================== HELPER FUNCTIONS ====================
@@ -225,6 +228,15 @@ export default function AnalyticsDashboard() {
       setWarehouseStock(data);
     } catch (error) {
       console.error('Error loading warehouse stock:', error);
+    }
+  };
+
+  const loadProjectLogs = async () => {
+    try {
+      const data = await offlineDB.projectLogs.toArray();
+      setProjectLogs(data);
+    } catch (error) {
+      console.error('Error loading project logs:', error);
     }
   };
 
@@ -543,8 +555,20 @@ export default function AnalyticsDashboard() {
 
       const timeProgress = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
 
+      // Calculate physical progress from project logs if available
+      let physicalProgress = timeProgress;
+      const projectLogsData = projectLogs.filter(l => l.project_id === project.id);
+      if (projectLogsData.length > 0) {
+        const latestLog = projectLogsData
+          .filter(log => log.physical_progress !== undefined && log.physical_progress !== null)
+          .sort((a, b) => new Date(b.log_date).getTime() - new Date(a.log_date).getTime())[0];
+        if (latestLog && latestLog.physical_progress !== undefined) {
+          physicalProgress = latestLog.physical_progress;
+        }
+      }
+
       if (project.status === 'execution') {
-        totalPhysical += timeProgress;
+        totalPhysical += physicalProgress;
 
         const projectTransactions = transactions.filter(t => t.project_id === project.id);
         const projectExpenses = projectTransactions

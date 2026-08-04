@@ -179,7 +179,7 @@ export default function ProjectManager() {
       setEditingProject(project);
       // If project has budget_total and calculated_duration from budget, use them
       const duration = project.duration_days || project.calculated_duration || 0;
-      const budget = project.total_budget || project.budget_total || 0;
+      const budget = project.budget_total || project.total_budget || 0;
 
       setFormData({
         code: project.code,
@@ -490,7 +490,7 @@ export default function ProjectManager() {
                         )}
                       </td>
                       <td className="py-3 px-4 text-white font-medium">
-                        {formatCurrency(project.total_budget)}
+                        {formatCurrency(project.budget_total || project.total_budget)}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">

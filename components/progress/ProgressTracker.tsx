@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, BarChart3, Activity, DollarSign, Target, Clock, AlertTriangle } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, Legend } from 'recharts';
-import { offlineDB, LocalProject, LocalFinancialTransaction } from '@/lib/db/offlineStore';
+import { offlineDB, LocalProject, LocalFinancialTransaction, LocalProjectLog } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { budgetState, ActiveBudgetState } from '@/lib/state/budgetState';
@@ -46,6 +46,7 @@ export default function ProgressTracker() {
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [activeBudget, setActiveBudget] = useState<ActiveBudgetState | null>(null);
   const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
+  const [projectLogs, setProjectLogs] = useState<LocalProjectLog[]>([]);
   const [metrics, setMetrics] = useState<ProgressMetrics | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<LocalFinancialTransaction | null>(null);
 
@@ -54,14 +55,16 @@ export default function ProgressTracker() {
     loadProjects();
   }, []);
 
-  // Load budget state and transactions when project changes
+  // Load budget state, transactions, and project logs when project changes
   useEffect(() => {
     if (selectedProject) {
       loadBudgetState();
       loadTransactions();
+      loadProjectLogs();
     } else {
       setActiveBudget(null);
       setTransactions([]);
+      setProjectLogs([]);
       setMetrics(null);
     }
   }, [selectedProject]);
@@ -127,6 +130,16 @@ export default function ProgressTracker() {
     }
   };
 
+  const loadProjectLogs = async () => {
+    try {
+      const allLogs = await offlineDB.projectLogs.toArray();
+      const projectLogsData = allLogs.filter(l => l.project_id === selectedProject);
+      setProjectLogs(projectLogsData);
+    } catch (error) {
+      console.error('Error loading project logs:', error);
+    }
+  };
+
   // Calculate progress metrics
   useEffect(() => {
     if (!activeBudget || !selectedProject) {
@@ -146,18 +159,33 @@ export default function ProgressTracker() {
 
     // Calculate time progress
     const startDate = project.start_date ? new Date(project.start_date) : new Date();
-    const endDate = project.estimated_end_date 
+    const endDate = project.estimated_end_date
       ? new Date(project.estimated_end_date)
       : new Date(startDate.getTime() + (project.duration_days * 24 * 60 * 60 * 1000));
-    
+
     const now = new Date();
     const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     const daysElapsed = Math.max(0, Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
     const timeProgress = (daysElapsed / totalDays) * 100;
 
-    // Estimate physical progress based on time (can be adjusted with actual progress input)
-    // Default: assume linear progress unless actual progress is tracked
-    const physicalProgress = Math.min(100, timeProgress);
+    // Calculate physical progress from project logs if available
+    let physicalProgress: number;
+    if (projectLogs.length > 0) {
+      // Get the most recent physical progress from logs
+      const latestLog = projectLogs
+        .filter(log => log.physical_progress !== undefined && log.physical_progress !== null)
+        .sort((a, b) => new Date(b.log_date).getTime() - new Date(a.log_date).getTime())[0];
+
+      if (latestLog && latestLog.physical_progress !== undefined) {
+        physicalProgress = latestLog.physical_progress;
+      } else {
+        // Fallback to time-based progress if no physical progress in logs
+        physicalProgress = Math.min(100, timeProgress);
+      }
+    } else {
+      // Fallback to time-based progress if no logs
+      physicalProgress = Math.min(100, timeProgress);
+    }
 
     // Estimated amount that should have been spent based on physical progress
     const estimatedSpent = (activeBudget.costTotalWithIndirects * physicalProgress) / 100;
@@ -176,7 +204,7 @@ export default function ProgressTracker() {
       totalDays,
       timeProgress,
     });
-  }, [activeBudget, transactions, selectedProject, projects]);
+  }, [activeBudget, transactions, selectedProject, projects, projectLogs]);
 
   const handleDelete = async (transaction: LocalFinancialTransaction) => {
     setDeleteConfirm(transaction);
@@ -245,10 +273,11 @@ export default function ProgressTracker() {
   ] : [];
 
   // Realtime refresh: recarga cuando cambios llegan de otros dispositivos
-  useRealtimeRefresh(['financial_transactions', 'projects', 'budgets'], () => {
+  useRealtimeRefresh(['financial_transactions', 'projects', 'budgets', 'project_logs'], () => {
     loadProjects();
     loadTransactions();
     loadBudgetState();
+    loadProjectLogs();
   });
 
   return (

@@ -146,6 +146,10 @@ const loadClients = async () => {
         city: '',
         client_type: 'individual',
         notes: '',
+        account_balance: 0,
+        credit_limit: 0,
+        payment_terms_days: 30,
+        is_delinquent: false,
       });
       loadClients();
     } catch (error) {

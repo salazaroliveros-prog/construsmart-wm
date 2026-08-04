@@ -31,8 +31,9 @@ export interface RoadblockDetectionResult {
   affectedProjects: number;
 }
 
-// Critical roadblock keywords in Spanish
+// Critical roadblock keywords in multiple languages (Spanish + English)
 const CRITICAL_KEYWORDS = [
+  // Spanish
   'retraso por clima',
   'falta de cemento',
   'falta de material',
@@ -49,10 +50,29 @@ const CRITICAL_KEYWORDS = [
   'detenido',
   'esperando',
   'atrasado',
-  'retraso'
+  'retraso',
+  // English
+  'weather delay',
+  'cement shortage',
+  'material shortage',
+  'out of stock',
+  'technical issue',
+  'permit denied',
+  'financial problem',
+  'strike',
+  'staff',
+  'accident',
+  'lack of',
+  'without',
+  'stopped',
+  'halted',
+  'waiting',
+  'delayed',
+  'delay'
 ];
 
 const ROADBLOCK_CATEGORIES: Record<string, 'clima' | 'material' | 'personal' | 'técnico' | 'permiso' | 'financiero' | 'otro'> = {
+  // Spanish
   'clima': 'clima',
   'lluvia': 'clima',
   'tiempo': 'clima',
@@ -64,7 +84,23 @@ const ROADBLOCK_CATEGORIES: Record<string, 'clima' | 'material' | 'personal' | '
   'financiero': 'financiero',
   'dinero': 'financiero',
   'crédito': 'financiero',
-  'pago': 'financiero'
+  'pago': 'financiero',
+  // English
+  'weather': 'clima',
+  'rain': 'clima',
+  'storm': 'clima',
+  'cement': 'material',
+  'staff': 'personal',
+  'worker': 'personal',
+  'labor': 'personal',
+  'technical': 'técnico',
+  'permit': 'permiso',
+  'financial': 'financiero',
+  'money': 'financiero',
+  'budget': 'financiero',
+  'cost': 'financiero',
+  'credit': 'financiero',
+  'payment': 'financiero'
 };
 
 export const useRoadblockDetection = () => {

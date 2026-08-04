@@ -180,7 +180,7 @@ export default function BudgetCalculator() {
             quantity: dbItem.quantity,
             unitCost: dbItem.unit_cost,
             totalCost: dbItem.total_cost,
-            category: dbItem.is_custom ? 'Custom' : 'APU',
+            category: dbItem.is_custom ? 'Custom' : 'APU', // UI-only field, not persisted in DB
             apuResult: dbItem.apu_result as APUResult | undefined,
           }));
 
@@ -534,9 +534,9 @@ export default function BudgetCalculator() {
         }
       }
 
-      // Enviar materiales al almacén de forma centralizada
-      // Ahora envía materiales incrementales en cada guardado (upsert para evitar duplicados)
-      if (warehouseInputs.length > 0) {
+      // Enviar materiales al almacén (solo en el primer guardado para evitar duplicados)
+      // TODO: Implementar upsert para actualizaciones incrementales
+      if (warehouseInputs.length > 0 && isFirstSave) {
         await sendBudgetMaterialsToWarehouse(warehouseInputs);
         showToast('info', `${warehouseInputs.length} materiales sincronizados con el almacén`);
       }
