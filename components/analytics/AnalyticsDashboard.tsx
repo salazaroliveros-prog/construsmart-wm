@@ -1,18 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-  TrendingUp, 
-  DollarSign, 
-  Activity, 
-  AlertTriangle, 
-  Loader2, 
+import {
+  TrendingUp,
+  DollarSign,
+  Activity,
+  AlertTriangle,
+  Loader2,
   Filter,
   Calendar as CalendarIcon,
   Clock,
   BarChart3,
   Target,
-  Zap
+  Zap,
+  Users,
+  FolderOpen
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -33,7 +35,7 @@ import {
   Cell, 
   ReferenceLine 
 } from 'recharts';
-import { offlineDB, LocalProject, LocalFinancialTransaction, LocalWarehouseStock, LocalProjectLog, LocalBudgetItem, LocalBudget } from '@/lib/db/offlineStore';
+import { offlineDB, LocalProject, LocalFinancialTransaction, LocalWarehouseStock, LocalProjectLog, LocalBudgetItem, LocalBudget, LocalPurchaseOrder, LocalPayrollRecord } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useBusinessSettings, calculateUtilityMarginHelper } from '@/lib/hooks/useBusinessSettings';
 import { useFinancialDataRealtime } from '@/hooks/useFinancialDataRealtime';
@@ -77,6 +79,22 @@ interface MaterialBurnRateData {
   total: number;
 }
 
+interface PurchaseOrderData {
+  periodo: string;
+  pendientes: number;
+  aprobadas: number;
+  ordenadas: number;
+  recibidas: number;
+  totalAmount: number;
+}
+
+interface PayrollData {
+  periodo: string;
+  totalNomina: number;
+  empleadosActivos: number;
+  horasExtra: number;
+}
+
 interface SummaryMetrics {
   totalProjects: number;
   activeProjects: number;
@@ -114,6 +132,8 @@ export default function AnalyticsDashboard() {
   const [projectLogs, setProjectLogs] = useState<LocalProjectLog[]>([]);
   const [budgetItems, setBudgetItems] = useState<LocalBudgetItem[]>([]);
   const [budgets, setBudgets] = useState<LocalBudget[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<LocalPurchaseOrder[]>([]);
+  const [payrollRecords, setPayrollRecords] = useState<LocalPayrollRecord[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('all');
 
   // ==================== HOOKS ====================
@@ -130,6 +150,8 @@ export default function AnalyticsDashboard() {
   const [budgetDeviationData, setBudgetDeviationData] = useState<BudgetDeviationData[]>([]);
   const [ganttData, setGanttData] = useState<GanttTaskData[]>([]);
   const [burnRateData, setBurnRateData] = useState<MaterialBurnRateData[]>([]);
+  const [purchaseOrderData, setPurchaseOrderData] = useState<PurchaseOrderData[]>([]);
+  const [payrollData, setPayrollData] = useState<PayrollData[]>([]);
   const [summaryMetrics, setSummaryMetrics] = useState<SummaryMetrics>({
     totalProjects: 0,
     activeProjects: 0,
@@ -157,6 +179,8 @@ export default function AnalyticsDashboard() {
     loadProjectLogs();
     loadBudgetItems();
     loadBudgets();
+    loadPurchaseOrders();
+    loadPayrollRecords();
   }, []);
 
   useEffect(() => {
@@ -183,13 +207,15 @@ export default function AnalyticsDashboard() {
     }
   }, [cumulativeCosts, selectedProject, projects]);
 
-  useRealtimeRefresh(['projects', 'financial_transactions', 'warehouse_stock', 'project_logs', 'budget_items', 'budgets'], () => {
+  useRealtimeRefresh(['projects', 'financial_transactions', 'warehouse_stock', 'project_logs', 'budget_items', 'budgets', 'purchase_orders', 'payroll_records'], () => {
     loadProjects();
     loadTransactions();
     loadWarehouseStock();
     loadProjectLogs();
     loadBudgetItems();
     loadBudgets();
+    loadPurchaseOrders();
+    loadPayrollRecords();
   });
 
   // ==================== HELPER FUNCTIONS ====================
@@ -264,6 +290,24 @@ export default function AnalyticsDashboard() {
     }
   };
 
+  const loadPurchaseOrders = async () => {
+    try {
+      const data = await offlineDB.purchaseOrders.toArray();
+      setPurchaseOrders(data);
+    } catch (error) {
+      console.error('Error loading purchase orders:', error);
+    }
+  };
+
+  const loadPayrollRecords = async () => {
+    try {
+      const data = await offlineDB.payrollRecords.toArray();
+      setPayrollRecords(data);
+    } catch (error) {
+      console.error('Error loading payroll records:', error);
+    }
+  };
+
   const loadAnalyticsData = async () => {
     if (!hasData) {
       resetAnalytics();
@@ -280,6 +324,8 @@ export default function AnalyticsDashboard() {
       setBudgetDeviationData(generateBudgetDeviationData(filteredProjects));
       setGanttData(generateGanttData(filteredProjects));
       setBurnRateData(generateBurnRateData(filteredProjects));
+      setPurchaseOrderData(generatePurchaseOrderData(filteredProjects));
+      setPayrollData(generatePayrollData(filteredProjects));
       setSummaryMetrics(calculateSummaryMetrics(filteredProjects));
     } catch (error) {
       console.error('Error loading analytics data:', error);
@@ -292,6 +338,8 @@ export default function AnalyticsDashboard() {
     setBudgetDeviationData([]);
     setGanttData([]);
     setBurnRateData([]);
+    setPurchaseOrderData([]);
+    setPayrollData([]);
     setSummaryMetrics({
       totalProjects: 0,
       activeProjects: 0,
@@ -413,7 +461,7 @@ export default function AnalyticsDashboard() {
     });
   };
 
-  // GRÁFICO 3: Desviación de Presupuesto por Capítulos (usando budget_items reales)
+  // GRÁFICO 3: Desviación de Presupuesto por Capítulos (usando budget_items reales - filtrado por proyecto)
   const generateBudgetDeviationData = (projects: LocalProject[]): BudgetDeviationData[] => {
     if (projects.length === 0) return [];
 
@@ -424,12 +472,12 @@ export default function AnalyticsDashboard() {
       let totalReal = 0;
 
       projects.forEach(project => {
-        // Obtener budget_items del proyecto
-        const projectBudgetItems = budgetItems.filter(bi => {
-          // Obtener budget_id del proyecto
-          const projectBudget = budgets.find(b => b.project_id === project.id);
-          return projectBudget && bi.budget_id === projectBudget.id;
-        });
+        // Obtener budget del proyecto
+        const projectBudget = budgets.find(b => b.project_id === project.id);
+        if (!projectBudget) return;
+
+        // Obtener budget_items del proyecto (filtrado por budget_id)
+        const projectBudgetItems = budgetItems.filter(bi => bi.budget_id === projectBudget.id);
 
         // Mapear descripciones a capítulos
         const capituloKeywords: Record<string, string[]> = {
@@ -449,7 +497,7 @@ export default function AnalyticsDashboard() {
           }
         });
 
-        // Sumar gastos reales por categoría de transacción
+        // Sumar gastos reales por categoría de transacción (filtrado por project_id)
         const categoryMapping: Record<string, string> = {
           'Cimentación': 'materiales',
           'Estructura': 'materiales',
@@ -562,6 +610,84 @@ export default function AnalyticsDashboard() {
         nivelActual: totalQuantity,
         puntoReorden: minThreshold || (totalQuantity * 0.2),
         total: maxStock || (totalQuantity * 1.25),
+      };
+    });
+  };
+
+  // GRÁFICO 6: Estado de Órdenes de Compra por Periodo
+  const generatePurchaseOrderData = (projects: LocalProject[]): PurchaseOrderData[] => {
+    if (projects.length === 0) return [];
+
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+
+    return Array.from({ length: currentMonth + 1 }, (_, index) => {
+      let pendientes = 0;
+      let aprobadas = 0;
+      let ordenadas = 0;
+      let recibidas = 0;
+      let totalAmount = 0;
+
+      projects.forEach(project => {
+        const projectOrders = purchaseOrders.filter(po => po.project_id === project.id);
+        const monthOrders = projectOrders.filter(po => {
+          const orderDate = new Date(po.order_date);
+          return orderDate.getMonth() === index && orderDate.getFullYear() === currentDate.getFullYear();
+        });
+
+        monthOrders.forEach(order => {
+          totalAmount += order.total_amount || 0;
+          if (order.status === 'pending') pendientes++;
+          else if (order.status === 'approved') aprobadas++;
+          else if (order.status === 'ordered') ordenadas++;
+          else if (order.status === 'received') recibidas++;
+        });
+      });
+
+      return {
+        periodo: months[index],
+        pendientes,
+        aprobadas,
+        ordenadas,
+        recibidas,
+        totalAmount,
+      };
+    });
+  };
+
+  // GRÁFICO 7: Nómina por Periodo
+  const generatePayrollData = (projects: LocalProject[]): PayrollData[] => {
+    if (projects.length === 0) return [];
+
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+
+    return Array.from({ length: currentMonth + 1 }, (_, index) => {
+      let totalNomina = 0;
+      let empleadosActivos = 0;
+      let horasExtra = 0;
+
+      projects.forEach(project => {
+        const projectPayroll = payrollRecords.filter(pr => pr.project_id === project.id);
+        const monthPayroll = projectPayroll.filter(pr => {
+          const periodStart = new Date(pr.period_start);
+          return periodStart.getMonth() === index && periodStart.getFullYear() === currentDate.getFullYear();
+        });
+
+        monthPayroll.forEach(record => {
+          totalNomina += record.net_salary || 0;
+          empleadosActivos += 1;
+          horasExtra += record.overtime_hours || 0;
+        });
+      });
+
+      return {
+        periodo: months[index],
+        totalNomina,
+        empleadosActivos,
+        horasExtra,
       };
     });
   };
@@ -719,10 +845,10 @@ export default function AnalyticsDashboard() {
         </div>
 
         {/* Layout Grid Responsivo de Alta Densidad */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           
           {/* GRÁFICO 1: CURVA "S" (AVANCE FÍSICO VS. FINANCIERO ACUMULADO) */}
-          <div className="bg-white/[var(--glass-opacity,0.1)] dark:bg-black/[var(--glass-opacity,0.15)] backdrop-blur-[var(--glass-blur,12px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_4px_16px_0_rgba(0,0,0,0.15)] rounded-xl p-4 sm:p-5">
+          <div className="bg-white/[var(--glass-opacity,0.1)] dark:bg-black/[var(--glass-opacity,0.15)] backdrop-blur-[var(--glass-blur,12px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_4px_16px_0_rgba(0,0,0,0.15)] rounded-xl p-4 sm:p-5 xl:col-span-2">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-cyan-500" />
@@ -999,6 +1125,101 @@ export default function AnalyticsDashboard() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          {/* GRÁFICO 6: ESTADO DE ÓRDENES DE COMPRA POR PERIODO */}
+          <div className="bg-white/[var(--glass-opacity,0.1)] dark:bg-black/[var(--glass-opacity,0.15)] backdrop-blur-[var(--glass-blur,12px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_4px_16px_0_rgba(0,0,0,0.15)] rounded-xl p-4 sm:p-5">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+              <FolderOpen className="w-5 h-5 text-violet-500" />
+              Estado de Órdenes de Compra
+            </h2>
+            <div className="h-72 sm:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={purchaseOrderData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
+                  <XAxis
+                    dataKey="periodo"
+                    stroke="currentColor"
+                    tick={{ fill: 'currentColor', fontSize: 12 }}
+                    tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                    className="text-zinc-900 dark:text-white"
+                  />
+                  <YAxis
+                    stroke="currentColor"
+                    tick={{ fill: 'currentColor', fontSize: 12 }}
+                    tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                    className="text-zinc-900 dark:text-white"
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
+                    itemStyle={{ color: '#fff', fontWeight: '500' }}
+                    labelStyle={{ color: '#fff', fontWeight: '600' }}
+                  />
+                  <Legend
+                    wrapperStyle={{ color: '#fff', fontWeight: '500' }}
+                    iconType="circle"
+                  />
+                  <Bar dataKey="pendientes" fill={COLORS.amber} name="Pendientes" />
+                  <Bar dataKey="aprobadas" fill={COLORS.cyan} name="Aprobadas" />
+                  <Bar dataKey="ordenadas" fill={COLORS.violet} name="Ordenadas" />
+                  <Bar dataKey="recibidas" fill={COLORS.emerald} name="Recibidas" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* GRÁFICO 7: NÓMINA POR PERIODO */}
+          <div className="bg-white/[var(--glass-opacity,0.1)] dark:bg-black/[var(--glass-opacity,0.15)] backdrop-blur-[var(--glass-blur,12px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_4px_16px_0_rgba(0,0,0,0.15)] rounded-xl p-4 sm:p-5">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+              <Users className="w-5 h-5 text-emerald-500" />
+              Nómina por Periodo
+            </h2>
+            <div className="h-72 sm:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={payrollData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
+                  <XAxis
+                    dataKey="periodo"
+                    stroke="currentColor"
+                    tick={{ fill: 'currentColor', fontSize: 12 }}
+                    tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                    className="text-zinc-900 dark:text-white"
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    stroke="currentColor"
+                    tick={{ fill: 'currentColor', fontSize: 12 }}
+                    tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                    tickFormatter={(value) => `Q${(value as number / 1000).toFixed(0)}k`}
+                    className="text-zinc-900 dark:text-white"
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    stroke="currentColor"
+                    tick={{ fill: 'currentColor', fontSize: 12 }}
+                    tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                    className="text-zinc-900 dark:text-white"
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
+                    itemStyle={{ color: '#fff', fontWeight: '500' }}
+                    labelStyle={{ color: '#fff', fontWeight: '600' }}
+                    formatter={(value, name) => {
+                      if (name === 'totalNomina') return formatCurrency(value as number);
+                      return value;
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{ color: '#fff', fontWeight: '500' }}
+                    iconType="circle"
+                  />
+                  <Bar yAxisId="left" dataKey="totalNomina" fill={COLORS.emerald} name="Total Nómina" />
+                  <Line yAxisId="right" type="monotone" dataKey="empleadosActivos" stroke={COLORS.cyan} strokeWidth={2} name="Empleados Activos" />
+                  <Line yAxisId="right" type="monotone" dataKey="horasExtra" stroke={COLORS.amber} strokeWidth={2} name="Horas Extra" />
+                </ComposedChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
