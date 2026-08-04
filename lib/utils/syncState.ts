@@ -1,21 +1,19 @@
-export type SyncStatusValue = 'pending' | 'syncing' | 'synced' | 'error';
+export type SyncStatusValue = 'synced' | 'created_offline' | 'updated_offline' | 'syncing' | 'pending' | 'sync_failed';
 
 export function normalizeSyncStatus(value?: string | null): SyncStatusValue {
   if (!value) return 'synced';
 
   const normalized = value.trim().toLowerCase();
   switch (normalized) {
-    case 'pending':
-    case 'syncing':
     case 'synced':
-    case 'error':
-    case 'created_offline': // Legacy mapping
-    case 'updated_offline': // Legacy mapping
-    case 'sync_failed': // Legacy mapping
-      if (normalized === 'created_offline' || normalized === 'updated_offline' || normalized === 'sync_failed') {
-        return 'pending';
-      }
+    case 'created_offline':
+    case 'updated_offline':
+    case 'syncing':
+    case 'pending':
+    case 'sync_failed':
       return normalized as SyncStatusValue;
+    case 'error': // Legacy mapping
+      return 'sync_failed';
     default:
       return 'synced';
   }
@@ -23,7 +21,7 @@ export function normalizeSyncStatus(value?: string | null): SyncStatusValue {
 
 export function isPendingSyncStatus(status?: string | null): boolean {
   const normalized = normalizeSyncStatus(status);
-  return normalized === 'pending' || normalized === 'syncing' || normalized === 'error';
+  return normalized === 'pending' || normalized === 'syncing' || normalized === 'sync_failed';
 }
 
 export interface ResolveSyncStatusOptions {
@@ -38,12 +36,12 @@ export function resolveSyncStatus({
   isOnline = true,
 }: ResolveSyncStatusOptions): SyncStatusValue {
   if (isNewRecord) {
-    return isOnline ? 'synced' : 'pending';
+    return isOnline ? 'synced' : 'created_offline';
   }
 
   const normalizedPrevious = normalizeSyncStatus(previousStatus);
   if (normalizedPrevious === 'synced' && !isOnline) {
-    return 'pending';
+    return 'updated_offline';
   }
 
   return 'synced';

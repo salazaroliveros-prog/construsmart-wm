@@ -4,6 +4,9 @@ import Dexie, { Table } from 'dexie';
 // Alineado con Supabase schema: 'synced' | 'created_offline' | 'updated_offline' | 'syncing' | 'pending' | 'sync_failed'
 export type SyncStatus = 'synced' | 'created_offline' | 'updated_offline' | 'syncing' | 'pending' | 'sync_failed';
 
+// Re-exportar desde syncState para consistencia
+export type { SyncStatusValue } from '@/lib/utils/syncState';
+
 export interface SyncStatusTransition {
   from: SyncStatus;
   to: SyncStatus;
