@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
     root: process.cwd(),
   },
   env: {
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'https://control-constructora-wm.vercel.app',
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'https://construsmart-wm.vercel.app',
   },
 };
 

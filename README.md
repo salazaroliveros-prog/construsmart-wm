@@ -133,7 +133,7 @@ CONTROL_SEGUIMIENTO_APP_VoL_10/
 Crear archivo `.env.local`:
 
 ```env
-NEXT_PUBLIC_APP_URL=https://control-constructora-wm.vercel.app
+NEXT_PUBLIC_APP_URL=https://construsmart-wm.vercel.app
 NEXT_PUBLIC_SUPABASE_URL=tu_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_supabase_anon_key
 ```
@@ -222,7 +222,7 @@ El proyecto está configurado para despliegue automático en Vercel:
 git push origin main
 
 # Vercel despliega automáticamente a:
-# https://control-constructora-wm.vercel.app
+# https://construsmart-wm.vercel.app
 ```
 
 ### Configuración Vercel

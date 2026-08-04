@@ -22,8 +22,8 @@
 
 1. **Open Vercel Dashboard**
    - Go to: https://vercel.com/proyectoswm/projects
-   - Find project: control-constructora-wm
-   - Or direct: https://vercel.com/proyectoswm/control-constructora-wm
+   - Find project: construsmart-wm
+   - Or direct: https://vercel.com/proyectoswm/construsmart-wm
 
 2. **Check Latest Deployment**
    - Look at the "Deployments" tab
@@ -41,7 +41,7 @@
      - No build warnings (acceptable: workspace root warning)
 
 4. **Verify Live Site**
-   - Go to: https://control-constructora-wm.vercel.app
+   - Go to: https://construsmart-wm.vercel.app
    - Check:
      - Site loads without errors
      - Login works
@@ -114,7 +114,7 @@ vercel inspect
 ### Next Steps
 
 1. Verify Vercel deployment using steps above
-2. Test live site: https://control-constructora-wm.vercel.app
+2. Test live site: https://construsmart-wm.vercel.app
 3. Test new features:
    - APU Calculator in Budgets module
    - Progress Tracker module
@@ -123,7 +123,7 @@ vercel inspect
 
 ### Deployment URL
 
-**Production:** https://control-constructora-wm.vercel.app
+**Production:** https://construsmart-wm.vercel.app
 
 ### Rollback if Needed
 
