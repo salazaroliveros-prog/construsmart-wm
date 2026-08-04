@@ -74,7 +74,7 @@ export const updateSyncStatus = async (
   await table.update(recordId, {
     sync_status: newStatus,
     last_sync_attempt: new Date().toISOString(),
-    sync_error: newStatus === 'error' ? 'Sync failed' : undefined
+    sync_error: newStatus === 'sync_failed' ? 'Sync failed' : undefined
   });
   
   // Registrar transición para auditoría
@@ -88,7 +88,7 @@ export const updateSyncStatus = async (
 };
 
 // Statuses that mark a row as pending to be pushed to Supabase.
-export const PENDING_STATUSES = ['pending', 'syncing', 'error'];
+export const PENDING_STATUSES = ['pending', 'syncing', 'sync_failed'];
 
 /**
  * Cascade delete helper that can operate against a provided DB (for tests)
