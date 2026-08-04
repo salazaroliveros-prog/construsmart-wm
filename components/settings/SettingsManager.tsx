@@ -203,7 +203,7 @@ const saveSettings = () => {
             <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-lg sm:text-xl font-bold text-white">Configuración del Sistema</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-white">Configuración del Sistema</h2>
             <p className="text-xs sm:text-sm text-white/60">Personaliza toda la plataforma</p>
           </div>
         </div>

@@ -581,28 +581,28 @@ export default function WarehouseManager() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-cyan-500">
+          <div className="glass-card p-4 sm:p-6 rounded-xl border-l-4 border-l-cyan-500">
             <div className="flex items-center gap-2 mb-1">
               <Package className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
               <span className="text-white/60 text-xs sm:text-sm">Total Items</span>
             </div>
             <p className="text-lg sm:text-xl font-bold text-white">{summary.totalItems}</p>
           </div>
-          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-amber-500">
+          <div className="glass-card p-4 sm:p-6 rounded-xl border-l-4 border-l-amber-500">
             <div className="flex items-center gap-2 mb-1">
               <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
               <span className="text-white/60 text-xs sm:text-sm">Stock Bajo</span>
             </div>
             <p className="text-lg sm:text-xl font-bold text-amber-400">{summary.lowStockCount}</p>
           </div>
-          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-emerald-500">
+          <div className="glass-card p-4 sm:p-6 rounded-xl border-l-4 border-l-emerald-500">
             <div className="flex items-center gap-2 mb-1">
               <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
               <span className="text-white/60 text-xs sm:text-sm">Valor Inventario</span>
             </div>
             <p className="text-lg sm:text-xl font-bold text-emerald-400">{formatCurrency(summary.totalInventoryValue, financial)}</p>
           </div>
-          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-violet-500">
+          <div className="glass-card p-4 sm:p-6 rounded-xl border-l-4 border-l-violet-500">
             <div className="flex items-center gap-2 mb-1">
               <Package className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400" />
               <span className="text-white/60 text-xs sm:text-sm">Unidades Totales</span>
@@ -665,6 +665,7 @@ export default function WarehouseManager() {
                 <button
                   onClick={() => clearAlerts(alert.projectId)}
                   className="text-white/60 hover:text-white p-1"
+                  aria-label="Cerrar alerta de stock"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -692,6 +693,7 @@ export default function WarehouseManager() {
               }}
               disabled={isProcessing}
               className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-emerald-600 text-white text-sm hover:opacity-90 flex items-center gap-2 disabled:opacity-50"
+              aria-label="Generar órdenes de compra automáticas para materiales agotados"
             >
               <RefreshCw className={`w-4 h-4 ${isProcessing ? 'animate-spin' : ''}`} />
               {isProcessing ? 'Generando POs...' : 'Generar POs Automáticas'}
@@ -745,6 +747,7 @@ export default function WarehouseManager() {
                     }}
                     disabled={isProcessing}
                     className="px-3 py-2 rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 text-xs border border-cyan-500/30 disabled:opacity-50"
+                    aria-label={`Generar orden de compra para ${alert.stockItem.description}`}
                   >
                     Generar PO
                   </button>
@@ -794,6 +797,7 @@ export default function WarehouseManager() {
               <button
                 onClick={() => handleOpenModal()}
                 className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+                aria-label="Agregar nuevo material al inventario"
               >
                 <Plus className="w-4 h-4" />
                 <span>Nuevo Material</span>
@@ -906,6 +910,7 @@ export default function WarehouseManager() {
                 <button
                   onClick={showMoreItems}
                   className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 text-sm transition-all"
+                  aria-label={`Ver más materiales, ${remainingItems} restantes`}
                 >
                   Ver más materiales ({remainingItems} restantes)
                 </button>
@@ -926,6 +931,7 @@ export default function WarehouseManager() {
               <button
                 onClick={handleCloseModal}
                 className="text-white/60 hover:text-white p-1"
+                aria-label="Cerrar formulario de material"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -1066,6 +1072,7 @@ export default function WarehouseManager() {
                 onClick={handleCloseModal}
                 className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm hover:bg-white/20"
                 disabled={saveLoading}
+                aria-label="Cancelar y cerrar formulario de material"
               >
                 Cancelar
               </button>
@@ -1073,6 +1080,7 @@ export default function WarehouseManager() {
                 onClick={handleSaveItem}
                 disabled={saveLoading}
                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm hover:opacity-90 flex items-center gap-2 disabled:opacity-50"
+                aria-label={editingItem ? 'Actualizar material existente' : 'Guardar nuevo material'}
               >
                 <Save className="w-4 h-4" />
                 <span>{saveLoading ? 'Guardando...' : 'Guardar'}</span>

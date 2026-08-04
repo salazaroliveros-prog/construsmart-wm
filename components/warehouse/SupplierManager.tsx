@@ -189,7 +189,7 @@ export default function SupplierManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Gestión de Proveedores</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-white">Gestión de Proveedores</h2>
           <p className="text-white/60 text-sm">Registro de proveedores de materiales y servicios</p>
         </div>
         <Tooltip content="Agregar nuevo proveedor al sistema">

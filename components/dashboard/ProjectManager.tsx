@@ -16,6 +16,7 @@ import ActionButton from '@/components/ui/ActionButton';
 import { projectSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { calculateCompletionBuffer, getBufferSeverity } from '@/lib/config/app.config';
+import { formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
 
 interface ProjectFormData {
   code: string;
@@ -66,6 +67,7 @@ const qualityLabels = {
 
 export default function ProjectManager() {
   const { showToast } = useToast();
+  const { financial } = useFinancialSettings();
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<LocalProject | null>(null);
@@ -327,15 +329,6 @@ export default function ProjectManager() {
     return matchesSearch && matchesStatus;
   });
 
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('es-GT', {
-      style: 'currency',
-      currency: 'GTQ',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-
   useRealtimeRefresh(['projects'], loadProjects);
 
   return (
@@ -490,7 +483,7 @@ export default function ProjectManager() {
                         )}
                       </td>
                       <td className="py-3 px-4 text-white font-medium">
-                        {formatCurrency(project.budget_total || project.total_budget)}
+                        {formatCurrency(project.budget_total || project.total_budget, financial)}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
@@ -587,7 +580,7 @@ export default function ProjectManager() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-[10px] text-white/40 truncate">Presupuesto</p>
-                      <p className="text-xs font-medium text-emerald-400 truncate">{formatCurrency(project.total_budget)}</p>
+                      <p className="text-xs font-medium text-emerald-400 truncate">{formatCurrency(project.total_budget, financial)}</p>
                     </div>
                     {project.has_critical_roadblock && (
                       <div className="min-w-0">
@@ -615,6 +608,7 @@ export default function ProjectManager() {
               <button
                 onClick={closeModal}
                 className="text-white/60 hover:text-white p-1"
+                aria-label="Cerrar formulario de proyecto"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -773,7 +767,7 @@ export default function ProjectManager() {
                     <label className="block text-white/60 text-sm mb-1">Presupuesto Calculado (GTQ)</label>
                     <input
                       type="text"
-                      value={formatCurrency(formData.budget_total)}
+                      value={formatCurrency(formData.budget_total, financial)}
                       readOnly
                       className="w-full bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2 text-emerald-400 text-sm cursor-not-allowed"
                     />

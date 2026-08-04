@@ -12,6 +12,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
+import { formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
 
 // Recharts is a client-only library. We use static imports (like DashboardCharts.tsx)
 // which is the correct pattern for recharts (no default export).
@@ -42,6 +43,7 @@ interface ProgressMetrics {
 
 export default function ProgressTracker() {
   const { showToast } = useToast();
+  const { financial } = useFinancialSettings();
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [activeBudget, setActiveBudget] = useState<ActiveBudgetState | null>(null);
@@ -226,15 +228,6 @@ export default function ProgressTracker() {
     }
   };
 
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('es-GT', {
-      style: 'currency',
-      currency: 'GTQ',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-
   // Prepare chart data
   const chartData = metrics ? [
     {
@@ -414,19 +407,19 @@ export default function ProgressTracker() {
               <div>
                 <p className="text-white/60 text-sm">Costo Directo (CD)</p>
                 <p className="text-white font-medium text-lg">
-                  {formatCurrency(activeBudget.costDirectTotal)}
+                  {formatCurrency(activeBudget.costDirectTotal, financial)}
                 </p>
               </div>
               <div>
                 <p className="text-white/60 text-sm">Costo Total (CD + CI)</p>
                 <p className="text-white font-medium text-lg">
-                  {formatCurrency(activeBudget.costTotalWithIndirects)}
+                  {formatCurrency(activeBudget.costTotalWithIndirects, financial)}
                 </p>
               </div>
               <div>
                 <p className="text-white/60 text-sm">Presupuesto Restante</p>
                 <p className="text-white font-medium text-lg">
-                  {formatCurrency(metrics?.remainingBudget || 0)}
+                  {formatCurrency(metrics?.remainingBudget || 0, financial)}
                 </p>
               </div>
             </div>
@@ -440,7 +433,7 @@ export default function ProgressTracker() {
                   <ChartComponents.YAxis stroke="rgba(255,255,255,0.6)" tickFormatter={(value: any) => `Q${(value / 1000).toFixed(0)}k`} />
                   <ChartComponents.Tooltip 
                     contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.2)' }}
-                    formatter={(value: any) => value ? formatCurrency(value) : ''}
+                    formatter={(value: any) => value ? formatCurrency(value, financial) : ''}
                   />
                   <ChartComponents.Bar dataKey="value" fill="#3b82f6" />
                 </ChartComponents.BarChart>
@@ -483,13 +476,13 @@ export default function ProgressTracker() {
               <div className="bg-white/5 p-4 rounded-lg">
                 <p className="text-white/60 text-sm mb-1">Monto Gastado Real</p>
                 <p className="text-white font-medium text-xl">
-                  {formatCurrency(metrics?.spentAmount || 0)}
+                  {formatCurrency(metrics?.spentAmount || 0, financial)}
                 </p>
               </div>
               <div className="bg-white/5 p-4 rounded-lg">
                 <p className="text-white/60 text-sm mb-1">Monto Estimado Según Progreso</p>
                 <p className="text-white font-medium text-xl">
-                  {formatCurrency(metrics?.estimatedSpent || 0)}
+                  {formatCurrency(metrics?.estimatedSpent || 0, financial)}
                 </p>
               </div>
             </div>

@@ -28,6 +28,7 @@ import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
 import CSVGenerator from '@/components/csv/CSVGenerator';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { RenglonCalculator, ProjectRenglon } from '@/lib/calculators/renglonCalculator';
 import BudgetItemsTable from '@/components/budgets/BudgetItemsTable';
 import BudgetSummaryPanel from '@/components/budgets/BudgetSummaryPanel';
@@ -654,8 +655,14 @@ export default function BudgetCalculator() {
                 disabled={saveLoading}
                 className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2 disabled:opacity-50"
               >
-                <Save className="w-4 h-4" />
-                {saveLoading ? 'Guardando...' : 'Guardar'}
+                {saveLoading ? (
+                  <LoadingSpinner size={16} />
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Guardar
+                  </>
+                )}
               </button>
             </Tooltip>
             <Tooltip content="Exportar presupuesto a PDF con membrete corporativo">

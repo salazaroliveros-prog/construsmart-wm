@@ -188,7 +188,7 @@ const loadClients = async () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Gestión de Clientes</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-white">Gestión de Clientes</h2>
           <p className="text-white/60 text-sm">CRM - Registro de datos de clientes</p>
         </div>
         <Tooltip content="Agregar nuevo cliente al sistema">
@@ -278,6 +278,8 @@ const loadClients = async () => {
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
                   : 'glass-button text-white/60'
               }`}
+              aria-label="Filtrar todos los clientes"
+              aria-pressed={filterType === 'all'}
             >
               Todos
             </button>
@@ -288,6 +290,8 @@ const loadClients = async () => {
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
                   : 'glass-button text-white/60'
               }`}
+              aria-label="Filtrar clientes individuales"
+              aria-pressed={filterType === 'individual'}
             >
               Individuales
             </button>
@@ -298,6 +302,8 @@ const loadClients = async () => {
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
                   : 'glass-button text-white/60'
               }`}
+              aria-label="Filtrar clientes corporativos"
+              aria-pressed={filterType === 'corporate'}
             >
               Corporativos
             </button>
@@ -390,6 +396,7 @@ const loadClients = async () => {
                 <button
                   onClick={() => handleEdit(client)}
                   className="flex-1 glass-button px-3 py-2 rounded-lg text-white text-sm flex items-center justify-center gap-2"
+                  aria-label={`Editar cliente ${client.name}`}
                 >
                   <Edit className="w-4 h-4" />
                   Editar
@@ -397,6 +404,7 @@ const loadClients = async () => {
                 <button
                   onClick={() => setDeleteDialog({ show: true, client })}
                   className="px-3 py-2 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-all"
+                  aria-label={`Eliminar cliente ${client.name}`}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -583,12 +591,14 @@ const loadClients = async () => {
                   type="button"
                   onClick={() => setShowForm(false)}
                   className="flex-1 glass-button px-4 py-2 rounded-lg text-white"
+                  aria-label="Cancelar y cerrar formulario de cliente"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   className="flex-1 bg-gradient-to-r from-cyan-500 to-violet-600 px-4 py-2 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity"
+                  aria-label={editingClient ? 'Actualizar cliente existente' : 'Guardar nuevo cliente'}
                 >
                   {editingClient ? 'Actualizar' : 'Guardar'}
                 </button>

@@ -37,7 +37,7 @@ import {
 } from 'recharts';
 import { offlineDB, LocalProject, LocalFinancialTransaction, LocalWarehouseStock, LocalProjectLog, LocalBudgetItem, LocalBudget, LocalPurchaseOrder, LocalPayrollRecord, LocalClient, LocalSupplier, LocalPurchaseOrderItem, LocalPayrollEmployee } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
-import { useBusinessSettings, calculateUtilityMarginHelper } from '@/lib/hooks/useBusinessSettings';
+import { useBusinessSettings, calculateUtilityMarginHelper, formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
 import { useFinancialDataRealtime } from '@/hooks/useFinancialDataRealtime';
 import { useEarnedValueManagement } from '@/hooks/useEarnedValueManagement';
 import EmptyState from '@/components/ui/EmptyState';
@@ -156,6 +156,7 @@ export default function DashboardCharts() {
 
   // ==================== HOOKS ====================
   const { settings } = useBusinessSettings();
+  const { financial } = useFinancialSettings();
   const { cumulativeCosts, lastUpdate, isLoading: financialDataLoading } = useFinancialDataRealtime(selectedProject);
   const {
     metrics: evmMetrics,
@@ -244,15 +245,6 @@ export default function DashboardCharts() {
   });
 
   // ==================== HELPER FUNCTIONS ====================
-  const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat('es-GT', {
-      style: 'currency',
-      currency: 'GTQ',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
   const formatPercent = (value: number): string => {
     return `${value.toFixed(1)}%`;
   };
@@ -973,7 +965,7 @@ export default function DashboardCharts() {
         </div>
         <div className="glass-panel rounded-lg p-2">
           <div className="text-zinc-400 text-[10px] mb-1">Presupuesto Total</div>
-          <div className="text-lg font-bold text-white">{formatCurrency(summaryMetrics.totalBudget)}</div>
+          <div className="text-lg font-bold text-white">{formatCurrency(summaryMetrics.totalBudget, financial)}</div>
         </div>
         <div className="glass-panel rounded-lg p-2">
           <div className="text-zinc-400 text-[10px] mb-1">Varianza</div>
@@ -1037,7 +1029,7 @@ export default function DashboardCharts() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis dataKey="period" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} className="text-white" />
                 <YAxis stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} className="text-white" />
-                <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }} itemStyle={{ color: '#fff', fontWeight: '500' }} labelStyle={{ color: '#fff', fontWeight: '600' }} formatter={(value, name) => name === 'saldoNeto' ? formatCurrency(Number(value)) : value} />
+                <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }} itemStyle={{ color: '#fff', fontWeight: '500' }} labelStyle={{ color: '#fff', fontWeight: '600' }} formatter={(value, name) => name === 'saldoNeto' ? formatCurrency(Number(value), financial) : value} />
                 <Legend wrapperStyle={{ color: '#fff', fontWeight: '500' }} iconType="circle" />
                 <Bar dataKey="ingresos" fill={COLORS.emerald} name="Ingresos" />
                 <Bar dataKey="egresos" fill={COLORS.red} name="Egresos" />
@@ -1059,7 +1051,7 @@ export default function DashboardCharts() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis type="number" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 11 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickFormatter={(value) => `Q${(value / 1000).toFixed(0)}k`} className="text-white" />
                 <YAxis type="category" dataKey="capitulo" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 11 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} width={100} interval={0} className="text-white" />
-                <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }} itemStyle={{ color: '#fff', fontWeight: '500' }} labelStyle={{ color: '#fff', fontWeight: '600' }} formatter={(value) => formatCurrency(Number(value))} />
+                <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }} itemStyle={{ color: '#fff', fontWeight: '500' }} labelStyle={{ color: '#fff', fontWeight: '600' }} formatter={(value) => formatCurrency(Number(value), financial)} />
                 <Legend wrapperStyle={{ color: '#fff', fontWeight: '500' }} iconType="circle" />
                 <Bar dataKey="presupuestoOriginal" fill={COLORS.cyan} name="Presupuesto Original" />
                 <Bar dataKey="costoRealDevengado" fill={COLORS.amber} name="Costo Real Devengado" />
@@ -1150,7 +1142,7 @@ export default function DashboardCharts() {
                 <YAxis yAxisId="left" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickFormatter={(value) => `Q${(value / 1000).toFixed(0)}k`} className="text-white" />
                 <YAxis yAxisId="right" orientation="right" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} className="text-white" />
                 <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }} itemStyle={{ color: '#fff', fontWeight: '500' }} labelStyle={{ color: '#fff', fontWeight: '600' }} formatter={(value, name) => {
-                  if (name === 'totalNomina') return formatCurrency(value as number);
+                  if (name === 'totalNomina') return formatCurrency(value as number, financial);
                   return value;
                 }} />
                 <Legend wrapperStyle={{ color: '#fff', fontWeight: '500' }} iconType="circle" />
@@ -1176,7 +1168,7 @@ export default function DashboardCharts() {
                 <YAxis yAxisId="left" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} className="text-white" />
                 <YAxis yAxisId="right" orientation="right" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickFormatter={(value) => `Q${(value / 1000).toFixed(0)}k`} className="text-white" />
                 <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }} itemStyle={{ color: '#fff', fontWeight: '500' }} labelStyle={{ color: '#fff', fontWeight: '600' }} formatter={(value, name) => {
-                  if (name === 'saldoPendiente') return formatCurrency(value as number);
+                  if (name === 'saldoPendiente') return formatCurrency(value as number, financial);
                   return value;
                 }} />
                 <Legend wrapperStyle={{ color: '#fff', fontWeight: '500' }} iconType="circle" />
@@ -1202,7 +1194,7 @@ export default function DashboardCharts() {
                 <YAxis yAxisId="left" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} className="text-white" />
                 <YAxis yAxisId="right" orientation="right" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickFormatter={(value) => `Q${(value / 1000).toFixed(0)}k`} className="text-white" />
                 <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }} itemStyle={{ color: '#fff', fontWeight: '500' }} labelStyle={{ color: '#fff', fontWeight: '600' }} formatter={(value, name) => {
-                  if (name === 'montoTotalCompras') return formatCurrency(value as number);
+                  if (name === 'montoTotalCompras') return formatCurrency(value as number, financial);
                   return value;
                 }} />
                 <Legend wrapperStyle={{ color: '#fff', fontWeight: '500' }} iconType="circle" />

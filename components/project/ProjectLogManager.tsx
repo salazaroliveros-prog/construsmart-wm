@@ -250,7 +250,7 @@ export default function ProjectLogManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Bitácora de Proyectos</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-white">Bitácora de Proyectos</h2>
           <p className="text-white/60 text-sm">Registro de avance, incidencias y notas</p>
         </div>
         <Tooltip content="Agregar nueva entrada a la bitácora">

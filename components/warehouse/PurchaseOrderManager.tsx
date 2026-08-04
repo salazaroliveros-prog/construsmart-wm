@@ -11,9 +11,11 @@ import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
+import { formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
 
 export default function PurchaseOrderManager() {
   const { showToast } = useToast();
+  const { financial } = useFinancialSettings();
   const [orders, setOrders] = useState<LocalPurchaseOrder[]>([]);
   const [orderItems, setOrderItems] = useState<LocalPurchaseOrderItem[]>([]);
   const [suppliers, setSuppliers] = useState<LocalSupplier[]>([]);
@@ -255,14 +257,6 @@ export default function PurchaseOrderManager() {
     }
   };
 
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('es-GT', {
-      style: 'currency',
-      currency: 'GTQ',
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
-
   const currentOrderItems = selectedOrder
     ? orderItems.filter((oi) => oi.purchase_order_id === selectedOrder.id)
     : [];
@@ -277,7 +271,7 @@ export default function PurchaseOrderManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Órdenes de Compra</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-white">Órdenes de Compra</h2>
           <p className="text-white/60 text-sm">Gestión de órdenes de compra a proveedores</p>
         </div>
         <Tooltip content="Crear nueva orden de compra">
@@ -357,7 +351,7 @@ export default function PurchaseOrderManager() {
             </div>
             <div>
               <p className="text-white/60 text-xs">Total</p>
-              <p className="text-white text-xl font-bold">{formatCurrency(orders.reduce((sum, o) => sum + (o.total_amount || 0), 0))}</p>
+              <p className="text-white text-xl font-bold">{formatCurrency(orders.reduce((sum, o) => sum + (o.total_amount || 0), 0), financial)}</p>
             </div>
           </div>
         </div>
@@ -455,7 +449,7 @@ export default function PurchaseOrderManager() {
                       </div>
                       <div className="flex items-center gap-2">
                         <DollarSign className="w-4 h-4" />
-                        <span className="text-emerald-400 font-medium">{formatCurrency(order.total_amount)}</span>
+                        <span className="text-emerald-400 font-medium">{formatCurrency(order.total_amount, financial)}</span>
                       </div>
                     </div>
                     {order.project_id && (
@@ -551,7 +545,7 @@ export default function PurchaseOrderManager() {
                       </div>
                       <div className="text-right">
                         <p className="text-white font-medium">{item.quantity} {item.unit}</p>
-                        <p className="text-emerald-400 text-sm">{formatCurrency(item.total_price)}</p>
+                        <p className="text-emerald-400 text-sm">{formatCurrency(item.total_price, financial)}</p>
                       </div>
                     </div>
                   </div>

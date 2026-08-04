@@ -473,21 +473,21 @@ export default function FinanceManager() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-emerald-500">
+          <div className="glass-card p-4 sm:p-6 rounded-xl border-l-4 border-l-emerald-500">
             <div className="flex items-center gap-2 mb-1">
               <ArrowUpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
               <span className="text-white/60 text-xs sm:text-sm">Ingresos Totales</span>
             </div>
             <p className="text-lg sm:text-xl font-bold text-emerald-400">{formatCurrency(totalIncome)}</p>
           </div>
-          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-red-500">
+          <div className="glass-card p-4 sm:p-6 rounded-xl border-l-4 border-l-red-500">
             <div className="flex items-center gap-2 mb-1">
               <ArrowDownCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
               <span className="text-white/60 text-xs sm:text-sm">Gastos Totales</span>
             </div>
             <p className="text-lg sm:text-xl font-bold text-red-400">{formatCurrency(totalExpense)}</p>
           </div>
-          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-cyan-500">
+          <div className="glass-card p-4 sm:p-6 rounded-xl border-l-4 border-l-cyan-500">
             <div className="flex items-center gap-2 mb-1">
               <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
               <span className="text-white/60 text-xs sm:text-sm">Balance</span>
@@ -672,6 +672,7 @@ export default function FinanceManager() {
                           onClick={() => openModal(transaction)}
                           className="text-cyan-400 hover:text-cyan-300 p-1"
                           title="Editar"
+                          aria-label="Editar transacción"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
@@ -679,6 +680,7 @@ export default function FinanceManager() {
                           onClick={() => handleDelete(transaction)}
                           className="text-red-400 hover:text-red-300 p-1"
                           title="Eliminar"
+                          aria-label="Eliminar transacción"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -693,6 +695,7 @@ export default function FinanceManager() {
                 <button
                   onClick={showMoreTransactions}
                   className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 text-sm transition-all"
+                  aria-label={`Ver más transacciones, ${remainingTransactions} restantes`}
                 >
                   Ver más transacciones ({remainingTransactions} restantes)
                 </button>
@@ -713,6 +716,7 @@ export default function FinanceManager() {
               <button
                 onClick={closeModal}
                 className="text-white/60 hover:text-white p-1"
+                aria-label="Cerrar formulario de transacción"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -824,6 +828,7 @@ export default function FinanceManager() {
                   type="button"
                   onClick={closeModal}
                   className="flex-1 glass-button px-4 py-2 rounded-lg text-white"
+                  aria-label="Cancelar y cerrar formulario de transacción"
                 >
                   Cancelar
                 </button>
@@ -831,6 +836,7 @@ export default function FinanceManager() {
                   type="submit"
                   disabled={saveLoading}
                   className="flex-1 glass-button px-4 py-2 rounded-lg text-white bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 disabled:opacity-50"
+                  aria-label={editingTransaction ? 'Actualizar transacción existente' : 'Crear nueva transacción'}
                 >
                   {saveLoading ? 'Guardando...' : (editingTransaction ? 'Actualizar' : 'Crear')}
                 </button>

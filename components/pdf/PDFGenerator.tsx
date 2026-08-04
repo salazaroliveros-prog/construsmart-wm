@@ -11,7 +11,7 @@
 import { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 import { Download } from 'lucide-react';
-import { useBusinessSettings, formatCurrency } from '@/lib/hooks/useBusinessSettings';
+import { useBusinessSettings, formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
 
 interface BudgetItem {
   code: string;
@@ -63,6 +63,7 @@ export default function PDFGenerator({
   totalProjectTime,
 }: PDFGeneratorProps) {
   const { settings } = useBusinessSettings();
+  const { financial } = useFinancialSettings();
 
   const generatePDF = async () => {
     const doc = new jsPDF();
@@ -258,9 +259,9 @@ export default function PDFGenerator({
       currentX += colWidths.unit;
       doc.text(item.quantity.toString(), currentX, currentY + 5);
       currentX += colWidths.quantity;
-      doc.text(formatCurrency(item.unitCost), currentX, currentY + 5);
+      doc.text(formatCurrency(item.unitCost, financial), currentX, currentY + 5);
       currentX += colWidths.unitCost;
-      doc.text(formatCurrency(item.totalCost), currentX, currentY + 5);
+      doc.text(formatCurrency(item.totalCost, financial), currentX, currentY + 5);
       currentX += colWidths.total;
       
       const timeText = item.timeRequired ? `${item.timeRequired.toFixed(1)}d` : '-';
@@ -296,7 +297,7 @@ export default function PDFGenerator({
 
     summaryItems.forEach((item) => {
       doc.text(item.label, 15, currentY);
-      doc.text(formatCurrency(item.value), pageWidth - 45, currentY);
+      doc.text(formatCurrency(item.value, financial), pageWidth - 45, currentY);
       currentY += 7;
     });
     
@@ -309,7 +310,7 @@ export default function PDFGenerator({
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
     doc.text('TOTAL DEL PRESUPUESTO', 15, currentY + 6);
-    doc.text(formatCurrency(summary.total), pageWidth - 45, currentY + 6);
+    doc.text(formatCurrency(summary.total, financial), pageWidth - 45, currentY + 6);
     
     // Tiempo total
     currentY += rowHeight + 5;
@@ -449,9 +450,9 @@ export default function PDFGenerator({
           currentX += materialColWidths.quantity;
           doc.text(material.unit, currentX, materialY + 5);
           currentX += materialColWidths.unit;
-          doc.text(formatCurrency(material.unitCost), currentX, materialY + 5);
+          doc.text(formatCurrency(material.unitCost, financial), currentX, materialY + 5);
           currentX += materialColWidths.unitCost;
-          doc.text(formatCurrency(material.totalCost), currentX, materialY + 5);
+          doc.text(formatCurrency(material.totalCost, financial), currentX, materialY + 5);
           
           // Agrupar para resumen
           const key = `${material.code}-${material.unit}`;
@@ -564,7 +565,7 @@ export default function PDFGenerator({
         currentX += summaryColWidths.quantity;
         doc.text(data.unit, currentX, summaryY + 5);
         currentX += summaryColWidths.unit;
-        doc.text(formatCurrency(data.totalCost), currentX, summaryY + 5);
+        doc.text(formatCurrency(data.totalCost, financial), currentX, summaryY + 5);
         
         grandTotal += data.totalCost;
         summaryY += rowHeight;
@@ -579,7 +580,7 @@ export default function PDFGenerator({
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(12);
       doc.text('TOTAL GENERAL DE MATERIALES', 15, summaryY + 6);
-      doc.text(formatCurrency(grandTotal), pageWidth - 45, summaryY + 6);
+      doc.text(formatCurrency(grandTotal, financial), pageWidth - 45, summaryY + 6);
     }
     
     // Footer en todas las páginas
@@ -599,14 +600,6 @@ export default function PDFGenerator({
     
     // Save the PDF
     doc.save(`presupuesto_completo_${projectName.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
-  };
-
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('es-GT', {
-      style: 'currency',
-      currency: 'GTQ',
-      minimumFractionDigits: 2,
-    }).format(amount);
   };
 
   return (

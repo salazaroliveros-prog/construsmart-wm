@@ -769,28 +769,28 @@ const checkOnlineStatus = () => {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-cyan-500">
+          <div className="glass-card p-4 sm:p-6 rounded-xl border-l-4 border-l-cyan-500">
             <div className="flex items-center gap-2 mb-1">
               <Users className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
               <span className="text-white/60 text-xs sm:text-sm">Empleados Activos</span>
             </div>
             <p className="text-lg sm:text-xl font-bold text-white">{summary.totalEmployees}</p>
           </div>
-          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-emerald-500">
+          <div className="glass-card p-4 sm:p-6 rounded-xl border-l-4 border-l-emerald-500">
             <div className="flex items-center gap-2 mb-1">
               <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
               <span className="text-white/60 text-xs sm:text-sm">Nómina Mensual</span>
             </div>
 <p className="text-lg sm:text-xl font-bold text-emerald-400">{formatCurrency(summary.totalMonthlyPayroll, financial)}</p>
           </div>
-          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-violet-500">
+          <div className="glass-card p-4 sm:p-6 rounded-xl border-l-4 border-l-violet-500">
             <div className="flex items-center gap-2 mb-1">
               <BadgeCheck className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400" />
               <span className="text-white/60 text-xs sm:text-sm">Prestaciones</span>
             </div>
             <p className="text-lg sm:text-xl font-bold text-violet-400">{formatCurrency(summary.totalBenefits, financial)}</p>
           </div>
-          <div className="glass-card p-3 sm:p-4 rounded-xl border-l-4 border-l-amber-500">
+          <div className="glass-card p-4 sm:p-6 rounded-xl border-l-4 border-l-amber-500">
             <div className="flex items-center gap-2 mb-1">
               <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
               <span className="text-white/60 text-xs sm:text-sm">Costo Total</span>
@@ -838,6 +838,9 @@ const checkOnlineStatus = () => {
                 ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
                 : 'text-white/60 hover:text-white border border-transparent'
             }`}
+            aria-label="Ver lista de empleados"
+            aria-selected={activeTab === 'employees'}
+            role="tab"
           >
             Empleados
           </button>
@@ -848,6 +851,9 @@ const checkOnlineStatus = () => {
                 ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'
                 : 'text-white/60 hover:text-white border border-transparent'
             }`}
+            aria-label="Ver registros de pago"
+            aria-selected={activeTab === 'records'}
+            role="tab"
           >
             Registros de Pago
           </button>
@@ -871,6 +877,7 @@ const checkOnlineStatus = () => {
                 }}
                 disabled={isDetecting}
                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 text-white text-sm hover:opacity-90 flex items-center gap-2 disabled:opacity-50"
+                aria-label="Revisar todos los registros de nómina para detectar excesos de mano de obra"
               >
                 <TrendingUp className={`w-4 h-4 ${isDetecting ? 'animate-pulse' : ''}`} />
                 {isDetecting ? 'Analizando...' : 'Revisar Todo'}
@@ -936,6 +943,7 @@ const checkOnlineStatus = () => {
                 <button
                   onClick={() => handleOpenEmployeeModal()}
                   className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+                  aria-label="Crear nuevo empleado"
                 >
                   <Plus className="w-4 h-4" />
                   Nuevo Empleado
@@ -989,6 +997,7 @@ const checkOnlineStatus = () => {
                             onClick={() => handleOpenEmployeeModal(employee)}
                             className="text-cyan-400 hover:text-cyan-300 p-1"
                             title="Editar"
+                            aria-label="Editar empleado"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
@@ -996,6 +1005,7 @@ const checkOnlineStatus = () => {
                             onClick={() => setDeleteConfirm(employee)}
                             className="text-red-400 hover:text-red-300 p-1"
                             title="Eliminar"
+                            aria-label="Eliminar empleado"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -1010,6 +1020,7 @@ const checkOnlineStatus = () => {
                   <button
                     onClick={showMoreEmployees}
                     className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 text-sm transition-all"
+                    aria-label={`Ver más empleados, ${remainingEmployees} restantes`}
                   >
                     Ver más empleados ({remainingEmployees} restantes)
                   </button>
@@ -1027,6 +1038,7 @@ const checkOnlineStatus = () => {
                 <button
                   onClick={() => handleOpenPayrollModal()}
                   className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+                  aria-label="Crear nuevo registro de nómina"
                 >
                   <Plus className="w-4 h-4" />
                   Nuevo Registro
@@ -1039,6 +1051,7 @@ const checkOnlineStatus = () => {
                 <button
                   onClick={() => handleOpenPayrollModal()}
                   className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+                  aria-label="Crear nuevo registro de nómina"
                 >
                   <Plus className="w-4 h-4" />
                   Nuevo Registro
@@ -1079,6 +1092,7 @@ const checkOnlineStatus = () => {
                     <button
                       onClick={showMorePayrollRecords}
                       className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 text-sm transition-all"
+                      aria-label={`Ver más registros de nómina, ${remainingPayrollRecords} restantes`}
                     >
                       Ver más registros ({remainingPayrollRecords} restantes)
                     </button>
@@ -1101,6 +1115,7 @@ const checkOnlineStatus = () => {
               <button
                 onClick={handleCloseEmployeeModal}
                 className="text-white/60 hover:text-white p-1"
+                aria-label="Cerrar formulario de empleado"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -1186,6 +1201,7 @@ const checkOnlineStatus = () => {
               <button
                 onClick={handleCloseEmployeeModal}
                 className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm hover:bg-white/20"
+                aria-label="Cancelar y cerrar formulario de empleado"
               >
                 Cancelar
               </button>
@@ -1193,6 +1209,7 @@ const checkOnlineStatus = () => {
                 onClick={handleSaveEmployee}
                 disabled={saveLoading}
                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 text-white text-sm hover:opacity-90 flex items-center gap-2 disabled:opacity-50"
+                aria-label={editingEmployee ? 'Actualizar empleado existente' : 'Guardar nuevo empleado'}
               >
                 <Save className="w-4 h-4" />
                 {saveLoading ? 'Guardando...' : 'Guardar'}
@@ -1213,6 +1230,7 @@ const checkOnlineStatus = () => {
               <button
                 onClick={handleClosePayrollModal}
                 className="text-white/60 hover:text-white p-1"
+                aria-label="Cerrar formulario de registro de nómina"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -1321,6 +1339,7 @@ const checkOnlineStatus = () => {
               <button
                 onClick={handleClosePayrollModal}
                 className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm hover:bg-white/20"
+                aria-label="Cancelar y cerrar formulario de registro de nómina"
               >
                 Cancelar
               </button>
@@ -1328,6 +1347,7 @@ const checkOnlineStatus = () => {
                 onClick={handleSavePayroll}
                 disabled={saveLoading}
                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 text-white text-sm hover:opacity-90 flex items-center gap-2 disabled:opacity-50"
+                aria-label={editingPayroll ? 'Actualizar registro de nómina existente' : 'Guardar nuevo registro de nómina'}
               >
                 <Save className="w-4 h-4" />
                 {saveLoading ? 'Guardando...' : 'Guardar'}
