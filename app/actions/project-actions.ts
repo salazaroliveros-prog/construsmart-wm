@@ -44,6 +44,7 @@ export async function createProject(input: unknown): Promise<{ data: ProjectRow 
 
     const payload: ProjectInsert = {
       id: parsed.id ?? generateId(),
+      user_id: (await supabase.auth.getUser()).data.user?.id ?? '',
       code: parsed.code,
       name: parsed.name,
       client_name: parsed.client_name,
@@ -60,6 +61,11 @@ export async function createProject(input: unknown): Promise<{ data: ProjectRow 
       total_budget: parsed.total_budget,
       budget_total: parsed.budget_total ?? null,
       calculated_duration: parsed.calculated_duration ?? null,
+      has_critical_roadblock: false,
+      roadblock_type: null,
+      roadblock_description: null,
+      roadblock_date: null,
+      completion_buffer_days: null,
       sync_status: 'synced',
     };
 
