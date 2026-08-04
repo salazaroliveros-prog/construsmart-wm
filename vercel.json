@@ -1,4 +1,5 @@
 {
+  "name": "control-seguimiento-app",
   "buildCommand": "next build",
   "devCommand": "next dev",
   "installCommand": "npm install",
