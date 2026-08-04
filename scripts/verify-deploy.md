@@ -21,9 +21,9 @@
 ### Manual Verification Steps
 
 1. **Open Vercel Dashboard**
-   - Go to: https://vercel.com/username/projects
+   - Go to: https://vercel.com/proyectoswm/projects
    - Find project: control-constructora-wm
-   - Or direct: https://vercel.com/salazaroliveros-prog/Control_Constructora
+   - Or direct: https://vercel.com/proyectoswm/control-constructora-wm
 
 2. **Check Latest Deployment**
    - Look at the "Deployments" tab

@@ -76,7 +76,7 @@ echo ""
 echo "🔗 6. URLs importantes:"
 echo ""
 echo "   - Dashboard Vercel: https://vercel.com/dashboard"
-echo "   - Proyecto: https://vercel.com/salazaroliveros-prog's-projects/control-constructora"
+echo "   - Proyecto: https://vercel.com/proyectoswm/control-constructora-wm"
 echo "   - Producción: https://control-constructora-wm.vercel.app"
 echo ""
 
