@@ -35,7 +35,7 @@ import {
   Cell, 
   ReferenceLine 
 } from 'recharts';
-import { offlineDB, LocalProject, LocalFinancialTransaction, LocalWarehouseStock, LocalProjectLog, LocalBudgetItem, LocalBudget, LocalPurchaseOrder, LocalPayrollRecord } from '@/lib/db/offlineStore';
+import { offlineDB, LocalProject, LocalFinancialTransaction, LocalWarehouseStock, LocalProjectLog, LocalBudgetItem, LocalBudget, LocalPurchaseOrder, LocalPayrollRecord, LocalClient, LocalSupplier, LocalPurchaseOrderItem, LocalPayrollEmployee } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useBusinessSettings, calculateUtilityMarginHelper } from '@/lib/hooks/useBusinessSettings';
 import { useFinancialDataRealtime } from '@/hooks/useFinancialDataRealtime';
@@ -95,6 +95,20 @@ interface PayrollData {
   horasExtra: number;
 }
 
+interface ClientData {
+  periodo: string;
+  nuevosClientes: number;
+  clientesActivos: number;
+  saldoPendiente: number;
+}
+
+interface SupplierData {
+  periodo: string;
+  ordenesPorProveedor: number;
+  montoTotalCompras: number;
+  proveedoresActivos: number;
+}
+
 interface SummaryMetrics {
   totalProjects: number;
   activeProjects: number;
@@ -133,7 +147,11 @@ export default function AnalyticsDashboard() {
   const [budgetItems, setBudgetItems] = useState<LocalBudgetItem[]>([]);
   const [budgets, setBudgets] = useState<LocalBudget[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<LocalPurchaseOrder[]>([]);
+  const [purchaseOrderItems, setPurchaseOrderItems] = useState<LocalPurchaseOrderItem[]>([]);
   const [payrollRecords, setPayrollRecords] = useState<LocalPayrollRecord[]>([]);
+  const [payrollEmployees, setPayrollEmployees] = useState<LocalPayrollEmployee[]>([]);
+  const [clients, setClients] = useState<LocalClient[]>([]);
+  const [suppliers, setSuppliers] = useState<LocalSupplier[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('all');
 
   // ==================== HOOKS ====================
@@ -152,6 +170,8 @@ export default function AnalyticsDashboard() {
   const [burnRateData, setBurnRateData] = useState<MaterialBurnRateData[]>([]);
   const [purchaseOrderData, setPurchaseOrderData] = useState<PurchaseOrderData[]>([]);
   const [payrollData, setPayrollData] = useState<PayrollData[]>([]);
+  const [clientData, setClientData] = useState<ClientData[]>([]);
+  const [supplierData, setSupplierData] = useState<SupplierData[]>([]);
   const [summaryMetrics, setSummaryMetrics] = useState<SummaryMetrics>({
     totalProjects: 0,
     activeProjects: 0,
@@ -180,7 +200,11 @@ export default function AnalyticsDashboard() {
     loadBudgetItems();
     loadBudgets();
     loadPurchaseOrders();
+    loadPurchaseOrderItems();
     loadPayrollRecords();
+    loadPayrollEmployees();
+    loadClients();
+    loadSuppliers();
   }, []);
 
   useEffect(() => {
@@ -207,7 +231,7 @@ export default function AnalyticsDashboard() {
     }
   }, [cumulativeCosts, selectedProject, projects]);
 
-  useRealtimeRefresh(['projects', 'financial_transactions', 'warehouse_stock', 'project_logs', 'budget_items', 'budgets', 'purchase_orders', 'payroll_records'], () => {
+  useRealtimeRefresh(['projects', 'financial_transactions', 'warehouse_stock', 'project_logs', 'budget_items', 'budgets', 'purchase_orders', 'purchase_order_items', 'payroll_records', 'payroll_employees', 'clients', 'suppliers'], () => {
     loadProjects();
     loadTransactions();
     loadWarehouseStock();
@@ -215,7 +239,11 @@ export default function AnalyticsDashboard() {
     loadBudgetItems();
     loadBudgets();
     loadPurchaseOrders();
+    loadPurchaseOrderItems();
     loadPayrollRecords();
+    loadPayrollEmployees();
+    loadClients();
+    loadSuppliers();
   });
 
   // ==================== HELPER FUNCTIONS ====================
@@ -308,6 +336,42 @@ export default function AnalyticsDashboard() {
     }
   };
 
+  const loadPurchaseOrderItems = async () => {
+    try {
+      const data = await offlineDB.purchaseOrderItems.toArray();
+      setPurchaseOrderItems(data);
+    } catch (error) {
+      console.error('Error loading purchase order items:', error);
+    }
+  };
+
+  const loadPayrollEmployees = async () => {
+    try {
+      const data = await offlineDB.payrollEmployees.toArray();
+      setPayrollEmployees(data);
+    } catch (error) {
+      console.error('Error loading payroll employees:', error);
+    }
+  };
+
+  const loadClients = async () => {
+    try {
+      const data = await offlineDB.clients.toArray();
+      setClients(data);
+    } catch (error) {
+      console.error('Error loading clients:', error);
+    }
+  };
+
+  const loadSuppliers = async () => {
+    try {
+      const data = await offlineDB.suppliers.toArray();
+      setSuppliers(data);
+    } catch (error) {
+      console.error('Error loading suppliers:', error);
+    }
+  };
+
   const loadAnalyticsData = async () => {
     if (!hasData) {
       resetAnalytics();
@@ -326,6 +390,8 @@ export default function AnalyticsDashboard() {
       setBurnRateData(generateBurnRateData(filteredProjects));
       setPurchaseOrderData(generatePurchaseOrderData(filteredProjects));
       setPayrollData(generatePayrollData(filteredProjects));
+      setClientData(generateClientData(filteredProjects));
+      setSupplierData(generateSupplierData(filteredProjects));
       setSummaryMetrics(calculateSummaryMetrics(filteredProjects));
     } catch (error) {
       console.error('Error loading analytics data:', error);
@@ -340,6 +406,8 @@ export default function AnalyticsDashboard() {
     setBurnRateData([]);
     setPurchaseOrderData([]);
     setPayrollData([]);
+    setClientData([]);
+    setSupplierData([]);
     setSummaryMetrics({
       totalProjects: 0,
       activeProjects: 0,
@@ -692,6 +760,79 @@ export default function AnalyticsDashboard() {
     });
   };
 
+  // GRÁFICO 8: Clientes por Periodo
+  const generateClientData = (projects: LocalProject[]): ClientData[] => {
+    if (projects.length === 0) return [];
+
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+
+    return Array.from({ length: currentMonth + 1 }, (_, index) => {
+      let nuevosClientes = 0;
+      let clientesActivos = 0;
+      let saldoPendiente = 0;
+
+      // Filtrar clientes por mes de creación
+      const monthClients = clients.filter(c => {
+        const createdAt = new Date(c.created_at || '');
+        return createdAt.getMonth() === index && createdAt.getFullYear() === currentDate.getFullYear();
+      });
+      nuevosClientes = monthClients.length;
+
+      // Contar clientes activos (no morosos)
+      clientesActivos = clients.filter(c => !c.is_delinquent).length;
+
+      // Sumar saldo pendiente de todos los clientes
+      saldoPendiente = clients.reduce((sum, c) => sum + (c.account_balance || 0), 0);
+
+      return {
+        periodo: months[index],
+        nuevosClientes,
+        clientesActivos,
+        saldoPendiente,
+      };
+    });
+  };
+
+  // GRÁFICO 9: Proveedores por Periodo
+  const generateSupplierData = (projects: LocalProject[]): SupplierData[] => {
+    if (projects.length === 0) return [];
+
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+
+    return Array.from({ length: currentMonth + 1 }, (_, index) => {
+      let ordenesPorProveedor = 0;
+      let montoTotalCompras = 0;
+      let proveedoresActivos = 0;
+
+      projects.forEach(project => {
+        const projectOrders = purchaseOrders.filter(po => po.project_id === project.id);
+        const monthOrders = projectOrders.filter(po => {
+          const orderDate = new Date(po.order_date);
+          return orderDate.getMonth() === index && orderDate.getFullYear() === currentDate.getFullYear();
+        });
+
+        monthOrders.forEach(order => {
+          ordenesPorProveedor += 1;
+          montoTotalCompras += order.total_amount || 0;
+        });
+      });
+
+      // Contar proveedores activos (is_preferred o con órdenes recientes)
+      proveedoresActivos = suppliers.filter(s => s.is_preferred).length;
+
+      return {
+        periodo: months[index],
+        ordenesPorProveedor,
+        montoTotalCompras,
+        proveedoresActivos,
+      };
+    });
+  };
+
   const calculateSummaryMetrics = (projects: LocalProject[]): SummaryMetrics => {
     if (projects.length === 0) {
       return {
@@ -845,7 +986,7 @@ export default function AnalyticsDashboard() {
         </div>
 
         {/* Layout Grid Responsivo de Alta Densidad */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
           
           {/* GRÁFICO 1: CURVA "S" (AVANCE FÍSICO VS. FINANCIERO ACUMULADO) */}
           <div className="bg-white/[var(--glass-opacity,0.1)] dark:bg-black/[var(--glass-opacity,0.15)] backdrop-blur-[var(--glass-blur,12px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_4px_16px_0_rgba(0,0,0,0.15)] rounded-xl p-4 sm:p-5 xl:col-span-2">
@@ -1218,6 +1359,114 @@ export default function AnalyticsDashboard() {
                   <Bar yAxisId="left" dataKey="totalNomina" fill={COLORS.emerald} name="Total Nómina" />
                   <Line yAxisId="right" type="monotone" dataKey="empleadosActivos" stroke={COLORS.cyan} strokeWidth={2} name="Empleados Activos" />
                   <Line yAxisId="right" type="monotone" dataKey="horasExtra" stroke={COLORS.amber} strokeWidth={2} name="Horas Extra" />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* GRÁFICO 8: CLIENTES POR PERIODO */}
+          <div className="bg-white/[var(--glass-opacity,0.1)] dark:bg-black/[var(--glass-opacity,0.15)] backdrop-blur-[var(--glass-blur,12px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_4px_16px_0_rgba(0,0,0,0.15)] rounded-xl p-4 sm:p-5">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+              <Users className="w-5 h-5 text-cyan-500" />
+              Clientes por Periodo
+            </h2>
+            <div className="h-72 sm:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={clientData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
+                  <XAxis
+                    dataKey="periodo"
+                    stroke="currentColor"
+                    tick={{ fill: 'currentColor', fontSize: 12 }}
+                    tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                    className="text-zinc-900 dark:text-white"
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    stroke="currentColor"
+                    tick={{ fill: 'currentColor', fontSize: 12 }}
+                    tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                    className="text-zinc-900 dark:text-white"
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    stroke="currentColor"
+                    tick={{ fill: 'currentColor', fontSize: 12 }}
+                    tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                    tickFormatter={(value) => `Q${(value as number / 1000).toFixed(0)}k`}
+                    className="text-zinc-900 dark:text-white"
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
+                    itemStyle={{ color: '#fff', fontWeight: '500' }}
+                    labelStyle={{ color: '#fff', fontWeight: '600' }}
+                    formatter={(value, name) => {
+                      if (name === 'saldoPendiente') return formatCurrency(value as number);
+                      return value;
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{ color: '#fff', fontWeight: '500' }}
+                    iconType="circle"
+                  />
+                  <Bar yAxisId="left" dataKey="nuevosClientes" fill={COLORS.cyan} name="Nuevos Clientes" />
+                  <Line yAxisId="left" type="monotone" dataKey="clientesActivos" stroke={COLORS.emerald} strokeWidth={2} name="Clientes Activos" />
+                  <Line yAxisId="right" type="monotone" dataKey="saldoPendiente" stroke={COLORS.amber} strokeWidth={2} name="Saldo Pendiente" />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* GRÁFICO 9: PROVEEDORES POR PERIODO */}
+          <div className="bg-white/[var(--glass-opacity,0.1)] dark:bg-black/[var(--glass-opacity,0.15)] backdrop-blur-[var(--glass-blur,12px)] border border-white/15 dark:border-zinc-700/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_4px_16px_0_rgba(0,0,0,0.15)] rounded-xl p-4 sm:p-5">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+              <FolderOpen className="w-5 h-5 text-violet-500" />
+              Proveedores por Periodo
+            </h2>
+            <div className="h-72 sm:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={supplierData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
+                  <XAxis
+                    dataKey="periodo"
+                    stroke="currentColor"
+                    tick={{ fill: 'currentColor', fontSize: 12 }}
+                    tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                    className="text-zinc-900 dark:text-white"
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    stroke="currentColor"
+                    tick={{ fill: 'currentColor', fontSize: 12 }}
+                    tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                    className="text-zinc-900 dark:text-white"
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    stroke="currentColor"
+                    tick={{ fill: 'currentColor', fontSize: 12 }}
+                    tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                    tickFormatter={(value) => `Q${(value as number / 1000).toFixed(0)}k`}
+                    className="text-zinc-900 dark:text-white"
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
+                    itemStyle={{ color: '#fff', fontWeight: '500' }}
+                    labelStyle={{ color: '#fff', fontWeight: '600' }}
+                    formatter={(value, name) => {
+                      if (name === 'montoTotalCompras') return formatCurrency(value as number);
+                      return value;
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{ color: '#fff', fontWeight: '500' }}
+                    iconType="circle"
+                  />
+                  <Bar yAxisId="left" dataKey="ordenesPorProveedor" fill={COLORS.violet} name="Órdenes por Proveedor" />
+                  <Line yAxisId="right" type="monotone" dataKey="montoTotalCompras" stroke={COLORS.emerald} strokeWidth={2} name="Monto Total Compras" />
+                  <Line yAxisId="left" type="monotone" dataKey="proveedoresActivos" stroke={COLORS.cyan} strokeWidth={2} name="Proveedores Activos" />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
