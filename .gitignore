@@ -51,7 +51,6 @@ typescript-errors.txt
 $null
 
 # Shadcn/Supabase generated files (not used in this project)
-components.json
 lib/client.ts
 lib/middleware.ts
 lib/server.ts

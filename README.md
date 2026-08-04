@@ -226,9 +226,11 @@ git push origin main
 ```
 
 ### Configuración Vercel
-- Framework: Next.js
-- Variables de entorno configuradas
-- Dominio personalizado: `control-constructora-wm.vercel.app`
+- **Framework:** Next.js
+- **Project:** control-constructora-wm (proyectoswm)
+- **Variables de entorno:** Configuradas en dashboard
+- **Dominio personalizado:** `control-constructora-wm.vercel.app`
+- **Node Version:** 24.x
 
 ## 📊 Analytics Dashboard
 

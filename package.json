@@ -15,7 +15,8 @@
     "start:pm2": "pm2 start scripts/start-production.js --name \"erp-wm\" -i max",
     "type-check": "tsc --noEmit",
     "clear-db": "tsx scripts/clear-local-db.ts",
-    "test": "npx vitest run"
+    "test": "npx vitest run",
+    "validate-config": "node scripts/validate-config.js"
   },
   "keywords": [
     "construction",
