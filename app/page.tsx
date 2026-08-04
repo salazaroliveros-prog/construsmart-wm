@@ -333,6 +333,13 @@ return (
                     key={tab.id}
                     type="button"
                     onClick={() => handleTabChange(tab.id)}
+                    onPointerDown={(e) => {
+                      // Prevenir comportamiento de doble click
+                      (e.currentTarget as HTMLElement).style.transform = 'scale(0.98)';
+                      setTimeout(() => {
+                        (e.currentTarget as HTMLElement).style.transform = '';
+                      }, 100);
+                    }}
                     className={`shrink-0 min-h-[44px] rounded-lg border px-3 py-2.5 text-[11px] font-medium transition-all duration-200 whitespace-nowrap sm:px-4 sm:text-sm ${
                       isTabActive
                         ? 'border-cyan-500/40 bg-gradient-to-r from-cyan-500/20 to-violet-500/20 text-white shadow-[0_0_0_1px_rgba(34,211,238,0.18)]'

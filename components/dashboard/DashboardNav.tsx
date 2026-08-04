@@ -1,7 +1,7 @@
 'use client';
 
 import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp, Database, LogOut, AlertCircle, BookOpen, Settings, Truck, ClipboardList, BarChart3 } from 'lucide-react';
-import { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, memo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
 import UserAvatar from '@/components/ui/UserAvatar';
@@ -67,16 +67,42 @@ const NavButton = memo(({
   isCollapsed: boolean;
   onClick?: () => void;
 }) => {
+  const isTouch = useRef(false);
+
+  const handleTouchStart = () => {
+    isTouch.current = true;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    // Feedback táctil inmediato
+    (e.currentTarget as HTMLElement).style.transform = 'scale(0.98)';
+    setTimeout(() => {
+      (e.currentTarget as HTMLElement).style.transform = '';
+    }, 100);
+
+    // Ejecutar el click en dispositivos táctiles
+    if (onClick) {
+      onClick();
+    }
+
+    // Resetear flag después de un breve delay
+    setTimeout(() => {
+      isTouch.current = false;
+    }, 100);
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    // Solo ejecutar si no fue un evento táctil (prevenir doble click en móvil)
+    if (!isTouch.current && onClick) {
+      onClick();
+    }
+  };
+
   return (
     <button
-      onClick={onClick}
-      onTouchEnd={(e) => {
-        // Feedback táctil inmediato sin duplicar onClick
-        e.currentTarget.style.transform = 'scale(0.98)';
-        setTimeout(() => {
-          e.currentTarget.style.transform = '';
-        }, 100);
-      }}
+      onClick={handleClick}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       className={`w-full flex items-center rounded-lg transition-all relative touch-manipulation ${
         isCollapsed ? 'justify-center px-2 py-2.5' : 'justify-between px-3 py-2.5'
       } ${
