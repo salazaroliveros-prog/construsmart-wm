@@ -179,8 +179,8 @@ export default function BudgetCalculator() {
             description: dbItem.description,
             unit: dbItem.unit,
             quantity: dbItem.quantity,
-            unitCost: dbItem.unit_cost,
-            totalCost: dbItem.total_cost,
+            unit_cost: dbItem.unit_cost,
+            total_cost: dbItem.total_cost,
             category: dbItem.is_custom ? 'Custom' : 'APU', // UI-only field, not persisted in DB
             apuResult: dbItem.apu_result as APUResult | undefined,
           }));
@@ -267,8 +267,8 @@ export default function BudgetCalculator() {
       description: result.description,
       unit: 'm²',
       quantity: dimensions.length * dimensions.width,
-      unitCost: cost / (dimensions.length * dimensions.width),
-      totalCost: cost,
+      unit_cost: cost / (dimensions.length * dimensions.width),
+      total_cost: cost,
       category: 'Estructura',
     };
 
@@ -286,8 +286,8 @@ export default function BudgetCalculator() {
       description: `APU ${TYPOLOGY_LABELS[selectedTypology]} - Renglón Personalizado`,
       unit: 'unid',
       quantity: apuParams.theoreticalQuantity,
-      unitCost: apuResult.totalCost / apuParams.theoreticalQuantity,
-      totalCost: apuResult.totalCost,
+      unit_cost: apuResult.total_cost / apuParams.theoreticalQuantity,
+      total_cost: apuResult.total_cost,
       category: 'APU',
       apuResult,
     };
@@ -305,8 +305,8 @@ export default function BudgetCalculator() {
       description: renglon.description,
       unit: renglon.unit,
       quantity: 0,
-      unitCost: 0,
-      totalCost: 0,
+      unit_cost: 0,
+      total_cost: 0,
       category: renglon.category,
     };
 
@@ -338,8 +338,8 @@ export default function BudgetCalculator() {
       description: 'Nuevo Item',
       unit: 'unid',
       quantity: 1,
-      unitCost: 0,
-      totalCost: 0,
+      unit_cost: 0,
+      total_cost: 0,
       category: 'General',
     };
 
@@ -351,8 +351,8 @@ export default function BudgetCalculator() {
     setItems(items.map(item => {
       if (item.id === id) {
         const updated = { ...item, [field]: value };
-        if (field === 'quantity' || field === 'unitCost') {
-          updated.totalCost = Number(updated.quantity) * Number(updated.unitCost);
+        if (field === 'quantity' || field === 'unit_cost') {
+          updated.total_cost = Number(updated.quantity) * Number(updated.unit_cost);
         }
         return updated;
       }
@@ -482,8 +482,8 @@ export default function BudgetCalculator() {
           description: item.description,
           unit: item.unit,
           quantity: item.quantity,
-          unit_cost: item.unitCost,
-          total_cost: item.totalCost,
+          unit_cost: item.unit_cost,
+          total_cost: item.total_cost,
           item_order: 0,
           is_custom: true,
           unidades_comerciales_estimadas: unidadesComerciales,
@@ -510,7 +510,7 @@ export default function BudgetCalculator() {
             const materialBreakdown = RenglonCalculator.calculateMaterialBreakdown({
               quantity: item.quantity,
               renglon: catalogRenglon,
-              customMaterialCost: item.unitCost
+              customMaterialCost: item.unit_cost
             });
             for (const material of materialBreakdown) {
               warehouseInputs.push({
@@ -519,7 +519,7 @@ export default function BudgetCalculator() {
                 description: material.description,
                 unit: material.unit,
                 quantity: material.quantity,
-                unitCost: material.unitCost,
+                unit_cost: material.unit_cost,
               });
             }
           } else {
@@ -529,7 +529,7 @@ export default function BudgetCalculator() {
               description: item.description,
               unit: item.unit,
               quantity: item.quantity,
-              unitCost: item.unitCost,
+              unit_cost: item.unit_cost,
             });
           }
         }
@@ -587,11 +587,11 @@ export default function BudgetCalculator() {
         renglonTimeData: timeImpact.renglonDays,
         breakdown: {
           materials: items.reduce((sum, item) => 
-            sum + (item.apuResult?.breakdown.materials || item.totalCost * 0.6), 0),
+            sum + (item.apuResult?.breakdown.materials || item.total_cost * 0.6), 0),
           labor: items.reduce((sum, item) => 
-            sum + (item.apuResult?.breakdown.labor || item.totalCost * 0.3), 0),
+            sum + (item.apuResult?.breakdown.labor || item.total_cost * 0.3), 0),
           machinery: items.reduce((sum, item) => 
-            sum + (item.apuResult?.breakdown.machinery || item.totalCost * 0.1), 0),
+            sum + (item.apuResult?.breakdown.machinery || item.total_cost * 0.1), 0),
         },
         topographyData: topographyData,
         calculatedAt: new Date().toISOString(),
@@ -683,8 +683,8 @@ export default function BudgetCalculator() {
                   description: item.description,
                   unit: item.unit,
                   quantity: item.quantity,
-                  unitCost: item.unitCost,
-                  totalCost: item.totalCost,
+                  unit_cost: item.unit_cost,
+                  total_cost: item.total_cost,
                   timeRequired: item.apuResult ? 
                     (item.quantity / (apuParams.dailyPerformance * (apuParams.crewSize || 1))) : undefined,
                   materialBreakdown: item.apuResult ? [{
@@ -692,8 +692,8 @@ export default function BudgetCalculator() {
                     description: item.description,
                     unit: item.unit,
                     quantity: item.quantity * (1 + apuParams.wastePercentage / 100),
-                    unitCost: item.unitCost,
-                    totalCost: item.totalCost
+                    unit_cost: item.unit_cost,
+                    total_cost: item.total_cost
                   }] : undefined,
                 }))}
                 summary={summary}
@@ -891,10 +891,10 @@ export default function BudgetCalculator() {
                       description: renglon.description,
                       unit: renglon.unit,
                       quantity: 100,
-                      unitCost: apuResult.totalCost / 100,
-                      totalCost: apuResult.totalCost,
+                      unit_cost: apuResult.total_cost / 100,
+                      total_cost: apuResult.total_cost,
                       category: renglon.category || 'general',
-                      timeRequired: apuResult.totalCost / (renglon.laborFormula?.dailySalary || 350),
+                      timeRequired: apuResult.total_cost / (renglon.laborFormula?.dailySalary || 350),
                       apuResult,
                     };
                     setItems(prev => [...prev, newItem]);
@@ -1121,7 +1121,7 @@ export default function BudgetCalculator() {
                   </div>
                   <div>
                     <p className="text-white/40 text-xs">Costo Total</p>
-                    <p className="text-cyan-400 font-medium">{formatQuetzales(result.totalCost)}</p>
+                    <p className="text-cyan-400 font-medium">{formatQuetzales(result.total_cost)}</p>
                   </div>
                 </div>
               );
@@ -1403,8 +1403,8 @@ export default function BudgetCalculator() {
                 description: item.description,
                 unit: item.unit,
                 quantity: item.quantity,
-                unitCost: item.unitCost,
-                totalCost: item.totalCost,
+                unit_cost: item.unit_cost,
+                total_cost: item.total_cost,
                 timeRequired: item.apuResult ? 
                   (item.quantity / (apuParams.dailyPerformance * (apuParams.crewSize || 1))) : undefined,
                 materialBreakdown: item.apuResult ? [{
@@ -1412,8 +1412,8 @@ export default function BudgetCalculator() {
                   description: item.description,
                   unit: item.unit,
                   quantity: item.quantity * (1 + apuParams.wastePercentage / 100),
-                  unitCost: item.unitCost,
-                  totalCost: item.totalCost
+                  unit_cost: item.unit_cost,
+                  total_cost: item.total_cost
                 }] : undefined,
               }))}
               summary={summary}

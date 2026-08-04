@@ -82,7 +82,7 @@ export default function BudgetItemsTable({
                   quantity={item.quantity}
                   onQuantityChange={(value) => onUpdateItem(item.id, 'quantity', value)}
                   onCrewSizeChange={(value) => onCrewSizeChange(item.id, value)}
-                  onMaterialCostChange={(value) => onUpdateItem(item.id, 'unitCost', value)}
+                  onMaterialCostChange={(value) => onUpdateItem(item.id, 'unit_cost', value)}
                   onPerformanceChange={(value) => onPerformanceChange(item.id, value)}
                   onEfficiencyChange={(value) => onEfficiencyChange(item.id, value)}
                   defaultExpanded={false}
@@ -109,14 +109,14 @@ export default function BudgetItemsTable({
                     <div>
                       <input
                         type="number"
-                        value={item.unitCost}
-                        onChange={(e) => onUpdateItem(item.id, 'unitCost', e.target.value)}
+                        value={item.unit_cost}
+                        onChange={(e) => onUpdateItem(item.id, 'unit_cost', e.target.value)}
                         className="w-24 bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-sm"
                       />
                     </div>
                   </div>
                   <div className="text-white font-medium mr-4">
-                    {formatQuetzales(item.totalCost)}
+                    {formatQuetzales(item.total_cost)}
                   </div>
                   <button
                     onClick={() => onDeleteItem(item.id)}

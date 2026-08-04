@@ -17,7 +17,7 @@ export interface MaterialToWarehouseInput {
   description: string;
   unit: string;
   quantity: number;
-  unitCost: number;
+  unit_cost: number;
 }
 
 export interface SendBudgetToWarehouseResult {
@@ -54,7 +54,7 @@ export async function sendBudgetMaterialsToWarehouse(
         await offlineDB.warehouseStock.update(existing.id, {
           description: input.description,
           unit: input.unit,
-          unit_cost: input.unitCost,
+          unit_cost: input.unit_cost,
           minimum_threshold: input.quantity,
           sync_status: isServerId(existing.id)
             ? resolveSyncStatus({ isNewRecord: false, previousStatus: existing.sync_status, isOnline: true })
@@ -68,7 +68,7 @@ export async function sendBudgetMaterialsToWarehouse(
           unit: input.unit,
           current_stock: 0,
           minimum_threshold: input.quantity,
-          unit_cost: input.unitCost,
+          unit_cost: input.unit_cost,
           project_id: input.projectId,
           sync_status: resolveSyncStatus({ isNewRecord: true, isOnline: true }),
           created_at: new Date().toISOString(),
@@ -111,14 +111,14 @@ export async function buildWarehouseInputsFromBudget(
     const quantity = apu?.breakdown?.materials
       ? apu.breakdown.materials / (item.unit_cost || 1)
       : item.quantity;
-    const unitCost = item.apu_params?.materialUnitCost ?? item.unit_cost;
+    const unit_cost = item.apu_params?.materialUnitCost ?? item.unit_cost;
     inputs.push({
       projectId,
       itemCode: item.code,
       description: item.description,
       unit: item.unit,
       quantity: quantity > 0 ? quantity : item.quantity,
-      unitCost,
+      unit_cost,
     });
   }
   return inputs;

@@ -26,8 +26,8 @@ export interface MaterialBreakdownItem {
   description: string;
   unit: string;
   quantity: number;
-  unitCost: number;
-  totalCost: number;
+  unit_cost: number;
+  total_cost: number;
 }
 
 export interface ProjectRenglon {
@@ -42,7 +42,7 @@ export interface RenglonCalculationResult {
   materialCost: number; // Costo total de materiales
   laborCost: number; // Costo total de mano de obra
   machineryCost: number; // Costo total de maquinaria
-  totalCost: number; // Costo total
+  total_cost: number; // Costo total
 
   // Materiales
   materialQuantity: number; // Cantidad de material con desperdicio
@@ -164,7 +164,7 @@ export class RenglonCalculator {
     // =========================================================================
     // CÁLCULO DE COSTO TOTAL
     // =========================================================================
-    const totalCost = materialCost + laborCost + machineryCost;
+    const total_cost = materialCost + laborCost + machineryCost;
 
     // =========================================================================
     // CÁLCULO DE RENDIMIENTOS
@@ -191,7 +191,7 @@ export class RenglonCalculator {
       materialCost,
       laborCost,
       machineryCost,
-      totalCost,
+      total_cost,
       materialQuantity,
       materialUnitCost,
       materialUnit,
@@ -261,7 +261,7 @@ export class RenglonCalculator {
     const wastePercentage = renglon.materialFormula.wastePercentage / 100;
     const materialQuantity = quantity * (1 + wastePercentage);
     const materialUnitCost = customMaterialCost || renglon.materialFormula.materialUnitCost;
-    const totalCost = materialQuantity * materialUnitCost;
+    const total_cost = materialQuantity * materialUnitCost;
 
     return [
       {
@@ -269,8 +269,8 @@ export class RenglonCalculator {
         description: renglon.description,
         unit: renglon.materialFormula.unit,
         quantity: materialQuantity,
-        unitCost: materialUnitCost,
-        totalCost
+        unit_cost: materialUnitCost,
+        total_cost
       }
     ];
   }
@@ -280,7 +280,7 @@ export class RenglonCalculator {
    */
   static calculateWarehouseCost(params: RenglonCalculationParams): number {
     const breakdown = this.calculateMaterialBreakdown(params);
-    return breakdown.reduce((sum, item) => sum + item.totalCost, 0);
+    return breakdown.reduce((sum, item) => sum + item.total_cost, 0);
   }
 
   /**

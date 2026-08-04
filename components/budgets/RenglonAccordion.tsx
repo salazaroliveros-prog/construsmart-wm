@@ -103,7 +103,7 @@ export default function RenglonAccordion({
             </div>
             <div className="flex items-center gap-4 mt-1 text-sm">
               <span className="text-white/60">Cant: {quantity} {renglon.unit}</span>
-              <span className="text-emerald-400 font-medium">{formatCurrency(calcResult.totalCost)}</span>
+              <span className="text-emerald-400 font-medium">{formatCurrency(calcResult.total_cost)}</span>
               <span className="text-white/60 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 {formatDays(calcResult.daysRequired)}
@@ -177,8 +177,8 @@ export default function RenglonAccordion({
                         <td className="py-2 px-2 text-white">{item.description}</td>
                         <td className="py-2 px-2 text-right text-white font-medium">{item.quantity.toFixed(3)}</td>
                         <td className="py-2 px-2 text-right text-white/60">{item.unit}</td>
-                        <td className="py-2 px-2 text-right text-white/60">{formatCurrency(item.unitCost)}</td>
-                        <td className="py-2 px-2 text-right text-emerald-400 font-semibold">{formatCurrency(item.totalCost)}</td>
+                        <td className="py-2 px-2 text-right text-white/60">{formatCurrency(item.unit_cost)}</td>
+                        <td className="py-2 px-2 text-right text-emerald-400 font-semibold">{formatCurrency(item.total_cost)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -186,7 +186,7 @@ export default function RenglonAccordion({
                     <tr className="border-t-2 border-cyan-500/30">
                       <td colSpan={5} className="py-2 px-2 text-right text-white font-semibold">Total Materiales:</td>
                       <td className="py-2 px-2 text-right text-cyan-400 font-bold">
-                        {formatCurrency(materialBreakdown.reduce((sum, item) => sum + item.totalCost, 0))}
+                        {formatCurrency(materialBreakdown.reduce((sum, item) => sum + item.total_cost, 0))}
                       </td>
                     </tr>
                   </tfoot>

@@ -16,8 +16,8 @@ interface BudgetItem {
   description: string;
   unit: string;
   quantity: number;
-  unitCost: number;
-  totalCost: number;
+  unit_cost: number;
+  total_cost: number;
   timeRequired?: number;
   materialBreakdown?: MaterialBreakdownItem[];
 }
@@ -27,8 +27,8 @@ interface MaterialBreakdownItem {
   description: string;
   unit: string;
   quantity: number;
-  unitCost: number;
-  totalCost: number;
+  unit_cost: number;
+  total_cost: number;
 }
 
 interface BudgetSummary {
@@ -89,7 +89,7 @@ export default function CSVGenerator({
       const timeText = item.timeRequired ? item.timeRequired.toFixed(2) : '0';
       totalTime += item.timeRequired || 0;
       
-      csvContent += `"${item.code}"${delimiter}"${item.description}"${delimiter}"${item.unit}"${delimiter}${item.quantity}${delimiter}${item.unitCost}${delimiter}${item.totalCost}${delimiter}${timeText}\n`;
+      csvContent += `"${item.code}"${delimiter}"${item.description}"${delimiter}"${item.unit}"${delimiter}${item.quantity}${delimiter}${item.unit_cost}${delimiter}${item.total_cost}${delimiter}${timeText}\n`;
     });
 
     // Resumen de costos
@@ -116,23 +116,23 @@ export default function CSVGenerator({
     }
 
     // Agrupar materiales para resumen
-    const materialSummary = new Map<string, { quantity: number; totalCost: number; unit: string; description: string }>();
+    const materialSummary = new Map<string, { quantity: number; total_cost: number; unit: string; description: string }>();
 
     items.forEach(item => {
       if (item.materialBreakdown && item.materialBreakdown.length > 0) {
         item.materialBreakdown.forEach(material => {
-          csvContent += `"${item.code}","${item.description}","${material.code}","${material.description}",${material.quantity.toFixed(3)},"${material.unit}",${material.unitCost},${material.totalCost}\n`;
+          csvContent += `"${item.code}","${item.description}","${material.code}","${material.description}",${material.quantity.toFixed(3)},"${material.unit}",${material.unit_cost},${material.total_cost}\n`;
 
           // Agrupar para resumen
           const key = `${material.code}-${material.unit}`;
           if (materialSummary.has(key)) {
             const existing = materialSummary.get(key)!;
             existing.quantity += material.quantity;
-            existing.totalCost += material.totalCost;
+            existing.total_cost += material.total_cost;
           } else {
             materialSummary.set(key, {
               quantity: material.quantity,
-              totalCost: material.totalCost,
+              total_cost: material.total_cost,
               unit: material.unit,
               description: material.description
             });
@@ -150,8 +150,8 @@ export default function CSVGenerator({
     let grandTotal = 0;
     Array.from(materialSummary.entries()).forEach(([key, data]) => {
       const [code] = key.split('-');
-      csvContent += `"${code}","${data.description}",${data.quantity.toFixed(3)},"${data.unit}",${data.totalCost}\n`;
-      grandTotal += data.totalCost;
+      csvContent += `"${code}","${data.description}",${data.quantity.toFixed(3)},"${data.unit}",${data.total_cost}\n`;
+      grandTotal += data.total_cost;
     });
 
     csvContent += `TOTAL GENERAL DE MATERIALES,,${grandTotal}\n`;

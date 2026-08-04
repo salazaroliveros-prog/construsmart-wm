@@ -10,8 +10,8 @@ export interface BudgetItem {
   description: string;
   unit: string;
   quantity: number;
-  unitCost: number;
-  totalCost: number;
+  unit_cost: number;
+  total_cost: number;
   category: string;
   apuResult?: APUResult;
   timeRequired?: number;

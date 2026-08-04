@@ -18,8 +18,8 @@ interface BudgetItem {
   description: string;
   unit: string;
   quantity: number;
-  unitCost: number;
-  totalCost: number;
+  unit_cost: number;
+  total_cost: number;
   timeRequired?: number; // Días requeridos para este renglón
   materialBreakdown?: MaterialBreakdownItem[]; // Desglose de materiales
 }
@@ -29,8 +29,8 @@ interface MaterialBreakdownItem {
   description: string;
   unit: string;
   quantity: number;
-  unitCost: number;
-  totalCost: number;
+  unit_cost: number;
+  total_cost: number;
 }
 
 interface BudgetSummary {
@@ -181,7 +181,7 @@ export default function PDFGenerator({
       description: 65,
       unit: 12,
       quantity: 15,
-      unitCost: 20,
+      unit_cost: 20,
       total: 25,
       time: 20,
     };
@@ -196,7 +196,7 @@ export default function PDFGenerator({
     doc.text('Cant.', currentX, tableStartY + 5);
     currentX += colWidths.quantity;
     doc.text('P. Unit.', currentX, tableStartY + 5);
-    currentX += colWidths.unitCost;
+    currentX += colWidths.unit_cost;
     doc.text('Total', currentX, tableStartY + 5);
     currentX += colWidths.total;
     doc.text('Tiempo', currentX, tableStartY + 5);
@@ -205,7 +205,7 @@ export default function PDFGenerator({
     doc.setFont('helvetica', 'normal');
     
     let currentY = tableStartY + rowHeight;
-    let totalCost = 0;
+    let total_cost = 0;
     let totalTime = 0;
     
     items.forEach((item, index) => {
@@ -229,7 +229,7 @@ export default function PDFGenerator({
         doc.text('Cant.', currentX, currentY + 5);
         currentX += colWidths.quantity;
         doc.text('P. Unit.', currentX, currentY + 5);
-        currentX += colWidths.unitCost;
+        currentX += colWidths.unit_cost;
         doc.text('Total', currentX, currentY + 5);
         currentX += colWidths.total;
         doc.text('Tiempo', currentX, currentY + 5);
@@ -259,15 +259,15 @@ export default function PDFGenerator({
       currentX += colWidths.unit;
       doc.text(item.quantity.toString(), currentX, currentY + 5);
       currentX += colWidths.quantity;
-      doc.text(formatCurrency(item.unitCost, financial), currentX, currentY + 5);
-      currentX += colWidths.unitCost;
-      doc.text(formatCurrency(item.totalCost, financial), currentX, currentY + 5);
+      doc.text(formatCurrency(item.unit_cost, financial), currentX, currentY + 5);
+      currentX += colWidths.unit_cost;
+      doc.text(formatCurrency(item.total_cost, financial), currentX, currentY + 5);
       currentX += colWidths.total;
       
       const timeText = item.timeRequired ? `${item.timeRequired.toFixed(1)}d` : '-';
       doc.text(timeText, currentX, currentY + 5);
       
-      totalCost += item.totalCost;
+      total_cost += item.total_cost;
       totalTime += item.timeRequired || 0;
       
       currentY += rowHeight;
@@ -356,7 +356,7 @@ export default function PDFGenerator({
       materialDesc: 40,
       quantity: 18,
       unit: 12,
-      unitCost: 18,
+      unit_cost: 18,
       total: 20,
     };
     
@@ -374,7 +374,7 @@ export default function PDFGenerator({
     doc.text('Unidad', currentX, materialTableStartY + 5);
     currentX += materialColWidths.unit;
     doc.text('P. Unit.', currentX, materialTableStartY + 5);
-    currentX += materialColWidths.unitCost;
+    currentX += materialColWidths.unit_cost;
     doc.text('Total', currentX, materialTableStartY + 5);
     
     doc.setTextColor(textColorRed, textColorGreen, textColorBlue);
@@ -383,7 +383,7 @@ export default function PDFGenerator({
     let materialY = materialTableStartY + rowHeight;
     
     // Agrupar materiales por tipo para resumen
-    const materialSummary = new Map<string, { quantity: number; totalCost: number; unit: string }>();
+    const materialSummary = new Map<string, { quantity: number; total_cost: number; unit: string }>();
     
     items.forEach((item, itemIndex) => {
       if (item.materialBreakdown && item.materialBreakdown.length > 0) {
@@ -412,7 +412,7 @@ export default function PDFGenerator({
             doc.text('Unidad', currentX, materialY + 5);
             currentX += materialColWidths.unit;
             doc.text('P. Unit.', currentX, materialY + 5);
-            currentX += materialColWidths.unitCost;
+            currentX += materialColWidths.unit_cost;
             doc.text('Total', currentX, materialY + 5);
             
             materialY += rowHeight;
@@ -450,20 +450,20 @@ export default function PDFGenerator({
           currentX += materialColWidths.quantity;
           doc.text(material.unit, currentX, materialY + 5);
           currentX += materialColWidths.unit;
-          doc.text(formatCurrency(material.unitCost, financial), currentX, materialY + 5);
-          currentX += materialColWidths.unitCost;
-          doc.text(formatCurrency(material.totalCost, financial), currentX, materialY + 5);
+          doc.text(formatCurrency(material.unit_cost, financial), currentX, materialY + 5);
+          currentX += materialColWidths.unit_cost;
+          doc.text(formatCurrency(material.total_cost, financial), currentX, materialY + 5);
           
           // Agrupar para resumen
           const key = `${material.code}-${material.unit}`;
           if (materialSummary.has(key)) {
             const existing = materialSummary.get(key)!;
             existing.quantity += material.quantity;
-            existing.totalCost += material.totalCost;
+            existing.total_cost += material.total_cost;
           } else {
             materialSummary.set(key, {
               quantity: material.quantity,
-              totalCost: material.totalCost,
+              total_cost: material.total_cost,
               unit: material.unit
             });
           }
@@ -502,7 +502,7 @@ export default function PDFGenerator({
         description: 80,
         quantity: 30,
         unit: 15,
-        totalCost: 30,
+        total_cost: 30,
       };
       
       currentX = 15;
@@ -565,9 +565,9 @@ export default function PDFGenerator({
         currentX += summaryColWidths.quantity;
         doc.text(data.unit, currentX, summaryY + 5);
         currentX += summaryColWidths.unit;
-        doc.text(formatCurrency(data.totalCost, financial), currentX, summaryY + 5);
+        doc.text(formatCurrency(data.total_cost, financial), currentX, summaryY + 5);
         
-        grandTotal += data.totalCost;
+        grandTotal += data.total_cost;
         summaryY += rowHeight;
       });
       
