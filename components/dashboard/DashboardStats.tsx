@@ -6,7 +6,6 @@ import { offlineDB, LocalProject, LocalFinancialTransaction, LocalPayrollEmploye
 import { useFinancialSettings, formatCurrency, calculateUtilityMarginHelper } from '@/lib/hooks/useBusinessSettings';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useBusinessSettings } from '@/lib/hooks/useBusinessSettings';
-import TierCards from './TierCards';
 
 interface StatCardProps {
   title: string;
@@ -172,9 +171,6 @@ export default function DashboardStats() {
           </>
         )}
       </div>
-
-      {/* Tier Cards */}
-      <TierCards />
     </div>
   );
 }

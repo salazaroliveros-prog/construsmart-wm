@@ -21,7 +21,6 @@ const BudgetCalculator = dynamic(() => import('@/components/budgets/BudgetCalcul
 const FinanceManager = dynamic(() => import('@/components/finances/FinanceManager'), { ssr: false });
 const PayrollManager = dynamic(() => import('@/components/payroll/PayrollManager'), { ssr: false });
 const WarehouseManager = dynamic(() => import('@/components/warehouse/WarehouseManager'), { ssr: false });
-const AnalyticsDashboard = dynamic(() => import('@/components/analytics/AnalyticsDashboard'), { ssr: false });
 const ClientManager = dynamic(() => import('@/components/crm/ClientManager'), { ssr: false });
 const ProjectLogManager = dynamic(() => import('@/components/project/ProjectLogManager'), { ssr: false });
 const InteractiveCalendar = dynamic(() => import('@/components/dashboard/InteractiveCalendar'), { ssr: false });
@@ -40,7 +39,6 @@ const NAVIGATION_TABS = [
   { id: 'warehouse', label: 'Almacén', icon: 'Warehouse' },
   { id: 'suppliers', label: 'Proveedores', icon: 'Truck' },
   { id: 'orders', label: 'Órdenes de Compra', icon: 'ShoppingCart' },
-  { id: 'analytics', label: 'Analytics', icon: 'TrendingUp' },
   { id: 'clients', label: 'Clientes', icon: 'Users' },
   { id: 'logs', label: 'Bitácora', icon: 'BookOpen' },
   { id: 'settings', label: 'Ajustes', icon: 'Settings' },
@@ -227,40 +225,9 @@ const renderTabContent = () => {
               <DashboardStats />
             </div>
 
-            {/* Grid: Left (overview + activity) | Right (charts) - with intelligent scrolling */}
+            {/* Full-width charts with scroll */}
             <div className="flex-1 min-h-0 overflow-hidden">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 h-full">
-                {/* Left column - scrollable */}
-                <div className="flex flex-col gap-3 min-h-0 overflow-y-auto">
-                  <div className="glass-panel rounded-xl p-2 md:p-3 flex-shrink-0">
-                    <ProjectOverview />
-                  </div>
-                  <div className="glass-panel rounded-xl p-3 md:p-3 flex-shrink-0">
-                    <h3 className="text-xs md:text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
-                      <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
-                      Actividad Reciente
-                    </h3>
-                    <div className="space-y-1.5">
-                      {recentActivity.length === 0 ? (
-                        <p className="text-xs text-white/40">No hay actividad reciente</p>
-                      ) : (
-                        recentActivity.map((activity) => (
-                          <div key={activity.id} className="flex items-center gap-2 py-1">
-                            <div className={`w-1.5 h-1.5 rounded-full ${activity.color}`} />
-                            <span className="text-xs text-white/80 truncate">{activity.text}</span>
-                            {activity.time && <span className="text-[9px] text-white/40 ml-auto">{activity.time}</span>}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right column: charts - scrollable */}
-                <div className="flex flex-col gap-3 min-h-0 overflow-y-auto">
-                  <DashboardCharts />
-                </div>
-              </div>
+              <DashboardCharts />
             </div>
           </div>
         );
@@ -280,8 +247,6 @@ const renderTabContent = () => {
         return isTabLoading ? <TabSkeleton /> : <SupplierManager />;
       case 'orders':
         return isTabLoading ? <TabSkeleton /> : <PurchaseOrderManager />;
-      case 'analytics':
-        return isTabLoading ? <TabSkeleton /> : <AnalyticsDashboard />;
       case 'clients':
         return isTabLoading ? <TabSkeleton /> : <ClientManager />;
       case 'logs':

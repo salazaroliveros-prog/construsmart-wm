@@ -1,6 +1,6 @@
 'use client';
 
-import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp, Database, LogOut, AlertCircle, BookOpen, Settings, Truck, ClipboardList, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp, Database, LogOut, AlertCircle, BookOpen, Settings, Truck, ClipboardList } from 'lucide-react';
 import { useState, useEffect, useCallback, memo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -28,7 +28,6 @@ const NAV_ITEMS_BASE: NavItem[] = [
   { id: 'progress', label: 'Progreso', icon: 'TrendingUp' },
   { id: 'suppliers', label: 'Proveedores', icon: 'Truck' },
   { id: 'orders', label: 'Órdenes', icon: 'ClipboardList' },
-  { id: 'analytics', label: 'Analytics', icon: 'BarChart3' },
   { id: 'clients', label: 'Clientes', icon: 'Users' },
   { id: 'logs', label: 'Bitácora', icon: 'BookOpen' },
   { id: 'settings', label: 'Ajustes', icon: 'Settings' },
@@ -51,7 +50,6 @@ const ICONS: Record<string, React.ReactNode> = {
   TrendingUp: <TrendingUp className="w-5 h-5" />,
   Truck: <Truck className="w-5 h-5" />,
   ClipboardList: <ClipboardList className="w-5 h-5" />,
-  BarChart3: <BarChart3 className="w-5 h-5" />,
   BookOpen: <BookOpen className="w-5 h-5" />,
   Settings: <Settings className="w-5 h-5" />,
 };
