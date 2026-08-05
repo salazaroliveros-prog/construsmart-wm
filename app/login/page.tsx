@@ -20,9 +20,9 @@ function LoginForm() {
     console.log('[Login] isAuthenticated=', isAuthenticated);
     if (isAuthenticated) {
       console.log('[Login] navigating to /');
-      router.replace('/');
+      window.location.href = '/';
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated]);
 
   // Verificar si hay error de autorización en la URL
   useEffect(() => {
