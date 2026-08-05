@@ -166,19 +166,25 @@ export const useEarnedValueManagement = () => {
 
       const predictions: EVMPrediction[] = [];
       const startDate = new Date(forecastConfig.startDate);
-      const budgetPerDay = (project.budget_total || 0) / forecastConfig.projectDuration;
+      // Evitar división por cero si la duración es 0 o inválida.
+      const safeDuration = Math.max(1, forecastConfig.projectDuration);
+      const budgetPerDay = (project.budget_total || 0) / safeDuration;
+      // CPI > 0 garantizado por calculateEVM (>= 1 cuando actualCost es 0).
+      const cpi = currentMetrics.costPerformanceIndex;
 
       // Generate prediction points
       for (let day = 0; day <= forecastConfig.forecastPeriod; day += 7) { // Weekly intervals
         const predictionDate = new Date(startDate);
         predictionDate.setDate(predictionDate.getDate() + day);
 
-        const timeProgress = Math.min(100, (day / forecastConfig.projectDuration) * 100);
+        const timeProgress = Math.min(100, (day / safeDuration) * 100);
         const cumulativeProgress = Math.min(100, forecastConfig.currentProgress + (timeProgress * forecastConfig.expectedAcceleration));
 
         const plannedValue = budgetPerDay * day;
         const predictedEV = (project.budget_total || 0) * (cumulativeProgress / 100);
-        const predictedAC = forecastConfig.dailyBurnRate * day * currentMetrics.costPerformanceIndex;
+        // Al sobrepasar presupuesto (CPI < 1) el AC proyectado debe crecer (burn / CPI),
+        // no reducirse: corrige la dirección del pronóstico.
+        const predictedAC = cpi > 0 ? (forecastConfig.dailyBurnRate * day) / cpi : (forecastConfig.dailyBurnRate * day);
         const predictedSV = predictedEV - plannedValue;
         const predictedCV = predictedEV - predictedAC;
 

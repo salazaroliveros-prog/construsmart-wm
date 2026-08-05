@@ -10,7 +10,6 @@ import DashboardNav from '@/components/dashboard/DashboardNav';
 import DashboardStats from '@/components/dashboard/DashboardStats';
 import DashboardCharts from '@/components/dashboard/DashboardCharts';
 import ProjectOverview from '@/components/dashboard/ProjectOverview';
-import AuthGuard from '@/components/auth/AuthGuard';
 import { offlineDB } from '@/lib/db/offlineStore';
 import { useScrollLock } from '@/lib/hooks/useScrollLock';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
@@ -35,11 +34,11 @@ const NAVIGATION_TABS = [
   { id: 'budgets', label: 'Presupuestos', icon: 'Calculator' },
   { id: 'progress', label: 'Control de Avance', icon: 'Activity' },
   { id: 'finances', label: 'Finanzas', icon: 'DollarSign' },
-  { id: 'payroll', label: 'Nómina', icon: 'Users' },
+  { id: 'payroll', label: 'Nómina', icon: 'Wallet' },
   { id: 'warehouse', label: 'Almacén', icon: 'Warehouse' },
   { id: 'suppliers', label: 'Proveedores', icon: 'Truck' },
   { id: 'orders', label: 'Órdenes de Compra', icon: 'ShoppingCart' },
-  { id: 'clients', label: 'Clientes', icon: 'Users' },
+  { id: 'clients', label: 'Clientes', icon: 'UserCircle' },
   { id: 'logs', label: 'Bitácora', icon: 'BookOpen' },
   { id: 'settings', label: 'Ajustes', icon: 'Settings' },
 ] as const;
@@ -276,8 +275,7 @@ const renderTabContent = () => {
   );
 
 return (
-    <AuthGuard>
-      <div className="flex flex-col h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 font-sans overflow-hidden">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 font-sans overflow-hidden">
         <DualBrandHeader />
         <RealtimeProvider activeTab={activeTab} />
 
@@ -381,7 +379,6 @@ return (
             {isMobileMenuOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
           </button>
         )}
-      </div>
-    </AuthGuard>
+    </div>
   );
 }

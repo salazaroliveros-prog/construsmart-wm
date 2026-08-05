@@ -16,6 +16,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
+import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
 import { financialTransactionSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { FINANCIAL_CATEGORY_COLORS, getFinancialCategoryColor } from '@/lib/config/colorPalettes';
@@ -460,15 +461,21 @@ export default function FinanceManager() {
                 {isOnline ? '🟢 En línea' : '🟡 Sin conexión'}
               </div>
             </Tooltip>
-            <Tooltip content="Registrar nueva transacción financiera">
-              <button
-                onClick={() => openModal()}
-                className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Nueva Transacción
-              </button>
-            </Tooltip>
+            <OnboardingTooltip
+              id="finance-new-button"
+              title="Registrar su primera transacción"
+              description="Registre ingresos o gastos para mantener el flujo de caja actualizado."
+            >
+              <Tooltip content="Registrar nueva transacción financiera">
+                <button
+                  onClick={() => openModal()}
+                  className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Nueva Transacción
+                </button>
+              </Tooltip>
+            </OnboardingTooltip>
           </div>
         </div>
 

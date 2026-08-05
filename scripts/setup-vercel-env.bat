@@ -1,20 +1,31 @@
 @echo off
+rem Configura las variables de entorno en Vercel usando los valores del entorno
+rem local (o del archivo .env del proyecto). No se hardcodean secretos aqui.
+rem Requiere tener antes definidas: NEXT_PUBLIC_SUPABASE_URL,
+rem NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+rem NEXT_PUBLIC_SITE_URL y NEXT_PUBLIC_APP_URL.
+
 echo Configurando variables de entorno en Vercel...
 
+if not defined NEXT_PUBLIC_SUPABASE_URL (
+    echo [ERROR] NEXT_PUBLIC_SUPABASE_URL no esta definida. Cargala desde tu .env antes de ejecutar.
+    exit /b 1
+)
+
 echo NEXT_PUBLIC_SUPABASE_URL
-echo n | vercel env add NEXT_PUBLIC_SUPABASE_URL=https://yibjsruoxjlgdnkgylld.supabase.co
+echo n | vercel env add NEXT_PUBLIC_SUPABASE_URL=%NEXT_PUBLIC_SUPABASE_URL%
 
 echo NEXT_PUBLIC_SUPABASE_ANON_KEY
-echo n | vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpYmpzcnVveGpsZ2Rua2d5bGxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzNjQ3OTYsImV4cCI6MjEwMDk0MDc5Nn0.aZuVrUHA4Sh8h3SBl96QCTmh6dTQSm0tXXFjMR5nRv8
+echo n | vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY=%NEXT_PUBLIC_SUPABASE_ANON_KEY%
 
 echo NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-echo n | vercel env add NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_i7VPT8T3SSkW3__-ZUlZmw_xiT1Wbri
+echo n | vercel env add NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=%NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY%
 
 echo NEXT_PUBLIC_SITE_URL
-echo n | vercel env add NEXT_PUBLIC_SITE_URL=https://control-seguimiento-9il1yi5lc-proyectoswm.vercel.app
+echo n | vercel env add NEXT_PUBLIC_SITE_URL=%NEXT_PUBLIC_SITE_URL%
 
 echo NEXT_PUBLIC_APP_URL
-echo n | vercel env add NEXT_PUBLIC_APP_URL=https://control-seguimiento-9il1yi5lc-proyectoswm.vercel.app
+echo n | vercel env add NEXT_PUBLIC_APP_URL=%NEXT_PUBLIC_APP_URL%
 
 echo Variables de entorno configuradas exitosamente
 pause

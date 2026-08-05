@@ -11,6 +11,10 @@ import { offlineDB, LocalWarehouseStock, LocalBudget, LocalBudgetItem } from '@/
 import { isServerId } from '@/lib/utils/offlineSync';
 import { resolveSyncStatus } from '@/lib/utils/syncState';
 
+// Detecta conectividad real del navegador (evita hardcodear isOnline).
+const isOnlineNow = (): boolean =>
+  typeof navigator !== 'undefined' ? navigator.onLine : true;
+
 export interface MaterialToWarehouseInput {
   projectId?: string;
   itemCode: string;
@@ -57,7 +61,7 @@ export async function sendBudgetMaterialsToWarehouse(
           unit_cost: input.unit_cost,
           minimum_threshold: input.quantity,
           sync_status: isServerId(existing.id)
-            ? resolveSyncStatus({ isNewRecord: false, previousStatus: existing.sync_status, isOnline: true })
+            ? resolveSyncStatus({ isNewRecord: false, previousStatus: existing.sync_status, isOnline: isOnlineNow() })
             : existing.sync_status,
         });
         result.updated++;
@@ -70,7 +74,7 @@ export async function sendBudgetMaterialsToWarehouse(
           minimum_threshold: input.quantity,
           unit_cost: input.unit_cost,
           project_id: input.projectId,
-          sync_status: resolveSyncStatus({ isNewRecord: true, isOnline: true }),
+          sync_status: resolveSyncStatus({ isNewRecord: true, isOnline: isOnlineNow() }),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
@@ -108,8 +112,11 @@ export async function buildWarehouseInputsFromBudget(
   for (const item of items) {
     if (!item.code) continue;
     const apu = item.apu_result;
-    const quantity = apu?.breakdown?.materials
-      ? apu.breakdown.materials / (item.unit_cost || 1)
+    // Usar la cantidad real de material calculada por el APU; si el item no es
+    // APU (o no la expone), caer en la cantidad del renglón. Evita derivar
+    // cantidad a partir de costo/unit_cost (división por cero con `|| 1`).
+    const quantity = apu?.totalMaterialQuantity
+      ? apu.totalMaterialQuantity
       : item.quantity;
     const unit_cost = item.apu_params?.materialUnitCost ?? item.unit_cost;
     inputs.push({
@@ -179,7 +186,7 @@ export async function recordMaterialConsumption(
         actual_consumption: newConsumption,
         consumption_variance: variance,
         updated_at: new Date().toISOString(),
-        sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: item.sync_status, isOnline: true }),
+        sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: item.sync_status, isOnline: isOnlineNow() }),
       });
 
       result.updated++;

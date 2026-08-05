@@ -11,6 +11,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
+import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
 import { clientSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { formatGTQ } from '@/lib/config/app.config';
@@ -191,29 +192,35 @@ const loadClients = async () => {
           <h2 className="text-xl sm:text-2xl font-bold text-white">Gestión de Clientes</h2>
           <p className="text-white/60 text-sm">CRM - Registro de datos de clientes</p>
         </div>
-        <Tooltip content="Agregar nuevo cliente al sistema">
-          <button
-            onClick={() => {
-              setEditingClient(null);
-              setFormData({
-                code: generateClientCode(),
-                name: '',
-                company_name: '',
-                phone: '',
-                email: '',
-                address: '',
-                city: '',
-                client_type: 'individual',
-                notes: '',
-              });
-              setShowForm(true);
-            }}
-            className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 text-white"
-          >
-            <Plus className="w-4 h-4" />
-            Nuevo Cliente
-          </button>
-        </Tooltip>
+        <OnboardingTooltip
+          id="client-new-button"
+          title="Registrar su primer cliente"
+          description="Agregue clientes para asociarlos a proyectos y hacer seguimiento de créditos."
+        >
+          <Tooltip content="Agregar nuevo cliente al sistema">
+            <button
+              onClick={() => {
+                setEditingClient(null);
+                setFormData({
+                  code: generateClientCode(),
+                  name: '',
+                  company_name: '',
+                  phone: '',
+                  email: '',
+                  address: '',
+                  city: '',
+                  client_type: 'individual',
+                  notes: '',
+                });
+                setShowForm(true);
+              }}
+              className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 text-white"
+            >
+              <Plus className="w-4 h-4" />
+              Nuevo Cliente
+            </button>
+          </Tooltip>
+        </OnboardingTooltip>
       </div>
 
       {/* Summary Cards */}

@@ -3,7 +3,7 @@
  * Guatemalan Standards
  */
 
-import { roundMoney, validateDimensions, validateWasteFactor } from './financialUtils';
+import { convertCementToBags, roundMoney, validateDimensions, validateWasteFactor } from './financialUtils';
 
 export interface VolumeResult {
   volume: number;
@@ -296,7 +296,7 @@ export interface ConcreteMix {
 
 export function calculateConcreteMix(volume: number, strength: '1500' | '2000' | '2500' | '3000'): ConcreteMix {
   // Short-circuit validation
-  if (volume <= 0) {
+  if (volume <= 0 || !isFinite(volume)) {
     return {
       cement: 0,
       sand: 0,
@@ -327,7 +327,7 @@ export function calculateConcreteMix(volume: number, strength: '1500' | '2000' |
  */
 export function calculateMortarMix(area: number, thickness: number = 0.02): ConcreteMix {
   // Short-circuit validation
-  if (area <= 0 || thickness <= 0) {
+  if (area <= 0 || thickness <= 0 || !isFinite(area) || !isFinite(thickness)) {
     return {
       cement: 0,
       sand: 0,
@@ -338,8 +338,10 @@ export function calculateMortarMix(area: number, thickness: number = 0.02): Conc
 
   const volume = roundMoney(area * thickness);
   // Standard mortar mix (1:4 cement:sand)
+  // Nota: el cemento pesa ~250 kg/m³ (estándar guatemalteco); se convierte a
+  // bolsas para mantener la misma unidad ("bags") del contrato ConcreteMix.
   return {
-    cement: roundMoney(volume * 250), // ~250 kg cement per m³
+    cement: convertCementToBags(volume * 250), // ~250 kg de cemento por m³ → bolsas
     sand: roundMoney(volume * 0.8),
     gravel: 0,
     water: roundMoney(volume * 100),

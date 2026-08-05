@@ -11,6 +11,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
+import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
 import { supplierSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
 
@@ -192,31 +193,37 @@ export default function SupplierManager() {
           <h2 className="text-xl sm:text-2xl font-bold text-white">Gestión de Proveedores</h2>
           <p className="text-white/60 text-sm">Registro de proveedores de materiales y servicios</p>
         </div>
-        <Tooltip content="Agregar nuevo proveedor al sistema">
-          <button
-            onClick={() => {
-              setEditingSupplier(null);
-              setFormData({
-                code: generateSupplierCode(),
-                name: '',
-                contact_person: '',
-                phone: '',
-                email: '',
-                address: '',
-                city: '',
-                payment_terms: '',
-                notes: '',
-                categories: [],
-                is_preferred: false,
-              });
-              setShowForm(true);
-            }}
-            className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 text-white"
-          >
-            <Plus className="w-4 h-4" />
-            Nuevo Proveedor
-          </button>
-        </Tooltip>
+        <OnboardingTooltip
+          id="supplier-new-button"
+          title="Registrar su primer proveedor"
+          description="Agregue proveedores de materiales y servicios para asociarlos a alertas de inventario."
+        >
+          <Tooltip content="Agregar nuevo proveedor al sistema">
+            <button
+              onClick={() => {
+                setEditingSupplier(null);
+                setFormData({
+                  code: generateSupplierCode(),
+                  name: '',
+                  contact_person: '',
+                  phone: '',
+                  email: '',
+                  address: '',
+                  city: '',
+                  payment_terms: '',
+                  notes: '',
+                  categories: [],
+                  is_preferred: false,
+                });
+                setShowForm(true);
+              }}
+              className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 text-white"
+            >
+              <Plus className="w-4 h-4" />
+              Nuevo Proveedor
+            </button>
+          </Tooltip>
+        </OnboardingTooltip>
       </div>
 
       {/* Summary Cards */}

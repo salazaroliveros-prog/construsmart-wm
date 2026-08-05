@@ -13,6 +13,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
+import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
 import { projectSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { calculateCompletionBuffer, getBufferSeverity } from '@/lib/config/app.config';
@@ -346,24 +347,30 @@ export default function ProjectManager() {
               Administre su portafolio de proyectos constructivos
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Tooltip content={isOnline ? 'Conectado a internet' : 'Trabajando sin conexión'}>
-              <div className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm ${
-                isOnline ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
-              }`}>
-                {isOnline ? '🟢 En línea' : '🟡 Sin conexión'}
-              </div>
-            </Tooltip>
-            <Tooltip content="Crear un nuevo proyecto">
-              <button
-                onClick={() => openModal()}
-                className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+            <div className="flex items-center gap-2">
+              <Tooltip content={isOnline ? 'Conectado a internet' : 'Trabajando sin conexión'}>
+                <div className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm ${
+                  isOnline ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+                }`}>
+                  {isOnline ? '🟢 En línea' : '🟡 Sin conexión'}
+                </div>
+              </Tooltip>
+              <OnboardingTooltip
+                id="project-new-button"
+                title="Crear su primer proyecto"
+                description="Comience creando un proyecto para asociar presupuestos, finanzas y nómina."
               >
-                <Plus className="w-4 h-4" />
-                Nuevo Proyecto
-              </button>
-            </Tooltip>
-          </div>
+                <Tooltip content="Crear un nuevo proyecto">
+                  <button
+                    onClick={() => openModal()}
+                    className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Nuevo Proyecto
+                  </button>
+                </Tooltip>
+              </OnboardingTooltip>
+            </div>
         </div>
 
         {/* Search and Filter */}

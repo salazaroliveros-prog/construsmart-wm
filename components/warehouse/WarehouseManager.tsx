@@ -14,11 +14,13 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
+import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
 import { warehouseStockSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { useMaterialAlertContext } from '@/context/MaterialAlertContext';
 import { useAutoPurchaseOrder } from '@/hooks/useAutoPurchaseOrder';
 import { WAREHOUSE_UNIT_COLORS, getWarehouseUnitColor } from '@/lib/config/colorPalettes';
+import { BUSINESS_CONFIG } from '@/lib/config/app.config';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 // ============================================================================
@@ -567,16 +569,22 @@ export default function WarehouseManager() {
                 {isOnline ? '🟢 En línea' : '🟡 Sin conexión'}
               </div>
             </Tooltip>
-            <Tooltip content="Agregar nuevo material al inventario">
-              <button
-                onClick={() => handleOpenModal()}
-                className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Nuevo Material</span>
-                <span className="sm:hidden">Nuevo</span>
-              </button>
-            </Tooltip>
+            <OnboardingTooltip
+              id="warehouse-new-button"
+              title="Agregar materiales al inventario"
+              description="Registre materiales con su stock mínimo para activar alertas y generación automática de OC."
+            >
+              <Tooltip content="Agregar nuevo material al inventario">
+                <button
+                  onClick={() => handleOpenModal()}
+                  className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Nuevo Material</span>
+                  <span className="sm:hidden">Nuevo</span>
+                </button>
+              </Tooltip>
+            </OnboardingTooltip>
           </div>
         </div>
 
@@ -1058,13 +1066,18 @@ export default function WarehouseManager() {
                     type="checkbox"
                     checked={formData.auto_generate_po || false}
                     onChange={(e) => setFormData({ ...formData, auto_generate_po: e.target.checked })}
-                    className="w-4 h-4 rounded"
+                    className="w-4 h-4 rounded accent-cyan-500"
                   />
                   <span className="text-white/70 text-sm flex items-center gap-1">
                     <RefreshCw className="w-3 h-3 text-cyan-400" />
                     Generar PO Automática
                   </span>
                 </label>
+                {BUSINESS_CONFIG.stockManagement.auto_po_enabled && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    AutoPO global activo
+                  </span>
+                )}
               </div>
             </div>
 

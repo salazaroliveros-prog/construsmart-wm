@@ -15,9 +15,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { offlineDB, LocalPayrollRecord, LocalBudgetItem, LocalFinancialTransaction } from '@/lib/db/offlineStore';
-import { generateId } from '@/lib/utils/generateId';
-import { resolveSyncStatus } from '@/lib/utils/syncState';
+import { offlineDB, LocalPayrollRecord, LocalBudgetItem } from '@/lib/db/offlineStore';
 import { formatGTQ, BUSINESS_CONFIG } from '@/lib/config/app.config';
 
 export interface LaborOverrunAlert {
@@ -49,9 +47,11 @@ export const useLaborCostOverrun = () => {
     try {
       setIsDetecting(true);
 
-      // Get overtime limits from business config
-      const overtimeDailyLimit = BUSINESS_CONFIG.laborOverrun.overtime_daily_limit; // Default: 2 hours
-      const warningThreshold = BUSINESS_CONFIG.laborOverrun.warning_threshold; // Default: 10%
+      // Obtener límites de la configuración de negocio
+      const overtimeDailyLimit = BUSINESS_CONFIG.laborOverrun.overtime_daily_limit; // Horas extra por día
+      // warning_threshold/critical_threshold son razones (1.10 = +10% sobre presupuesto).
+      const warningPct = (BUSINESS_CONFIG.laborOverrun.warning_threshold - 1) * 100;
+      const criticalPct = (BUSINESS_CONFIG.laborOverrun.critical_threshold - 1) * 100;
 
       // Calculate overtime hours
       const totalHours = payrollRecord.total_hours || 8; // Default to 8 hours if not set
@@ -75,17 +75,16 @@ export const useLaborCostOverrun = () => {
       let severity: 'warning' | 'critical' | 'none' = 'none';
       const overrunPercentage = plannedCost > 0 ? (costOverrunAmount / plannedCost) * 100 : 0;
 
-      if (overtimeHours > overtimeDailyLimit || overrunPercentage > warningThreshold) {
+      if (overtimeHours > overtimeDailyLimit || overrunPercentage > warningPct) {
         severity = 'warning';
       }
 
-      if (overtimeHours > overtimeDailyLimit * 2 || overrunPercentage > warningThreshold * 2) {
+      if (overtimeHours > overtimeDailyLimit * 2 || overrunPercentage > criticalPct) {
         severity = 'critical';
       }
 
       // Generate alert if overrun detected
       const newAlerts: LaborOverrunAlert[] = [];
-      let warningTransactionId: string | undefined;
 
       if (severity !== 'none' && !payrollRecord.is_overrun_warning_fired) {
         const alert: LaborOverrunAlert = {
@@ -103,26 +102,10 @@ export const useLaborCostOverrun = () => {
 
         newAlerts.push(alert);
 
-        // Create warning transaction in financial ledger
-        const warningTransaction: LocalFinancialTransaction = {
-          id: generateId(),
-          project_id: payrollRecord.project_id,
-          type: 'expense',
-          category: 'mano_de_obra',
-          description: alert.message,
-          quantity: 1,
-          unit: 'Q',
-          unit_cost: costOverrunAmount,
-          total_cost: costOverrunAmount,
-          date: new Date().toISOString().split('T')[0],
-          sync_status: resolveSyncStatus({ isNewRecord: true, isOnline: navigator.onLine }),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        warningTransactionId = await offlineDB.financialTransactions.add(warningTransaction);
-
-        // Update payroll record with warning flag
+        // Marcar el registro de nómina con el flag de aviso. NO se inserta una
+        // transacción financiera adicional: el costo de nómina completo ya es
+        // registrado por usePayrollToFinanceSync, e insertar la diferencia aquí
+        // inflaría el costo real (AC) en EVM (doble conteo).
         await offlineDB.payrollRecords.update(payrollRecord.id!, {
           cost_overrun_amount: costOverrunAmount,
           is_overrun_warning_fired: true,
@@ -135,7 +118,7 @@ export const useLaborCostOverrun = () => {
         hasOverrun: newAlerts.length > 0,
         severity,
         alerts: newAlerts,
-        warningTransactionId,
+        warningTransactionId: undefined,
       };
 
     } catch (error) {

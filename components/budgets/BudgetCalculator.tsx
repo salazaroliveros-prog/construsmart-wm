@@ -27,6 +27,7 @@ import { budgetState, ActiveBudgetState } from '@/lib/state/budgetState';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
+import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
 import CSVGenerator from '@/components/csv/CSVGenerator';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { RenglonCalculator, ProjectRenglon } from '@/lib/calculators/renglonCalculator';
@@ -649,22 +650,28 @@ export default function BudgetCalculator() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Tooltip content="Guardar presupuesto y actualizar proyecto">
-              <button
-                onClick={saveBudget}
-                disabled={saveLoading}
-                className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2 disabled:opacity-50"
-              >
-                {saveLoading ? (
-                  <LoadingSpinner size={16} />
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    Guardar
-                  </>
-                )}
-              </button>
-            </Tooltip>
+            <OnboardingTooltip
+              id="budget-save-button"
+              title="Guardar el presupuesto"
+              description="Guarde el presupuesto para asociarlo al proyecto y sincronizarlo con el servidor."
+            >
+              <Tooltip content="Guardar presupuesto y actualizar proyecto">
+                <button
+                  onClick={saveBudget}
+                  disabled={saveLoading}
+                  className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2 disabled:opacity-50"
+                >
+                  {saveLoading ? (
+                    <LoadingSpinner size={16} />
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Guardar
+                    </>
+                  )}
+                </button>
+              </Tooltip>
+            </OnboardingTooltip>
             <Tooltip content="Exportar presupuesto a PDF con membrete corporativo">
               <button
                 onClick={generatePDF}

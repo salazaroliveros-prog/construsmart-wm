@@ -80,10 +80,10 @@ Entonces necesitarías agregar:
 #### GitHub Secrets Requeridos (si usas GitHub Actions):
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://yibjsruoxjlgdnkgylld.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_i7VPT8T3SSkW3__-ZUlZmw_xiT1Wbri
-SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key (opcional, para operaciones de admin)
+NEXT_PUBLIC_SUPABASE_URL=<tu_url_de_supabase>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<tu_anon_key>
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<tu_publishable_key>
+SUPABASE_SERVICE_ROLE_KEY=<tu_service_role_key> (opcional, para operaciones de admin, guardalo en secreto)
 ```
 
 **Para agregar GitHub Secrets:**

@@ -14,6 +14,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
+import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
 import { payrollEmployeeSchema, payrollRecordSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { useLaborCostOverrun } from '@/hooks/useLaborCostOverrun';
@@ -755,16 +756,22 @@ const checkOnlineStatus = () => {
                 {isOnline ? '🟢 En línea' : '🟡 Sin conexión'}
               </div>
             </Tooltip>
-            <Tooltip content="Agregar nuevo empleado a la nómina">
-              <button
-                onClick={() => handleOpenEmployeeModal()}
-                className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Nuevo Empleado</span>
-                <span className="sm:hidden">Nuevo</span>
-              </button>
-            </Tooltip>
+            <OnboardingTooltip
+              id="payroll-new-button"
+              title="Registrar su primer empleado"
+              description="Agregue empleados para calcular nómina, deducciones y gastos de mano de obra."
+            >
+              <Tooltip content="Agregar nuevo empleado a la nómina">
+                <button
+                  onClick={() => handleOpenEmployeeModal()}
+                  className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Nuevo Empleado</span>
+                  <span className="sm:hidden">Nuevo</span>
+                </button>
+              </Tooltip>
+            </OnboardingTooltip>
           </div>
         </div>
 

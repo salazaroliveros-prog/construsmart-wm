@@ -13,6 +13,8 @@ export interface SlabCalculationResult {
   electroweldedMeshArea?: number;
   viguetasLength?: number;
   bovedillasCount?: number;
+  boardFeet?: number; // Pies tablares de madera (pérgola de madera)
+  tileCount?: number; // Unidades de teja / cerámica / porcelanato
   description: string;
 }
 
@@ -169,6 +171,7 @@ export function calculateWoodPergola(dimensions: SlabDimensions): SlabCalculatio
     concreteVolume: 0,
     steelWeight: 0,
     formworkArea: 0,
+    boardFeet,
     description: `Pérgola de Madera - ${roundMoney(area)}m² (${boardFeet} pies tablares)`,
   };
 }
@@ -197,6 +200,7 @@ export function calculateClayTileRoof(dimensions: SlabDimensions): SlabCalculati
     concreteVolume: 0,
     steelWeight: 0,
     formworkArea: 0,
+    tileCount: tilesCount,
     description: `Tejado Teja de Barro - ${roundMoney(area)}m² (${tilesCount} tejas)`,
   };
 }
@@ -271,17 +275,33 @@ export function calculateSlabCost(
     total_cost += result.bovedillasCount * params.bovedillaPricePerUnit;
   }
 
-  // Wood cost
-  if (params.woodPricePerBoardFoot && result.description.includes('pies tablares')) {
-    const boardFeet = parseFloat(result.description.match(/\d+/)?.[0] || '0');
+  // Wood cost (pies tablares): usa el campo estructurado cuando está
+  // disponible; de lo contrario se extrae la cantidad entre paréntesis.
+  if (params.woodPricePerBoardFoot && (result.boardFeet !== undefined || result.description.includes('pies tablares'))) {
+    const boardFeet = result.boardFeet !== undefined
+      ? result.boardFeet
+      : parseDescriptionCount(result.description);
     total_cost += boardFeet * params.woodPricePerBoardFoot;
   }
 
-  // Tiles cost
-  if (params.tilePricePerUnit && result.description.includes('tejas')) {
-    const tiles = parseFloat(result.description.match(/\d+/)?.[0] || '0');
+  // Tiles cost (teja / cerámica / porcelanato): misma lógica de cantidad.
+  if (params.tilePricePerUnit && (result.tileCount !== undefined || result.description.includes('tejas'))) {
+    const tiles = result.tileCount !== undefined
+      ? result.tileCount
+      : parseDescriptionCount(result.description);
     total_cost += tiles * params.tilePricePerUnit;
   }
 
   return roundMoney(total_cost);
+}
+
+/**
+ * Extrae la cantidad (número) encerrada entre paréntesis de la descripción,
+ * p.ej. "(120 pies tablares)" → 120. Previene NaN ante descripciones vacías.
+ */
+function parseDescriptionCount(description: string): number {
+  if (!description) return 0;
+  const match = description.match(/\((\d+(?:\.\d+)?)/);
+  const value = match ? parseFloat(match[1]) : 0;
+  return isFinite(value) ? value : 0;
 }

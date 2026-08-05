@@ -1,6 +1,6 @@
 'use client';
 
-import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp, Database, LogOut, AlertCircle, BookOpen, Settings, Truck, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp, Database, LogOut, AlertCircle, BookOpen, Settings, Truck, ClipboardList, Wallet, UserCircle } from 'lucide-react';
 import { useState, useEffect, useCallback, memo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -52,6 +52,8 @@ const ICONS: Record<string, React.ReactNode> = {
   ClipboardList: <ClipboardList className="w-5 h-5" />,
   BookOpen: <BookOpen className="w-5 h-5" />,
   Settings: <Settings className="w-5 h-5" />,
+  Wallet: <Wallet className="w-5 h-5" />,
+  UserCircle: <UserCircle className="w-5 h-5" />,
 };
 
 const NavButton = memo(({

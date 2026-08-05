@@ -88,7 +88,9 @@ export const updateSyncStatus = async (
 };
 
 // Statuses that mark a row as pending to be pushed to Supabase.
-export const PENDING_STATUSES = ['pending', 'syncing', 'sync_failed'];
+// Incluye created_offline y updated_offline (asignados por resolveSyncStatus
+// cuando el usuario trabaja sin conexión) para que el motor de sync los procese.
+export const PENDING_STATUSES = ['pending', 'syncing', 'sync_failed', 'created_offline', 'updated_offline'];
 
 /**
  * Cascade delete helper that can operate against a provided DB (for tests)
@@ -1085,7 +1087,12 @@ export function setupNetworkListeners() {
     console.log('Network status: online');
     // Trigger sync when coming back online
     if (supabase) {
-      syncOfflineData();
+      // Sincronización "fire-and-forget" al recuperar conexión: se ejecuta en
+      // segundo plano y cualquier fallo se registra sin romper la app ni dejar
+      // una promesa rechazada sin manejar. No bloquea al usuario.
+      syncOfflineData().catch((error) => {
+        console.error('Error en sync automático al recuperar conexión:', error);
+      });
     }
   });
 
@@ -1198,7 +1205,12 @@ export async function queueDelete(remoteTable: string, row: { id?: string }): Pr
   });
 
   if (isOnline() && supabase) {
-    syncOfflineData();
+    // Sincronización "fire-and-forget" tras encolar el borrado remoto: corre en
+    // segundo plano y cualquier fallo se registra sin propagar una excepción al
+    // llamador (el borrado local ya se encoló correctamente).
+    syncOfflineData().catch((error) => {
+      console.error(`queueDelete: sync en segundo plano falló para ${remoteTable} ${row.id}:`, error);
+    });
   }
   return true;
 }

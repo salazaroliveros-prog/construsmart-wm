@@ -10,6 +10,7 @@ import { UISettingsProvider } from '@/lib/hooks/useUISettings';
 import AuthGuard from '@/components/auth/AuthGuard';
 import { MaterialAlertProvider } from '@/context/MaterialAlertContext';
 import { OfflineSyncIndicator } from '@/components/common/OfflineSyncIndicator';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { cn } from "@/lib/utils";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
@@ -76,7 +77,9 @@ export default function RootLayout({
                 <ServiceWorkerRegistration />
                 <SyncProvider />
                 <AuthGuard>
-                  {children}
+                  <ErrorBoundary>
+                    {children}
+                  </ErrorBoundary>
                 </AuthGuard>
                 <OfflineSyncIndicator />
               </MaterialAlertProvider>

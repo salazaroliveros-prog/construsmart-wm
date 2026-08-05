@@ -66,7 +66,6 @@ export default function DatabaseCleaner() {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-email': user?.email || '',
         },
       });
 

@@ -218,12 +218,14 @@ export const useRoadblockDetection = () => {
 
   const clearRoadblockFlag = async (projectId: string) => {
     try {
+      // Consistencia con la BD (roadblock_type: string|null): al limpiar se usa null,
+      // no undefined, para que calce con el esquema de Supabase en database.ts.
       await offlineDB.projects.update(projectId, {
         has_critical_roadblock: false,
-        roadblock_type: undefined,
-        roadblock_description: undefined,
-        roadblock_date: undefined
-      });
+        roadblock_type: null,
+        roadblock_description: null,
+        roadblock_date: null
+      } as unknown as Parameters<typeof offlineDB.projects.update>[1]);
       
       // Update local state
       setAlerts(prev => prev.filter(alert => alert.projectId !== projectId));

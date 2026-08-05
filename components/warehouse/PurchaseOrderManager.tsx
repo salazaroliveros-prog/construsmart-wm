@@ -11,6 +11,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
+import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
 import { formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
 
 export default function PurchaseOrderManager() {
@@ -274,28 +275,34 @@ export default function PurchaseOrderManager() {
           <h2 className="text-xl sm:text-2xl font-bold text-white">Órdenes de Compra</h2>
           <p className="text-white/60 text-sm">Gestión de órdenes de compra a proveedores</p>
         </div>
-        <Tooltip content="Crear nueva orden de compra">
-          <button
-            onClick={() => {
-              setEditingOrder(null);
-              setFormData({
-                code: `OC-${Date.now()}`,
-                supplier_id: '',
-                project_id: '',
-                order_date: new Date().toISOString().split('T')[0],
-                expected_delivery_date: '',
-                status: 'pending',
-                total_amount: 0,
-                notes: '',
-              });
-              setShowForm(true);
-            }}
-            className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 text-white"
-          >
-            <Plus className="w-4 h-4" />
-            Nueva Orden
-          </button>
-        </Tooltip>
+        <OnboardingTooltip
+          id="po-new-button"
+          title="Crear su primera orden de compra"
+          description="Cree una orden de compra para proveedores y vincúlela a un proyecto."
+        >
+          <Tooltip content="Crear nueva orden de compra">
+            <button
+              onClick={() => {
+                setEditingOrder(null);
+                setFormData({
+                  code: `OC-${Date.now()}`,
+                  supplier_id: '',
+                  project_id: '',
+                  order_date: new Date().toISOString().split('T')[0],
+                  expected_delivery_date: '',
+                  status: 'pending',
+                  total_amount: 0,
+                  notes: '',
+                });
+                setShowForm(true);
+              }}
+              className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 text-white"
+            >
+              <Plus className="w-4 h-4" />
+              Nueva Orden
+            </button>
+          </Tooltip>
+        </OnboardingTooltip>
       </div>
 
       {/* Summary Cards */}

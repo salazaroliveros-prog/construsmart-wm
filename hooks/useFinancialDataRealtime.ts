@@ -34,8 +34,9 @@ export const useFinancialDataRealtime = (projectId: string) => {
           .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
           .forEach(transaction => {
             const date = transaction.date;
+            const cost = Number.isFinite(transaction.total_cost) ? transaction.total_cost : 0;
             const current = costsByDate.get(date) || 0;
-            costsByDate.set(date, current + transaction.total_cost);
+            costsByDate.set(date, current + cost);
           });
         
         // Convertir a acumulativo

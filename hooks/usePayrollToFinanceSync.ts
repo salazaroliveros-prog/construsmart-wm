@@ -21,6 +21,33 @@ export const usePayrollToFinanceSync = () => {
                        payrollRecord.aguinaldo_provision + 
                        payrollRecord.vacaciones_provision;
 
+    // --- Idempotencia: evitar transacciones financieras duplicadas por re-sincronización ---
+    // Antes de insertar, se busca una transacción que ya represente este mismo registro de
+    // nómina. No existe un campo de referencia/source dedicado, por lo que se usa una regla
+    // determinista con los campos disponibles: la descripción guarda el periodo de nómina
+    // (period_start - period_end), que actúa como clave natural del registro (como payroll_id),
+    // y se cruza con categoría, proyecto y monto.
+    const existingTransaction = await offlineDB.financialTransactions
+      .filter(tx =>
+        tx.type === 'expense' &&
+        tx.category === 'Gastos Operativos / Nómina de Mano de Obra' &&
+        (payrollRecord.project_id === undefined || tx.project_id === payrollRecord.project_id) &&
+        tx.description.includes(`${payrollRecord.period_start} - ${payrollRecord.period_end}`) &&
+        tx.total_cost === totalAmount
+      )
+      .first();
+
+    // Si ya existe, se omite el insert para no duplicar el gasto (acumula AC en EVM)
+    if (existingTransaction) {
+      console.log('[Payroll→Finance Sync] Duplicado omitido para registro de nómina', {
+        payrollId: payrollRecord.id,
+        existingTransactionId: existingTransaction.id,
+        amount: existingTransaction.total_cost,
+        reason: 'Ya existe una transacción financiera para este periodo de nómina'
+      });
+      return existingTransaction;
+    }
+
     // Generate UUID using a compatible method
     const generateUUID = () => {
       return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {

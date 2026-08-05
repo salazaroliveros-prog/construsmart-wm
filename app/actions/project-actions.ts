@@ -1,7 +1,7 @@
 'use server';
 
-// import { revalidatePath } from 'next/cache';
-import { createSupabaseServerClient } from '../../lib/supabase/server';
+import { revalidatePath } from 'next/cache';
+import { createSupabaseServerClient, requireServerAuth } from '../../lib/supabase/server';
 import type { ProjectInsert, ProjectUpdate, ProjectRow } from '../../lib/types/database';
 import { generateId } from '../../lib/utils/generateId';
 import { z } from 'zod';
@@ -40,11 +40,12 @@ const ProjectSchema = z.object({
 export async function createProject(input: unknown): Promise<{ data: ProjectRow | null; error: string | null }> {
   try {
     const parsed = ProjectSchema.parse(input);
+    const userId = await requireServerAuth();
     const supabase = await createSupabaseServerClient();
 
     const payload: ProjectInsert = {
       id: parsed.id ?? generateId(),
-      user_id: (await supabase.auth.getUser()).data.user?.id ?? '',
+      user_id: userId,
       code: parsed.code,
       name: parsed.name,
       client_name: parsed.client_name,
@@ -79,7 +80,8 @@ export async function createProject(input: unknown): Promise<{ data: ProjectRow 
       return { data: null, error: error.message };
     }
 
-    // revalidatePath('/');
+    // Revalidar la ruta principal para refrescar el listado de proyectos.
+    revalidatePath('/');
     return { data: data as ProjectRow, error: null };
   } catch (err) {
     const message = err instanceof z.ZodError
@@ -99,12 +101,18 @@ export async function updateProject(id: string, input: unknown): Promise<{ data:
     }
 
     const parsed = ProjectSchema.partial().parse(input);
+    const userId = await requireServerAuth();
     const supabase = await createSupabaseServerClient();
+
+    // Nunca permitir que el cliente modifique el id ni la propiedad (ownership).
+    const { id: _ignoredId, ...rest } = parsed;
+    const updatePayload = rest as ProjectUpdate;
 
     const { data, error } = await supabase
       .from('projects')
-      .update(parsed as ProjectUpdate)
+      .update(updatePayload)
       .eq('id', id)
+      .eq('user_id', userId)
       .select()
       .single();
 
@@ -112,7 +120,7 @@ export async function updateProject(id: string, input: unknown): Promise<{ data:
       return { data: null, error: error.message };
     }
 
-    // revalidatePath('/');
+    revalidatePath('/');
     return { data: data as ProjectRow, error: null };
   } catch (err) {
     const message = err instanceof z.ZodError
@@ -132,13 +140,18 @@ export async function deleteProject(id: string): Promise<{ success: boolean; err
     }
 
     const supabase = await createSupabaseServerClient();
-    const { error } = await supabase.from('projects').delete().eq('id', id);
+    const userId = await requireServerAuth();
+    const { error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userId);
 
     if (error) {
       return { success: false, error: error.message };
     }
 
-    // revalidatePath('/');
+    revalidatePath('/');
     return { success: true, error: null };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error al eliminar el proyecto';
