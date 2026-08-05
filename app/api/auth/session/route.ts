@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
+export const runtime = 'nodejs';
+
 export async function POST(request: Request) {
   try {
     const { access_token, refresh_token } = await request.json();
