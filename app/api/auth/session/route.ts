@@ -37,6 +37,8 @@ export async function POST(request: Request) {
       refresh_token,
     });
 
+    console.log('[Session] setSession error=', error?.message || 'null', 'user=', data.user?.email || 'null');
+
     if (error || !data.session) {
       return NextResponse.json(
         { success: false, error: error?.message || 'No se pudo establecer la sesión' },

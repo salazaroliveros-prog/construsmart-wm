@@ -11,6 +11,7 @@ import { updateSession } from '@/lib/proxy'
 import type { NextRequest } from 'next/server'
 
 export async function proxy(request: NextRequest) {
+  console.log('[Proxy] path=', request.nextUrl.pathname, 'cookies=', request.cookies.getAll().map(c => c.name).join(',') || '(none)');
   return await updateSession(request)
 }
 

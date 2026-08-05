@@ -17,7 +17,9 @@ function LoginForm() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    console.log('[Login] isAuthenticated=', isAuthenticated);
     if (isAuthenticated) {
+      console.log('[Login] navigating to /');
       router.replace('/');
     }
   }, [isAuthenticated, router]);

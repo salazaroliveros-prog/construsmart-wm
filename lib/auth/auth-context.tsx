@@ -113,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
 
           const result = await response.json();
+          console.log('[AuthContext] session sync status=', response.status, 'result=', result);
 
           if (!response.ok || !result.success) {
             console.error('[AuthContext] Session cookie sync failed:', result.error);
@@ -131,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name: userName,
         });
         setIsAuthenticated(true);
+        console.log('[AuthContext] isAuthenticated set to true');
       }
     } catch (error: any) {
       console.error('[AuthContext] Sign in failed:', error);
