@@ -21,9 +21,9 @@ export const config = {
      * - _next/static (archivos estáticos)
      * - _next/image (optimización de imágenes)
      * - favicon.ico (favicon)
-     * - public folder
+     * - public folder, assets, icons, logo.png (archivos estáticos)
      * - sw.js / manifest.json (service worker PWA)
      */
-    '/((?!_next/static|_next/image|favicon.ico|public|sw.js|manifest.json).*)',
+    '/((?!_next/static|_next/image|favicon.ico|public/.*|assets/.*|icons/.*|logo\\.png|sw\\.js|manifest\\.json).*)',
   ],
 };
