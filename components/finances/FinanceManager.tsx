@@ -32,6 +32,13 @@ interface TransactionFormData {
   unit_cost: number;
   date: string;
   receipt_url?: string;
+  payment_method?: 'efectivo' | 'transferencia' | 'cheque' | 'tarjeta' | 'anticipo';
+  tax_amount?: number;
+  related_supplier_id?: string;
+  related_client_id?: string;
+  related_purchase_order_id?: string;
+  document_number?: string;
+  is_reconciled?: boolean;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -118,6 +125,9 @@ export default function FinanceManager() {
     unit_cost: 0,
     date: new Date().toISOString().split('T')[0],
     receipt_url: '',
+    payment_method: 'transferencia',
+    tax_amount: 0,
+    is_reconciled: false,
   });
 
   const [availableProjects, setAvailableProjects] = useState<LocalProject[]>([]);
@@ -353,6 +363,13 @@ export default function FinanceManager() {
         total_cost: total_cost,
         date: formData.date,
         receipt_url: formData.receipt_url,
+        payment_method: formData.payment_method,
+        tax_amount: formData.tax_amount,
+        related_supplier_id: formData.related_supplier_id,
+        related_client_id: formData.related_client_id,
+        related_purchase_order_id: formData.related_purchase_order_id,
+        document_number: formData.document_number,
+        is_reconciled: formData.is_reconciled,
         sync_status: editingTransaction
           ? resolveSyncStatus({ isNewRecord: false, previousStatus: editingTransaction.sync_status, isOnline })
           : resolveSyncStatus({ isNewRecord: true, isOnline }),
@@ -828,6 +845,50 @@ export default function FinanceManager() {
                     onChange={(e) => setFormData({ ...formData, receipt_url: e.target.value })}
                     className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
                   />
+                </div>
+                <div>
+                  <label className="block text-white/60 text-sm mb-1">Método de Pago</label>
+                  <select
+                    value={formData.payment_method || ''}
+                    onChange={(e) => setFormData({ ...formData, payment_method: e.target.value as any })}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                  >
+                    <option value="">Seleccione...</option>
+                    <option value="efectivo">Efectivo</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="cheque">Cheque</option>
+                    <option value="tarjeta">Tarjeta</option>
+                    <option value="anticipo">Anticipo</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-white/60 text-sm mb-1">Impuesto / IVA (GTQ)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.tax_amount}
+                    onChange={(e) => setFormData({ ...formData, tax_amount: Number(e.target.value) })}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-white/60 text-sm mb-1">No. Documento / Factura</label>
+                  <input
+                    type="text"
+                    value={formData.document_number}
+                    onChange={(e) => setFormData({ ...formData, document_number: e.target.value })}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="reconciled"
+                    type="checkbox"
+                    checked={formData.is_reconciled || false}
+                    onChange={(e) => setFormData({ ...formData, is_reconciled: e.target.checked })}
+                    className="w-4 h-4 rounded accent-cyan-500"
+                  />
+                  <label htmlFor="reconciled" className="text-white/70 text-sm">Conciliado</label>
                 </div>
               </div>
 

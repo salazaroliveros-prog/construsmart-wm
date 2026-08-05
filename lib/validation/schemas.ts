@@ -97,6 +97,13 @@ export const financialTransactionSchema = z.object({
       return parsed <= today;
     }, 'Fecha no puede ser futura'),
   receipt_url: z.string().url('URL de recibo inválida').optional().or(z.literal('')),
+  payment_method: z.enum(['efectivo', 'transferencia', 'cheque', 'tarjeta', 'anticipo']).optional(),
+  tax_amount: z.number().min(0, 'Impuesto no puede ser negativo').optional(),
+  related_supplier_id: z.string().uuid('ID de proveedor inválido').optional().or(z.literal('')),
+  related_client_id: z.string().uuid('ID de cliente inválido').optional().or(z.literal('')),
+  related_purchase_order_id: z.string().uuid('ID de orden de compra inválido').optional().or(z.literal('')),
+  document_number: z.string().max(50, 'No. documento no puede exceder 50 caracteres').optional().or(z.literal('')),
+  is_reconciled: z.boolean().optional(),
 });
 
 export type FinancialTransactionFormData = z.infer<typeof financialTransactionSchema>;
@@ -421,3 +428,41 @@ export function formatValidationErrors(errors: Record<string, string>): string[]
     return `${fieldLabel}: ${message}`;
   });
 }
+
+// ============================================================================
+// SUBCONTRACTOR SCHEMA
+// ============================================================================
+export const subcontractorSchema = z.object({
+  supplier_id: z.string().uuid('ID de proveedor inválido').optional().or(z.literal('')),
+  code: z.string()
+    .min(1, 'Código es requerido')
+    .max(50, 'Código no puede exceder 50 caracteres'),
+  name: z.string()
+    .min(1, 'Nombre es requerido')
+    .min(2, 'Nombre debe tener al menos 2 caracteres')
+    .max(150, 'Nombre no puede exceder 150 caracteres'),
+  contact_person: z.string().max(100).optional().or(z.literal('')),
+  phone: z.string().max(20).optional().or(z.literal('')),
+  email: z.string().email('Email inválido').optional().or(z.literal('')),
+  contract_start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal('')),
+  contract_end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal('')),
+  contract_value: z.number()
+    .min(0, 'Valor de contrato no puede ser negativo')
+    .max(9999999999.99, 'Valor excede el máximo permitido'),
+  retention_rate: z.number()
+    .min(0, 'Retención no puede ser negativa')
+    .max(1, 'Retención no puede exceder 100%'),
+  advance_amount: z.number()
+    .min(0, 'Anticipo no puede ser negativo')
+    .max(9999999999.99, 'Anticipo excede el máximo permitido'),
+  advance_balance: z.number()
+    .min(0, 'Saldo de anticipo no puede ser negativo')
+    .optional(),
+  retention_balance: z.number()
+    .min(0, 'Saldo de retención no puede ser negativo')
+    .optional(),
+  status: z.enum(['active', 'suspended', 'completed']),
+  notes: z.string().max(500).optional().or(z.literal('')),
+});
+
+export type SubcontractorFormData = z.infer<typeof subcontractorSchema>;

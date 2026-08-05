@@ -144,7 +144,7 @@ export interface LocalFinancialTransaction extends SyncableEntity {
   type: 'income' | 'expense';
   category: 'materiales' | 'mano_de_obra' | 'herramienta' | 'sub_contrato' |
            'administrativo' | 'personal' | 'transporte' | 'fijos' | 'hogar' | 'aporte' | 'trabajos_extra' |
-           'Gastos Operativos / Nómina de Mano de Obra'; // Agregado para integración Payroll
+           'Gastos Operativos / Nómina de Mano de Obra';
   description: string;
   quantity: number;
   unit: string;
@@ -152,6 +152,14 @@ export interface LocalFinancialTransaction extends SyncableEntity {
   total_cost: number;
   date: string;
   receipt_url?: string;
+  // Payment / treasury tracking
+  payment_method?: 'efectivo' | 'transferencia' | 'cheque' | 'tarjeta' | 'anticipo';
+  tax_amount?: number; // IVA / impuestos incluidos en la transacción
+  related_supplier_id?: string;
+  related_client_id?: string;
+  related_purchase_order_id?: string;
+  document_number?: string; // Factura / recibo / comprobante
+  is_reconciled?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -279,6 +287,28 @@ export interface LocalSupplier extends SyncableEntity {
   is_preferred?: boolean; // Mark as preferred for auto-PO
 }
 
+export interface LocalSubcontractor extends SyncableEntity {
+  id?: string;
+  user_id?: string;
+  supplier_id?: string; // Link to LocalSupplier when applicable
+  code: string;
+  name: string;
+  contact_person?: string;
+  phone?: string;
+  email?: string;
+  contract_start_date?: string;
+  contract_end_date?: string;
+  contract_value: number;
+  retention_rate: number; // Ej: 0.10 = 10% retención de garantía
+  advance_amount: number; // Anticipo entregado
+  advance_balance: number; // Saldo restante por amortizar
+  retention_balance: number; // Saldo retenido pendiente de liberación
+  status: 'active' | 'suspended' | 'completed';
+  notes?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
 export interface LocalPurchaseOrder extends SyncableEntity {
   id?: string;
   user_id?: string; // For tenant isolation
@@ -332,11 +362,12 @@ export class WMDatabase extends Dexie {
   suppliers!: Table<LocalSupplier>;
   purchaseOrders!: Table<LocalPurchaseOrder>;
   purchaseOrderItems!: Table<LocalPurchaseOrderItem>;
+  subcontractors!: Table<LocalSubcontractor>;
   pendingDeletes!: Table<LocalPendingDelete>;
 
   constructor() {
     super('ConstructoraWM_OfflineDB');
-    this.version(8).stores({
+    this.version(9).stores({
       projects: 'id, user_id, code, name, sync_status, status, typology, created_at, updated_at, budget_total, calculated_duration, has_critical_roadblock, roadblock_type, roadblock_date',
       budgets: 'id, user_id, project_id, version, sync_status, created_at, updated_at',
       budgetItems: 'id, user_id, budget_id, project_id, parent_id, code, sync_status, item_order, created_at, updated_at, actual_consumption, consumption_variance, category',
@@ -349,6 +380,7 @@ export class WMDatabase extends Dexie {
       suppliers: 'id, user_id, code, name, sync_status, created_at, updated_at, categories, is_preferred',
       purchaseOrders: 'id, user_id, code, supplier_id, project_id, status, order_date, sync_status, created_at, updated_at',
       purchaseOrderItems: 'id, user_id, purchase_order_id, item_code, sync_status, created_at, updated_at',
+      subcontractors: 'id, user_id, supplier_id, code, status, sync_status, created_at, updated_at',
       pendingDeletes: '++id, table, serverId, created_at'
     });
   }

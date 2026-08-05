@@ -317,6 +317,13 @@ export default function WarehouseManager() {
       // Obtener user_id para tenencia
       const userId = await getCurrentUserId();
 
+      // Validar stock mínimo al asignar a un proyecto
+      if (formData.project_id && formData.current_stock !== undefined && formData.minimum_threshold !== undefined) {
+        if (formData.current_stock <= formData.minimum_threshold) {
+          showToast('warning', `Advertencia: stock actual (${formData.current_stock}) está en o por debajo del mínimo (${formData.minimum_threshold}). Considere reabastecer antes de asignar a proyecto.`);
+        }
+      }
+
       const itemData: LocalWarehouseStock = {
         user_id: userId || undefined,
         ...formData,

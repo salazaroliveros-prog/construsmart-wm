@@ -25,6 +25,7 @@ const ProjectLogManager = dynamic(() => import('@/components/project/ProjectLogM
 const InteractiveCalendar = dynamic(() => import('@/components/dashboard/InteractiveCalendar'), { ssr: false });
 const SupplierManager = dynamic(() => import('@/components/warehouse/SupplierManager'), { ssr: false });
 const PurchaseOrderManager = dynamic(() => import('@/components/warehouse/PurchaseOrderManager'), { ssr: false });
+const SubcontractorManager = dynamic(() => import('@/components/warehouse/SubcontractorManager'), { ssr: false });
 const ProgressTracker = dynamic(() => import('@/components/progress/ProgressTracker'), { ssr: false });
 const SettingsManager = dynamic(() => import('@/components/settings/SettingsManager'), { ssr: false });
 
@@ -38,6 +39,7 @@ const NAVIGATION_TABS = [
   { id: 'warehouse', label: 'Almacén', icon: 'Warehouse' },
   { id: 'suppliers', label: 'Proveedores', icon: 'Truck' },
   { id: 'orders', label: 'Órdenes de Compra', icon: 'ShoppingCart' },
+  { id: 'subcontractors', label: 'Subcontratos', icon: 'Users' },
   { id: 'clients', label: 'Clientes', icon: 'UserCircle' },
   { id: 'logs', label: 'Bitácora', icon: 'BookOpen' },
   { id: 'settings', label: 'Ajustes', icon: 'Settings' },
@@ -246,6 +248,8 @@ const renderTabContent = () => {
         return isTabLoading ? <TabSkeleton /> : <SupplierManager />;
       case 'orders':
         return isTabLoading ? <TabSkeleton /> : <PurchaseOrderManager />;
+      case 'subcontractors':
+        return isTabLoading ? <TabSkeleton /> : <SubcontractorManager />;
       case 'clients':
         return isTabLoading ? <TabSkeleton /> : <ClientManager />;
       case 'logs':
