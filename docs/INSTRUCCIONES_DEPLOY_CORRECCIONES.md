@@ -52,7 +52,7 @@ Asegurar que el archivo `.env` en la raíz tenga:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://yibjsruoxjlgdnkgylld.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<tu-anon-key>
-NEXT_PUBLIC_APP_URL=https://control-constructora-wm.vercel.app
+NEXT_PUBLIC_APP_URL=https://construsmart-wm.vercel.app
 ```
 
 **Nota:** Reemplazar `<tu-anon-key>` con la clave real de Supabase.
@@ -64,8 +64,8 @@ NEXT_PUBLIC_APP_URL=https://control-constructora-wm.vercel.app
 1. Ir a: https://supabase.com/dashboard/project/yibjsruoxjlgdnkgylld/auth
 2. En **"Email Auth"**, asegurar que esté habilitado
 3. En **"URL Configuration"**, agregar:
-   - Site URL: `https://control-constructora-wm.vercel.app`
-   - Redirect URLs: `https://control-constructora-wm.vercel.app/**`
+   - Site URL: `https://construsmart-wm.vercel.app`
+   - Redirect URLs: `https://construsmart-wm.vercel.app/**`
 
 4. **Crear usuario administrador:**
    - Ir a: https://supabase.com/dashboard/project/yibjsruoxjlgdnkgylld/auth/users

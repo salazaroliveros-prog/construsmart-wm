@@ -166,14 +166,9 @@ function main() {
   allPassed &= checkEnvLocal();
   allPassed &= checkFile('.env.production', 'Production environment');
   
-  // Check proxy/middleware
+  // Check proxy
   log('\n--- Routing Configuration ---', colors.blue);
   const hasProxy = checkFile('proxy.ts', 'Proxy (Next.js modern)');
-  const hasMiddleware = checkFile('middleware.ts', 'Middleware (deprecated)');
-  
-  if (hasProxy && hasMiddleware) {
-    log('  ⚠ Both proxy.ts and middleware.ts exist (middleware is deprecated)', colors.yellow);
-  }
   
   // Check public files
   log('\n--- Public Files ---', colors.blue);

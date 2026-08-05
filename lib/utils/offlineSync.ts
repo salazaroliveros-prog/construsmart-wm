@@ -7,7 +7,7 @@
  * 
  * Covers: projects, budgets, budget_items, financial_transactions, payroll_employees,
  * payroll_records, warehouse_stock, clients, project_logs, suppliers,
- * purchase_orders and purchase_order_items.
+ * purchase_orders, purchase_order_items and subcontractors.
  */
 
 import { Table } from 'dexie';
@@ -35,6 +35,7 @@ export interface SyncStats {
   pendingSuppliers: number;
   pendingPurchaseOrders: number;
   pendingPurchaseOrderItems: number;
+  pendingSubcontractors: number;
   pendingDeletes: number;
   lastSync: number | null;
 }
@@ -557,7 +558,62 @@ export async function syncOfflineData(): Promise<SyncResult> {
       result,
     );
 
-    // 3. CLIENTS (independent)
+    // 3. SUBCONTRACTORS (children of suppliers, optional link)
+    const subcontractorRows = await offlineDB.subcontractors
+      .where('sync_status')
+      .anyOf(PENDING_STATUSES)
+      .toArray();
+    await syncRows(
+      'subcontractors',
+      subcontractorRows,
+      (s) => s.code,
+      (s) => ({
+        user_id: s.user_id,
+        supplier_id: remap(supplierIdMap, s.supplier_id),
+        code: s.code,
+        name: s.name,
+        company_name: s.company_name,
+        contact_person: s.contact_person,
+        phone: s.phone,
+        email: s.email,
+        address: s.address,
+        city: s.city,
+        specialties: s.specialties,
+        retention_rate: s.retention_rate,
+        advance_amount: s.advance_amount,
+        advance_balance: s.advance_balance,
+        retention_balance: s.retention_balance,
+        is_active: s.is_active,
+        sync_status: s.sync_status,
+      }),
+      (s) => ({
+        user_id: s.user_id,
+        supplier_id: remap(supplierIdMap, s.supplier_id),
+        code: s.code,
+        name: s.name,
+        company_name: s.company_name,
+        contact_person: s.contact_person,
+        phone: s.phone,
+        email: s.email,
+        address: s.address,
+        city: s.city,
+        specialties: s.specialties,
+        retention_rate: s.retention_rate,
+        advance_amount: s.advance_amount,
+        advance_balance: s.advance_balance,
+        retention_balance: s.retention_balance,
+        is_active: s.is_active,
+      }),
+      async (s, localId, serverId) => {
+        await offlineDB.subcontractors.update(localId, { id: serverId, sync_status: 'synced' });
+      },
+      async (s) => {
+        await offlineDB.subcontractors.update(s.id!, { sync_status: 'synced' });
+      },
+      result,
+    );
+
+    // 4. CLIENTS (independent)
     const clientRows = await offlineDB.clients
       .where('sync_status')
       .anyOf(PENDING_STATUSES)
@@ -1117,6 +1173,7 @@ export async function getSyncStats(): Promise<SyncStats> {
     pendingSuppliers: 0,
     pendingPurchaseOrders: 0,
     pendingPurchaseOrderItems: 0,
+    pendingSubcontractors: 0,
     pendingDeletes: 0,
     lastSync: null,
   };
@@ -1136,6 +1193,7 @@ export async function getSyncStats(): Promise<SyncStats> {
       pendingSuppliersCount,
       pendingPurchaseOrdersCount,
       pendingPurchaseOrderItemsCount,
+      pendingSubcontractorsCount,
       pendingDeletesCount,
     ] = await Promise.all([
       offlineDB.projects.where('sync_status').anyOf(PENDING_STATUSES).count(),
@@ -1150,6 +1208,7 @@ export async function getSyncStats(): Promise<SyncStats> {
       offlineDB.suppliers.where('sync_status').anyOf(PENDING_STATUSES).count(),
       offlineDB.purchaseOrders.where('sync_status').anyOf(PENDING_STATUSES).count(),
       offlineDB.purchaseOrderItems.where('sync_status').anyOf(PENDING_STATUSES).count(),
+      offlineDB.subcontractors.where('sync_status').anyOf(PENDING_STATUSES).count(),
       offlineDB.pendingDeletes.count(),
     ]);
 
@@ -1164,6 +1223,7 @@ export async function getSyncStats(): Promise<SyncStats> {
     stats.pendingSuppliers = pendingSuppliersCount;
     stats.pendingPurchaseOrders = pendingPurchaseOrdersCount;
     stats.pendingPurchaseOrderItems = pendingPurchaseOrderItemsCount;
+    stats.pendingSubcontractors = pendingSubcontractorsCount;
     stats.pendingDeletes = pendingDeletesCount;
 
     // Get last sync timestamp from localStorage
@@ -1294,6 +1354,7 @@ export async function forceFullSync(): Promise<SyncResult> {
     { local: offlineDB.suppliers, remote: 'suppliers' },
     { local: offlineDB.purchaseOrders, remote: 'purchase_orders' },
     { local: offlineDB.purchaseOrderItems, remote: 'purchase_order_items' },
+    { local: offlineDB.subcontractors, remote: 'subcontractors' },
   ];
 
   try {

@@ -17,7 +17,7 @@ CREATE TYPE expense_category AS ENUM (
     'administrativo', 'personal', 'transporte', 'fijos', 'hogar', 'aporte', 'trabajos_extra',
     'Gastos Operativos / Nómina de Mano de Obra'
 );
-CREATE TYPE order_status AS ENUM ('pending', 'approved', 'ordered', 'received', 'cancelled');
+CREATE TYPE order_status AS ENUM ('pending', 'pending_approval', 'approved', 'ordered', 'received', 'cancelled');
 CREATE TYPE client_type AS ENUM ('individual', 'corporate');
 ```
 
@@ -369,6 +369,31 @@ CREATE TYPE client_type AS ENUM ('individual', 'corporate');
 
 **Índices:** `idx_project_logs_project_id`, `idx_project_logs_log_date`, `idx_project_logs_activity_type`, `idx_project_logs_user_id`
 
+### 2.16 subcontractors
+
+| Columna               | Tipo                     | Default | Restricciones                                   |
+|-----------------------|--------------------------|---------|--------------------------------------------------|
+| id                    | UUID                     | gen_random_uuid() | PK                                           |
+| user_id               | UUID                     |         | FK → auth.users(id) ON DELETE CASCADE |
+| code                  | VARCHAR(20)              |         | UNIQUE NOT NULL                                  |
+| name                  | TEXT                     | NOT NULL|                                                  |
+| company_name          | TEXT                     | NULL    |                                                  |
+| contact_person        | TEXT                     | NOT NULL|                                                  |
+| phone                 | TEXT                     | NOT NULL|                                                  |
+| email                 | TEXT                     | NULL    |                                                  |
+| address               | TEXT                     | NOT NULL|                                                  |
+| city                  | TEXT                     | NOT NULL|                                                  |
+| specialties           | TEXT[]                   | NULL    | (especialidades del subcontratista)              |
+| retention_percentage  | NUMERIC(5,2)             | 0       | (porcentaje de retención de garantía)            |
+| advance_amount       | NUMERIC(15,2)            | 0       | (anticipo otorgado)                              |
+| advance_balance       | NUMERIC(15,2)            | 0       | (saldo pendiente de anticipo)                    |
+| is_active             | BOOLEAN                  | TRUE    |                                                  |
+| sync_status           | TEXT                     | 'synced'| CHECK IN ('synced','created_offline','updated_offline','syncing','pending','sync_failed') |
+| created_at            | TIMESTAMP WITH TIME ZONE | NOW()   |                                                  |
+| updated_at            | TIMESTAMP WITH TIME ZONE | NOW()   |                                                  |
+
+**Índices:** `idx_subcontractors_code`, `idx_subcontractors_user_id`, `idx_subcontractors_is_active`
+
 ---
 
 ## 3. TRIGGERS & FUNCTIONS
@@ -403,6 +428,7 @@ CREATE TYPE client_type AS ENUM ('individual', 'corporate');
 | suppliers               | Todos autenticados leen; warehouse+ gestionan |
 | purchase_orders         | Todos autenticados leen; warehouse+ gestionan |
 | project_logs            | Todos autenticados leen; engineers+ gestionan |
+| subcontractors          | Todos autenticados leen; engineers+ gestionan |
 
 ---
 
@@ -429,9 +455,9 @@ warehouse_stock ──── suppliers (preferred_supplier_id)
     │
 purchase_orders ──── purchase_order_items
     │
-clients
-    │
 project_logs
+    │
+subcontractors
 ```
 
 ---

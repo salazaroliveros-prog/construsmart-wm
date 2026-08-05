@@ -4,7 +4,7 @@
 ## Instrucciones para Configurar Variables de Entorno en Vercel
 
 ### 1. Acceder al Dashboard de Vercel
-- Ve a: https://vercel.com/proyectoswm/control-constructora-wm/settings/environment-variables
+- Ve a: https://vercel.com/proyectoswm/construsmart-wm/settings/environment-variables
 
 ### 2. Agregar las siguientes variables de entorno
 
@@ -44,7 +44,7 @@ Crea cada variable haciendo clic en "Add New" y selecciona el entorno:
 
 ### 3. Verificar el Webhook de GitHub
 
-1. **Ve a:** https://vercel.com/proyectoswm/control-constructora-wm/settings/git
+1. **Ve a:** https://vercel.com/proyectoswm/construsmart-wm/settings/git
 2. **Verifica que:**
    - El repositorio de GitHub esté conectado
    - El webhook esté activo
@@ -61,13 +61,13 @@ Crea cada variable haciendo clic en "Add New" y selecciona el entorno:
 
 Después de configurar las variables de entorno:
 
-1. **Ve a:** https://vercel.com/proyectoswm/control-constructora-wm/deployments
+1. **Ve a:** https://vercel.com/proyectoswm/construsmart-wm/deployments
 2. **Haz clic en "Redeploy"** en el último deployment
 3. **Selecciona "Redeploy to Production"**
 
 ### 5. Verificar la Aplicación
 
-1. **Accede a:** https://control-constructora-wm.vercel.app
+1. **Accede a:** https://construsmart-wm.vercel.app
 2. **Verifica que:**
    - La aplicación carga correctamente
    - No hay errores de consola
@@ -85,7 +85,7 @@ Para verificar que los despliegues automáticos funcionan:
    git push origin main
    ```
 3. **Verifica que Vercel despliegue automáticamente**
-4. **Revisa el deployment en:** https://vercel.com/proyectoswm/control-constructora-wm/deployments
+4. **Revisa el deployment en:** https://vercel.com/proyectoswm/construsmart-wm/deployments
 
 ---
 

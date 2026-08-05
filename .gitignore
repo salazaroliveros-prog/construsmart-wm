@@ -52,5 +52,20 @@ $null
 
 # Shadcn/Supabase generated files (not used in this project)
 lib/client.ts
-lib/middleware.ts
 lib/server.ts
+
+# Local agent/runtime artifacts (not committed)
+lib/.agents/
+lib/.claude/
+lib/data/skills/
+lib/skills-lock.json
+
+# Playwright MCP artifacts
+.playwright-mcp/
+
+# Vitest (not yet used in CI)
+tests/
+vitest.config.ts
+
+# Temporary/local docs (keep project docs in docs/)
+NEXT_PUBLIC_SITE_URL - Necesaria pa.txt

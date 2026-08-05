@@ -11,10 +11,11 @@ Arquitectura offline-first con `Dexie.js` (IndexedDB) como fuente local y `Supab
 
 - **Lectura:** la UI siempre lee primero de Dexie (local) para velocidad.
 - **Escritura:** se guarda local primero con un `sync_status`; el motor empuja a Supabase.
-- **Motor:** `lib/utils/offlineSync.ts` (`syncOfflineData`) sincroniza las 12 tablas en
+- **Motor:** `lib/utils/offlineSync.ts` (`syncOfflineData`) sincroniza las 13 tablas en
   orden de dependencias (padres antes que hijos) y luego procesa borrados pendientes.
 - **Disparo:** `components/ui/SyncProvider.tsx` corre sync al montar la app, al volver
-  online (`online`), al recuperar el foco (`visibilitychange`) y cada 60 segundos.
+  online (`online`), al recuperar el foco (`visibilitychange`) y cada 5 minutos.
+- **Cobertura push:** `subcontractors` incluido en la fase push de `syncOfflineData`.
 
 ### Estados `sync_status`
 | Estado | Significado |
@@ -57,7 +58,7 @@ Detalles de FK:
 ## 3. REALTIME (CAMBIOS EN VIVO)
 
 `components/ui/RealtimeProvider.tsx` (montado en `app/layout.tsx`) se suscribe a
-`postgres_changes` de las 12 tablas (`supabase_realtime` habilitado por la migración
+`postgres_changes` de las 13 tablas (`supabase_realtime` habilitado por la migración
 `20250131000006_enable_realtime_and_anon_access.sql`).
 
 - INSERT/UPDATE del servidor → `put` en Dexie con `sync_status: 'synced'`.
@@ -70,7 +71,7 @@ Detalles de FK:
 
 ## 4. SEGURIDAD / RLS
 
-Las políticas RLS permiten acceso total a la anon key en las 12 tablas
+Las políticas RLS permiten acceso total a la anon key en las 13 tablas
 (`USING (true)`), requerido para que el motor de sync y Realtime funcionen sin login.
 La migración 00006 agregó estas políticas a `clients`, `project_logs`, `suppliers`,
 `purchase_orders` y `purchase_order_items`.

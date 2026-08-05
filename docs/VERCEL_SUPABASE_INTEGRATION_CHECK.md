@@ -108,7 +108,7 @@ Si el usuario conectó el proyecto de Vercel con Supabase directamente en el Das
 
 ### Paso 1: Ir al Dashboard de Vercel
 1. Navegar a https://vercel.com/dashboard
-2. Seleccionar el proyecto: "control-constructora-wm"
+2. Seleccionar el proyecto: "construsmart-wm"
 
 ### Paso 2: Revisar Integraciones
 1. Ir a Settings → Integrations

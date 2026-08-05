@@ -2,7 +2,7 @@
 
 **Fecha:** 2025-01-19
 **Slogan:** "CONSTRUYENDO EL FUTURO"
-**Versión DB:** 5 (Local), 5 (Remota - ✅ Migración Completada)
+**Versión DB:** 9 (Local), 9 (Remota - ✅ Migración Completada)
 
 **Estado Migración Remota:** ✅ Ejecutada exitosamente
 **Fecha de Migración:** 2025-01-19
@@ -15,7 +15,7 @@
 ### 1.1 Punto de Entrada Principal
 **Archivo:** `app/page.tsx`
 
-**Tabs Configurados (11 módulos):**
+**Tabs Configurados (13 módulos):**
 ```typescript
 const NAVIGATION_TABS = [
   { id: 'dashboard', label: 'Tablero Principal', icon: 'LayoutDashboard' },
@@ -26,9 +26,10 @@ const NAVIGATION_TABS = [
   { id: 'warehouse', label: 'Almacén', icon: 'Warehouse' },
   { id: 'suppliers', label: 'Proveedores', icon: 'Truck' },
   { id: 'orders', label: 'Órdenes de Compra', icon: 'ShoppingCart' },
-  { id: 'analytics', label: 'Analytics', icon: 'TrendingUp' },
+  { id: 'subcontractors', label: 'Subcontratistas', icon: 'Users' },
   { id: 'clients', label: 'Clientes', icon: 'Users' },
   { id: 'logs', label: 'Bitácora', icon: 'BookOpen' },
+  { id: 'settings', label: 'Ajustes', icon: 'Settings' },
 ]
 ```
 
@@ -40,12 +41,10 @@ const NAVIGATION_TABS = [
 - ✅ WarehouseManager
 - ✅ SupplierManager
 - ✅ PurchaseOrderManager
-- ✅ AnalyticsDashboard
 - ✅ ClientManager
 - ✅ ProjectLogManager
-- ✅ InteractiveCalendar
-
-**Estado:** ✅ Todos los módulos están correctamente importados y accesibles desde la navegación principal.
+- ✅ SubcontractorManager
+- ✅ SettingsManager
 
 ---
 
@@ -70,7 +69,8 @@ const NAVIGATION_TABS = [
 10. **`suppliers`** - **NUEVO** - Proveedores
 11. **`purchaseOrders`** - **NUEVO** - Órdenes de compra
 12. **`purchaseOrderItems`** - **NUEVO** - Items de órdenes de compra
-13. **`pendingDeletes`** - Tombstones de borrado (borrado diferido para sync)
+13. **`subcontractors`** - **NUEVO** - Subcontratistas
+14. **`pendingDeletes`** - Tombstones de borrado (borrado diferido para sync)
 
 **Estado:** ✅ Todas las tablas están definidas y conectadas a Dexie.js.
 
@@ -151,18 +151,18 @@ const NAVIGATION_TABS = [
 ---
 
 ### 3.6 Analytics
-**Archivo:** `components/analytics/AnalyticsDashboard.tsx`
+**Archivo:** `components/analytics/AnalyticsDashboard.tsx` (NO EXISTE)
 
 **Conexiones Entrantes:**
-- ✅ Proyectos → `projects` (para todas las métricas)
-- ✅ Finanzas → `financialTransactions` (para análisis financiero)
-- ✅ Nómina → `payrollEmployees` (para análisis de RRHH)
-- ✅ Almacén → `warehouseStock` (para análisis de inventario)
+- ⏳ Proyectos → `projects` (para todas las métricas) - PENDING
+- ⏳ Finanzas → `financialTransactions` (para análisis financiero) - PENDING
+- ⏳ Nómina → `payrollEmployees` (para análisis de RRHH) - PENDING
+- ⏳ Almacén → `warehouseStock` (para análisis de inventario) - PENDING
 
 **Conexiones Salientes:**
 - Ninguna (módulo de solo lectura)
 
-**Estado:** ✅ Conectado correctamente con todos los módulos transaccionales.
+**Estado:** ⏳ Módulo no implementado. Tipos y hooks EVM existen pero sin UI.
 
 ---
 
@@ -341,9 +341,11 @@ const NAVIGATION_TABS = [
 | Almacén | ✅ | ✅ warehouseStock | ✅ | ✅ |
 | **Proveedores** | ✅ | ✅ suppliers | ✅ | ✅ |
 | **Órdenes de Compra** | ✅ | ✅ purchaseOrders, purchaseOrderItems | ✅ | ✅ |
-| Analytics | ✅ | ✅ projects, financialTransactions, payrollEmployees, warehouseStock | ✅ | ✅ |
+| **Subcontratistas** | ✅ | ✅ subcontractors | ⏳ | 🔄 |
+| Analytics | ⏳ | ⏳ | ⏳ | ⏳ |
 | **Clientes** | ✅ | ✅ clients | ⚠️ | ✅ |
 | **Bitácora** | ✅ | ✅ projectLogs | ✅ | ✅ |
+| **Ajustes** | ⏳ | N/A | ⏳ | ⏳ |
 
 **Notas:**
 - ✅ = Totalmente integrado
@@ -380,19 +382,19 @@ const NAVIGATION_TABS = [
 
 ## 9. CONCLUSIÓN
 
-**Estado General:** ✅ **100% COMPLETO (Módulos Principales)**
+**Estado General:** 🔄 **EN PROGRESO (Core completo, features avanzadas pendientes)**
 
 El sistema CONSTRUCTORA WM/M&S tiene una arquitectura sólida con:
-- ✅ Base de datos centralizada (Dexie.js + IndexedDB)
-- ✅ Navegación unificada (11 módulos principales)
+- ✅ Base de datos centralizada (Dexie.js + IndexedDB v9)
+- ✅ Navegación unificada (13 tabs: 11 implementados, 1 parcial, 1 pendiente)
 - ✅ 11 módulos totalmente integrados en flujo de trabajo
-- ✅ Proveedores y Órdenes de Compra integrados en navegación principal
+- ✅ Proveedores, Órdenes de Compra y Subcontratistas integrados en navegación principal
 - ✅ Componentes de UI reutilizables
 - ✅ Estilos globales consistentes
 - ✅ Glassmorphism profesional
 - ✅ Code splitting con dynamic imports
 - ✅ Interconexión de datos completa (todos los módulos conectados a DB central)
 
-**Pendiente:** Mejoras opcionales (conexión Cliente→Proyecto, Purchase Order→Stock)
+**Pendiente:** AnalyticsDashboard (módulo completo), SettingsManager (UI), supplier category routing, EVM UI integration.
 
 **El sistema es funcional y cohesionado. Todos los módulos principales están integrados y accesibles desde la navegación principal. Las mejoras pendientes son extensiones útiles pero no críticas para el funcionamiento básico del ERP.**

@@ -10,21 +10,21 @@
 
 ### Dominio Principal Confirmado
 
-**Dominio Verdadero:** https://control-constructora-wm.vercel.app ✅
+**Dominio Verdadero:** https://construsmart-wm.vercel.app ✅
 
 **Estado del Alias:**
-- ✅ El dominio principal `https://control-constructora-wm.vercel.app` es un alias permanente
+- ✅ El dominio principal `https://construsmart-wm.vercel.app` es un alias permanente
 - ✅ Este alias no cambia entre deployments
 - ✅ Los deployments individuales tienen URLs temporales pero el alias principal se mantiene
 
 **Aliases Actuales:**
-- https://control-constructora-wm.vercel.app (DOMINIO PRINCIPAL - PERMANENTE)
-- https://control-constructora-wm-proyectoswm.vercel.app
-- https://control-constructora-wm-git-main-proyectoswm.vercel.app
+- https://construsmart-wm.vercel.app (DOMINIO PRINCIPAL - PERMANENTE)
+- https://construsmart-wm-proyectoswm.vercel.app
+- https://construsmart-wm-git-main-proyectoswm.vercel.app
 
 **Deployment Actual:**
-- URL del deployment: https://control-constructora-kjz4qvj34-proyectoswm.vercel.app
-- Alias principal: https://control-constructora-wm.vercel.app (redirige al deployment actual)
+- URL del deployment: https://construsmart-wm-kjz4qvj34-proyectoswm.vercel.app
+- Alias principal: https://construsmart-wm.vercel.app (redirige al deployment actual)
 
 **Conclusión:** ✅ El dominio principal es correcto y no cambiará en nuevos deployments
 
@@ -35,15 +35,15 @@
 ### URLs que DEBEN estar configuradas en Supabase Auth
 
 **Site URL:**
-- ✅ https://control-constructora-wm.vercel.app
+- ✅ https://construsmart-wm.vercel.app
 
 **Redirect URLs:**
 - ✅ http://localhost:3000/
-- ✅ https://control-constructora-wm.vercel.app/
-- ✅ https://control-constructora-wm.vercel.app
+- ✅ https://construsmart-wm.vercel.app/
+- ✅ https://construsmart-wm.vercel.app
 - ✅ http://localhost:3000
-- ✅ https://control-constructora-wm.vercel.app/auth/callback
-- ✅ https://control-constructora-*.vercel.app/auth/callback
+- ✅ https://construsmart-wm.vercel.app/auth/callback
+- ✅ https://construsmart-wm-*.vercel.app/auth/callback
 - ✅ http://localhost:3000/auth/callback
 
 ### Configuración Recomendada para Vercel
@@ -51,7 +51,7 @@
 Según la documentación de Supabase, para deployments con Vercel se recomienda:
 
 **Site URL:**
-- https://control-constructora-wm.vercel.app
+- https://construsmart-wm.vercel.app
 
 **Additional Redirect URLs:**
 - http://localhost:3000/**
@@ -88,7 +88,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_i7VPT8T3SSkW3__-ZUlZmw_xiT1Wbri
 
 **Paso 1: Ir al Dashboard de Vercel**
 1. Navegar a https://vercel.com/dashboard
-2. Seleccionar el proyecto: "control-constructora-wm"
+2. Seleccionar el proyecto: "construsmart-wm"
 
 **Paso 2: Verificar Variables de Entorno**
 1. Ir a Settings → Environment Variables
@@ -98,7 +98,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_i7VPT8T3SSkW3__-ZUlZmw_xiT1Wbri
 NEXT_PUBLIC_SUPABASE_URL=https://yibjsruoxjlgdnkgylld.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_i7VPT8T3SSkW3__-ZUlZmw_xiT1Wbri
 SUPABASE_SECRET_KEY=[TU_CLAVE_SECRETA]
-NEXT_PUBLIC_SITE_URL=https://control-constructora-wm.vercel.app
+NEXT_PUBLIC_SITE_URL=https://construsmart-wm.vercel.app
 ```
 
 **Paso 3: Verificar Variables del Sistema**
@@ -117,18 +117,18 @@ Vercel proporciona automáticamente:
 ### Paso 2: Configurar Site URL
 1. Ir a Authentication → URL Configuration
 2. En "Site URL", configurar:
-   - https://control-constructora-wm.vercel.app
+   - https://construsmart-wm.vercel.app
 
 ### Paso 3: Configurar Redirect URLs
 En "Redirect URLs", agregar las siguientes URLs:
 
 ```
 http://localhost:3000/
-https://control-constructora-wm.vercel.app/
-https://control-constructora-wm.vercel.app
+https://construsmart-wm.vercel.app/
+https://construsmart-wm.vercel.app
 http://localhost:3000
-https://control-constructora-wm.vercel.app/auth/callback
-https://control-constructora-*.vercel.app/auth/callback
+https://construsmart-wm.vercel.app/auth/callback
+https://construsmart-wm-*.vercel.app/auth/callback
 http://localhost:3000/auth/callback
 ```
 
@@ -181,7 +181,7 @@ const { data, error } = await supabase.auth.signInWithOAuth({
 
 | Componente | Estado | Detalles |
 |------------|--------|----------|
-| Dominio Vercel | ✅ Confirmado | https://control-constructora-wm.vercel.app es el dominio principal permanente |
+| Dominio Vercel | ✅ Confirmado | https://construsmart-wm.vercel.app es el dominio principal permanente |
 | Alias Vercel | ✅ Funcional | El alias principal no cambia entre deployments |
 | Configuración Supabase | ⚠️ Requiere verificación manual | No se puede verificar vía MCP, requiere acceso al Dashboard |
 | Variables de Entorno Vercel | ⚠️ Requiere verificación manual | No se puede verificar vía CLI, requiere acceso al Dashboard |
@@ -194,11 +194,11 @@ const { data, error } = await supabase.auth.signInWithOAuth({
 ### 1. Verificar Variables de Entorno en Vercel (Recomendado)
 - Ir a Vercel Dashboard → Settings → Environment Variables
 - Verificar que todas las variables de Supabase estén configuradas
-- Agregar `NEXT_PUBLIC_SITE_URL=https://control-constructora-wm.vercel.app`
+- Agregar `NEXT_PUBLIC_SITE_URL=https://construsmart-wm.vercel.app`
 
 ### 2. Verificar Configuración de Supabase Auth (Recomendado)
 - Ir a Supabase Dashboard → Authentication → URL Configuration
-- Verificar Site URL: https://control-constructora-wm.vercel.app
+- Verificar Site URL: https://construsmart-wm.vercel.app
 - Verificar Redirect URLs (lista proporcionada arriba)
 - Agregar URLs faltantes si es necesario
 
@@ -214,7 +214,7 @@ const { data, error } = await supabase.auth.signInWithOAuth({
 **Configuración Supabase:** ⚠️ Requiere verificación manual en Dashboard  
 **Variables de Entorno:** ⚠️ Requiere verificación manual en Vercel Dashboard  
 
-**El dominio principal https://control-constructora-wm.vercel.app es correcto y no cambiará en nuevos deployments.** Los deployments individuales tienen URLs temporales pero el alias principal siempre redirige al deployment más reciente.
+**El dominio principal https://construsmart-wm.vercel.app es correcto y no cambiará en nuevos deployments.** Los deployments individuales tienen URLs temporales pero el alias principal siempre redirige al deployment más reciente.
 
 **Para garantizar que la configuración de Supabase y las variables de entorno estén correctas, se recomienda verificar manualmente en los Dashboards correspondientes siguiendo las instrucciones proporcionadas.**
 

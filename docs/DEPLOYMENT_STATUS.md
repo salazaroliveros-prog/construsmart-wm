@@ -28,7 +28,7 @@
 
 ## Vercel Deploy Status ✅
 
-**URL:** https://control-constructora-wm.vercel.app
+**URL:** https://construsmart-wm.vercel.app
 **Auto-deploy:** ✅ Funcionando (webhook configurado)
 
 ### Problemas Detectados y Corregidos
@@ -99,7 +99,7 @@ El plugin `@ducanh2912/next-pwa` fue eliminado de `next.config.ts` porque sobres
 | overflow-anchor-none | ✅ | Aplicado a todos los contenedores scrollables |
 | Dashboard Layout | ✅ | Tarjetas de nivel y gráficas intercambiadas |
 | Vercel Deploy | ✅ | Funcionando |
-| Live Site | ✅ | https://control-constructora-wm.vercel.app |
+| Live Site | ✅ | https://construsmart-wm.vercel.app |
 
 ## Siguiente Acción
 

@@ -293,9 +293,13 @@ export interface LocalSubcontractor extends SyncableEntity {
   supplier_id?: string; // Link to LocalSupplier when applicable
   code: string;
   name: string;
+  company_name?: string;
   contact_person?: string;
   phone?: string;
   email?: string;
+  address?: string;
+  city?: string;
+  specialties?: unknown[];
   contract_start_date?: string;
   contract_end_date?: string;
   contract_value: number;
@@ -303,10 +307,12 @@ export interface LocalSubcontractor extends SyncableEntity {
   advance_amount: number; // Anticipo entregado
   advance_balance: number; // Saldo restante por amortizar
   retention_balance: number; // Saldo retenido pendiente de liberación
+  is_active?: boolean;
   status: 'active' | 'suspended' | 'completed';
   notes?: string;
   created_at: string;
   updated_at?: string;
+  [key: number]: string | number | boolean | undefined | string[];
 }
 
 export interface LocalPurchaseOrder extends SyncableEntity {

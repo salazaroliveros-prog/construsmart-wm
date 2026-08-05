@@ -178,7 +178,7 @@ export default function SubcontractorManager() {
       };
 
       if (editingSubcontractor) {
-        await offlineDB.subcontractors.update(editingSubcontractor.id!, subcontractorData);
+        await offlineDB.subcontractors.update(editingSubcontractor.id!, subcontractorData as any);
         showToast('success', 'Subcontrato actualizado');
       } else {
         await offlineDB.subcontractors.add(subcontractorData);

@@ -166,7 +166,7 @@ Después de ejecutar la migración, verifica:
    - Verifica que las RLS policies están activas
 
 2. **En la Aplicación:**
-   - Abre la aplicación: https://control-constructora-wm.vercel.app
+   - Abre la aplicación: https://construsmart-wm.vercel.app
    - Navega a "Clientes" - debería poder crear clientes
    - Navega a "Bitácora" - debería poder crear logs
    - Navega a "Proveedores" - debería poder crear proveedores

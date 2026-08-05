@@ -25,14 +25,14 @@ En la sección **Redirect URLs**, agrega las siguientes URLs (una por línea):
 
 #### URLs de Producción:
 ```
-https://control-constructora-wm.vercel.app/**
-https://control-constructora-wm.vercel.app/auth/callback
+https://construsmart-wm.vercel.app/**
+https://construsmart-wm.vercel.app/auth/callback
 ```
 
 #### URLs de Preview Deployments (para branches diferentes de main):
 ```
-https://control-constructora-*.vercel.app/**
-https://control-constructora-*.vercel.app/auth/callback
+https://construsmart-wm-*.vercel.app/**
+https://construsmart-wm-*.vercel.app/auth/callback
 ```
 
 #### URLs de Desarrollo Local:
@@ -111,10 +111,10 @@ SUPABASE_SERVICE_ROLE_KEY=<tu_service_role_key> (opcional, para operaciones de a
 ### ⚠️ Pendiente (Supabase):
 
 **URLs de Callback en Supabase:**
-- ⚠️ Site URL: https://control-constructora-wm.vercel.app
+- ⚠️ Site URL: https://construsmart-wm.vercel.app
 - ⚠️ Redirect URLs: 
-  - https://control-constructora-wm.vercel.app/**
-  - https://control-constructora-*.vercel.app/**
+  - https://construsmart-wm.vercel.app/**
+  - https://construsmart-wm-*.vercel.app/**
   - http://localhost:3000/**
 
 ### ❌ No Requerido (GitHub Secrets):
@@ -137,7 +137,7 @@ SUPABASE_SERVICE_ROLE_KEY=<tu_service_role_key> (opcional, para operaciones de a
 1. Haz un cambio pequeño en el código
 2. Commit y push a GitHub
 3. Verifica que Vercel despliegue automáticamente
-4. Revisa: https://vercel.com/proyectoswm/control-constructora-wm/deployments
+4. Revisa: https://vercel.com/proyectoswm/construsmart-wm/deployments
 
 ### Paso 3: Testear la Aplicación
 1. Accede a: https://control-constructora-wm.vercel.app
@@ -161,5 +161,5 @@ SUPABASE_SERVICE_ROLE_KEY=<tu_service_role_key> (opcional, para operaciones de a
 
 ### Despliegue automático no funciona
 - Verifica el webhook en GitHub: https://github.com/salazaroliveros-prog/Control_Constructora/settings/hooks
-- Revisa la integración Git en Vercel: https://vercel.com/proyectoswm/control-constructora-wm/settings/git
+- Revisa la integración Git en Vercel: https://vercel.com/proyectoswm/construsmart-wm/settings/git
 - Asegúrate de que el proyecto esté vinculado al repositorio correcto

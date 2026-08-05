@@ -118,15 +118,16 @@ export function checkBudgetMarginWarning(
 
 ---
 
-## MODULE 3: ALMACÉN, PROVEEDORES & ÓRDENES DE COMPRAS ⏳ PENDING
+## MODULE 3: ALMACÉN, PROVEEDORES & ÓRDENES DE COMPRAS 🔄 IN PROGRESS
 
 ### Automated Supply Chain
 
 **Target Component Files:**
-- `lib/db/offlineStore.ts` - Extended `LocalWarehouseStock` and `LocalSupplier` (COMPLETED)
-- `hooks/useAutoPurchaseOrder.ts` - NEW: Auto-PO generation hook
-- `components/warehouse/WarehouseManager.tsx` - ADD: Stock depletion triggers
-- `components/suppliers/SupplierManager.tsx` - ADD: Category assignment
+- `lib/db/offlineStore.ts` - Extended `LocalWarehouseStock`, `LocalSupplier` and `LocalSubcontractor` (COMPLETED)
+- `hooks/useAutoPurchaseOrder.ts` - COMPLETED: Auto-PO generation hook
+- `components/warehouse/WarehouseManager.tsx` - ADD: Stock depletion triggers (PARTIAL)
+- `components/warehouse/SupplierManager.tsx` - ADD: Category assignment (PENDING)
+- `components/warehouse/SubcontractorManager.tsx` - NEW: Subcontractor management module
 
 **Reactive Data Interlocks:**
 ```
@@ -142,45 +143,19 @@ WarehouseManager.updateStock()
 
 **Dexie.js Index Updates:**
 ```typescript
-// Version 8 stores
-warehouseStock: 'id, project_id, item_code, sync_status, created_at, updated_at, preferred_supplier_id, auto_generate_po, category'
-suppliers: 'id, code, name, sync_status, created_at, updated_at, categories, is_preferred'
-```
-
-**TypeScript Refactoring Snippets:**
-```typescript
-// Extended LocalWarehouseStock interface
-export interface LocalWarehouseStock extends SyncableEntity {
-  // ... existing fields
-  preferred_supplier_id?: string;
-  auto_generate_po?: boolean;
-  last_po_date?: string;
-  category?: string; // For supplier routing
-}
-
-// Extended LocalSupplier interface
-export interface LocalSupplier extends SyncableEntity {
-  // ... existing fields
-  categories?: string[]; // Material categories this supplier handles
-  is_preferred?: boolean; // Mark as preferred for auto-PO
-}
-
-// Auto-PO generation hook (to be created)
-export const useAutoPurchaseOrder = () => {
-  const generateDraftPO = async (stockItem: LocalWarehouseStock) => {
-    // Implementation details
-  };
-  return { generateDraftPO };
-};
+// Version 9 stores
+warehouseStock: 'id, user_id, project_id, item_code, sync_status, created_at, updated_at, preferred_supplier_id, auto_generate_po, category'
+suppliers: 'id, user_id, code, name, sync_status, created_at, updated_at, categories, is_preferred'
+subcontractors: 'id, user_id, supplier_id, code, status, sync_status, created_at, updated_at'
 ```
 
 **Implementation Required:**
-1. Create useAutoPurchaseOrder hook
-2. Add stock depletion monitoring in WarehouseManager
-3. Add category assignment to SupplierManager
-4. Implement supplier routing logic by category
-5. Create Draft PO generation with pricing estimation
-6. Add user notification system for auto-generated POs
+1. ~~Create useAutoPurchaseOrder hook~~ ✅ COMPLETED
+2. Add stock depletion monitoring in WarehouseManager (PARTIAL)
+3. Add category assignment to SupplierManager (PENDING)
+4. Implement supplier routing logic by category (PENDING)
+5. Create Draft PO generation with pricing estimation ✅ COMPLETED
+6. Add user notification system for auto-generated POs (PENDING)
 
 ---
 
@@ -189,9 +164,9 @@ export const useAutoPurchaseOrder = () => {
 ### Mathematical Predictive Triggers (EVM)
 
 **Target Component Files:**
-- `hooks/useEarnedValueManagement.ts` - NEW: EVM calculation hook
-- `components/analytics/AnalyticsDashboard.tsx` - ADD: EVM metrics display
-- `lib/types/evm.ts` - NEW: EVM type definitions
+- `hooks/useEarnedValueManagement.ts` - NEW: EVM calculation hook (NOT CREATED)
+- `components/analytics/AnalyticsDashboard.tsx` - ADD: EVM metrics display (PENDING)
+- `lib/types/evm.ts` - NEW: EVM type definitions (NOT CREATED)
 
 **Reactive Data Interlocks:**
 ```
@@ -347,14 +322,14 @@ export function getBufferSeverity(bufferDays: number)
 
 ## 🔄 DATABASE MIGRATION PLAN
 
-### Version 7 → Version 8 Migration
+### Version 8 → Version 9 Migration
 
 ```typescript
-// Migration script to be added to offlineStore.ts
-this.version(8).stores({
+// Migration script added to supabase/migrations/20260902000000_add_subcontractors_and_pending_approval.sql
+this.version(9).stores({
   projects: 'id, code, name, sync_status, status, typology, created_at, updated_at, budget_total, calculated_duration, has_critical_roadblock, roadblock_type, roadblock_date',
   budgets: 'id, project_id, version, sync_status, created_at, updated_at',
-  budgetItems: 'id, budget_id, project_id, parent_id, code, sync_status, item_order, created_at, updated_at, actual_consumption, consumption_variance',
+  budgetItems: 'id, budget_id, project_id, parent_id, code, sync_status, item_order, created_at, updated_at, actual_consumption, consumption_variance, category',
   financialTransactions: 'id, project_id, type, category, date, sync_status, created_at, updated_at',
   payrollEmployees: 'id, name, position, category, department, sync_status, created_at, updated_at',
   payrollRecords: 'id, project_id, employee_id, period_start, period_end, sync_status, created_at, updated_at, budget_item_id, is_overrun_warning_fired',
@@ -364,6 +339,7 @@ this.version(8).stores({
   suppliers: 'id, code, name, sync_status, created_at, updated_at, categories, is_preferred',
   purchaseOrders: 'id, code, supplier_id, project_id, status, order_date, sync_status, created_at, updated_at',
   purchaseOrderItems: 'id, purchase_order_id, item_code, sync_status, created_at, updated_at',
+  subcontractors: 'id, user_id, supplier_id, code, status, sync_status, created_at, updated_at',
   pendingDeletes: '++id, table, serverId, created_at'
 }).upgrade(tx => {
   // Migration logic if needed
@@ -377,7 +353,7 @@ this.version(8).stores({
 1. **Module 1** ✅ COMPLETED - Critical for project visibility
 2. **Module 6** ✅ COMPLETED - Foundation for all other modules
 3. **Module 2** 🔄 IN PROGRESS - Financial controls
-4. **Module 3** ⏳ PENDING - Supply chain automation
+4. **Module 3** 🔄 IN PROGRESS - Supply chain automation (partial)
 5. **Module 5** ⏳ PENDING - Cost control
 6. **Module 4** ⏳ PENDING - Advanced analytics
 
@@ -411,8 +387,8 @@ All interfaces extend `SyncableEntity` with strict type checking:
 - [x] Roadblock detection hook
 - [x] Client balance integration
 - [x] Auto-PO generation hook
-- [x] EVM calculation hook
-- [x] Labor cost overrun hook
+- [ ] EVM calculation hook
+- [ ] Labor cost overrun hook
 - [x] Settings UI component
 - [x] Component integration tests
 - [x] Supabase schema migration script
@@ -438,15 +414,15 @@ All interfaces extend `SyncableEntity` with strict type checking:
 5. Test sync functionality with new fields
 
 **Database Changes:**
-- 12 tables with 25+ new fields
-- 15+ new indexes for performance
+- 13 tables with 30+ new fields
+- 18+ new indexes for performance
 - 2 new foreign key constraints
 - Updated RLS policies
 - Default values migration for existing data
 
 ---
 
-**Generated:** 2026-08-03  
-**Status:** All 6 Modules Complete ✅  
-**Database Validation:** Tools Ready for Execution  
-**Next Steps:** Run validation script and apply migration if needed
+**Generated:** 2026-08-05  
+**Status:** Module 1 & 6 Complete ✅ | Module 2 & 3 In Progress 🔄 | Module 4, 5 Pending ⏳ | Analytics Pending ⏳  
+**Database Validation:** Supabase migration v9 ready for execution  
+**Next Steps:** Apply supabase migration 20260902000000_add_subcontractors_and_pending_approval.sql

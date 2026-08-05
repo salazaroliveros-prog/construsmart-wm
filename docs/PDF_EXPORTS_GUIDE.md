@@ -1,7 +1,7 @@
 # BRANDED PDF & CSV EXPORT SPECIFICATIONS
 ## CONSTRUCTORA WM/M&S - "CONSTRUYENDO EL FUTURO"
 
-This document contains the structural HTML/CSS letterhead template and export configuration for generated PDF documents.
+This document contains the PDF export configuration and letterhead implementation for generated PDF documents.
 
 ---
 
@@ -9,34 +9,30 @@ This document contains the structural HTML/CSS letterhead template and export co
 
 All client-facing proposals and administrator reports must include the official header:
 
-```html
-<header class="pdf-letterhead" style="
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center; 
-  border-bottom: 3px solid #d97706; 
-  padding-bottom: 15px; 
-  margin-bottom: 25px;
-">
-  <!-- LEFT: Multi Servicios Header Branding Asset -->
-  <div class="logo-container">
-    <img src="/assets/branding/letterhead-multiservicios.jpg" alt="Multi Servicios de Guatemala" style="height: 70px; object-fit: contain;" />
-  </div>
-
-  <!-- RIGHT: Company Identity & Slogan -->
-  <div class="company-info" style="text-align: right; font-family: 'Segoe UI', sans-serif;">
-    <h1 style="margin: 0; font-size: 16pt; color: #b45309; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">
-      CONSTRUCTORA WM/M&S
-    </h1>
-    <p style="margin: 3px 0; font-weight: 600; font-style: italic; color: #475569; font-size: 10pt;">
-      "CONSTRUYENDO EL FUTURO"
-    </p>
-    <p style="margin: 0; font-size: 8.5pt; color: #64748b;">
-      Guatemala, C.A. | Presupuestos y Planificación de Obra
-    </p>
-  </div>
-</header>
+```typescript
+// Implementado en components/pdf/PDFGenerator.tsx usando jsPDF
+const addLetterhead = async () => {
+  // Try to use custom logo first if enabled
+  if (includeLogo && companyLogo) {
+    doc.addImage(companyLogo, 'JPEG', 15, 10, 40, 25);
+  } else {
+    // Fallback to default letterhead
+    const letterheadResponse = await fetch('/assets/branding/letterhead-multiservicios.jpg');
+    const letterheadBlob = await letterheadResponse.blob();
+    const letterheadDataUrl = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(letterheadBlob);
+    });
+    doc.addImage(letterheadDataUrl, 'JPEG', 15, 10, 40, 25);
+  }
+};
 ```
+
+**Letterhead Components:**
+- LEFT: Multi Servicios Header Branding Asset (`/assets/branding/letterhead-multiservicios.jpg`)
+- RIGHT: Company Identity & Slogan (CONSTRUCTORA WM/M&S - "CONSTRUYENDO EL FUTURO")
+- Fallback: Text-based header with company name and contact info if image fails to load
 
 ---
 
