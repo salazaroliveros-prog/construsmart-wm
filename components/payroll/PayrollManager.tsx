@@ -1129,6 +1129,7 @@ const checkOnlineStatus = () => {
               </button>
             </div>
 
+            <form onSubmit={handleSaveEmployee}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
                 <label className="block text-white/60 text-sm mb-1">Nombre Completo</label>
@@ -1202,27 +1203,29 @@ const checkOnlineStatus = () => {
                   />
                   <span className="text-white text-sm">Empleado Activo</span>
                 </label>
-              </div>
-            </div>
+               </div>
+             </div>
 
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={handleCloseEmployeeModal}
-                className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm hover:bg-white/20"
-                aria-label="Cancelar y cerrar formulario de empleado"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveEmployee}
-                disabled={saveLoading}
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 text-white text-sm hover:opacity-90 flex items-center gap-2 disabled:opacity-50"
-                aria-label={editingEmployee ? 'Actualizar empleado existente' : 'Guardar nuevo empleado'}
-              >
-                <Save className="w-4 h-4" />
-                {saveLoading ? <LoadingSpinner size={16} /> : 'Guardar'}
-              </button>
-            </div>
+             <div className="flex justify-end gap-3 mt-6">
+               <button
+                 type="button"
+                 onClick={handleCloseEmployeeModal}
+                 className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm hover:bg-white/20"
+                 aria-label="Cancelar y cerrar formulario de empleado"
+               >
+                 Cancelar
+               </button>
+               <button
+                 type="submit"
+                 disabled={saveLoading}
+                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 text-white text-sm hover:opacity-90 flex items-center gap-2 disabled:opacity-50"
+                 aria-label={editingEmployee ? 'Actualizar empleado existente' : 'Guardar nuevo empleado'}
+               >
+                 <Save className="w-4 h-4" />
+                 {saveLoading ? <LoadingSpinner size={16} /> : 'Guardar'}
+               </button>
+             </div>
+             </form>
           </div>
         </div>
       )}
@@ -1244,6 +1247,7 @@ const checkOnlineStatus = () => {
               </button>
             </div>
 
+            <form onSubmit={handleSavePayroll}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
                 <label className="block text-white/60 text-sm mb-1">Proyecto</label>
@@ -1343,24 +1347,26 @@ const checkOnlineStatus = () => {
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={handleClosePayrollModal}
-                className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm hover:bg-white/20"
-                aria-label="Cancelar y cerrar formulario de registro de nómina"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSavePayroll}
-                disabled={saveLoading}
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 text-white text-sm hover:opacity-90 flex items-center gap-2 disabled:opacity-50"
-                aria-label={editingPayroll ? 'Actualizar registro de nómina existente' : 'Guardar nuevo registro de nómina'}
-              >
-                <Save className="w-4 h-4" />
-                {saveLoading ? <LoadingSpinner size={16} /> : 'Guardar'}
-              </button>
-            </div>
+             <div className="flex justify-end gap-3 mt-6">
+               <button
+                 type="button"
+                 onClick={handleClosePayrollModal}
+                 className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm hover:bg-white/20"
+                 aria-label="Cancelar y cerrar formulario de registro de nómina"
+               >
+                 Cancelar
+               </button>
+               <button
+                 type="submit"
+                 disabled={saveLoading}
+                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 text-white text-sm hover:opacity-90 flex items-center gap-2 disabled:opacity-50"
+                 aria-label={editingPayroll ? 'Actualizar registro de nómina existente' : 'Guardar nuevo registro de nómina'}
+               >
+                 <Save className="w-4 h-4" />
+                 {saveLoading ? <LoadingSpinner size={16} /> : 'Guardar'}
+               </button>
+             </div>
+             </form>
           </div>
         </div>
       )}

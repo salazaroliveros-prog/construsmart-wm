@@ -538,7 +538,7 @@ export default function BudgetCalculator() {
 
       // Enviar materiales al almacén (solo en el primer guardado para evitar duplicados)
       // TODO: Implementar upsert para actualizaciones incrementales
-      if (warehouseInputs.length > 0 && isFirstSave) {
+      if (warehouseInputs.length > 0) {
         await sendBudgetMaterialsToWarehouse(warehouseInputs);
         showToast('info', `${warehouseInputs.length} materiales sincronizados con el almacén`);
       }

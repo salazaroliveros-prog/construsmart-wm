@@ -178,8 +178,13 @@ export default function SupplierManager() {
   };
 
   const generateSupplierCode = () => {
-    const count = suppliers.length + 1;
-    return `SUP-${String(count).padStart(4, '0')}`;
+    const all = suppliers;
+    const maxNum = all.reduce((max, s) => {
+      const m = s.code.match(/^SUP-(\d+)$/);
+      const n = m ? parseInt(m[1], 10) : 0;
+      return n > max ? n : max;
+    }, 0);
+    return `SUP-${String(maxNum + 1).padStart(4, '0')}`;
   };
 
   // Realtime refresh: recarga cuando cambios llegan de otros dispositivos

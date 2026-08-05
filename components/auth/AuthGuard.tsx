@@ -31,7 +31,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     }
 
     // Verificar que el usuario sea el administrador autorizado
-    if (user.email !== ADMIN_EMAIL) {
+    if (user.email.toLowerCase() !== ADMIN_EMAIL) {
       console.log('[AuthGuard] Unauthorized user:', user.email);
       router.push('/login?error=unauthorized');
       return;

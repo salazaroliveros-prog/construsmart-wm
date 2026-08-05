@@ -177,8 +177,13 @@ const loadClients = async () => {
   };
 
   const generateClientCode = () => {
-    const count = clients.length + 1;
-    return `CLI-${String(count).padStart(4, '0')}`;
+    const all = clients;
+    const maxNum = all.reduce((max, c) => {
+      const m = c.code.match(/^CLI-(\d+)$/);
+      const n = m ? parseInt(m[1], 10) : 0;
+      return n > max ? n : max;
+    }, 0);
+    return `CLI-${String(maxNum + 1).padStart(4, '0')}`;
   };
 
   // Realtime refresh: recarga cuando cambios llegan de otros dispositivos

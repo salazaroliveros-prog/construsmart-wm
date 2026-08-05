@@ -946,6 +946,7 @@ export default function WarehouseManager() {
               </button>
             </div>
 
+            <form onSubmit={handleSaveItem}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-white/60 text-sm mb-1">Proyecto</label>
@@ -1081,25 +1082,27 @@ export default function WarehouseManager() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={handleCloseModal}
-                className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm hover:bg-white/20"
-                disabled={saveLoading}
-                aria-label="Cancelar y cerrar formulario de material"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveItem}
-                disabled={saveLoading}
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm hover:opacity-90 flex items-center gap-2 disabled:opacity-50"
-                aria-label={editingItem ? 'Actualizar material existente' : 'Guardar nuevo material'}
-              >
-                <Save className="w-4 h-4" />
-                {saveLoading ? <LoadingSpinner size={16} /> : 'Guardar'}
-              </button>
-            </div>
+             <div className="flex justify-end gap-3 mt-6">
+               <button
+                 type="button"
+                 onClick={handleCloseModal}
+                 className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm hover:bg-white/20"
+                 disabled={saveLoading}
+                 aria-label="Cancelar y cerrar formulario de material"
+               >
+                 Cancelar
+               </button>
+               <button
+                 type="submit"
+                 disabled={saveLoading}
+                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm hover:opacity-90 flex items-center gap-2 disabled:opacity-50"
+                 aria-label={editingItem ? 'Actualizar material existente' : 'Guardar nuevo material'}
+               >
+                 <Save className="w-4 h-4" />
+                 {saveLoading ? <LoadingSpinner size={16} /> : 'Guardar'}
+               </button>
+             </div>
+             </form>
           </div>
         </div>
       )}
