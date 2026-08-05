@@ -12,25 +12,25 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Si está cargando, no hacer nada
+    console.log('[AuthGuard] loading=', loading, 'isAuthenticated=', isAuthenticated, 'user=', user?.email || 'null', 'pathname=', pathname);
     if (loading) return;
 
-    // Rutas públicas que no requieren autenticación
     const publicPaths = ['/login'];
 
-    // Si es ruta pública, permitir acceso
     if (publicPaths.some(path => pathname.startsWith(path))) {
+      if (isAuthenticated && user?.email === ADMIN_EMAIL) {
+        console.log('[AuthGuard] already authenticated on public route, navigating to /');
+        router.replace('/');
+      }
       return;
     }
 
-    // Si no está autenticado, redirigir al login
     if (!isAuthenticated || !user) {
       console.log('[AuthGuard] No authenticated, redirecting to login');
       router.push('/login');
       return;
     }
 
-    // Verificar que el usuario sea el administrador autorizado
     if (user.email.toLowerCase() !== ADMIN_EMAIL) {
       console.log('[AuthGuard] Unauthorized user:', user.email);
       router.push('/login?error=unauthorized');
