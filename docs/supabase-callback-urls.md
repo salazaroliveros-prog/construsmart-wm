@@ -16,7 +16,7 @@ Para que la autenticación funcione correctamente, necesitas configurar las URLs
 En la sección **Site URL**, agrega:
 
 ```
-https://control-constructora-wm.vercel.app
+https://construsmart-wm.vercel.app
 ```
 
 ### 3. Configurar Redirect URLs
@@ -140,7 +140,7 @@ SUPABASE_SERVICE_ROLE_KEY=<tu_service_role_key> (opcional, para operaciones de a
 4. Revisa: https://vercel.com/proyectoswm/construsmart-wm/deployments
 
 ### Paso 3: Testear la Aplicación
-1. Accede a: https://control-constructora-wm.vercel.app
+1. Accede a: https://construsmart-wm.vercel.app
 2. Intenta iniciar sesión (si está implementado)
 3. Verifica que no haya errores de conexión con Supabase
 4. Revisa la consola del navegador para errores

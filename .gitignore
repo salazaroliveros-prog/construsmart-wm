@@ -69,3 +69,6 @@ vitest.config.ts
 
 # Temporary/local docs (keep project docs in docs/)
 NEXT_PUBLIC_SITE_URL - Necesaria pa.txt
+
+# Supabase local artifacts
+supabase/database/

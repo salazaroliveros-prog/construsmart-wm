@@ -122,18 +122,6 @@
       ]
     },
     {
-      "name": "Analytics",
-      "short_name": "Analytics",
-      "description": "Ver análisis y métricas",
-      "url": "/?tab=analytics",
-      "icons": [
-        {
-          "src": "/assets/branding/logo-constructora-wm.jpg",
-          "sizes": "96x96"
-        }
-      ]
-    },
-    {
       "name": "Clientes",
       "short_name": "Clientes",
       "description": "Gestionar clientes (CRM)",
@@ -150,18 +138,6 @@
       "short_name": "Bitácora",
       "description": "Ver bitácora de proyectos",
       "url": "/?tab=logs",
-      "icons": [
-        {
-          "src": "/assets/branding/logo-constructora-wm.jpg",
-          "sizes": "96x96"
-        }
-      ]
-    },
-    {
-      "name": "Ajustes",
-      "short_name": "Ajustes",
-      "description": "Personalizar interfaz y configuración",
-      "url": "/?tab=settings",
       "icons": [
         {
           "src": "/assets/branding/logo-constructora-wm.jpg",
