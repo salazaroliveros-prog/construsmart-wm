@@ -2,10 +2,10 @@
 // Slogan: "CONSTRUYENDO EL FUTURO"
 // Progressive Web App - 100% Offline Capable
 
-const CACHE_NAME = 'constructora-wm-v3';
-const STATIC_CACHE = 'constructora-wm-static-v3';
-const DATA_CACHE = 'constructora-wm-data-v3';
-const RUNTIME_CACHE = 'constructora-wm-runtime-v3';
+const CACHE_NAME = 'constructora-wm-v4';
+const STATIC_CACHE = 'constructora-wm-static-v4';
+const DATA_CACHE = 'constructora-wm-data-v4';
+const RUNTIME_CACHE = 'constructora-wm-runtime-v4';
 
 // Detect environment
 const isDevelopment = self.location.hostname === 'localhost' ||
