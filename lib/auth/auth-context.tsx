@@ -99,8 +99,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(error.message || 'Credenciales inválidas');
       }
 
-      if (data.user) {
+      if (data.user && data.session) {
         console.log('[AuthContext] Sign in successful for:', data.user.email);
+
+        try {
+          const response = await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              access_token: data.session.access_token,
+              refresh_token: data.session.refresh_token,
+            }),
+          });
+
+          const result = await response.json();
+
+          if (!response.ok || !result.success) {
+            console.error('[AuthContext] Session cookie sync failed:', result.error);
+            throw new Error(result.error || 'No se pudo sincronizar la sesión en el servidor');
+          }
+        } catch (sessionError) {
+          console.error('[AuthContext] Session sync error:', sessionError);
+          throw new Error('Error al sincronizar la sesión. Intenta nuevamente.');
+        }
+
         const userName = data.user.email?.split('@')[0] || 'Usuario';
 
         setUser({

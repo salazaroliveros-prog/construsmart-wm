@@ -9,12 +9,18 @@ import { useToast } from '@/components/ui/Toast';
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signIn } = useAuth();
+  const { signIn, isAuthenticated } = useAuth();
   const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/');
+    }
+  }, [isAuthenticated, router]);
 
   // Verificar si hay error de autorización en la URL
   useEffect(() => {
@@ -33,9 +39,7 @@ function LoginForm() {
     try {
       await signIn(email, password);
       showToast('success', 'Inicio de sesión exitoso');
-      // Usar router.push para navegación client-side
-      // El AuthGuard detectará el cambio de estado y permitirá el acceso
-      router.push('/');
+      // La navegación la maneja el useEffect cuando isAuthenticated cambie
     } catch (err: any) {
       setError(err.message || 'Error al iniciar sesión');
       showToast('error', err.message || 'Error al iniciar sesión');
