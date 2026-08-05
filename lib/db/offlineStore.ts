@@ -287,7 +287,7 @@ export interface LocalPurchaseOrder extends SyncableEntity {
   project_id?: string;
   order_date: string;
   expected_delivery_date?: string;
-  status: 'pending' | 'approved' | 'ordered' | 'received' | 'cancelled';
+  status: 'pending' | 'pending_approval' | 'approved' | 'ordered' | 'received' | 'cancelled';
   total_amount: number;
   notes?: string;
   created_at: string;

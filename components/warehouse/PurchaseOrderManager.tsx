@@ -23,7 +23,7 @@ export default function PurchaseOrderManager() {
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<LocalPurchaseOrder[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<LocalPurchaseOrder | null>(null);
-  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved' | 'ordered' | 'received' | 'cancelled'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'pending_approval' | 'approved' | 'ordered' | 'received' | 'cancelled'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [showItemForm, setShowItemForm] = useState(false);
@@ -37,7 +37,7 @@ export default function PurchaseOrderManager() {
     project_id: '',
     order_date: new Date().toISOString().split('T')[0],
     expected_delivery_date: '',
-    status: 'pending',
+    status: 'pending_approval',
     total_amount: 0,
     notes: '',
   });
@@ -140,7 +140,7 @@ export default function PurchaseOrderManager() {
         project_id: '',
         order_date: new Date().toISOString().split('T')[0],
         expected_delivery_date: '',
-        status: 'pending',
+        status: 'pending_approval',
         total_amount: 0,
         notes: '',
       });
@@ -224,10 +224,44 @@ export default function PurchaseOrderManager() {
     setSelectedOrder(order);
   };
 
+  const handleApprove = async (order: LocalPurchaseOrder) => {
+    try {
+      const now = new Date().toISOString();
+      await offlineDB.purchaseOrders.update(order.id!, {
+        status: 'approved',
+        updated_at: now,
+        sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: order.sync_status, isOnline }),
+      });
+      showToast('success', 'Orden aprobada');
+      loadData();
+    } catch (error) {
+      console.error('Error approving order:', error);
+      showToast('error', 'Error al aprobar la orden');
+    }
+  };
+
+  const handleReject = async (order: LocalPurchaseOrder) => {
+    try {
+      const now = new Date().toISOString();
+      await offlineDB.purchaseOrders.update(order.id!, {
+        status: 'cancelled',
+        updated_at: now,
+        sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: order.sync_status, isOnline }),
+      });
+      showToast('success', 'Orden rechazada');
+      loadData();
+    } catch (error) {
+      console.error('Error rejecting order:', error);
+      showToast('error', 'Error al rechazar la orden');
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
         return <Clock className="w-4 h-4" />;
+      case 'pending_approval':
+        return <FileText className="w-4 h-4" />;
       case 'approved':
         return <CheckCircle className="w-4 h-4" />;
       case 'ordered':
@@ -245,6 +279,8 @@ export default function PurchaseOrderManager() {
     switch (status) {
       case 'pending':
         return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+      case 'pending_approval':
+        return 'bg-orange-500/20 text-orange-300 border-orange-500/30';
       case 'approved':
         return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
       case 'ordered':
@@ -290,7 +326,7 @@ export default function PurchaseOrderManager() {
                   project_id: '',
                   order_date: new Date().toISOString().split('T')[0],
                   expected_delivery_date: '',
-                  status: 'pending',
+                  status: 'pending_approval',
                   total_amount: 0,
                   notes: '',
                 });
@@ -306,7 +342,7 @@ export default function PurchaseOrderManager() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
         <div className="glass-card p-4 rounded-xl border-l-4 border-l-cyan-500">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
@@ -326,6 +362,17 @@ export default function PurchaseOrderManager() {
             <div>
               <p className="text-white/60 text-xs">Pendientes</p>
               <p className="text-white text-xl font-bold">{orders.filter((o) => o.status === 'pending').length}</p>
+            </div>
+          </div>
+        </div>
+        <div className="glass-card p-4 rounded-xl border-l-4 border-l-orange-500">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
+              <FileText className="w-5 h-5 text-orange-400" />
+            </div>
+            <div>
+              <p className="text-white/60 text-xs">Por Aprobar</p>
+              <p className="text-white text-xl font-bold">{orders.filter((o) => o.status === 'pending_approval').length}</p>
             </div>
           </div>
         </div>
@@ -474,15 +521,39 @@ export default function PurchaseOrderManager() {
                       Items
                     </button>
                   </Tooltip>
-                  <Tooltip content="Editar información de la orden">
-                    <button
-                      onClick={() => handleEdit(order)}
-                      className="glass-button px-3 py-2 rounded-lg text-white text-sm flex items-center gap-2"
-                    >
-                      <Edit className="w-4 h-4" />
-                      Editar
-                    </button>
-                  </Tooltip>
+                  {(order.status === 'pending' || order.status === 'pending_approval') && (
+                    <>
+                      <Tooltip content="Aprobar orden">
+                        <button
+                          onClick={() => handleApprove(order)}
+                          className="px-3 py-2 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 transition-all flex items-center gap-1"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          Aprobar
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="Rechazar orden">
+                        <button
+                          onClick={() => handleReject(order)}
+                          className="px-3 py-2 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-all flex items-center gap-1"
+                        >
+                          <XCircle className="w-4 h-4" />
+                          Rechazar
+                        </button>
+                      </Tooltip>
+                    </>
+                  )}
+                  {order.status !== 'cancelled' && order.status !== 'received' && (
+                    <Tooltip content="Editar información de la orden">
+                      <button
+                        onClick={() => handleEdit(order)}
+                        className="glass-button px-3 py-2 rounded-lg text-white text-sm flex items-center gap-2"
+                      >
+                        <Edit className="w-4 h-4" />
+                        Editar
+                      </button>
+                    </Tooltip>
+                  )}
                   <Tooltip content="Eliminar orden permanentemente">
                     <button
                       onClick={() => setDeleteDialog({ show: true, order })}
@@ -647,6 +718,7 @@ export default function PurchaseOrderManager() {
                   className="glass-input w-full px-4 py-2 rounded-lg text-white"
                 >
                   <option value="pending">Pendiente</option>
+                  <option value="pending_approval">Pendiente de Aprobación</option>
                   <option value="approved">Aprobada</option>
                   <option value="ordered">Ordenada</option>
                   <option value="received">Recibida</option>

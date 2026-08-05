@@ -257,7 +257,7 @@ export default function ProjectLogManager() {
           <button
             onClick={() => {
               if (!selectedProject) {
-                alert('Por favor selecciona un proyecto primero');
+                showToast('warning', 'Por favor selecciona un proyecto primero');
                 return;
               }
               setEditingLog(null);
