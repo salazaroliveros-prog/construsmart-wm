@@ -9,20 +9,20 @@ import { useToast } from '@/components/ui/Toast';
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signIn, isAuthenticated } = useAuth();
+  const { signIn } = useAuth();
   const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    console.log('[Login] isAuthenticated=', isAuthenticated);
-    if (isAuthenticated) {
-      console.log('[Login] navigating to /');
-      window.location.href = '/';
+  // Valida que la ruta de destino sea interna (evita open-redirect).
+  const getSafeNextPath = (next?: string | null): string => {
+    if (next && next.startsWith('/') && !next.startsWith('//')) {
+      return next;
     }
-  }, [isAuthenticated]);
+    return '/';
+  };
 
   // Verificar si hay error de autorización en la URL
   useEffect(() => {
@@ -41,7 +41,9 @@ function LoginForm() {
     try {
       await signIn(email, password);
       showToast('success', 'Inicio de sesión exitoso');
-      // La navegación la maneja el useEffect cuando isAuthenticated cambie
+      // Navegar a la ruta original (si es válida e interna) o al dashboard
+      const next = getSafeNextPath(searchParams.get('next'));
+      router.replace(next);
     } catch (err: any) {
       setError(err.message || 'Error al iniciar sesión');
       showToast('error', err.message || 'Error al iniciar sesión');

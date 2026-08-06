@@ -6,6 +6,7 @@ import { offlineDB, LocalProject, LocalFinancialTransaction, LocalPayrollEmploye
 import { useFinancialSettings, formatCurrency, calculateUtilityMarginHelper } from '@/lib/hooks/useBusinessSettings';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useBusinessSettings } from '@/lib/hooks/useBusinessSettings';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 interface StatCardProps {
   title: string;
@@ -69,11 +70,12 @@ export default function DashboardStats() {
 
   const loadRealData = async () => {
     try {
+      const userId = await getUserScope();
       const [localProjects, localTransactions, localEmployees, localStock] = await Promise.all([
-        offlineDB.projects.toArray(),
-        offlineDB.financialTransactions.toArray(),
-        offlineDB.payrollEmployees.toArray(),
-        offlineDB.warehouseStock.toArray()
+        scopeLocalRows(await offlineDB.projects.toArray(), userId),
+        scopeLocalRows(await offlineDB.financialTransactions.toArray(), userId),
+        scopeLocalRows(await offlineDB.payrollEmployees.toArray(), userId),
+        scopeLocalRows(await offlineDB.warehouseStock.toArray(), userId)
       ]);
 
       setProjects(localProjects);

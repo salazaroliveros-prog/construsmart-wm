@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { offlineDB, LocalProjectLog, LocalFinancialTransaction } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from './useRealtimeRefresh';
 import { useToast } from '@/components/ui/Toast';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 interface ProjectProgress {
   projectId: string;
@@ -26,9 +27,20 @@ export function useProjectProgress(projectId?: string) {
 
     setLoading(true);
     try {
+      // Validar propiedad del proyecto antes de exponer su progreso
+      const userId = await getUserScope();
+      const userProjects = scopeLocalRows(
+        await offlineDB.projects.where('id').equals(pid).toArray(),
+        userId
+      );
+      if (userProjects.length === 0) {
+        setProgress(null);
+        return;
+      }
+
       const [logs, transactions] = await Promise.all([
-        offlineDB.projectLogs.where('project_id').equals(pid).toArray(),
-        offlineDB.financialTransactions.where('project_id').equals(pid).toArray(),
+        scopeLocalRows(await offlineDB.projectLogs.where('project_id').equals(pid).toArray(), userId),
+        scopeLocalRows(await offlineDB.financialTransactions.where('project_id').equals(pid).toArray(), userId),
       ]);
 
       // Calculate aggregate progress from logs

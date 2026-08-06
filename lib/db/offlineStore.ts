@@ -137,6 +137,25 @@ export interface LocalBudgetItem extends SyncableEntity {
   updated_at?: string;
 }
 
+export interface LocalBudgetItemBreakdown extends SyncableEntity {
+  id?: string;
+  user_id?: string;
+  budget_item_id: string;
+  resource_type?: string;
+  code?: string;
+  description?: string;
+  unit?: string;
+  quantity_unitary?: number;
+  total_quantity?: number;
+  unit_price?: number;
+  waste_percentage?: number;
+  total_price?: number;
+  unit_cost?: number;
+  total_cost?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface LocalFinancialTransaction extends SyncableEntity {
   id?: string;
   user_id?: string; // For tenant isolation
@@ -359,6 +378,7 @@ export class WMDatabase extends Dexie {
   projects!: Table<LocalProject>;
   budgets!: Table<LocalBudget>;
   budgetItems!: Table<LocalBudgetItem>;
+  budgetItemBreakdowns!: Table<LocalBudgetItemBreakdown>;
   financialTransactions!: Table<LocalFinancialTransaction>;
   payrollEmployees!: Table<LocalPayrollEmployee>;
   payrollRecords!: Table<LocalPayrollRecord>;
@@ -373,10 +393,11 @@ export class WMDatabase extends Dexie {
 
   constructor() {
     super('ConstructoraWM_OfflineDB');
-    this.version(9).stores({
+    this.version(10).stores({
       projects: 'id, user_id, code, name, sync_status, status, typology, created_at, updated_at, budget_total, calculated_duration, has_critical_roadblock, roadblock_type, roadblock_date',
       budgets: 'id, user_id, project_id, version, sync_status, created_at, updated_at',
       budgetItems: 'id, user_id, budget_id, project_id, parent_id, code, sync_status, item_order, created_at, updated_at, actual_consumption, consumption_variance, category',
+      budgetItemBreakdowns: 'id, user_id, budget_item_id, resource_type, code, sync_status, created_at, updated_at',
       financialTransactions: 'id, user_id, project_id, type, category, date, sync_status, created_at, updated_at',
       payrollEmployees: 'id, user_id, name, position, category, department, sync_status, created_at, updated_at',
       payrollRecords: 'id, user_id, project_id, employee_id, period_start, period_end, sync_status, created_at, updated_at, budget_item_id, is_overrun_warning_fired',

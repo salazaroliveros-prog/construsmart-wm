@@ -3,8 +3,15 @@
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
+import { DEFAULT_ADMIN_EMAIL } from '@/lib/config/app.config';
 
-const ADMIN_EMAIL = 'salazaroliveros@gmail.com';
+// Valida que la ruta de destino sea interna (evita open-redirect).
+const getSafeNextPath = (next?: string | null): string => {
+  if (next && next.startsWith('/') && !next.startsWith('//')) {
+    return next;
+  }
+  return '/';
+};
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading, isAuthenticated } = useAuth();
@@ -18,9 +25,12 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const publicPaths = ['/login'];
 
     if (publicPaths.some(path => pathname.startsWith(path))) {
-      if (isAuthenticated && user?.email === ADMIN_EMAIL) {
-        console.log('[AuthGuard] already authenticated on public route, navigating to /');
-        router.replace('/');
+      if (isAuthenticated && user?.email === DEFAULT_ADMIN_EMAIL) {
+        const next = typeof window !== 'undefined'
+          ? getSafeNextPath(new URLSearchParams(window.location.search).get('next'))
+          : '/';
+        console.log('[AuthGuard] already authenticated on public route, navigating to', next);
+        router.replace(next);
       }
       return;
     }
@@ -31,7 +41,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (user.email.toLowerCase() !== ADMIN_EMAIL) {
+    if (user.email.toLowerCase() !== DEFAULT_ADMIN_EMAIL) {
       console.log('[AuthGuard] Unauthorized user:', user.email);
       router.push('/login?error=unauthorized');
       return;
@@ -51,7 +61,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   // Si es ruta pública o está autenticado, mostrar children
   const publicPaths = ['/login'];
-  if (publicPaths.some(path => pathname.startsWith(path)) || (isAuthenticated && user?.email === ADMIN_EMAIL)) {
+  if (publicPaths.some(path => pathname.startsWith(path)) || (isAuthenticated && user?.email === DEFAULT_ADMIN_EMAIL)) {
     return <>{children}</>;
   }
 

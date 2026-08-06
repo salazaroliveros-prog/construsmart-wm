@@ -13,6 +13,7 @@
 
 import { useState, useEffect } from 'react';
 import { offlineDB, LocalProject, LocalProjectLog } from '@/lib/db/offlineStore';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 export interface RoadblockAlert {
   projectId: string;
@@ -110,10 +111,11 @@ export const useRoadblockDetection = () => {
   const detectRoadblocks = async (): Promise<RoadblockDetectionResult> => {
     try {
       setIsLoading(true);
-      
-      // Get all logs
-      const logs = await offlineDB.projectLogs.toArray();
-      const projects = await offlineDB.projects.toArray();
+
+      // Get all logs scoped by user
+      const userId = await getUserScope();
+      const logs = scopeLocalRows(await offlineDB.projectLogs.toArray(), userId);
+      const projects = scopeLocalRows(await offlineDB.projects.toArray(), userId);
       
       const detectedRoadblocks: RoadblockAlert[] = [];
       

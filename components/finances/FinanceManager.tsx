@@ -19,6 +19,7 @@ import ActionButton from '@/components/ui/ActionButton';
 import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
 import { financialTransactionSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 import { FINANCIAL_CATEGORY_COLORS, getFinancialCategoryColor } from '@/lib/config/colorPalettes';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
@@ -160,10 +161,13 @@ export default function FinanceManager() {
 
   const loadTransactions = async () => {
     try {
-      const localTransactions = await offlineDB.financialTransactions.toArray();
+      const userId = await getUserScope();
+      const localTransactions = scopeLocalRows(await offlineDB.financialTransactions.toArray(), userId);
       setTransactions(localTransactions);
 
-      if (navigator.onLine && supabase) {
+      // Backfill remoto SOLO en arranque en frío (Dexie vacío). La UI siempre
+      // lee de Dexie; SyncProvider + Realtime mantienen los datos al día.
+      if (localTransactions.length === 0 && navigator.onLine && supabase) {
         const { data: supabaseTransactions } = await supabase
           .from('financial_transactions')
           .select('*')
@@ -179,7 +183,8 @@ export default function FinanceManager() {
             });
           }
 
-          const updatedTransactions = await offlineDB.financialTransactions.toArray();
+          const userId = await getUserScope();
+          const updatedTransactions = scopeLocalRows(await offlineDB.financialTransactions.toArray(), userId);
           setTransactions(updatedTransactions);
         }
       }
@@ -191,7 +196,8 @@ export default function FinanceManager() {
 
   const loadProjects = async () => {
     try {
-      const projects = await offlineDB.projects.toArray();
+      const userId = await getUserScope();
+      const projects = scopeLocalRows(await offlineDB.projects.toArray(), userId);
       const executionProjects = projects.filter(p => p.status === 'execution');
       setAvailableProjects(executionProjects);
     } catch (error) {
@@ -210,23 +216,34 @@ export default function FinanceManager() {
     }
 
     try {
+      // Validar propiedad del proyecto antes de exponer su presupuesto
+      const userId = await getUserScope();
+      const userProjects = scopeLocalRows(
+        await offlineDB.projects.where('id').equals(projectId).toArray(),
+        userId
+      );
+      if (userProjects.length === 0) {
+        setActiveBudget(null);
+        setBudgetItems([]);
+        showToast('error', 'Proyecto no válido o sin permisos');
+        return;
+      }
+
       // Get the latest budget for the project
-      const budgets = await offlineDB.budgets
-        .where('project_id')
-        .equals(projectId)
-        .reverse()
-        .limit(1)
-        .toArray();
+      const budgets = scopeLocalRows(
+        await offlineDB.budgets.where('project_id').equals(projectId).toArray(),
+        userId
+      );
 
       if (budgets.length > 0) {
-        const budget = budgets[0];
+        const budget = budgets[budgets.length - 1];
         setActiveBudget(budget);
 
         // Load budget items with APU data
-        const items = await offlineDB.budgetItems
-          .where('budget_id')
-          .equals(budget.id as string)
-          .toArray();
+        const items = scopeLocalRows(
+          await offlineDB.budgetItems.where('budget_id').equals(budget.id as string).toArray(),
+          userId
+        );
         setBudgetItems(items);
 
         // Calculate budget vs actual comparison

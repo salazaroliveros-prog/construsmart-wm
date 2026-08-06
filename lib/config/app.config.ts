@@ -106,6 +106,10 @@ export const BUSINESS_CONFIG = {
   }
 } as const;
 
+// Email de administrador por defecto (centralizado). En el servidor se puede
+// sobreescribir con la variable de entorno ADMIN_EMAIL.
+export const DEFAULT_ADMIN_EMAIL = 'salazaroliveros@gmail.com';
+
 export const APP_CONFIG = {
   // The production URL of the application
   // This is set via environment variable NEXT_PUBLIC_APP_URL

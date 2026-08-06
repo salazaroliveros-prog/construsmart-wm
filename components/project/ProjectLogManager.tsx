@@ -13,6 +13,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 export default function ProjectLogManager() {
   const { showToast } = useToast();
@@ -54,8 +55,8 @@ export default function ProjectLogManager() {
 
   const loadProjects = async () => {
     try {
-      const allProjects = await offlineDB.projects.toArray();
-      setProjects(allProjects);
+      const userId = await getUserScope();
+      setProjects(scopeLocalRows(await offlineDB.projects.toArray(), userId));
     } catch (error) {
       console.error('Error loading projects:', error);
     }
@@ -63,8 +64,8 @@ export default function ProjectLogManager() {
 
   const loadLogs = async () => {
     try {
-      const allLogs = await offlineDB.projectLogs.toArray();
-      setLogs(allLogs);
+      const userId = await getUserScope();
+      setLogs(scopeLocalRows(await offlineDB.projectLogs.toArray(), userId));
     } catch (error) {
       console.error('Error loading logs:', error);
     }

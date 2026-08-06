@@ -19,7 +19,8 @@ export async function POST(request: Request) {
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+      (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!,
       {
         cookies: {
           getAll() {
@@ -48,7 +49,10 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ success: true, user: data.user });
+    const response = NextResponse.json({ success: true, user: data.user });
+    response.headers.set('x-auth-access-token', access_token);
+    response.headers.set('x-auth-refresh-token', refresh_token);
+    return response;
   } catch (err: any) {
     return NextResponse.json(
       { success: false, error: err.message || 'Error interno' },
@@ -56,3 +60,5 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export const GET = POST;

@@ -31,11 +31,12 @@ const TABLES: RemoteToLocal[] = [
   { remote: 'suppliers', local: offlineDB.suppliers },
   { remote: 'purchase_orders', local: offlineDB.purchaseOrders },
   { remote: 'purchase_order_items', local: offlineDB.purchaseOrderItems },
+  { remote: 'subcontractors', local: offlineDB.subcontractors },
 ];
 
 // Map de tab → tablas que necesita (por nombre remoto).
 const TAB_BY_TABLES: Record<string, string[]> = {
-  dashboard: ['projects', 'financial_transactions', 'project_logs'],
+  dashboard: ['projects', 'financial_transactions', 'project_logs', 'warehouse_stock', 'budgets', 'budget_items', 'purchase_orders', 'purchase_order_items', 'payroll_records', 'payroll_employees', 'clients', 'suppliers'],
   projects: ['projects'],
   budgets: ['projects', 'budgets', 'budget_items'],
   progress: ['projects', 'project_logs', 'budgets', 'budget_items'],
@@ -44,7 +45,7 @@ const TAB_BY_TABLES: Record<string, string[]> = {
   warehouse: ['warehouse_stock', 'projects'],
   suppliers: ['suppliers', 'purchase_orders'],
   orders: ['purchase_orders', 'purchase_order_items', 'suppliers'],
-  analytics: ['financial_transactions', 'projects', 'warehouse_stock'],
+  subcontractors: ['subcontractors', 'suppliers'],
   clients: ['clients'],
   logs: ['project_logs', 'projects'],
   settings: [],

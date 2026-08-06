@@ -18,6 +18,7 @@ import { offlineDB, LocalWarehouseStock, LocalSupplier, LocalPurchaseOrder, Loca
 import { generateId } from '@/lib/utils/generateId';
 import { resolveSyncStatus } from '@/lib/utils/syncState';
 import { formatGTQ, BUSINESS_CONFIG } from '@/lib/config/app.config';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 export interface AutoPOResult {
   success: boolean;
@@ -46,8 +47,9 @@ export const useAutoPurchaseOrder = () => {
    */
   const checkStockDepletion = async (): Promise<StockDepletionAlert[]> => {
     try {
-      const allStock = await offlineDB.warehouseStock.toArray();
-      const allSuppliers = await offlineDB.suppliers.toArray();
+      const userId = await getUserScope();
+      const allStock = scopeLocalRows(await offlineDB.warehouseStock.toArray(), userId);
+      const allSuppliers = scopeLocalRows(await offlineDB.suppliers.toArray(), userId);
       
       const alerts: StockDepletionAlert[] = [];
       
@@ -103,9 +105,10 @@ export const useAutoPurchaseOrder = () => {
   const generateDraftPO = async (stockItem: LocalWarehouseStock): Promise<AutoPOResult> => {
     try {
       setIsProcessing(true);
-      
-      // Get all suppliers
-      const allSuppliers = await offlineDB.suppliers.toArray();
+
+      // Get all suppliers (scoped by user)
+      const userId = await getUserScope();
+      const allSuppliers = scopeLocalRows(await offlineDB.suppliers.toArray(), userId);
       
       // Find preferred supplier
       const supplier = stockItem.preferred_supplier_id
@@ -211,8 +214,9 @@ export const useAutoPurchaseOrder = () => {
    */
   const findSuppliersByCategory = async (category: string): Promise<LocalSupplier[]> => {
     try {
-      const allSuppliers = await offlineDB.suppliers.toArray();
-      return allSuppliers.filter(s => 
+      const userId = await getUserScope();
+      const allSuppliers = scopeLocalRows(await offlineDB.suppliers.toArray(), userId);
+      return allSuppliers.filter(s =>
         s.categories?.includes(category) || s.is_preferred
       );
     } catch (error) {

@@ -21,6 +21,7 @@ import { offlineDB, LocalProject, LocalBudgetItem, LocalClient } from '@/lib/db/
 import { queueDelete } from '@/lib/utils/offlineSync';
 import { resolveSyncStatus, normalizeSyncStatus } from '@/lib/utils/syncState';
 import { sendBudgetMaterialsToWarehouse, MaterialToWarehouseInput } from '@/lib/integrations/budgetToWarehouse';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useIncrementalList } from '@/lib/hooks/useIncrementalList';
 import { budgetState, ActiveBudgetState } from '@/lib/state/budgetState';
@@ -76,7 +77,8 @@ export default function BudgetCalculator() {
   // Load projects and clients
   const loadProjects = async () => {
     try {
-      const allProjects = await offlineDB.projects.toArray();
+      const userId = await getUserScope();
+      const allProjects = scopeLocalRows(await offlineDB.projects.toArray(), userId);
       const planningProjects = allProjects.filter(p => p.status === 'planning');
       setProjects(planningProjects);
     } catch (error) {
@@ -87,8 +89,8 @@ export default function BudgetCalculator() {
 
   const loadClients = async () => {
     try {
-      const allClients = await offlineDB.clients.toArray();
-      setClients(allClients);
+      const userId = await getUserScope();
+      setClients(scopeLocalRows(await offlineDB.clients.toArray(), userId));
     } catch (error) {
       console.error('Error loading clients:', error);
     }
@@ -160,17 +162,18 @@ export default function BudgetCalculator() {
 
     // Carga el presupuesto existente desde offlineDB y restaura items en memoria.
     try {
-      const existingBudget = await offlineDB.budgets
-        .where('project_id')
-        .equals(projectId)
-        .reverse()
-        .first();
+      const userId = await getUserScope();
+      const scopedBudgets = scopeLocalRows(
+        await offlineDB.budgets.where('project_id').equals(projectId).toArray(),
+        userId
+      );
+      const existingBudget = scopedBudgets.reverse()[0] ?? null;
 
       if (existingBudget) {
-        const dbItems: LocalBudgetItem[] = await offlineDB.budgetItems
-          .where('budget_id')
-          .equals(existingBudget.id as string)
-          .toArray();
+        const dbItems: LocalBudgetItem[] = scopeLocalRows(
+          await offlineDB.budgetItems.where('budget_id').equals(existingBudget.id as string).toArray(),
+          userId
+        );
 
         const restored: BudgetItem[] = dbItems
           .sort((a, b) => (a.item_order ?? 0) - (b.item_order ?? 0))
@@ -390,10 +393,19 @@ export default function BudgetCalculator() {
 
     setSaveLoading(true);
     try {
+      // Validar que el proyecto pertenezca al usuario actual (aislamiento por dueño)
+      const userId = await getUserScope();
+      const userProjects = scopeLocalRows(await offlineDB.projects.where('id').equals(selectedProject).toArray(), userId);
+      if (userProjects.length === 0) {
+        showToast('error', 'Proyecto no válido o sin permisos');
+        setSaveLoading(false);
+        return;
+      }
+
       const summary = calculateSummary();
 
       // Get project for validation and update
-      const project = projects.find(p => p.id === selectedProject);
+      const project = userProjects[0];
 
       // Validate cost per square meter against project category
       if (project && project.area_m2 > 0) {
@@ -413,11 +425,11 @@ export default function BudgetCalculator() {
       }
 
       // Look up an existing budget for this project so saves are idempotent
-      const existingBudget = await offlineDB.budgets
-        .where('project_id')
-        .equals(selectedProject)
-        .reverse()
-        .first();
+      const scopedBudgets = scopeLocalRows(
+        await offlineDB.budgets.where('project_id').equals(selectedProject).toArray(),
+        userId
+      );
+      const existingBudget = scopedBudgets.reverse()[0] ?? null;
 
       const isFirstSave = !existingBudget;
       let budgetId: string;
@@ -440,7 +452,10 @@ export default function BudgetCalculator() {
         });
 
         // Replace existing budget items (queue server deletions for synced items)
-        const oldItems = await offlineDB.budgetItems.where('budget_id').equals(budgetId).toArray();
+        const oldItems = scopeLocalRows(
+          await offlineDB.budgetItems.where('budget_id').equals(budgetId).toArray(),
+          userId
+        );
         for (const oldItem of oldItems) {
           await queueDelete('budget_items', oldItem);
           await offlineDB.budgetItems.delete(oldItem.id!);

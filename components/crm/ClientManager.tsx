@@ -14,6 +14,7 @@ import ActionButton from '@/components/ui/ActionButton';
 import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
 import { clientSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 import { formatGTQ } from '@/lib/config/app.config';
 
 export default function ClientManager() {
@@ -53,8 +54,8 @@ export default function ClientManager() {
 
 const loadClients = async () => {
     try {
-      const allClients = await offlineDB.clients.toArray();
-      setClients(allClients);
+      const userId = await getUserScope();
+      setClients(scopeLocalRows(await offlineDB.clients.toArray(), userId));
     } catch (error) {
       console.error('Error loading clients:', error);
       showToast('error', 'Error al cargar clientes');

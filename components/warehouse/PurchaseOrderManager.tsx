@@ -13,6 +13,7 @@ import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
 import { formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 export default function PurchaseOrderManager() {
   const { showToast } = useToast();
@@ -62,11 +63,12 @@ export default function PurchaseOrderManager() {
 
   const loadData = async () => {
     try {
+      const userId = await getUserScope();
       const [localOrders, localOrderItems, localSuppliers, localProjects] = await Promise.all([
-        offlineDB.purchaseOrders.toArray(),
-        offlineDB.purchaseOrderItems.toArray(),
-        offlineDB.suppliers.toArray(),
-        offlineDB.projects.toArray(),
+        scopeLocalRows(await offlineDB.purchaseOrders.toArray(), userId),
+        scopeLocalRows(await offlineDB.purchaseOrderItems.toArray(), userId),
+        scopeLocalRows(await offlineDB.suppliers.toArray(), userId),
+        scopeLocalRows(await offlineDB.projects.toArray(), userId),
       ]);
 
       setOrders(localOrders);
@@ -114,6 +116,19 @@ export default function PurchaseOrderManager() {
 
     try {
       const now = new Date().toISOString();
+
+      // Validar propiedad del proyecto antes de guardar
+      const userId = await getUserScope();
+      if (formData.project_id) {
+        const userProjects = scopeLocalRows(
+          await offlineDB.projects.where('id').equals(formData.project_id).toArray(),
+          userId
+        );
+        if (userProjects.length === 0) {
+          showToast('error', 'Proyecto no válido o sin permisos');
+          return;
+        }
+      }
 
       if (editingOrder) {
         await offlineDB.purchaseOrders.update(editingOrder.id!, {

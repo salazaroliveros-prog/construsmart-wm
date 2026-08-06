@@ -14,6 +14,7 @@ import ActionButton from '@/components/ui/ActionButton';
 import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
 import { supplierSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 export default function SupplierManager() {
   const { showToast } = useToast();
@@ -49,8 +50,8 @@ export default function SupplierManager() {
 
   const loadSuppliers = async () => {
     try {
-      const allSuppliers = await offlineDB.suppliers.toArray();
-      setSuppliers(allSuppliers);
+      const userId = await getUserScope();
+      setSuppliers(scopeLocalRows(await offlineDB.suppliers.toArray(), userId));
 } catch (error) {
       console.error('Error loading suppliers:', error);
       showToast('error', 'Error al cargar proveedores');
@@ -102,9 +103,9 @@ export default function SupplierManager() {
       }
 
       const now = new Date().toISOString();
-      
+
       // Obtener user_id para tenencia
-      const userId = await getCurrentUserId();
+      const userId = await getUserScope();
 
       if (editingSupplier) {
         await offlineDB.suppliers.update(editingSupplier.id!, {

@@ -16,6 +16,7 @@ import ActionButton from '@/components/ui/ActionButton';
 import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
 import { projectSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 import { calculateCompletionBuffer, getBufferSeverity } from '@/lib/config/app.config';
 import { formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -121,8 +122,8 @@ export default function ProjectManager() {
         console.log('[ProjectManager] fetchProjectsForOffline trajo=', pulled.length);
       }
       const localProjects = await offlineDB.projects.toArray();
-      console.log('[ProjectManager] offlineDB.projects cargados=', localProjects.length);
-      setProjects(localProjects);
+      const userId = await getUserScope();
+      setProjects(scopeLocalRows(localProjects, userId));
     } catch (error) {
       console.error('Error loading projects:', error);
       showToast('error', 'Error al cargar proyectos');
@@ -298,20 +299,29 @@ export default function ProjectManager() {
       await queueDelete('projects', deleteConfirm);
       await offlineDB.projects.delete(deleteConfirm.id);
 
-      // Cascada local para no dejar huérfanos (el servidor usa CASCADE/SET NULL):
-      // elimina presupuestos + items y bitácoras; desvincula transacciones, stock, nómina y OC.
+      // Cascada local para no dejar huérfanos:
+      // elimina presupuestos + items + breakdowns y bitácoras;
+      // elimina registros de nómina y items de OC vinculados;
+      // desvincula transacciones y stock para conservar historial financiero/inventario.
       const projectId = deleteConfirm.id!;
       const budgetIds = (await offlineDB.budgets.where('project_id').equals(projectId).toArray())
         .map((b) => b.id as string);
       if (budgetIds.length > 0) {
         await offlineDB.budgetItems.where('budget_id').anyOf(budgetIds).delete();
+        await offlineDB.budgetItemBreakdowns.where('budget_item_id').anyOf(
+          (await offlineDB.budgetItems.where('budget_id').anyOf(budgetIds).toArray()).map(i => i.id as string)
+        ).delete();
       }
       await offlineDB.budgets.where('project_id').equals(projectId).delete();
       await offlineDB.projectLogs.where('project_id').equals(projectId).delete();
       await offlineDB.financialTransactions.where('project_id').equals(projectId).modify({ project_id: undefined });
       await offlineDB.warehouseStock.where('project_id').equals(projectId).modify({ project_id: undefined });
-      await offlineDB.payrollRecords.where('project_id').equals(projectId).modify({ project_id: undefined });
-      await offlineDB.purchaseOrders.where('project_id').equals(projectId).modify({ project_id: undefined });
+      await offlineDB.payrollRecords.where('project_id').equals(projectId).delete();
+      const purchaseOrderIds = (await offlineDB.purchaseOrders.where('project_id').equals(projectId).toArray()).map(o => o.id as string);
+      if (purchaseOrderIds.length > 0) {
+        await offlineDB.purchaseOrderItems.where('purchase_order_id').anyOf(purchaseOrderIds).delete();
+      }
+      await offlineDB.purchaseOrders.where('project_id').equals(projectId).delete();
 
       showToast('success', 'Proyecto eliminado exitosamente');
       loadProjects();

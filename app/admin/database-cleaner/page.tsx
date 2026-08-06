@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Database, Trash2, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/lib/auth/auth-context';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { DEFAULT_ADMIN_EMAIL } from '@/lib/config/app.config';
 
 export default function DatabaseCleaner() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -11,12 +13,11 @@ export default function DatabaseCleaner() {
   const [isClearing, setIsClearing] = useState(false);
   const [cleared, setCleared] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
-
-  const ADMIN_EMAIL = 'salazaroliveros@gmail.com';
+  const [confirmClear, setConfirmClear] = useState(false);
 
   useEffect(() => {
     if (!loading && isAuthenticated && user) {
-      const isAdmin = user.email === ADMIN_EMAIL;
+      const isAdmin = user.email === DEFAULT_ADMIN_EMAIL;
       setIsAuthorized(isAdmin);
       if (!isAdmin) {
         showToast('error', 'No tienes permisos para acceder a esta página');
@@ -55,10 +56,6 @@ export default function DatabaseCleaner() {
   }
 
   const clearDatabase = async () => {
-    if (!confirm('⚠️ ¿Está seguro de eliminar TODOS los datos locales y remotos?\n\nEsta acción:\n- Eliminará todos los datos de la base de datos local (IndexedDB)\n- Eliminará todos los datos de la base de datos remota de Supabase\n\nEsta acción NO se puede deshacer.')) {
-      return;
-    }
-
     setIsClearing(true);
 
     try {
@@ -222,7 +219,7 @@ export default function DatabaseCleaner() {
               </button>
 
               <button
-                onClick={clearDatabase}
+                onClick={() => setConfirmClear(true)}
                 disabled={isClearing || cleared}
                 className="flex-1 px-4 py-3 rounded-lg text-white flex items-center justify-center gap-2 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30 hover:from-red-500/30 hover:to-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -272,6 +269,19 @@ export default function DatabaseCleaner() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmClear}
+        title="Eliminar todos los datos"
+        message="¿Está seguro de eliminar TODOS los datos locales y remotos? Esta acción eliminará la base de datos local (IndexedDB) y la remota (Supabase). Esta acción NO se puede deshacer."
+        confirmLabel="Eliminar Todo"
+        variant="danger"
+        onConfirm={() => {
+          setConfirmClear(false);
+          clearDatabase();
+        }}
+        onCancel={() => setConfirmClear(false)}
+      />
     </div>
   );
 }

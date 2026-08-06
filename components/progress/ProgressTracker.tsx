@@ -13,6 +13,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import { formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 // Recharts is a client-only library. We use static imports (like DashboardCharts.tsx)
 // which is the correct pattern for recharts (no default export).
@@ -73,7 +74,8 @@ export default function ProgressTracker() {
 
   const loadProjects = async () => {
     try {
-      const allProjects = await offlineDB.projects.toArray();
+      const userId = await getUserScope();
+      const allProjects = scopeLocalRows(await offlineDB.projects.toArray(), userId);
       const executionProjects = allProjects.filter(p => p.status === 'execution');
       setProjects(executionProjects);
     } catch (error) {
@@ -91,15 +93,23 @@ export default function ProgressTracker() {
 
     // Fallback: read the latest budget from the local DB (e.g. created on another device)
     try {
-      const budgets = await offlineDB.budgets
-        .where('project_id')
-        .equals(selectedProject)
-        .reverse()
-        .limit(1)
-        .toArray();
+      const userId = await getUserScope();
+      const userProjects = scopeLocalRows(
+        await offlineDB.projects.where('id').equals(selectedProject).toArray(),
+        userId
+      );
+      if (userProjects.length === 0) {
+        setActiveBudget(null);
+        return;
+      }
+
+      const budgets = scopeLocalRows(
+        await offlineDB.budgets.where('project_id').equals(selectedProject).toArray(),
+        userId
+      );
 
       if (budgets.length > 0) {
-        const budget = budgets[0];
+        const budget = budgets[budgets.length - 1];
         setActiveBudget({
           projectId: selectedProject,
           budgetId: budget.id as string,
@@ -124,7 +134,8 @@ export default function ProgressTracker() {
 
   const loadTransactions = async () => {
     try {
-      const allTransactions = await offlineDB.financialTransactions.toArray();
+      const userId = await getUserScope();
+      const allTransactions = scopeLocalRows(await offlineDB.financialTransactions.toArray(), userId);
       const projectTransactions = allTransactions.filter(t => t.project_id === selectedProject);
       setTransactions(projectTransactions);
     } catch (error) {
@@ -134,7 +145,8 @@ export default function ProgressTracker() {
 
   const loadProjectLogs = async () => {
     try {
-      const allLogs = await offlineDB.projectLogs.toArray();
+      const userId = await getUserScope();
+      const allLogs = scopeLocalRows(await offlineDB.projectLogs.toArray(), userId);
       const projectLogsData = allLogs.filter(l => l.project_id === selectedProject);
       setProjectLogs(projectLogsData);
     } catch (error) {

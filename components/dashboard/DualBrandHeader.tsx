@@ -70,7 +70,8 @@ export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) 
         setPendingCount(
           stats.pendingProjects + stats.pendingBudgets + stats.pendingBudgetItems + stats.pendingTransactions +
           stats.pendingPayroll + stats.pendingWarehouse + stats.pendingClients + stats.pendingProjectLogs +
-          stats.pendingSuppliers + stats.pendingPurchaseOrders + stats.pendingPurchaseOrderItems + stats.pendingDeletes
+          stats.pendingSuppliers + stats.pendingPurchaseOrders + stats.pendingPurchaseOrderItems +
+          stats.pendingSubcontractors + stats.pendingDeletes
         );
       } catch (error) {
         console.error('Error loading sync stats:', error);

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, MapPin } from 'lucide-react';
 import { offlineDB, LocalProjectLog, LocalProject } from '@/lib/db/offlineStore';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 interface CalendarEvent {
   id: string;
@@ -27,9 +28,10 @@ export default function InteractiveCalendar() {
   const loadRealEvents = useCallback(async () => {
     try {
       setIsLoading(true);
+      const userId = await getUserScope();
       const [logs, projects] = await Promise.all([
-        offlineDB.projectLogs.toArray(),
-        offlineDB.projects.toArray(),
+        scopeLocalRows(await offlineDB.projectLogs.toArray(), userId),
+        scopeLocalRows(await offlineDB.projects.toArray(), userId),
       ]);
 
       const projectMap = new Map<string, LocalProject>();

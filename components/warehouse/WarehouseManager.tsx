@@ -17,6 +17,7 @@ import ActionButton from '@/components/ui/ActionButton';
 import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
 import { warehouseStockSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 import { useMaterialAlertContext } from '@/context/MaterialAlertContext';
 import { useAutoPurchaseOrder } from '@/hooks/useAutoPurchaseOrder';
 import { WAREHOUSE_UNIT_COLORS, getWarehouseUnitColor } from '@/lib/config/colorPalettes';
@@ -159,8 +160,8 @@ export default function WarehouseManager() {
 
   const loadSuppliers = async () => {
     try {
-      const allSuppliers = await offlineDB.suppliers.toArray();
-      setSuppliers(allSuppliers);
+      const userId = await getUserScope();
+      setSuppliers(scopeLocalRows(await offlineDB.suppliers.toArray(), userId));
     } catch (error) {
       console.error('Error loading suppliers:', error);
     }
@@ -199,10 +200,13 @@ export default function WarehouseManager() {
 
   const loadStockItems = async () => {
     try {
-      const localItems = await offlineDB.warehouseStock.toArray();
+      const userId = await getUserScope();
+      const localItems = scopeLocalRows(await offlineDB.warehouseStock.toArray(), userId);
       setStockItems(localItems);
 
-      if (navigator.onLine && supabase) {
+      // Backfill remoto SOLO en arranque en frío (Dexie vacío). La UI siempre
+      // lee de Dexie; SyncProvider + Realtime mantienen los datos al día.
+      if (localItems.length === 0 && navigator.onLine && supabase) {
         const { data: supabaseItems } = await supabase
           .from('warehouse_stock')
           .select('*')
@@ -218,7 +222,8 @@ export default function WarehouseManager() {
             });
           }
 
-          const updatedItems = await offlineDB.warehouseStock.toArray();
+          const userId = await getUserScope();
+          const updatedItems = scopeLocalRows(await offlineDB.warehouseStock.toArray(), userId);
           setStockItems(updatedItems);
         }
       }
@@ -230,7 +235,8 @@ export default function WarehouseManager() {
 
   const loadProjects = async () => {
     try {
-      const projects = await offlineDB.projects.toArray();
+      const userId = await getUserScope();
+      const projects = scopeLocalRows(await offlineDB.projects.toArray(), userId);
       setAvailableProjects(projects);
     } catch (error) {
       console.error('Error loading projects:', error);

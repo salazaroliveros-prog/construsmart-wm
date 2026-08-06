@@ -10,6 +10,7 @@
 import { offlineDB, LocalWarehouseStock, LocalBudget, LocalBudgetItem } from '@/lib/db/offlineStore';
 import { isServerId } from '@/lib/utils/offlineSync';
 import { resolveSyncStatus } from '@/lib/utils/syncState';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 // Detecta conectividad real del navegador (evita hardcodear isOnline).
 const isOnlineNow = (): boolean =>
@@ -139,10 +140,24 @@ export async function buildWarehouseInputsFromBudget(
  */
 export async function syncActiveBudgetToWarehouse(projectId?: string): Promise<SendBudgetToWarehouseResult> {
   let budgets: LocalBudget[] = [];
+  const userId = await getUserScope();
+
   if (projectId) {
-    budgets = await offlineDB.budgets.where('project_id').equals(projectId).toArray();
+    // Validar propiedad del proyecto antes de exponer su presupuesto
+    const userProjects = scopeLocalRows(
+      await offlineDB.projects.where('id').equals(projectId).toArray(),
+      userId
+    );
+    if (userProjects.length === 0) {
+      return { inserted: 0, updated: 0, skipped: 0 };
+    }
+
+    budgets = scopeLocalRows(
+      await offlineDB.budgets.where('project_id').equals(projectId).toArray(),
+      userId
+    );
   } else {
-    budgets = await offlineDB.budgets.toArray();
+    budgets = scopeLocalRows(await offlineDB.budgets.toArray(), userId);
   }
 
   if (budgets.length === 0) {

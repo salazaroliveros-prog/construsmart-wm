@@ -14,6 +14,7 @@ import { offlineDB } from '@/lib/db/offlineStore';
 import { useScrollLock } from '@/lib/hooks/useScrollLock';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import RealtimeProvider from '@/components/ui/RealtimeProvider';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 const ProjectManager = dynamic(() => import('@/components/dashboard/ProjectManager'), { ssr: false });
 const BudgetCalculator = dynamic(() => import('@/components/budgets/BudgetCalculator'), { ssr: false });
@@ -145,9 +146,10 @@ export default function Dashboard() {
 
   const loadRecentActivity = async () => {
     try {
+      const userId = await getUserScope();
       const [transactions, projects] = await Promise.all([
-        offlineDB.financialTransactions.toArray(),
-        offlineDB.projects.toArray(),
+        scopeLocalRows(await offlineDB.financialTransactions.toArray(), userId),
+        scopeLocalRows(await offlineDB.projects.toArray(), userId),
       ]);
 
       const activities: RecentActivity[] = [];

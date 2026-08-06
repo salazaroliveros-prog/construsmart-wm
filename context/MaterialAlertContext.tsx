@@ -10,6 +10,7 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { offlineDB } from '@/lib/db/offlineStore';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 // Aliases de unidades para normalizar equivalentes escritos distinto
 // (p.ej. "m3" ↔ "m³", "und" ↔ "unidad") y evitar falsas alertas por unidades.
@@ -137,7 +138,8 @@ export const MaterialAlertProvider = ({ children }: { children: ReactNode }) => 
     });
     
     // ---- Obtener stock del almacén SÓLO del proyecto actual (o compartido) ----
-    const warehouseStock = await offlineDB.warehouseStock.toArray();
+    const userId = await getUserScope();
+    const warehouseStock = scopeLocalRows(await offlineDB.warehouseStock.toArray(), userId);
     const stockMap = new Map<string, { quantity: number; unit: string }>();
     
     warehouseStock.forEach(item => {

@@ -6,6 +6,7 @@ import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useFinancialSettings, formatCurrency } from '@/lib/hooks/useBusinessSettings';
 import EmptyState from '@/components/ui/EmptyState';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 const statusColors = {
   planning: { bg: 'rgba(59, 130, 246, 0.2)', text: 'rgb(147, 197, 253)', border: 'rgba(59, 130, 246, 0.3)' },
@@ -33,7 +34,8 @@ export default function ProjectOverview() {
 
   const loadProjects = async () => {
     try {
-      const data = await offlineDB.projects.toArray();
+      const userId = await getUserScope();
+      const data = scopeLocalRows(await offlineDB.projects.toArray(), userId);
       setProjects(data.filter(p => p.status === 'execution' || p.status === 'planning'));
     } catch (err) {
       console.error('Error loading projects:', err);

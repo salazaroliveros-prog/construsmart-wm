@@ -17,6 +17,7 @@
 import { useState, useEffect } from 'react';
 import { offlineDB, LocalPayrollRecord, LocalBudgetItem } from '@/lib/db/offlineStore';
 import { formatGTQ, BUSINESS_CONFIG } from '@/lib/config/app.config';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 export interface LaborOverrunAlert {
   payrollRecord: LocalPayrollRecord;
@@ -138,15 +139,26 @@ export const useLaborCostOverrun = () => {
    */
   const detectAllOverruns = async (projectId?: string): Promise<OverrunDetectionResult[]> => {
     try {
+      const userId = await getUserScope();
       let payrollRecords: LocalPayrollRecord[];
 
       if (projectId) {
-        payrollRecords = await offlineDB.payrollRecords
-          .where('project_id')
-          .equals(projectId)
-          .toArray();
+        // Validar propiedad del proyecto antes de exponer registros de nómina
+        const userProjects = scopeLocalRows(
+          await offlineDB.projects.where('id').equals(projectId).toArray(),
+          userId
+        );
+        if (userProjects.length === 0) return [];
+
+        payrollRecords = scopeLocalRows(
+          await offlineDB.payrollRecords
+            .where('project_id')
+            .equals(projectId)
+            .toArray(),
+          userId
+        );
       } else {
-        payrollRecords = await offlineDB.payrollRecords.toArray();
+        payrollRecords = scopeLocalRows(await offlineDB.payrollRecords.toArray(), userId);
       }
 
       const results: OverrunDetectionResult[] = [];
@@ -193,16 +205,27 @@ export const useLaborCostOverrun = () => {
    */
   const getOverrunRecords = async (projectId?: string): Promise<LocalPayrollRecord[]> => {
     try {
+      const userId = await getUserScope();
       let records: LocalPayrollRecord[];
 
       if (projectId) {
-        records = await offlineDB.payrollRecords
-          .where('project_id')
-          .equals(projectId)
-          .and(record => record.is_overrun_warning_fired === true)
-          .toArray();
+        // Validar propiedad del proyecto antes de exponer registros de nómina
+        const userProjects = scopeLocalRows(
+          await offlineDB.projects.where('id').equals(projectId).toArray(),
+          userId
+        );
+        if (userProjects.length === 0) return [];
+
+        records = scopeLocalRows(
+          await offlineDB.payrollRecords
+            .where('project_id')
+            .equals(projectId)
+            .and(record => record.is_overrun_warning_fired === true)
+            .toArray(),
+          userId
+        );
       } else {
-        const allRecords = await offlineDB.payrollRecords.toArray();
+        const allRecords = scopeLocalRows(await offlineDB.payrollRecords.toArray(), userId);
         records = allRecords.filter(record => record.is_overrun_warning_fired === true);
       }
 

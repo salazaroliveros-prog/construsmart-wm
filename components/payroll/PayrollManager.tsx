@@ -17,6 +17,7 @@ import ActionButton from '@/components/ui/ActionButton';
 import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
 import { payrollEmployeeSchema, payrollRecordSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 import { useLaborCostOverrun } from '@/hooks/useLaborCostOverrun';
 import { PAYROLL_CATEGORY_COLORS, getPayrollCategoryColor } from '@/lib/config/colorPalettes';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -215,10 +216,13 @@ const checkOnlineStatus = () => {
 
   const loadEmployees = async () => {
     try {
-      const localEmployees = await offlineDB.payrollEmployees.toArray();
+      const userId = await getUserScope();
+      const localEmployees = scopeLocalRows(await offlineDB.payrollEmployees.toArray(), userId);
       setEmployees(localEmployees);
 
-      if (navigator.onLine && supabase) {
+      // Backfill remoto SOLO en arranque en frío (Dexie vacío). La UI siempre
+      // lee de Dexie; SyncProvider + Realtime mantienen los datos al día.
+      if (localEmployees.length === 0 && navigator.onLine && supabase) {
         const { data: supabaseEmployees } = await supabase
           .from('payroll_employees')
           .select('*')
@@ -234,7 +238,8 @@ const checkOnlineStatus = () => {
             });
           }
 
-          const updatedEmployees = await offlineDB.payrollEmployees.toArray();
+          const userId = await getUserScope();
+          const updatedEmployees = scopeLocalRows(await offlineDB.payrollEmployees.toArray(), userId);
           setEmployees(updatedEmployees);
         }
       }
@@ -246,10 +251,12 @@ const checkOnlineStatus = () => {
 
   const loadPayrollRecords = async () => {
     try {
-      const localRecords = await offlineDB.payrollRecords.toArray();
+      const userId = await getUserScope();
+      const localRecords = scopeLocalRows(await offlineDB.payrollRecords.toArray(), userId);
       setPayrollRecords(localRecords);
 
-      if (navigator.onLine && supabase) {
+      // Backfill remoto SOLO en arranque en frío (Dexie vacío).
+      if (localRecords.length === 0 && navigator.onLine && supabase) {
         const { data: supabaseRecords } = await supabase
           .from('payroll_records')
           .select('*')
@@ -265,7 +272,8 @@ const checkOnlineStatus = () => {
             });
           }
 
-          const updatedRecords = await offlineDB.payrollRecords.toArray();
+          const userId = await getUserScope();
+          const updatedRecords = scopeLocalRows(await offlineDB.payrollRecords.toArray(), userId);
           setPayrollRecords(updatedRecords);
         }
       }
@@ -277,7 +285,8 @@ const checkOnlineStatus = () => {
 
   const loadProjects = async () => {
     try {
-      const projects = await offlineDB.projects.toArray();
+      const userId = await getUserScope();
+      const projects = scopeLocalRows(await offlineDB.projects.toArray(), userId);
       setAvailableProjects(projects);
     } catch (error) {
       console.error('Error loading projects:', error);

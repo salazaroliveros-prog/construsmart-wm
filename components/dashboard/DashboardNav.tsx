@@ -9,6 +9,7 @@ import { offlineDB } from '@/lib/db/offlineStore';
 import { getSyncStats } from '@/lib/utils/offlineSync';
 import { useCompanySettings } from '@/lib/hooks/useBusinessSettings';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 interface NavItem {
   id: string;
@@ -28,6 +29,7 @@ const NAV_ITEMS_BASE: NavItem[] = [
   { id: 'progress', label: 'Progreso', icon: 'TrendingUp' },
   { id: 'suppliers', label: 'Proveedores', icon: 'Truck' },
   { id: 'orders', label: 'Órdenes', icon: 'ClipboardList' },
+  { id: 'subcontractors', label: 'Subcontratos', icon: 'Users' },
   { id: 'clients', label: 'Clientes', icon: 'Users' },
   { id: 'logs', label: 'Bitácora', icon: 'BookOpen' },
   { id: 'settings', label: 'Ajustes', icon: 'Settings' },
@@ -147,10 +149,11 @@ export default function DashboardNav({ activeTab, onTabChange, isCollapsed = fal
 
   const loadBadges = useCallback(async () => {
     try {
+      const userId = await getUserScope();
       const [projects, budgets, warehouseStock] = await Promise.all([
-        offlineDB.projects.toArray(),
-        offlineDB.budgets.toArray(),
-        offlineDB.warehouseStock.toArray(),
+        scopeLocalRows(await offlineDB.projects.toArray(), userId),
+        scopeLocalRows(await offlineDB.budgets.toArray(), userId),
+        scopeLocalRows(await offlineDB.warehouseStock.toArray(), userId),
       ]);
 
       const updatedItems = NAV_ITEMS_BASE.map(item => ({ ...item }));
@@ -196,7 +199,7 @@ export default function DashboardNav({ activeTab, onTabChange, isCollapsed = fal
     const loadSyncPending = async () => {
       try {
         const stats = await getSyncStats();
-        setSyncPendingCount(stats.pendingDeletes + stats.pendingProjects + stats.pendingBudgets + stats.pendingBudgetItems + stats.pendingTransactions + stats.pendingPayroll + stats.pendingWarehouse + stats.pendingClients + stats.pendingProjectLogs + stats.pendingSuppliers + stats.pendingPurchaseOrders + stats.pendingPurchaseOrderItems);
+        setSyncPendingCount(stats.pendingDeletes + stats.pendingProjects + stats.pendingBudgets + stats.pendingBudgetItems + stats.pendingTransactions + stats.pendingPayroll + stats.pendingWarehouse + stats.pendingClients + stats.pendingProjectLogs + stats.pendingSuppliers + stats.pendingPurchaseOrders + stats.pendingPurchaseOrderItems + stats.pendingSubcontractors);
       } catch (error) {
         console.error('Error loading sync pending count:', error);
       }

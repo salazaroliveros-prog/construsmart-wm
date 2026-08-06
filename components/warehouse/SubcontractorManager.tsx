@@ -14,6 +14,7 @@ import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
 import { formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { subcontractorSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 const statusLabels: Record<string, string> = {
   active: 'Activo',
@@ -62,10 +63,11 @@ export default function SubcontractorManager() {
 
   const loadData = async () => {
     try {
+      const userId = await getUserScope();
       const [localSubs, localSuppliers, localProjects] = await Promise.all([
-        offlineDB.subcontractors.toArray(),
-        offlineDB.suppliers.toArray(),
-        offlineDB.projects.toArray(),
+        scopeLocalRows(await offlineDB.subcontractors.toArray(), userId),
+        scopeLocalRows(await offlineDB.suppliers.toArray(), userId),
+        scopeLocalRows(await offlineDB.projects.toArray(), userId),
       ]);
       setSubcontractors(localSubs);
       setSuppliers(localSuppliers);

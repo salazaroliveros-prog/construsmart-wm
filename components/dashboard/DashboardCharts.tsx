@@ -41,6 +41,7 @@ import { useBusinessSettings, calculateUtilityMarginHelper, formatCurrency, useF
 import { useFinancialDataRealtime } from '@/hooks/useFinancialDataRealtime';
 import { useEarnedValueManagement } from '@/hooks/useEarnedValueManagement';
 import EmptyState from '@/components/ui/EmptyState';
+import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 // ==================== TYPES & INTERFACES ====================
 
@@ -252,7 +253,8 @@ export default function DashboardCharts() {
   // ==================== DATA LOADING ====================
   const loadProjects = async () => {
     try {
-      const data = await offlineDB.projects.toArray();
+      const userId = await getUserScope();
+      const data = scopeLocalRows(await offlineDB.projects.toArray(), userId);
       setProjects(data);
       setHasData(data.length > 0);
     } catch (error) {
@@ -264,8 +266,8 @@ export default function DashboardCharts() {
 
   const loadTransactions = async () => {
     try {
-      const data = await offlineDB.financialTransactions.toArray();
-      setTransactions(data);
+      const userId = await getUserScope();
+      setTransactions(scopeLocalRows(await offlineDB.financialTransactions.toArray(), userId));
     } catch (error) {
       console.error('Error loading transactions:', error);
     }
@@ -273,8 +275,8 @@ export default function DashboardCharts() {
 
   const loadWarehouseStock = async () => {
     try {
-      const data = await offlineDB.warehouseStock.toArray();
-      setWarehouseStock(data);
+      const userId = await getUserScope();
+      setWarehouseStock(scopeLocalRows(await offlineDB.warehouseStock.toArray(), userId));
     } catch (error) {
       console.error('Error loading warehouse stock:', error);
     }
@@ -282,8 +284,8 @@ export default function DashboardCharts() {
 
   const loadProjectLogs = async () => {
     try {
-      const data = await offlineDB.projectLogs.toArray();
-      setProjectLogs(data);
+      const userId = await getUserScope();
+      setProjectLogs(scopeLocalRows(await offlineDB.projectLogs.toArray(), userId));
     } catch (error) {
       console.error('Error loading project logs:', error);
     }
@@ -291,8 +293,8 @@ export default function DashboardCharts() {
 
   const loadBudgetItems = async () => {
     try {
-      const data = await offlineDB.budgetItems.toArray();
-      setBudgetItems(data);
+      const userId = await getUserScope();
+      setBudgetItems(scopeLocalRows(await offlineDB.budgetItems.toArray(), userId));
     } catch (error) {
       console.error('Error loading budget items:', error);
     }
@@ -300,8 +302,8 @@ export default function DashboardCharts() {
 
   const loadBudgets = async () => {
     try {
-      const data = await offlineDB.budgets.toArray();
-      setBudgets(data);
+      const userId = await getUserScope();
+      setBudgets(scopeLocalRows(await offlineDB.budgets.toArray(), userId));
     } catch (error) {
       console.error('Error loading budgets:', error);
     }
@@ -309,8 +311,8 @@ export default function DashboardCharts() {
 
   const loadPurchaseOrders = async () => {
     try {
-      const data = await offlineDB.purchaseOrders.toArray();
-      setPurchaseOrders(data);
+      const userId = await getUserScope();
+      setPurchaseOrders(scopeLocalRows(await offlineDB.purchaseOrders.toArray(), userId));
     } catch (error) {
       console.error('Error loading purchase orders:', error);
     }
@@ -318,8 +320,8 @@ export default function DashboardCharts() {
 
   const loadPurchaseOrderItems = async () => {
     try {
-      const data = await offlineDB.purchaseOrderItems.toArray();
-      setPurchaseOrderItems(data);
+      const userId = await getUserScope();
+      setPurchaseOrderItems(scopeLocalRows(await offlineDB.purchaseOrderItems.toArray(), userId));
     } catch (error) {
       console.error('Error loading purchase order items:', error);
     }
@@ -327,8 +329,8 @@ export default function DashboardCharts() {
 
   const loadPayrollRecords = async () => {
     try {
-      const data = await offlineDB.payrollRecords.toArray();
-      setPayrollRecords(data);
+      const userId = await getUserScope();
+      setPayrollRecords(scopeLocalRows(await offlineDB.payrollRecords.toArray(), userId));
     } catch (error) {
       console.error('Error loading payroll records:', error);
     }
@@ -336,8 +338,8 @@ export default function DashboardCharts() {
 
   const loadPayrollEmployees = async () => {
     try {
-      const data = await offlineDB.payrollEmployees.toArray();
-      setPayrollEmployees(data);
+      const userId = await getUserScope();
+      setPayrollEmployees(scopeLocalRows(await offlineDB.payrollEmployees.toArray(), userId));
     } catch (error) {
       console.error('Error loading payroll employees:', error);
     }
@@ -345,8 +347,8 @@ export default function DashboardCharts() {
 
   const loadClients = async () => {
     try {
-      const data = await offlineDB.clients.toArray();
-      setClients(data);
+      const userId = await getUserScope();
+      setClients(scopeLocalRows(await offlineDB.clients.toArray(), userId));
     } catch (error) {
       console.error('Error loading clients:', error);
     }
@@ -354,8 +356,8 @@ export default function DashboardCharts() {
 
   const loadSuppliers = async () => {
     try {
-      const data = await offlineDB.suppliers.toArray();
-      setSuppliers(data);
+      const userId = await getUserScope();
+      setSuppliers(scopeLocalRows(await offlineDB.suppliers.toArray(), userId));
     } catch (error) {
       console.error('Error loading suppliers:', error);
     }
