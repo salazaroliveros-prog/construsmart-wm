@@ -36,23 +36,30 @@ export async function updateSession(request: NextRequest) {
 
   // IMPORTANT: If you remove getClaims() and you use server-side rendering
   // with the Supabase client, your users may be randomly logged out.
-  const { data } = await supabase.auth.getClaims()
-  const user = data?.claims
+  let user = null
+  try {
+    const { data } = await supabase.auth.getClaims()
+    user = data?.claims ?? null
+  } catch (err) {
+    console.error('[Proxy] getClaims failed:', err)
+    // No romper toda la respuesta con un 500; continuar como usuario anónimo.
+    // El AuthGuard y rutas protegidas ya manejan la redirección a /login.
+  }
 
-  console.log('[Proxy] getClaims user=', user?.email || 'null');
+  console.log('[Proxy] getClaims user=', user?.email || 'null')
 
   if (
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/api/auth')
   ) {
-    console.log('[Proxy] redirecting to /login from', request.nextUrl.pathname);
+    console.log('[Proxy] redirecting to /login from', request.nextUrl.pathname)
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('next', request.nextUrl.pathname)
     return NextResponse.redirect(url)
   }
 
-  console.log('[Proxy] allowing', request.nextUrl.pathname);
+  console.log('[Proxy] allowing', request.nextUrl.pathname)
   return supabaseResponse
 }
