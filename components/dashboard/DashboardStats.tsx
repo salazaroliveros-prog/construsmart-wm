@@ -18,6 +18,10 @@ interface StatCardProps {
   color?: string;
 }
 
+interface DashboardStatsProps {
+  selectedProject?: string;
+}
+
 const colorClasses: Record<string, string> = {
   cyan: 'text-cyan-400 bg-cyan-500/10',
   emerald: 'text-emerald-400 bg-emerald-500/10',
@@ -55,7 +59,7 @@ function StatCard({ title, value, subtitle, icon, trend, trendUp, color = 'cyan'
 
 const MemoizedStatCard = React.memo(StatCard);
 
-export default function DashboardStats() {
+export default function DashboardStats({ selectedProject = 'all' }: DashboardStatsProps) {
   const { financial } = useFinancialSettings();
   const { settings } = useBusinessSettings();
   const [projects, setProjects] = useState<LocalProject[]>([]);
@@ -89,9 +93,20 @@ export default function DashboardStats() {
     }
   };
 
-  const activeProjects = projects.filter(p => p.status === 'execution' || p.status === 'planning');
-  const totalBudget = projects.reduce((sum, p) => sum + (p.total_budget || 0), 0);
-  const totalSpent = transactions
+  // Por defecto mostramos proyectos activos (planning + execution).
+  // Si el usuario selecciona un proyecto específico, filtramos por ese proyecto.
+  const visibleProjects = selectedProject === 'all'
+    ? projects.filter(p => p.status === 'execution' || p.status === 'planning')
+    : projects.filter(p => p.id === selectedProject);
+
+  const visibleProjectIds = new Set(visibleProjects.map(p => p.id));
+  const visibleTransactions = selectedProject === 'all'
+    ? transactions
+    : transactions.filter(t => (t.project_id || '').trim() !== '' && visibleProjectIds.has(t.project_id || ''));
+
+  const activeProjects = visibleProjects.filter(p => p.status === 'execution' || p.status === 'planning');
+  const totalBudget = visibleProjects.reduce((sum, p) => sum + (p.total_budget || p.budget_total || 0), 0);
+  const totalSpent = visibleTransactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + (t.total_cost || 0), 0);
   const activeEmployees = employees.filter(e => e.active).length;

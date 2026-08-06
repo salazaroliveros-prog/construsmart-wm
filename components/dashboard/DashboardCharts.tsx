@@ -126,6 +126,11 @@ interface SummaryMetrics {
   evmCV?: number;
 }
 
+interface DashboardChartsProps {
+  selectedProject: string;
+  onProjectChange: (projectId: string) => void;
+}
+
 // ==================== COLORS ====================
 
 const COLORS = {
@@ -139,7 +144,7 @@ const COLORS = {
 
 // ==================== MAIN COMPONENT ====================
 
-export default function DashboardCharts() {
+export default function DashboardCharts({ selectedProject, onProjectChange }: DashboardChartsProps) {
   // ==================== STATE ====================
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
@@ -153,7 +158,6 @@ export default function DashboardCharts() {
   const [payrollEmployees, setPayrollEmployees] = useState<LocalPayrollEmployee[]>([]);
   const [clients, setClients] = useState<LocalClient[]>([]);
   const [suppliers, setSuppliers] = useState<LocalSupplier[]>([]);
-  const [selectedProject, setSelectedProject] = useState<string>('all');
 
   // ==================== HOOKS ====================
   const { settings } = useBusinessSettings();
@@ -210,25 +214,16 @@ export default function DashboardCharts() {
   }, []);
 
   useEffect(() => {
-    loadAnalyticsData();
-  }, [selectedProject]);
-
-  useEffect(() => {
-    loadAnalyticsData();
-  }, [settings]);
-
-  useEffect(() => {
     if (selectedProject && selectedProject !== 'all') {
       analyzeProject(selectedProject);
     }
   }, [selectedProject]);
 
   useEffect(() => {
-    if (selectedProject === 'all' && cumulativeCosts.size > 0) {
-      const filteredProjects = projects;
-      setSCurveData(generateSCurveData(filteredProjects));
+    if (hasData) {
+      loadAnalyticsData();
     }
-  }, [cumulativeCosts, selectedProject, projects]);
+  }, [hasData, selectedProject, settings, projects, transactions, projectLogs, budgetItems, budgets, purchaseOrders, purchaseOrderItems, payrollRecords, payrollEmployees, clients, suppliers]);
 
   useRealtimeRefresh(['projects', 'financial_transactions', 'warehouse_stock', 'project_logs', 'budget_items', 'budgets', 'purchase_orders', 'purchase_order_items', 'payroll_records', 'payroll_employees', 'clients', 'suppliers'], () => {
     loadProjects();
@@ -243,6 +238,9 @@ export default function DashboardCharts() {
     loadPayrollEmployees();
     loadClients();
     loadSuppliers();
+    if (hasData) {
+      loadAnalyticsData();
+    }
   });
 
   // ==================== HELPER FUNCTIONS ====================
@@ -370,20 +368,20 @@ export default function DashboardCharts() {
     }
 
     try {
-      const filteredProjects = selectedProject === 'all'
-        ? projects
+      const visibleProjects = selectedProject === 'all'
+        ? projects.filter(p => p.status === 'execution' || p.status === 'planning')
         : projects.filter(p => p.id === selectedProject);
 
-      setSCurveData(generateSCurveData(filteredProjects));
-      setCashFlowData(generateCashFlowData(filteredProjects));
-      setBudgetDeviationData(generateBudgetDeviationData(filteredProjects));
-      setGanttData(generateGanttData(filteredProjects));
-      setBurnRateData(generateBurnRateData(filteredProjects));
-      setPurchaseOrderData(generatePurchaseOrderData(filteredProjects));
-      setPayrollData(generatePayrollData(filteredProjects));
-      setClientData(generateClientData(filteredProjects));
-      setSupplierData(generateSupplierData(filteredProjects));
-      setSummaryMetrics(calculateSummaryMetrics(filteredProjects));
+      setSCurveData(generateSCurveData(visibleProjects));
+      setCashFlowData(generateCashFlowData(visibleProjects));
+      setBudgetDeviationData(generateBudgetDeviationData(visibleProjects));
+      setGanttData(generateGanttData(visibleProjects));
+      setBurnRateData(generateBurnRateData(visibleProjects));
+      setPurchaseOrderData(generatePurchaseOrderData(visibleProjects));
+      setPayrollData(generatePayrollData(visibleProjects));
+      setClientData(generateClientData(visibleProjects));
+      setSupplierData(generateSupplierData(visibleProjects));
+      setSummaryMetrics(calculateSummaryMetrics(visibleProjects));
     } catch (error) {
       console.error('Error loading analytics data:', error);
     }
@@ -937,7 +935,7 @@ export default function DashboardCharts() {
         </h2>
         <select
           value={selectedProject}
-          onChange={(e) => setSelectedProject(e.target.value)}
+          onChange={(e) => onProjectChange(e.target.value)}
           className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white text-sm"
         >
           <option value="all">Todos los Proyectos</option>

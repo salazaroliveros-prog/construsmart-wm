@@ -77,6 +77,7 @@ export default function Dashboard() {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [isTabLoading, setIsTabLoading] = useState(false);
   const [tabIndex, setTabIndex] = useState(getTabIndex('dashboard'));
+  const [selectedDashboardProject, setSelectedDashboardProject] = useState<string>('all');
 
   useScrollLock(isMobileMenuOpen && isMobile);
 
@@ -225,12 +226,15 @@ const renderTabContent = () => {
           <div className="flex flex-col gap-3 h-full">
             {/* KPIs Full width - fixed height */}
             <div className="flex-shrink-0">
-              <DashboardStats />
+              <DashboardStats selectedProject={selectedDashboardProject} />
             </div>
 
             {/* Full-width charts with scroll */}
             <div className="flex-1 min-h-0 overflow-hidden">
-              <DashboardCharts />
+              <DashboardCharts
+                selectedProject={selectedDashboardProject}
+                onProjectChange={setSelectedDashboardProject}
+              />
             </div>
           </div>
         );
