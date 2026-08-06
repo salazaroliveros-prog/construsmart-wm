@@ -298,3 +298,73 @@ Se creó `lib/utils/userScope.ts` con `getUserScope()` y `scopeLocalRows()`. El 
 
 **Resultado:** Las 12 inconsistencias documentadas en la sección 5 quedaron **corregidas e implementadas** y el proyecto compila correctamente.
 
+---
+
+## 9. ESTADO FINAL DE CONSISTENCIA Y DB REMOTA AL 100%
+
+**Fecha de actualización:** 2026-08-06 · **Validación:** `npx tsc --noEmit` ✅ · `npm run build` ✅ · Deploy Vercel ✅
+
+### 9.1 Correcciones de schema local (causa del fallo de `declarative sync`)
+
+| # | Inconsistencia detectada | Corrección aplicada |
+|---|---|---|
+| S-1 | `shadow_port=54320` chocaba con Docker Desktop (Windows reserva 54320–54329) | Cambiado a **`55432`** en `supabase/config.toml` |
+| S-2 | Columna `payroll_records.project_id` inexistente → rompía la migración 20260803000000 | Agregada columna UUID + índice + FK `ON DELETE SET NULL` |
+| S-3 | `sync_status` CHECK de `payroll_records` incompleto (solo 3 estados) | Ampliado a los 6 estados (synced/created_offline/updated_offline/syncing/pending/sync_failed) |
+| S-4 | Enum `expense_category` sin la categoría de nómina (11 valores) | Agregado `'Gastos Operativos / Nómina de Mano de Obra'` (12 valores) |
+| S-5 | Migración `20260901000000` fallaba (asumía TEXT+CHECK, pero `category` es enum) | Reescrita como **idempotente** (maneja enum y TEXT+CHECK) |
+| S-6 | DB local desalineada: solo 15/24 migraciones aplicadas | Aplicadas las **9 migraciones faltantes** en orden → **24/24** |
+
+**Migraciones aplicadas una a una (validadas):** `20260110000000`, `20260201000000`, `20260803000000`, `20260803000001`, `20260803000002`, `20260804000000` (RLS por dueño), `20260804010000` (índices), `20260901000000` (fix nómina), `20260902000000` (subcontractors).
+
+### 9.2 Diseño de la RLS por dueño (migración 20260804000000)
+
+La RLS **no requiere `user_id` en cada tabla**. Usa `projects.user_id` como fuente de verdad y valida las demás tablas del tenant a través de su `project_id → projects.user_id` mediante subqueries `EXISTS`:
+
+```sql
+-- Ejemplo (financial_transactions):
+CREATE POLICY "Owner select financial_transactions" ON financial_transactions
+  FOR SELECT TO authenticated
+  USING (EXISTS (SELECT 1 FROM public.projects p
+         WHERE p.id = financial_transactions.project_id
+           AND p.user_id = auth.uid()));
+```
+
+Tablas aisladas por dueño (8): `projects`, `budgets`, `budget_items`, `budget_item_breakdowns`, `financial_transactions`, `project_logs`, `purchase_orders`, `payroll_records`.
+
+Catálogos/globales (acceso authenticated-all, por diseño 1-tenant): `warehouse_stock`, `payroll_employees`, `suppliers`, `clients`.
+
+### 9.3 Scripts seguros para DB remota (producción)
+
+Para preparar el remoto y activar la RLS de forma segura se crearon dos scripts **idempotentes y no destructivos**:
+
+| Script | Propósito | Estado |
+|---|---|---|
+| `supabase/PATCH_REMOTO_nomina_category.sql` | Agrega la categoría de nómina al enum/CHECK de `financial_transactions` (evita que la Nómina falle en producción) | ✅ Aplicado en producción |
+| `supabase/PATCH_REMOTO_backfill_user_id.sql` | Rellena `projects.user_id` con el UUID del admin desde `auth.users` (evita que la RLS oculte datos existentes) | ✅ Aplicado en producción |
+
+**Plan de activación RLS en producción (3 pasos, ejecutado manualmente con éxito):**
+1. `PATCH_REMOTO_nomina_category.sql` → fix de categoría de nómina.
+2. `PATCH_REMOTO_backfill_user_id.sql` → backfill de `projects.user_id`.
+3. `supabase/migrations/20260804000000_scope_rls_by_owner.sql` → activación de RLS por dueño.
+   - Verificación previa: `SELECT count(*) FROM public.projects WHERE user_id IS NULL;` → **0** (confirmado).
+
+### 9.4 Despliegue en producción
+
+- **URL:** https://construsmart-wm.vercel.app
+- **Estado:** Build 21s, Ready in 40s, sin errores.
+- **Rutas:** `/`, `/login`, `/admin/database-cleaner`, `/api/auth/session`, `/api/admin/database-cleaner` + Proxy middleware.
+- La ruta raíz redirige correctamente a `/login` sin sesión (AuthGuard + middleware).
+
+### 9.5 Estado real vs. remoto (validado vía `supabase migration list`)
+
+| Métrica | Local | Remoto |
+|---|---|---|
+| Migraciones aplicadas | 24/24 | 24/24 (tras los 3 pasos) |
+| Schema `expense_category` | 12 valores | 12 valores (PATCH aplicado) |
+| `projects.user_id` | ✅ FK a auth.users | ✅ Backfilleado |
+| RLS por dueño | ✅ Activa (M6) | ✅ Activa (paso 3) |
+| Enum/CHECK nómina | ✅ | ✅ |
+
+**Conclusión:** la suite quedó **funcionando al 100% en el entorno real**, con la DB local y remota alineadas, la RLS por dueño activa de forma segura (sin dejar datos huérfanos), el módulo de Nómina operativo y la app desplegada en Vercel sin errores.
+
