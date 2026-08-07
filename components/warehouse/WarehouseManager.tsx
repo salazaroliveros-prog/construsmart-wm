@@ -20,6 +20,7 @@ import SecondaryButton from '@/components/ui/SecondaryButton';
 import { warehouseStockSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
+import { recordMaterialConsumption } from '@/lib/integrations/budgetToWarehouse';
 import { useMaterialAlertContext } from '@/context/MaterialAlertContext';
 import { useAutoPurchaseOrder } from '@/hooks/useAutoPurchaseOrder';
 import { WAREHOUSE_UNIT_COLORS, getWarehouseUnitColor } from '@/lib/config/colorPalettes';
@@ -438,6 +439,7 @@ export default function WarehouseManager() {
     try {
       const item = deleteConfirm.item;
       const newStock = deleteConfirm.newStock;
+      const adjustment = deleteConfirm.adjustment;
       const wasSynced = normalizeSyncStatus(item.sync_status) === 'synced';
 
       await offlineDB.warehouseStock.update(item.id!, {
@@ -450,6 +452,16 @@ export default function WarehouseManager() {
           .from('warehouse_stock')
           .update({ current_stock: newStock })
           .eq('id', item.id);
+      }
+
+      // Consumo de material → actualiza el renglón de presupuesto (presupuestado vs real)
+      if (adjustment < 0) {
+        await recordMaterialConsumption(
+          item.item_code,
+          Math.abs(adjustment),
+          item.project_id,
+          item.budget_item_id
+        ).catch((e) => console.error('Error registrando consumo en presupuesto:', e));
       }
 
       await loadStockItems();
@@ -498,6 +510,16 @@ export default function WarehouseManager() {
           .from('warehouse_stock')
           .update({ current_stock: newStock })
           .eq('id', item.id);
+      }
+
+      // Consumo de material → actualiza el renglón de presupuesto (presupuestado vs real)
+      if (adjustment < 0) {
+        await recordMaterialConsumption(
+          item.item_code,
+          Math.abs(adjustment),
+          item.project_id,
+          item.budget_item_id
+        ).catch((e) => console.error('Error registrando consumo en presupuesto:', e));
       }
 
       await loadStockItems();

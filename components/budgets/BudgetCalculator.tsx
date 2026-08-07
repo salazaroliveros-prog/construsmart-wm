@@ -18,6 +18,7 @@ import { APU_LIBRARY_BY_TYPOLOGY } from '@/lib/data/apuLibrary';
 import { ProjectTypology, APUFormulaParams, APUResult, TYPOLOGY_LABELS, MATERIAL_FACTORS } from '@/lib/types/apu';
 import type { APURenglon } from '@/lib/types/apu';
 import { offlineDB, LocalProject, LocalBudgetItem, LocalClient } from '@/lib/db/offlineStore';
+import { generateId } from '@/lib/utils/generateId';
 import { queueDelete } from '@/lib/utils/offlineSync';
 import { resolveSyncStatus, normalizeSyncStatus } from '@/lib/utils/syncState';
 import { sendBudgetMaterialsToWarehouse, MaterialToWarehouseInput } from '@/lib/integrations/budgetToWarehouse';
@@ -495,6 +496,7 @@ export default function BudgetCalculator() {
         }
 
         const budgetItemData: LocalBudgetItem = {
+          id: generateId(),
           budget_id: budgetId as string,
           code: item.code,
           description: item.description,
@@ -533,6 +535,7 @@ export default function BudgetCalculator() {
             for (const material of materialBreakdown) {
               warehouseInputs.push({
                 projectId: selectedProject,
+                budgetItemId: budgetItemData.id,
                 itemCode: material.code,
                 description: material.description,
                 unit: material.unit,
@@ -543,6 +546,7 @@ export default function BudgetCalculator() {
           } else {
             warehouseInputs.push({
               projectId: selectedProject,
+              budgetItemId: budgetItemData.id,
               itemCode: item.code,
               description: item.description,
               unit: item.unit,

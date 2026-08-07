@@ -131,6 +131,7 @@ export interface WarehouseStockRow {
   auto_generate_po: boolean;
   last_po_date: string | null;
   category: string | null;
+  budget_item_id: string | null;
   sync_status: SyncStatus;
   created_at: string;
   updated_at: string;

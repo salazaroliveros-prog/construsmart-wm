@@ -43,8 +43,9 @@ const EXPECTED_COLUMNS = {
   warehouse_stock: [
     'id', 'project_id', 'item_code', 'description', 'unit', 'current_stock',
     'minimum_threshold', 'unit_cost', 'created_at', 'updated_at', 'sync_status',
-    'preferred_supplier_id', 'auto_generate_po', 'last_po_date', 'category', 'user_id'
-  ], // Note: preferred_supplier_id is UUID type
+    'preferred_supplier_id', 'auto_generate_po', 'last_po_date', 'category', 'user_id',
+    'budget_item_id'
+  ], // Note: preferred_supplier_id and budget_item_id are UUID type
   suppliers: [
     'id', 'code', 'name', 'contact_person', 'phone', 'email', 'address',
     'city', 'payment_terms', 'notes', 'created_at', 'updated_at', 'sync_status',

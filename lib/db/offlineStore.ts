@@ -240,6 +240,8 @@ export interface LocalWarehouseStock extends SyncableEntity {
   unit_cost: number;
   created_at?: string;
   updated_at?: string;
+  // Trazabilidad Presupuesto → Almacén (renglón de origen)
+  budget_item_id?: string; // UUID reference to budget_items (renglón de donde proviene el material)
   // Auto-PO integration fields
   preferred_supplier_id?: string; // UUID reference to suppliers table
   auto_generate_po?: boolean;
@@ -401,7 +403,7 @@ export class WMDatabase extends Dexie {
       financialTransactions: 'id, user_id, project_id, type, category, date, sync_status, created_at, updated_at',
       payrollEmployees: 'id, user_id, name, position, category, department, sync_status, created_at, updated_at',
       payrollRecords: 'id, user_id, project_id, employee_id, period_start, period_end, sync_status, created_at, updated_at, budget_item_id, is_overrun_warning_fired',
-      warehouseStock: 'id, user_id, project_id, item_code, sync_status, created_at, updated_at, preferred_supplier_id, auto_generate_po, category',
+      warehouseStock: 'id, user_id, project_id, item_code, budget_item_id, sync_status, created_at, updated_at, preferred_supplier_id, auto_generate_po, category',
       clients: 'id, user_id, code, name, client_type, sync_status, created_at, updated_at, account_balance, credit_limit, is_delinquent',
       projectLogs: 'id, user_id, project_id, log_date, activity_type, sync_status, created_at, updated_at, is_critical_roadblock, roadblock_category, severity',
       suppliers: 'id, user_id, code, name, sync_status, created_at, updated_at, categories, is_preferred',

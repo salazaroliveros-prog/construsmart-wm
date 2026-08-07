@@ -18,6 +18,7 @@ const isOnlineNow = (): boolean =>
 
 export interface MaterialToWarehouseInput {
   projectId?: string;
+  budgetItemId?: string; // UUID del renglón de presupuesto de origen (trazabilidad)
   itemCode: string;
   description: string;
   unit: string;
@@ -48,19 +49,32 @@ export async function sendBudgetMaterialsToWarehouse(
       continue;
     }
 
-    try {
-      const existing = await offlineDB.warehouseStock
+    // Buscar preferentemente por renglón de origen (trazabilidad). Si no hay
+    // budgetItemId, caer en el item_code + proyecto (comportamiento previo).
+    let existing: LocalWarehouseStock | undefined;
+    if (input.budgetItemId) {
+      existing = await offlineDB.warehouseStock
+        .where('budget_item_id')
+        .equals(input.budgetItemId)
+        .and((row) => (input.projectId ? row.project_id === input.projectId : true))
+        .first();
+    }
+    if (!existing && !input.budgetItemId) {
+      existing = await offlineDB.warehouseStock
         .where('item_code')
         .equals(input.itemCode)
         .and((row) => (input.projectId ? row.project_id === input.projectId : true))
         .first();
+    }
 
+    try {
       if (existing && existing.id) {
         await offlineDB.warehouseStock.update(existing.id, {
           description: input.description,
           unit: input.unit,
           unit_cost: input.unit_cost,
           minimum_threshold: input.quantity,
+          budget_item_id: input.budgetItemId || existing.budget_item_id,
           sync_status: isServerId(existing.id)
             ? resolveSyncStatus({ isNewRecord: false, previousStatus: existing.sync_status, isOnline: isOnlineNow() })
             : existing.sync_status,
@@ -75,6 +89,7 @@ export async function sendBudgetMaterialsToWarehouse(
           minimum_threshold: input.quantity,
           unit_cost: input.unit_cost,
           project_id: input.projectId,
+          budget_item_id: input.budgetItemId,
           sync_status: resolveSyncStatus({ isNewRecord: true, isOnline: isOnlineNow() }),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -122,6 +137,7 @@ export async function buildWarehouseInputsFromBudget(
     const unit_cost = item.apu_params?.materialUnitCost ?? item.unit_cost;
     inputs.push({
       projectId,
+      budgetItemId: item.id,
       itemCode: item.code,
       description: item.description,
       unit: item.unit,
@@ -176,17 +192,26 @@ export async function syncActiveBudgetToWarehouse(projectId?: string): Promise<S
 export async function recordMaterialConsumption(
   itemCode: string,
   quantity: number,
-  projectId?: string
+  projectId?: string,
+  budgetItemId?: string
 ): Promise<{ updated: number; skipped: number }> {
   const result = { updated: 0, skipped: 0 };
 
   try {
-    // Find related budget items by item code
-    const budgetItems = await offlineDB.budgetItems
-      .where('code')
-      .equals(itemCode)
-      .and(item => projectId ? item.project_id === projectId : true)
-      .toArray();
+    // Preferir el renglón exacto (trazabilidad). Si no hay budgetItemId, caer
+    // en la búsqueda por item_code (comportamiento previo).
+    let budgetItems: LocalBudgetItem[] = [];
+    if (budgetItemId) {
+      const exact = await offlineDB.budgetItems.get(budgetItemId);
+      if (exact) budgetItems = [exact];
+    }
+    if (budgetItems.length === 0) {
+      budgetItems = await offlineDB.budgetItems
+        .where('code')
+        .equals(itemCode)
+        .and(item => projectId ? item.project_id === projectId : true)
+        .toArray();
+    }
 
     for (const item of budgetItems) {
       if (!item.id) continue;
