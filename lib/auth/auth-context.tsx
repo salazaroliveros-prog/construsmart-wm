@@ -35,20 +35,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          // Usar el email como nombre de usuario (sin depender de tabla profiles)
-          const userName = session.user.email?.split('@')[0] || 'Usuario';
-          
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            name: userName,
-          });
-          setIsAuthenticated(true);
+        const { data, error } = await supabase.auth.getSession();
+        if (error || !data?.session?.user) {
+          await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+          setUser(null);
+          setIsAuthenticated(false);
+          setLoading(false);
+          return;
         }
+
+        const userName = data.session.user.email?.split('@')[0] || 'Usuario';
+
+        setUser({
+          id: data.session.user.id,
+          email: data.session.user.email || '',
+          name: userName,
+        });
+        setIsAuthenticated(true);
       } catch (error) {
         console.error('Error al verificar sesión:', error);
+        if (supabase) {
+          await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+        }
+        setUser(null);
+        setIsAuthenticated(false);
       } finally {
         setLoading(false);
       }
