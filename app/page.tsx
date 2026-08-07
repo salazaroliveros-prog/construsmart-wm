@@ -270,7 +270,7 @@ const renderTabContent = () => {
   );
 
 return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 font-sans overflow-hidden">
+    <div className="flex flex-col h-dvh bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 font-sans overflow-hidden">
         <DualBrandHeader />
         <RealtimeProvider activeTab={activeTab} />
 
@@ -369,7 +369,8 @@ return (
         {isMounted && isMobile && (
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="fixed bottom-4 right-4 z-40 w-10 h-10 rounded-xl glass-button shadow-lg shadow-cyan-500/20"
+            className="fixed right-4 z-40 w-11 h-11 rounded-xl glass-button shadow-lg shadow-cyan-500/20 flex items-center justify-center"
+            style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
             aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
             aria-expanded={isMobileMenuOpen}
           >

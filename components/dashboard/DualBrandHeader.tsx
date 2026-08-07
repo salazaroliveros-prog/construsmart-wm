@@ -185,7 +185,7 @@ export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) 
           type="button"
           onClick={handleManualSync}
           disabled={!isOnline || manualSyncLoading}
-          className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/20 text-cyan-200 text-[10px] sm:text-xs hover:bg-cyan-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed min-h-[36px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+          className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/20 text-cyan-200 text-[10px] sm:text-xs hover:bg-cyan-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px] sm:min-h-[36px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
           title={isOnline ? 'Sincronizar ahora' : 'Conéctese a internet para sincronizar'}
         >
           <RefreshCcw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${manualSyncLoading ? 'animate-spin' : 'text-cyan-200'}`} />
