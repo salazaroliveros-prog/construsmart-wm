@@ -39,7 +39,7 @@ function daysFromNow(n: number): string {
 }
 
 async function main() {
-  console.log('Proyecto:', SUPABASE_URL.replace(/^https:\/\//, ''));
+  console.log('Proyecto:', SUPABASE_URL!.replace(/^https:\/\//, ''));
 
   const { data: existingEmployees } = await admin.from('payroll_employees').select('id').limit(10);
   const { data: existingClients } = await admin.from('clients').select('id').limit(10);
