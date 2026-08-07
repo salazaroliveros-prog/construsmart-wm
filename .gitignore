@@ -72,3 +72,6 @@ NEXT_PUBLIC_SITE_URL - Necesaria pa.txt
 
 # Supabase local artifacts
 supabase/database/
+tmp_*.sql
+NEXT_PUBLIC_SITE_URL*
+vercel_dep.log
