@@ -29,7 +29,6 @@
   "license": "ISC",
   "dependencies": {
     "@base-ui/react": "^1.6.0",
-    "@ducanh2912/next-pwa": "^10.2.9",
     "@openrouter/sdk": "^1.2.4",
     "@supabase/server": "^1.4.1",
     "@supabase/ssr": "^0.12.4",
