@@ -138,30 +138,59 @@ export async function deleteUserLogo(storagePath: string) {
   }
 }
 
+export type DiagnosticSuggestion = {
+  severity: 'info' | 'warning' | 'critical';
+  title: string;
+  description: string;
+  action: string; // instructivo concreto paso a paso
+  canAutoFix?: boolean;
+  autoFixLabel?: string;
+};
+
 export type RemoteDiagnosticsResult = {
   success: boolean;
   data?: {
-    admin: { email: string; exists: boolean; confirmed: boolean; lastSignIn?: string };
+    admin: { email: string; exists: boolean; confirmed: boolean; lastSignIn?: string | null };
     checks: { label: string; ok: boolean; detail?: string }[];
+    suggestions: DiagnosticSuggestion[];
+    summary: { total: number; ok: number; failed: number };
     timestamp: string;
   };
   error?: string;
 };
 
 export async function runRemoteDatabaseDiagnostics(): Promise<RemoteDiagnosticsResult> {
+  const ADMIN_EMAIL = 'salazaroliveros@gmail.com';
+  const checks: { label: string; ok: boolean; detail?: string }[] = [];
+  const suggestions: DiagnosticSuggestion[] = [];
+
   try {
     await requireServerAuth();
 
     const { createSupabaseAdminClient } = await import('@/lib/supabase/admin');
     const admin = createSupabaseAdminClient();
 
-    const ADMIN_EMAIL = 'salazaroliveros@gmail.com';
-    const checks: { label: string; ok: boolean; detail?: string }[] = [];
+    let adminConfirmed = false;
+    let adminExists = false;
+    let user: { email?: string; email_confirmed_at?: string | null; last_sign_in_at?: string | null } | undefined;
 
-    const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 100 });
-    const user = users?.find((u) => u.email === ADMIN_EMAIL);
-    const adminExists = !!user;
-    const adminConfirmed = !!user?.email_confirmed_at;
+    try {
+      const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 100 });
+      user = users?.find((u) => u.email === ADMIN_EMAIL);
+      adminExists = !!user;
+      adminConfirmed = !!user?.email_confirmed_at;
+    } catch (authErr) {
+      const msg = authErr instanceof Error ? authErr.message : 'Error de autenticación';
+      suggestions.push({
+        severity: 'critical',
+        title: 'No se pudo consultar Supabase Auth',
+        description: msg,
+        action:
+          '1. Confirma que el proyecto apunta a la BD remota (yibjsruoxjlgdnkgylld.supabase.co).\n' +
+          '2. Verifica que la variable SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL sea correcta en Vercel.\n' +
+          '3. Si el error persiste, revisa si la cuenta aún tiene acceso al proyecto Supabase.',
+      });
+    }
 
     checks.push({
       label: `Usuario administrador (${ADMIN_EMAIL})`,
@@ -170,6 +199,32 @@ export async function runRemoteDatabaseDiagnostics(): Promise<RemoteDiagnosticsR
         ? `Confirmado: ${adminConfirmed ? 'sí' : 'no'} | Último login: ${user?.last_sign_in_at ?? 'nunca'}`
         : 'No encontrado en Supabase Auth',
     });
+
+    if (!adminExists) {
+      suggestions.push({
+        severity: 'critical',
+        title: 'El usuario administrador no existe',
+        description: `No se encontró ${ADMIN_EMAIL} en Supabase Auth. Sin él no es posible iniciar sesión.`,
+        action:
+          'En el Dashboard de Supabase → Authentication → Users → "Add user", crea un usuario con:\n' +
+          `  Email: ${ADMIN_EMAIL}\n` +
+          '  Password: define una segura y guárdala.\n' +
+          'Luego vuelve a ejecutar este diagnóstico.',
+        canAutoFix: true,
+        autoFixLabel: 'Crear usuario admin',
+      });
+    } else if (!adminConfirmed) {
+      suggestions.push({
+        severity: 'warning',
+        title: 'El email del administrador no está confirmado',
+        description: 'El usuario existe pero el email no fue confirmado, lo que puede impedir el login.',
+        action:
+          'En Supabase Dashboard → Authentication → Users, selecciona el usuario y usa "Confirm user".\n' +
+          'O vuelve a enviar el correo de confirmación desde Users → más opciones.',
+        canAutoFix: true,
+        autoFixLabel: 'Confirmar email del admin',
+      });
+    }
 
     const tables = [
       'projects',
@@ -188,6 +243,7 @@ export async function runRemoteDatabaseDiagnostics(): Promise<RemoteDiagnosticsR
       'user_settings',
     ];
 
+    const missingTables: string[] = [];
     for (const table of tables) {
       const { count, error } = await admin
         .from(table)
@@ -197,6 +253,36 @@ export async function runRemoteDatabaseDiagnostics(): Promise<RemoteDiagnosticsR
         label: `Tabla: ${table}`,
         ok: !error,
         detail: error ? error.message : `${count ?? 0} registros`,
+      });
+
+      if (error) missingTables.push(table);
+    }
+
+    if (missingTables.length > 0) {
+      suggestions.push({
+        severity: 'critical',
+        title: 'Faltan tablas en la base de datos',
+        description: `No existen estas tablas: ${missingTables.join(', ')}. La suite requiere todo el esquema.`,
+        action:
+          'Estas tablas las crea el esquema SQL del proyecto (carpeta supabase/migrations o scripts/).\n' +
+          '1. Aplica las migraciones pendientes desde Supabase Dashboard → SQL Editor.\n' +
+          '2. O ejecuta el script de inicialización del repo.\n' +
+          '3. Vuelve a ejecutar el diagnóstico.',
+      });
+    }
+
+    const summary = {
+      total: checks.length,
+      ok: checks.filter((c) => c.ok).length,
+      failed: checks.filter((c) => !c.ok).length,
+    };
+
+    if (summary.failed === 0) {
+      suggestions.push({
+        severity: 'info',
+        title: 'Todo en orden',
+        description: 'No se detectaron problemas en la base de datos remota.',
+        action: 'No se requiere ninguna acción. La suite está lista para usarse.',
       });
     }
 
@@ -210,6 +296,8 @@ export async function runRemoteDatabaseDiagnostics(): Promise<RemoteDiagnosticsR
           lastSignIn: user?.last_sign_in_at,
         },
         checks,
+        suggestions,
+        summary,
         timestamp: new Date().toISOString(),
       },
     };
@@ -220,4 +308,5 @@ export async function runRemoteDatabaseDiagnostics(): Promise<RemoteDiagnosticsR
     };
   }
 }
+
 

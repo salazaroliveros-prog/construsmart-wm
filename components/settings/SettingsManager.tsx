@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import {
   Settings, Palette, Sliders, Eye, EyeOff, Zap, Moon, Sun, RotateCcw, Check,
   Building2, DollarSign, FileText, Monitor, Database, Sparkles, Upload, X,
-  LayoutDashboard, Bell, Ruler, Globe
+  LayoutDashboard, Bell, Ruler, Globe, Copy
 } from 'lucide-react';
 import {
   DEFAULT_UI_SETTINGS, UISettings,
@@ -271,6 +271,33 @@ const saveSettings = async () => {
     }
   };
 
+  const copyDiagnosticsReport = async () => {
+    if (!diagResult?.success || !diagResult.data) {
+      showToast('error', 'Primero ejecuta el diagnóstico');
+      return;
+    }
+    const { data } = diagResult;
+    const lines: string[] = [
+      'CONSTRUCTORA WM/M&S — Diagnóstico de BD Remota',
+      `Fecha: ${new Date(data.timestamp).toLocaleString()}`,
+      '',
+      `Administrador (${data.admin.email}): ${data.admin.exists ? 'OK' : 'FALTA'} | Confirmado: ${data.admin.confirmed ? 'sí' : 'no'} | Último login: ${data.admin.lastSignIn ?? 'nunca'}`,
+      `Resumen: ${data.summary.ok}/${data.summary.total} OK | ${data.summary.failed} fallos`,
+      '',
+      'Chequeos:',
+      ...data.checks.map((c) => `  [${c.ok ? 'OK' : 'FALLO'}] ${c.label} — ${c.detail ?? ''}`),
+      '',
+      'Sugerencias:',
+      ...data.suggestions.map((s) => `  • (${s.severity}) ${s.title}\n    ${s.description}\n    Acción: ${s.action.split('\n').join(' ')}`),
+    ];
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'));
+      showToast('success', 'Reporte copiado al portapapeles');
+    } catch (e) {
+      showToast('error', 'No se pudo copiar: el portapapeles no está disponible');
+    }
+  };
+
   const tabs = [
     { id: 'appearance' as const, label: 'Apariencia', icon: Palette },
     { id: 'glass' as const, label: 'Glassmorphism', icon: Sliders },
@@ -373,6 +400,7 @@ const saveSettings = async () => {
             diagRunning={diagRunning}
             diagResult={diagResult}
             onRunDiagnostics={runDiagnostics}
+            onCopyReport={copyDiagnosticsReport}
           />
         )}
       </div>
@@ -1156,6 +1184,7 @@ function SyncTab({
   diagRunning,
   diagResult,
   onRunDiagnostics,
+  onCopyReport,
 }: {
   settings: UISettings;
   updateSetting: <K extends keyof UISettings>(key: K, value: UISettings[K]) => void;
@@ -1164,6 +1193,7 @@ function SyncTab({
   diagRunning: boolean;
   diagResult: RemoteDiagnosticsResult | null;
   onRunDiagnostics: () => void;
+  onCopyReport: () => void;
 }) {
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -1245,6 +1275,17 @@ function SyncTab({
             </PrimaryButton>
 
 
+            {diagResult && diagResult.success && diagResult.data && (
+              <button
+                type="button"
+                onClick={onCopyReport}
+                className="w-full flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 text-xs sm:text-sm transition-all"
+              >
+                <Copy className="w-4 h-4" />
+                Copiar reporte
+              </button>
+            )}
+
             {diagResult && (
               <div className="space-y-2">
                 {diagResult.success && diagResult.data && (
@@ -1277,6 +1318,33 @@ function SyncTab({
                         </div>
                       ))}
                     </div>
+
+                    {diagResult.data.suggestions.length > 0 && (
+                      <div className="pt-1">
+                        <p className="text-xs sm:text-sm font-medium text-white mb-2 flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-cyan-400" />
+                          Sugerencias de reparación
+                        </p>
+                        <div className="space-y-2">
+                          {diagResult.data.suggestions.map((s, idx) => (
+                            <div
+                              key={idx}
+                              className={`p-3 rounded-xl border ${
+                                s.severity === 'critical'
+                                  ? 'bg-red-500/10 border-red-500/30'
+                                  : s.severity === 'warning'
+                                    ? 'bg-amber-500/10 border-amber-500/30'
+                                    : 'bg-emerald-500/10 border-emerald-500/30'
+                              }`}
+                            >
+                              <p className="text-xs sm:text-sm font-medium text-white">{s.title}</p>
+                              <p className="text-[10px] sm:text-xs text-white/60 mt-0.5">{s.description}</p>
+                              <pre className="mt-2 whitespace-pre-wrap text-[10px] sm:text-xs text-white/70 leading-relaxed">{s.action}</pre>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
 
