@@ -8,17 +8,16 @@
 
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { SUPABASE_ENV, assertSupabaseEnv } from './env';
 
-/**
- * Crea un cliente de Supabase para usar en el servidor (Server Actions, RSC, etc.)
- * Incluye automáticamente el user_id para tenencia por auth.uid()
- */
+assertSupabaseEnv('Supabase Server Client');
+
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    SUPABASE_ENV.url,
+    SUPABASE_ENV.anonKey,
     {
       cookies: {
         getAll() {

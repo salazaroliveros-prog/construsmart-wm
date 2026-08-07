@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { SUPABASE_ENV, assertSupabaseEnv } from '@/lib/supabase/env';
+
+assertSupabaseEnv('Session API');
 
 export const runtime = 'nodejs';
 
@@ -18,9 +21,8 @@ export async function POST(request: Request) {
     const cookieStore = await cookies();
 
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!,
+      SUPABASE_ENV.url,
+      SUPABASE_ENV.anonKey,
       {
         cookies: {
           getAll() {

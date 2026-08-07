@@ -15,6 +15,7 @@ import { useScrollLock } from '@/lib/hooks/useScrollLock';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import RealtimeProvider from '@/components/ui/RealtimeProvider';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
+import { NAVIGATION_TABS, type NavigationTabId } from '@/components/dashboard/navigation';
 
 const ProjectManager = dynamic(() => import('@/components/dashboard/ProjectManager'), { ssr: false });
 const BudgetCalculator = dynamic(() => import('@/components/budgets/BudgetCalculator'), { ssr: false });
@@ -29,22 +30,6 @@ const PurchaseOrderManager = dynamic(() => import('@/components/warehouse/Purcha
 const SubcontractorManager = dynamic(() => import('@/components/warehouse/SubcontractorManager'), { ssr: false });
 const ProgressTracker = dynamic(() => import('@/components/progress/ProgressTracker'), { ssr: false });
 const SettingsManager = dynamic(() => import('@/components/settings/SettingsManager'), { ssr: false });
-
-const NAVIGATION_TABS = [
-  { id: 'dashboard', label: 'Tablero Principal', icon: 'LayoutDashboard' },
-  { id: 'projects', label: 'Proyectos', icon: 'FolderKanban' },
-  { id: 'budgets', label: 'Presupuestos', icon: 'Calculator' },
-  { id: 'progress', label: 'Control de Avance', icon: 'Activity' },
-  { id: 'finances', label: 'Finanzas', icon: 'DollarSign' },
-  { id: 'payroll', label: 'Nómina', icon: 'Wallet' },
-  { id: 'warehouse', label: 'Almacén', icon: 'Warehouse' },
-  { id: 'suppliers', label: 'Proveedores', icon: 'Truck' },
-  { id: 'orders', label: 'Órdenes de Compra', icon: 'ShoppingCart' },
-  { id: 'subcontractors', label: 'Subcontratos', icon: 'Users' },
-  { id: 'clients', label: 'Clientes', icon: 'UserCircle' },
-  { id: 'logs', label: 'Bitácora', icon: 'BookOpen' },
-  { id: 'settings', label: 'Ajustes', icon: 'Settings' },
-] as const;
 
 interface RecentActivity {
   id: string;
@@ -62,13 +47,13 @@ const getTabIndex = (tabId: string): number => {
 };
 
 // Función para obtener el tab por índice
-const getTabById = (index: number): string => {
+const getTabById = (index: number): NavigationTabId => {
   return NAVIGATION_TABS[Math.max(0, Math.min(index, NAVIGATION_TABS.length - 1))]?.id || 'dashboard';
 };
 
 export default function Dashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState<NavigationTabId>('dashboard');
   const [ready, setReady] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -110,7 +95,7 @@ export default function Dashboard() {
       if (tab) {
         const valid = NAVIGATION_TABS.some(t => t.id === tab);
         if (valid && tab !== activeTab) {
-          setActiveTab(tab as (typeof NAVIGATION_TABS)[number]['id']);
+          setActiveTab(tab as NavigationTabId);
         }
       }
     } catch {
@@ -130,7 +115,7 @@ export default function Dashboard() {
     if (tabId === activeTab) return;
 
     setIsTabLoading(true);
-    setActiveTab(tabId);
+    setActiveTab(tabId as NavigationTabId);
     setTabIndex(getTabIndex(tabId));
     router.replace(`/?tab=${tabId}`, { scroll: false });
 
@@ -313,7 +298,7 @@ return (
                         (e.currentTarget as HTMLElement).style.transform = '';
                       }, 100);
                     }}
-                    className={`shrink-0 min-h-[44px] rounded-lg border px-3 py-2.5 text-[11px] font-medium transition-all duration-200 whitespace-nowrap sm:px-4 sm:text-sm ${
+                    className={`shrink-0 min-h-[44px] rounded-lg border px-3 py-2.5 text-[11px] font-medium transition-all duration-200 whitespace-nowrap sm:px-4 sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
                       isTabActive
                         ? 'border-cyan-500/40 bg-gradient-to-r from-cyan-500/20 to-violet-500/20 text-white shadow-[0_0_0_1px_rgba(34,211,238,0.18)]'
                         : 'border-transparent text-gray-400 hover:bg-white/5 hover:text-white'

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Building2, Mail, Lock, ArrowRight, AlertCircle, Loader2, Shield } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useToast } from '@/components/ui/Toast';
+import PrimaryButton from '@/components/ui/PrimaryButton';
 
 function LoginForm() {
   const router = useRouter();
@@ -66,10 +67,10 @@ function LoginForm() {
           <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
             <Building2 className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+          <h1 className="text-xl sm:text-2xl font-bold text-white mb-2">
             CONSTRUCTORA WM/M&S
           </h1>
-          <p className="text-cyan-400 text-sm italic">
+          <p className="text-cyan-400 text-xs sm:text-sm italic">
             "CONSTRUYENDO EL FUTURO"
           </p>
         </div>
@@ -140,23 +141,14 @@ function LoginForm() {
           )}
 
           {/* Submit Button */}
-          <button
+          <PrimaryButton
             type="submit"
-            disabled={loading}
-            className="w-full py-3 px-4 bg-gradient-to-r from-cyan-500 to-violet-600 rounded-xl text-white font-medium flex items-center justify-center gap-2 hover:from-cyan-600 hover:to-violet-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-cyan-500/20"
+            fullWidth
+            isLoading={loading}
+            icon={!loading ? <ArrowRight className="w-5 h-5" /> : undefined}
           >
-            {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Iniciando sesión...
-              </>
-            ) : (
-              <>
-                Iniciar Sesión
-                <ArrowRight className="w-5 h-5" />
-              </>
-            )}
-          </button>
+            Iniciar Sesión
+          </PrimaryButton>
         </form>
 
         {/* Footer */}

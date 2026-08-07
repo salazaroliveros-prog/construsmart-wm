@@ -1,0 +1,25 @@
+import type { LucideIcon } from 'lucide-react';
+
+export interface NavTab {
+  id: string;
+  label: string;
+  icon: keyof typeof import('lucide-react');
+}
+
+export const NAVIGATION_TABS: readonly NavTab[] = [
+  { id: 'dashboard', label: 'Tablero Principal', icon: 'LayoutDashboard' },
+  { id: 'projects', label: 'Proyectos', icon: 'FolderKanban' },
+  { id: 'budgets', label: 'Presupuestos', icon: 'Calculator' },
+  { id: 'progress', label: 'Control de Avance', icon: 'Activity' },
+  { id: 'finances', label: 'Finanzas', icon: 'DollarSign' },
+  { id: 'payroll', label: 'Nómina', icon: 'Wallet' },
+  { id: 'warehouse', label: 'Almacén', icon: 'Warehouse' },
+  { id: 'suppliers', label: 'Proveedores', icon: 'Truck' },
+  { id: 'orders', label: 'Órdenes de Compra', icon: 'ShoppingCart' },
+  { id: 'subcontractors', label: 'Subcontratos', icon: 'Users' },
+  { id: 'clients', label: 'Clientes', icon: 'UserCircle' },
+  { id: 'logs', label: 'Bitácora', icon: 'BookOpen' },
+  { id: 'settings', label: 'Ajustes', icon: 'Settings' },
+] as const;
+
+export type NavigationTabId = (typeof NAVIGATION_TABS)[number]['id'];

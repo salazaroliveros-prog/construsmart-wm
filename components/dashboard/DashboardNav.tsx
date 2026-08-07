@@ -259,7 +259,7 @@ export default function DashboardNav({ activeTab, onTabChange, isCollapsed = fal
                 
                 {/* Company Name */}
                 <div>
-                  <h2 className="text-white font-bold text-sm sm:text-lg truncate">{company.shortName || company.name}</h2>
+                  <h2 className="text-white font-bold text-sm sm:text-base truncate">{company.shortName || company.name}</h2>
                   <p className="text-[10px] sm:text-xs text-cyan-400">Sistema ERP</p>
                 </div>
               </div>
@@ -290,7 +290,7 @@ export default function DashboardNav({ activeTab, onTabChange, isCollapsed = fal
         <button
           type="button"
           onClick={() => router.push('/admin/database-cleaner')}
-          className={`flex items-center gap-2 sm:gap-3 text-white/60 active:text-white transition-colors group ${isCollapsed ? 'justify-center' : ''}`}
+          className={`flex items-center gap-2 sm:gap-3 text-white/60 active:text-white transition-colors group min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${isCollapsed ? 'justify-center' : ''}`}
         >
           <Database className="w-4 h-4 sm:w-5 sm:h-5 active:text-red-400 flex-shrink-0" />
           {!isCollapsed && <span className="text-[10px] sm:text-xs">Limpiar BD</span>}
@@ -316,7 +316,7 @@ export default function DashboardNav({ activeTab, onTabChange, isCollapsed = fal
         </div>
         <button
           onClick={handleSignOut}
-          className={`w-full flex items-center gap-2 px-3 py-2.5 text-white/60 active:text-white active:bg-white/10 rounded-lg transition-colors text-xs touch-manipulation ${isCollapsed ? 'justify-center' : 'justify-center'}`}
+          className={`w-full flex items-center gap-2 px-3 py-2.5 text-white/60 active:text-white active:bg-white/10 rounded-lg transition-colors text-xs min-h-[44px] touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${isCollapsed ? 'justify-center' : 'justify-center'}`}
           title={isCollapsed ? 'Cerrar Sesión' : undefined}
         >
           <LogOut className="w-4 h-4 flex-shrink-0" />

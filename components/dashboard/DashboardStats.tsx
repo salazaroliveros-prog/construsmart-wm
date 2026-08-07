@@ -39,7 +39,7 @@ function StatCard({ title, value, subtitle, icon, trend, trendUp, color = 'cyan'
           {icon}
         </div>
         {trend && (
-          <div className={`flex items-center gap-0.5 text-[9px] px-1 py-0.25 rounded-md border ${
+          <div className={`flex items-center gap-0.5 text-[10px] px-1 py-0.5 rounded-md border ${
             trendUp
               ? 'text-emerald-400 bg-emerald-400/10 border-emerald-500/30'
               : 'text-red-400 bg-red-400/10 border-red-500/30'
@@ -49,9 +49,9 @@ function StatCard({ title, value, subtitle, icon, trend, trendUp, color = 'cyan'
         )}
       </div>
       <div>
-        <h3 className="text-[9px] sm:text-[10px] font-medium text-white/50 mb-0.5 truncate">{title}</h3>
+        <h3 className="text-[10px] sm:text-xs font-medium text-white/50 mb-0.5 truncate">{title}</h3>
         <p className="text-sm sm:text-base font-bold text-white drop-shadow-lg truncate">{value}</p>
-        <p className="text-[8px] sm:text-[9px] text-white/40 truncate">{subtitle}</p>
+        <p className="text-[10px] sm:text-xs text-white/40 truncate">{subtitle}</p>
       </div>
     </div>
   );

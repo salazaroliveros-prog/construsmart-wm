@@ -5,7 +5,9 @@ import { Database, Trash2, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-
 import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/lib/auth/auth-context';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import { DEFAULT_ADMIN_EMAIL } from '@/lib/config/app.config';
+import { getAdminEmail } from '@/lib/config/app.config';
+import SecondaryButton from '@/components/ui/SecondaryButton';
+import DangerButton from '@/components/ui/DangerButton';
 
 export default function DatabaseCleaner() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -15,15 +17,17 @@ export default function DatabaseCleaner() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
 
+  const adminEmail = getAdminEmail();
+
   useEffect(() => {
     if (!loading && isAuthenticated && user) {
-      const isAdmin = user.email === DEFAULT_ADMIN_EMAIL;
+      const isAdmin = user.email === adminEmail;
       setIsAuthorized(isAdmin);
       if (!isAdmin) {
         showToast('error', 'No tienes permisos para acceder a esta página');
       }
     }
-  }, [user, isAuthenticated, loading, showToast]);
+  }, [user, isAuthenticated, loading, showToast, adminEmail]);
 
   if (loading) {
     return (
@@ -132,7 +136,7 @@ export default function DatabaseCleaner() {
         <div className="glass-panel rounded-2xl p-6 sm:p-8">
           <div className="flex items-center gap-3 mb-6">
             <Database className="w-8 h-8 text-cyan-400" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-white">
+            <h1 className="text-xl sm:text-2xl font-bold text-white">
               Limpieza de Base de Datos Local
             </h1>
           </div>
@@ -210,36 +214,30 @@ export default function DatabaseCleaner() {
 
             {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-3">
-              <button
+              <SecondaryButton
                 onClick={checkDatabase}
-                className="glass-button px-4 py-3 rounded-lg text-white flex items-center justify-center gap-2"
+                icon={<RefreshCw className="w-4 h-4" />}
+                fullWidth
               >
-                <RefreshCw className="w-4 h-4" />
                 Verificar Base de Datos
-              </button>
+              </SecondaryButton>
 
-              <button
+              <DangerButton
                 onClick={() => setConfirmClear(true)}
                 disabled={isClearing || cleared}
-                className="flex-1 px-4 py-3 rounded-lg text-white flex items-center justify-center gap-2 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30 hover:from-red-500/30 hover:to-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isClearing ? (
-                  <>
+                fullWidth
+                icon={
+                  isClearing ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
-                    Limpiando...
-                  </>
-                ) : cleared ? (
-                  <>
+                  ) : cleared ? (
                     <CheckCircle className="w-4 h-4" />
-                    Eliminado
-                  </>
-                ) : (
-                  <>
+                  ) : (
                     <Trash2 className="w-4 h-4" />
-                    Eliminar Todos los Datos
-                  </>
-                )}
-              </button>
+                  )
+                }
+              >
+                {isClearing ? 'Limpiando...' : cleared ? 'Eliminado' : 'Eliminar Todos los Datos'}
+              </DangerButton>
             </div>
 
             {/* Success Message */}

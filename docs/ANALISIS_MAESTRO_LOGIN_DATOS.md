@@ -2,7 +2,7 @@
 
 > **Sistema:** CONSTRUCTORA WM/M&S — "CONSTRUYENDO EL FUTURO"
 > **Stack:** Next.js 16 (App Router) + React 19 + TypeScript + Supabase + Dexie.js (offline-first)
-> **Fecha de análisis:** 2026-08-05 · **Moneda:** GTQ
+> **Fecha de análisis:** 2026-06-08 · **Moneda:** GTQ
 
 ---
 
@@ -178,21 +178,25 @@ Componente (useEffect / load)
 - **Dónde:** `lib/supabase/client.ts` y `lib/supabase/server.ts` usan `NEXT_PUBLIC_SUPABASE_ANON_KEY`; `lib/proxy.ts` y `app/api/auth/session/route.ts` usan `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; `lib/supabase/admin.ts` usa `SUPABASE_SECRET_KEY`.
 - **Problema:** si un entorno carga `.env` (que solo define `ANON_KEY`) sin `.env.local`/`.env.production`, el middleware (`lib/proxy.ts`) recibe `undefined` con aserción `!`, rompiendo toda la autenticación.
 - **Corrección:** unificar a una sola variable canónica (recomendado `NEXT_PUBLIC_SUPABASE_ANON_KEY`) o mantener un único helper por capa que resuelva el fallback. Validar en Vercel que ambos nombres existan.
+- **Estado actual:** ✅ Corregido mediante helper centralizado `lib/supabase/env.ts`. Todas las capas (`client`, `server`, `admin`, `proxy`, `session`) usan `SUPABASE_ENV.url` y `SUPABASE_ENV.anonKey`, sin aserciones `!`.
 
 #### IN-2 — El parámetro `next` del middleware nunca se consume
 - **Dónde:** `lib/proxy.ts` línea ~51 (`url.searchParams.set('next', pathname)`) y `app/login/page.tsx` / `AuthGuard`.
 - **Problema:** tras autenticarse, el usuario **siempre** va a `/`; la ruta original a la que intentaba acceder se pierde.
 - **Corrección:** en `login/page.tsx` (o `AuthGuard`), leer `searchParams.get('next')`, validar que sea una URL interna (evitar open-redirect) y navegar a ella tras el login; si no existe, ir a `/`.
+- **Estado actual:** ✅ Implementado (`getSafeNextPath`) en `app/login/page.tsx` y `components/auth/AuthGuard.tsx`.
 
 #### IN-3 — Doble navegación y recarga completa tras el login
 - **Dónde:** `app/login/page.tsx` (éxito → `window.location.href`) y `AuthGuard` (`router.replace('/')`).
 - **Problema:** dos mecanismos disparan navegación; un full reload es más lento y puede producir parpadeo/flicker del dashboard.
 - **Corrección:** dejar una única vía (p. ej. `router.replace('/')` en `AuthGuard` o un `useEffect` con la navegación del router del cliente, sin reload completo).
+- **Estado actual:** ✅ Corregido. El login usa `router.replace(next)` y no hay `window.location.href`.
 
 #### IN-4 — Email de administrador hardcodeado en varios lugares
 - **Dónde:** `components/auth/AuthGuard.tsx` y `app/admin/database-cleaner/page.tsx` (`ADMIN_EMAIL = 'salazaroliveros@gmail.com'`); la API `app/api/admin/database-cleaner/route.ts` usa `process.env.ADMIN_EMAIL`.
 - **Problema:** el valor está duplicado y en el cliente **no** se lee de entorno; si cambia el admin, hay que tocar código.
 - **Corrección:** centralizar en `lib/config/app.config.ts` con fallback a `process.env.NEXT_PUBLIC_ADMIN_EMAIL` y reutilizarlo en AuthGuard, página y API.
+- **Estado actual:** ✅ Corregido. Exposición de `DEFAULT_ADMIN_EMAIL` resuelta por `getAdminEmail()` desde entorno (`NEXT_PUBLIC_ADMIN_EMAIL` o `ADMIN_EMAIL`) y usada en `AuthGuard` y `DatabaseCleaner`.
 
 ### 🟠 MEDIA
 
@@ -200,26 +204,31 @@ Componente (useEffect / load)
 - **Dónde:** `components/dashboard/DashboardNav.tsx` (`NAV_ITEMS_BASE`) frente a `app/page.tsx` (`NAVIGATION_TABS`, sí incluye `subcontractors`).
 - **Problema:** el usuario puede abrir Subcontratos desde la barra de tabs superior, pero **no** desde la barra lateral; la navegación es inconsistente.
 - **Corrección:** agregar `{ id: 'subcontractors', label: 'Subcontratos', icon: 'Users' }` a `NAV_ITEMS_BASE` (y su icono en el mapa `ICONS`).
+- **Estado:** ✅ Corregido (nav centralizado en `components/dashboard/navigation.ts` con Subcontratos).
 
 #### IN-6 — RealtimeProvider no suscribe `subcontractors`
 - **Dónde:** `components/ui/RealtimeProvider.tsx` (`TABLES` y `TAB_BY_TABLES`).
 - **Problema:** `SubcontractorManager` llama `useRealtimeRefresh(['subcontractors', 'suppliers'], ...)`, pero el evento `wm-dexie-changed` para `subcontractors` nunca se dispara porque la tabla no está en `TABLES` ni en el mapa por tab → los cambios de otro dispositivo en subcontratos **no** llegan en vivo.
 - **Corrección:** añadir `{ remote: 'subcontractors', local: offlineDB.subcontractors }` a `TABLES` y `subcontractors: ['subcontractors', 'suppliers']` a `TAB_BY_TABLES`.
+- **Estado:** ✅ Corregido.
 
 #### IN-7 — Clave muerta `analytics` en RealtimeProvider
 - **Dónde:** `components/ui/RealtimeProvider.tsx` (`TAB_BY_TABLES.analytics`).
 - **Problema:** no existe ningún tab `analytics` en `NAVIGATION_TABS`; la clave es código muerto y no alimenta nada.
 - **Corrección:** eliminar la clave `analytics` (o renombrarla si se incorpora un tab Analytics futuro).
+- **Estado:** ✅ Corregido (no existe la clave `analytics`).
 
 #### IN-8 — El Dashboard no recibe realtime de todas sus tablas
 - **Dónde:** `DashboardCharts.tsx` (usa 12 tablas) vs `RealtimeProvider` `tablesForTab('dashboard')` (solo projects, financial_transactions, project_logs).
 - **Problema:** los KPIs basados en `budgets`, `budget_items`, `warehouse_stock`, `purchase_orders`, `payroll_*`, `clients`, `suppliers` solo se refrescan con el sync de 5 min, no en vivo.
 - **Corrección:** ampliar el mapa del tab `dashboard` en `TAB_BY_TABLES` para incluir las tablas que realmente consume el dashboard.
+- **Estado:** ✅ Corregido (el tab `dashboard` incluye las 12 tablas).
 
 #### IN-9 — Lecturas directas de Supabase rompen el patrón offline-first
 - **Dónde:** `FinanceManager.tsx` (~168), `PayrollManager.tsx` (~223/254), `WarehouseManager.tsx` (~207).
 - **Problema:** estos loaders hacen `supabase.from(...).select(...)` directamente al montar, mientras el resto de la suite lee solo de Dexie. Resulta en comportamiento inconsistente sin conexión y duplicidad de fuentes.
 - **Corrección:** unificar la carga inicial con `offlineDB` (offline-first) y depender de `SyncProvider` + Realtime para poblar/sincronizar; la escritura directa cuando está online puede conservarse, pero la lectura debe venir de Dexie.
+- **Estado:** ⚠️ Parcial (lectura híbrida por rendimiento en módulos grandes; el dashboard ya es 100% Dexie).
 
 
 ### 🟡 BAJA
@@ -228,6 +237,7 @@ Componente (useEffect / load)
 - **Dónde:** `components/dashboard/DualBrandHeader.tsx` (~70-74) y `DashboardNav.tsx` (~199).
 - **Problema:** `getSyncStats()` expone `pendingSubcontractors` pero el header (y la suma en el nav) no lo cuentan.
 - **Corrección:** incluir `stats.pendingSubcontractors` en el cálculo total de pendientes.
+- **Estado:** ✅ Corregido (el total en `DashboardNav.tsx` incluye `pendingSubcontractors`).
 
 #### IN-11 — Lectura local sin filtro por `user_id`
 - **Dónde:** todos los `offlineDB.<tabla>.toArray()` de los componentes.

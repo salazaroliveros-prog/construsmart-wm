@@ -117,7 +117,7 @@ export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) 
             <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
           <div className="hidden sm:block flex-1 min-w-0">
-            <h1 className="text-sm sm:text-lg font-bold text-white truncate">CONSTRUCTORA WM/M&S</h1>
+            <h1 className="text-sm sm:text-base font-bold text-white truncate">CONSTRUCTORA WM/M&amp;S</h1>
             <p className="text-[10px] sm:text-xs text-cyan-400 italic truncate">
               "CONSTRUYENDO EL FUTURO"
             </p>
@@ -127,18 +127,17 @@ export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) 
 
       <div className="flex items-center gap-2 sm:gap-4">
         {isClient && isMounted && currentTime && (
-          <button
-            onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-            className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-white/70 hover:bg-white/20 transition-colors cursor-pointer"
+          <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 hover:bg-white/20 transition-colors cursor-pointer min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
             title="Ver calendario"
+            onClick={() => setIsCalendarOpen(!isCalendarOpen)}
           >
             <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span className="text-xs sm:text-sm">
+            <span className="text-sm">
               {currentTime.toLocaleDateString('es-GT', { day: '2-digit', month: 'short', year: 'numeric' })}
             </span>
             <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span className="text-xs sm:text-sm">{formatTime(currentTime)}</span>
-          </button>
+            <span className="text-sm">{formatTime(currentTime)}</span>
+          </div>
         )}
 
         <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-emerald-500/20 backdrop-blur-sm border border-emerald-500/30 active:bg-emerald-500/30 transition-colors">
@@ -186,7 +185,7 @@ export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) 
           type="button"
           onClick={handleManualSync}
           disabled={!isOnline || manualSyncLoading}
-          className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/20 text-cyan-200 text-[10px] sm:text-xs hover:bg-cyan-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/20 text-cyan-200 text-[10px] sm:text-xs hover:bg-cyan-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed min-h-[36px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
           title={isOnline ? 'Sincronizar ahora' : 'Conéctese a internet para sincronizar'}
         >
           <RefreshCcw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${manualSyncLoading ? 'animate-spin' : 'text-cyan-200'}`} />
