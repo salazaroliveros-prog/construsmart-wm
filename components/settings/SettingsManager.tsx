@@ -16,6 +16,8 @@ import { applyUISettings } from '@/lib/utils/applySettings';
 import { updateSettingsSingleton } from '@/lib/hooks/useBusinessSettings';
 import { useToast } from '@/components/ui/Toast';
 
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import SecondaryButton from '@/components/ui/SecondaryButton';
 export default function SettingsManager() {
   const { showToast } = useToast();
   const [settings, setSettings] = useState<UISettings>(DEFAULT_UI_SETTINGS);
@@ -217,18 +219,13 @@ const saveSettings = () => {
               <span className="hidden sm:inline">Restablecer</span>
             </button>
           )}
-          <button
-            onClick={saveSettings}
-            disabled={!hasChanges}
-            className={`px-3 sm:px-4 py-2 rounded-lg flex items-center gap-2 transition-all text-sm ${
-              hasChanges
-                ? 'bg-gradient-to-r from-cyan-500 to-violet-600 text-white hover:opacity-90'
-                : 'bg-white/10 text-white/40 cursor-not-allowed'
-            }`}
-          >
-            <Check className="w-4 h-4" />
+                    <PrimaryButton type="button" onClick={saveSettings} disabled={!hasChanges} className={`px-3 sm:px-4 py-2 rounded-lg flex items-center gap-2 transition-all text-sm ${
+                hasChanges
+                  ? 'bg-gradient-to-r from-cyan-500 to-violet-600 text-white hover:opacity-90'
+                  : 'bg-white/10 text-white/40 cursor-not-allowed'
+              }`} icon={<Check className="w-4 h-4" />}>
             <span className="hidden sm:inline">Guardar</span>
-          </button>
+          </PrimaryButton>
         </div>
       </div>
 

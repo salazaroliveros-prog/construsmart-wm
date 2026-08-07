@@ -12,6 +12,8 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import SecondaryButton from '@/components/ui/SecondaryButton';
 import { formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
@@ -752,19 +754,17 @@ export default function PurchaseOrderManager() {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button
+                <SecondaryButton
                   type="button"
-                  onClick={() => setShowForm(false)}
-                  className="flex-1 glass-button px-4 py-2 rounded-lg text-white"
-                >
+                  onClick={() => setShowForm(false)}>
                   Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-gradient-to-r from-cyan-500 to-violet-600 px-4 py-2 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity"
-                >
+                </SecondaryButton>
+                <PrimaryButton
+                  type="submit">
+                  
                   {editingOrder ? 'Actualizar' : 'Guardar'}
-                </button>
+                
+                </PrimaryButton>
               </div>
             </form>
           </div>
@@ -836,19 +836,17 @@ export default function PurchaseOrderManager() {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button
+                <SecondaryButton
                   type="button"
-                  onClick={() => setShowItemForm(false)}
-                  className="flex-1 glass-button px-4 py-2 rounded-lg text-white"
-                >
+                  onClick={() => setShowItemForm(false)}>
                   Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-gradient-to-r from-cyan-500 to-violet-600 px-4 py-2 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity"
-                >
+                </SecondaryButton>
+                <PrimaryButton
+                  type="submit">
+                  
                   Agregar
-                </button>
+                
+                </PrimaryButton>
               </div>
             </form>
           </div>

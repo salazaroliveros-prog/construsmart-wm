@@ -12,6 +12,8 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import SecondaryButton from '@/components/ui/SecondaryButton';
 import { supplierSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
@@ -205,7 +207,7 @@ export default function SupplierManager() {
           description="Agregue proveedores de materiales y servicios para asociarlos a alertas de inventario."
         >
           <Tooltip content="Agregar nuevo proveedor al sistema">
-            <button
+            <PrimaryButton
               onClick={() => {
                 setEditingSupplier(null);
                 setFormData({
@@ -223,11 +225,10 @@ export default function SupplierManager() {
                 });
                 setShowForm(true);
               }}
-              className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 text-white"
+              icon={<Plus className="w-4 h-4" />}
             >
-              <Plus className="w-4 h-4" />
               Nuevo Proveedor
-            </button>
+            </PrimaryButton>
           </Tooltip>
         </OnboardingTooltip>
       </div>
@@ -522,19 +523,12 @@ export default function SupplierManager() {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="flex-1 glass-button px-4 py-2 rounded-lg text-white"
-                >
+                <SecondaryButton type="button" onClick={() => setShowForm(false)} fullWidth>
                   Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-gradient-to-r from-cyan-500 to-violet-600 px-4 py-2 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity"
-                >
+                </SecondaryButton>
+                <PrimaryButton type="submit" fullWidth>
                   {editingSupplier ? 'Actualizar' : 'Guardar'}
-                </button>
+                </PrimaryButton>
               </div>
             </form>
           </div>

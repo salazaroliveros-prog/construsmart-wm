@@ -24,6 +24,8 @@ interface FloatingCalendarProps {
   triggerDate?: Date;
 }
 
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import SecondaryButton from '@/components/ui/SecondaryButton';
 export default function FloatingCalendar({ isOpen, onClose, triggerDate }: FloatingCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -308,18 +310,12 @@ export default function FloatingCalendar({ isOpen, onClose, triggerDate }: Float
                 rows={2}
               />
               <div className="flex gap-2">
-                <button
-                  onClick={handleAddEvent}
-                  className="flex-1 py-1.5 px-3 rounded-lg bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition-colors"
-                >
+                                <PrimaryButton type="button" onClick={handleAddEvent} className={`flex-1 py-1.5 px-3 rounded-lg bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition-colors`}>
                   Agregar
-                </button>
-                <button
-                  onClick={() => setShowEventForm(false)}
-                  className="flex-1 py-1.5 px-3 rounded-lg bg-white/10 dark:bg-black/20 border border-white/20 dark:border-zinc-700/30 text-zinc-900 dark:text-white text-sm font-medium hover:bg-white/20 dark:hover:bg-black/30 transition-colors"
-                >
+                </PrimaryButton>
+                                <SecondaryButton type="button" onClick={() => setShowEventForm(false)} className={`flex-1 py-1.5 px-3 rounded-lg bg-white/10 dark:bg-black/20 border border-white/20 dark:border-zinc-700/30 text-zinc-900 dark:text-white text-sm font-medium hover:bg-white/20 dark:hover:bg-black/30 transition-colors`}>
                   Cancelar
-                </button>
+                </SecondaryButton>
               </div>
             </div>
           )}

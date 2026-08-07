@@ -75,3 +75,5 @@ supabase/database/
 tmp_*.sql
 NEXT_PUBLIC_SITE_URL*
 vercel_dep.log
+
+.clinerules/

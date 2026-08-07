@@ -6,6 +6,16 @@ import { z } from 'zod';
  * 
  * Schemas de validación para todas las entidades del sistema
  * Garantiza integridad de datos antes de guardar en DB
+ * 
+ * CONVENCIÓN DE CAMPOS OPCIONALES vs REQUERIDOS:
+ * - Campos REQUERIDOS: sin modificador `.optional()`. Si llega `undefined`,
+ *   la validación falla y se muestra el mensaje definido.
+ * - Campos OPCIONALES: usan `.optional().or(z.literal(''))`. Esto admite
+ *   tanto `undefined` como cadena vacía (lo que los formularios envían
+ *   cuando el usuario deja el campo en blanco).
+ * - Campos NUMÉRICOS OPCIONALES: usan `.optional()` o suelen tener un
+ *   default explícito; evitan el `.or(z.literal(''))` porque el tipo no
+ *   coincide con string.
  */
 
 // ============================================================================

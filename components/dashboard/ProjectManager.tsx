@@ -14,6 +14,8 @@ import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import SecondaryButton from '@/components/ui/SecondaryButton';
 import { projectSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
@@ -371,13 +373,9 @@ export default function ProjectManager() {
                 description="Comience creando un proyecto para asociar presupuestos, finanzas y nómina."
               >
                 <Tooltip content="Crear un nuevo proyecto">
-                  <button
-                    onClick={() => openModal()}
-                    className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
+                  <PrimaryButton onClick={() => openModal()} icon={<Plus className="w-4 h-4" />}>
                     Nuevo Proyecto
-                  </button>
+                  </PrimaryButton>
                 </Tooltip>
               </OnboardingTooltip>
             </div>
@@ -806,23 +804,19 @@ export default function ProjectManager() {
 
               <div className="flex gap-3 pt-4">
                 <Tooltip content="Cancelar y cerrar el formulario">
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    className="flex-1 glass-button px-4 py-2 rounded-lg text-white"
-                  >
+                  <SecondaryButton type="button" onClick={closeModal} fullWidth>
                     Cancelar
-                  </button>
+                  </SecondaryButton>
                 </Tooltip>
                 <Tooltip content={editingProject ? 'Guardar cambios del proyecto' : 'Crear nuevo proyecto'}>
-                  <button
+                  <PrimaryButton
                     type="submit"
+                    fullWidth
                     disabled={saveLoading}
-                    className="flex-1 glass-button px-4 py-2 rounded-lg text-white bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 disabled:opacity-50 flex items-center justify-center gap-2"
+                    icon={<Save className="w-4 h-4" />}
                   >
-                    <Save className="w-4 h-4" />
                     {saveLoading ? <LoadingSpinner size={16} /> : (editingProject ? 'Actualizar' : 'Crear')}
-                  </button>
+                  </PrimaryButton>
                 </Tooltip>
               </div>
             </form>

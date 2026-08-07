@@ -15,6 +15,8 @@ import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import SecondaryButton from '@/components/ui/SecondaryButton';
 import { warehouseStockSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
@@ -204,29 +206,7 @@ export default function WarehouseManager() {
       const localItems = scopeLocalRows(await offlineDB.warehouseStock.toArray(), userId);
       setStockItems(localItems);
 
-      // Backfill remoto SOLO en arranque en frío (Dexie vacío). La UI siempre
-      // lee de Dexie; SyncProvider + Realtime mantienen los datos al día.
-      if (localItems.length === 0 && navigator.onLine && supabase) {
-        const { data: supabaseItems } = await supabase
-          .from('warehouse_stock')
-          .select('*')
-          .order('description', { ascending: true });
 
-        if (supabaseItems) {
-          for (const item of supabaseItems) {
-            const existing = await offlineDB.warehouseStock.get(item.id);
-            if (existing && PENDING_STATUSES.includes(existing.sync_status || '')) continue;
-            await offlineDB.warehouseStock.put({
-              ...item,
-              sync_status: 'synced',
-            });
-          }
-
-          const userId = await getUserScope();
-          const updatedItems = scopeLocalRows(await offlineDB.warehouseStock.toArray(), userId);
-          setStockItems(updatedItems);
-        }
-      }
 } catch (error) {
       console.error('Error loading stock items:', error);
       showToast('error', 'Error al cargar items del inventario');
@@ -588,14 +568,10 @@ export default function WarehouseManager() {
               description="Registre materiales con su stock mínimo para activar alertas y generación automática de OC."
             >
               <Tooltip content="Agregar nuevo material al inventario">
-                <button
-                  onClick={() => handleOpenModal()}
-                  className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
+                <PrimaryButton onClick={() => handleOpenModal()} icon={<Plus className="w-4 h-4" />}>
                   <span className="hidden sm:inline">Nuevo Material</span>
                   <span className="sm:hidden">Nuevo</span>
-                </button>
+                </PrimaryButton>
               </Tooltip>
             </OnboardingTooltip>
           </div>
@@ -816,14 +792,9 @@ export default function WarehouseManager() {
             title="Inventario vacío"
             description="Agregue materiales al inventario para comenzar a gestionar el almacén."
             action={
-              <button
-                onClick={() => handleOpenModal()}
-                className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
-                aria-label="Agregar nuevo material al inventario"
-              >
-                <Plus className="w-4 h-4" />
+              <PrimaryButton onClick={() => handleOpenModal()} icon={<Plus className="w-4 h-4" />} aria-label="Agregar nuevo material al inventario">
                 <span>Nuevo Material</span>
-              </button>
+              </PrimaryButton>
             }
           />
         ) : filteredItems.length === 0 ? (
@@ -1096,24 +1067,22 @@ export default function WarehouseManager() {
             </div>
 
              <div className="flex justify-end gap-3 mt-6">
-               <button
+               <SecondaryButton
                  type="button"
                  onClick={handleCloseModal}
-                 className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm hover:bg-white/20"
                  disabled={saveLoading}
                  aria-label="Cancelar y cerrar formulario de material"
                >
                  Cancelar
-               </button>
-               <button
+               </SecondaryButton>
+               <PrimaryButton
                  type="submit"
                  disabled={saveLoading}
-                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm hover:opacity-90 flex items-center gap-2 disabled:opacity-50"
                  aria-label={editingItem ? 'Actualizar material existente' : 'Guardar nuevo material'}
+                 icon={<Save className="w-4 h-4" />}
                >
-                 <Save className="w-4 h-4" />
                  {saveLoading ? <LoadingSpinner size={16} /> : 'Guardar'}
-               </button>
+               </PrimaryButton>
              </div>
              </form>
           </div>

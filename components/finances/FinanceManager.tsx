@@ -17,6 +17,8 @@ import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import SecondaryButton from '@/components/ui/SecondaryButton';
 import { financialTransactionSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
@@ -165,29 +167,7 @@ export default function FinanceManager() {
       const localTransactions = scopeLocalRows(await offlineDB.financialTransactions.toArray(), userId);
       setTransactions(localTransactions);
 
-      // Backfill remoto SOLO en arranque en frío (Dexie vacío). La UI siempre
-      // lee de Dexie; SyncProvider + Realtime mantienen los datos al día.
-      if (localTransactions.length === 0 && navigator.onLine && supabase) {
-        const { data: supabaseTransactions } = await supabase
-          .from('financial_transactions')
-          .select('*')
-          .order('date', { ascending: false });
 
-        if (supabaseTransactions) {
-          for (const transaction of supabaseTransactions) {
-            const existing = await offlineDB.financialTransactions.get(transaction.id);
-            if (existing && PENDING_STATUSES.includes(existing.sync_status || '')) continue;
-            await offlineDB.financialTransactions.put({
-              ...transaction,
-              sync_status: 'synced',
-            });
-          }
-
-          const userId = await getUserScope();
-          const updatedTransactions = scopeLocalRows(await offlineDB.financialTransactions.toArray(), userId);
-          setTransactions(updatedTransactions);
-        }
-      }
 } catch (error) {
       console.error('Error loading transactions:', error);
       showToast('error', 'Error al cargar transacciones financieras');
@@ -910,23 +890,15 @@ export default function FinanceManager() {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button
+                <SecondaryButton
                   type="button"
-                  onClick={closeModal}
-                  className="flex-1 glass-button px-4 py-2 rounded-lg text-white"
-                  aria-label="Cancelar y cerrar formulario de transacción"
-                >
+                  onClick={closeModal} aria-label="Cancelar y cerrar formulario de transacción">
                   Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={saveLoading}
-                  className="flex-1 glass-button px-4 py-2 rounded-lg text-white bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 disabled:opacity-50 flex items-center justify-center gap-2"
-                  aria-label={editingTransaction ? 'Actualizar transacción existente' : 'Crear nueva transacción'}
-                >
-                  <Save className="w-4 h-4" />
+                </SecondaryButton>
+                <PrimaryButton
+                  type="submit" disabled={saveLoading} aria-label={editingTransaction ? 'Actualizar transacción existente' : 'Crear nueva transacción'} icon={<Save className="w-4 h-4" />}>
                   {saveLoading ? <LoadingSpinner size={16} /> : (editingTransaction ? 'Actualizar' : 'Crear')}
-                </button>
+                </PrimaryButton>
               </div>
             </form>
           </div>

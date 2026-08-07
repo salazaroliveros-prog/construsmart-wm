@@ -86,6 +86,8 @@ const categoryColors: Record<string, { bg: string; text: string; border: string 
 // MAIN COMPONENT
 // ============================================================================
 
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import SecondaryButton from '@/components/ui/SecondaryButton';
 export default function PayrollManager() {
   const { showToast } = useToast();
   const { financial } = useFinancialSettings();
@@ -220,29 +222,7 @@ const checkOnlineStatus = () => {
       const localEmployees = scopeLocalRows(await offlineDB.payrollEmployees.toArray(), userId);
       setEmployees(localEmployees);
 
-      // Backfill remoto SOLO en arranque en frío (Dexie vacío). La UI siempre
-      // lee de Dexie; SyncProvider + Realtime mantienen los datos al día.
-      if (localEmployees.length === 0 && navigator.onLine && supabase) {
-        const { data: supabaseEmployees } = await supabase
-          .from('payroll_employees')
-          .select('*')
-          .order('name', { ascending: true });
 
-        if (supabaseEmployees) {
-          for (const employee of supabaseEmployees) {
-            const existing = await offlineDB.payrollEmployees.get(employee.id);
-            if (existing && PENDING_STATUSES.includes(existing.sync_status || '')) continue;
-            await offlineDB.payrollEmployees.put({
-              ...employee,
-              sync_status: 'synced',
-            });
-          }
-
-          const userId = await getUserScope();
-          const updatedEmployees = scopeLocalRows(await offlineDB.payrollEmployees.toArray(), userId);
-          setEmployees(updatedEmployees);
-        }
-      }
 } catch (error) {
       console.error('Error loading employees:', error);
       showToast('error', 'Error al cargar empleados desde el servidor');
@@ -255,28 +235,7 @@ const checkOnlineStatus = () => {
       const localRecords = scopeLocalRows(await offlineDB.payrollRecords.toArray(), userId);
       setPayrollRecords(localRecords);
 
-      // Backfill remoto SOLO en arranque en frío (Dexie vacío).
-      if (localRecords.length === 0 && navigator.onLine && supabase) {
-        const { data: supabaseRecords } = await supabase
-          .from('payroll_records')
-          .select('*')
-          .order('period_end', { ascending: false });
 
-        if (supabaseRecords) {
-          for (const record of supabaseRecords) {
-            const existing = await offlineDB.payrollRecords.get(record.id);
-            if (existing && PENDING_STATUSES.includes(existing.sync_status || '')) continue;
-            await offlineDB.payrollRecords.put({
-              ...record,
-              sync_status: 'synced',
-            });
-          }
-
-          const userId = await getUserScope();
-          const updatedRecords = scopeLocalRows(await offlineDB.payrollRecords.toArray(), userId);
-          setPayrollRecords(updatedRecords);
-        }
-      }
     } catch (error) {
       console.error('Error loading payroll records:', error);
       showToast('error', 'Error al cargar registros de nómina');
@@ -771,14 +730,10 @@ const checkOnlineStatus = () => {
               description="Agregue empleados para calcular nómina, deducciones y gastos de mano de obra."
             >
               <Tooltip content="Agregar nuevo empleado a la nómina">
-                <button
-                  onClick={() => handleOpenEmployeeModal()}
-                  className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
+                                <PrimaryButton type="button" onClick={() => handleOpenEmployeeModal()} icon={<Plus className="w-4 h-4" />}>
                   <span className="hidden sm:inline">Nuevo Empleado</span>
                   <span className="sm:hidden">Nuevo</span>
-                </button>
+                </PrimaryButton>
               </Tooltip>
             </OnboardingTooltip>
           </div>
@@ -957,14 +912,9 @@ const checkOnlineStatus = () => {
               title={employees.length === 0 ? "No hay empleados" : "Sin resultados"}
               description={employees.length === 0 ? "Registre empleados para comenzar a gestionar la nómina." : "Intente con otros términos de búsqueda."}
               action={employees.length === 0 ? (
-                <button
-                  onClick={() => handleOpenEmployeeModal()}
-                  className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
-                  aria-label="Crear nuevo empleado"
-                >
-                  <Plus className="w-4 h-4" />
+                                <PrimaryButton type="button" onClick={() => handleOpenEmployeeModal()} aria-label="Crear nuevo empleado" icon={<Plus className="w-4 h-4" />}>
                   Nuevo Empleado
-                </button>
+                </PrimaryButton>
               ) : undefined}
             />
           ) : (
@@ -1052,27 +1002,17 @@ const checkOnlineStatus = () => {
               title="No hay registros de pago"
               description={selectedProject !== 'all' ? 'No hay registros de nómina para el proyecto seleccionado.' : 'Genere registros de nómina para los empleados registrados.'}
               action={
-                <button
-                  onClick={() => handleOpenPayrollModal()}
-                  className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
-                  aria-label="Crear nuevo registro de nómina"
-                >
-                  <Plus className="w-4 h-4" />
+                                <PrimaryButton type="button" onClick={() => handleOpenPayrollModal()} aria-label="Crear nuevo registro de nómina" icon={<Plus className="w-4 h-4" />}>
                   Nuevo Registro
-                </button>
+                </PrimaryButton>
               }
             />
           ) : (
             <div className="space-y-4">
               <div className="flex justify-end">
-                <button
-                  onClick={() => handleOpenPayrollModal()}
-                  className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
-                  aria-label="Crear nuevo registro de nómina"
-                >
-                  <Plus className="w-4 h-4" />
+                                <PrimaryButton type="button" onClick={() => handleOpenPayrollModal()} aria-label="Crear nuevo registro de nómina" icon={<Plus className="w-4 h-4" />}>
                   Nuevo Registro
-                </button>
+                </PrimaryButton>
               </div>
               <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
                 <table className="w-full text-sm min-w-[600px]">
@@ -1216,23 +1156,12 @@ const checkOnlineStatus = () => {
              </div>
 
              <div className="flex justify-end gap-3 mt-6">
-               <button
-                 type="button"
-                 onClick={handleCloseEmployeeModal}
-                 className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm hover:bg-white/20"
-                 aria-label="Cancelar y cerrar formulario de empleado"
-               >
+                              <SecondaryButton type="button" onClick={handleCloseEmployeeModal} aria-label="Cancelar y cerrar formulario de empleado">
                  Cancelar
-               </button>
-               <button
-                 type="submit"
-                 disabled={saveLoading}
-                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 text-white text-sm hover:opacity-90 flex items-center gap-2 disabled:opacity-50"
-                 aria-label={editingEmployee ? 'Actualizar empleado existente' : 'Guardar nuevo empleado'}
-               >
-                 <Save className="w-4 h-4" />
+               </SecondaryButton>
+                              <PrimaryButton type="submit" disabled={saveLoading} aria-label={editingEmployee ? 'Actualizar empleado existente' : 'Guardar nuevo empleado'} icon={<Save className="w-4 h-4" />}>
                  {saveLoading ? <LoadingSpinner size={16} /> : 'Guardar'}
-               </button>
+               </PrimaryButton>
              </div>
              </form>
           </div>
@@ -1357,23 +1286,12 @@ const checkOnlineStatus = () => {
             </div>
 
              <div className="flex justify-end gap-3 mt-6">
-               <button
-                 type="button"
-                 onClick={handleClosePayrollModal}
-                 className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm hover:bg-white/20"
-                 aria-label="Cancelar y cerrar formulario de registro de nómina"
-               >
+                              <SecondaryButton type="button" onClick={handleClosePayrollModal} aria-label="Cancelar y cerrar formulario de registro de nómina">
                  Cancelar
-               </button>
-               <button
-                 type="submit"
-                 disabled={saveLoading}
-                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 text-white text-sm hover:opacity-90 flex items-center gap-2 disabled:opacity-50"
-                 aria-label={editingPayroll ? 'Actualizar registro de nómina existente' : 'Guardar nuevo registro de nómina'}
-               >
-                 <Save className="w-4 h-4" />
+               </SecondaryButton>
+                              <PrimaryButton type="submit" disabled={saveLoading} aria-label={editingPayroll ? 'Actualizar registro de nómina existente' : 'Guardar nuevo registro de nómina'} icon={<Save className="w-4 h-4" />}>
                  {saveLoading ? <LoadingSpinner size={16} /> : 'Guardar'}
-               </button>
+               </PrimaryButton>
              </div>
              </form>
           </div>

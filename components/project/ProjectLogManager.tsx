@@ -12,6 +12,8 @@ import { useToast } from '@/components/ui/Toast';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import SecondaryButton from '@/components/ui/SecondaryButton';
 import ActionButton from '@/components/ui/ActionButton';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
@@ -534,19 +536,17 @@ export default function ProjectLogManager() {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button
+                <SecondaryButton
                   type="button"
-                  onClick={() => setShowForm(false)}
-                  className="flex-1 glass-button px-4 py-2 rounded-lg text-white"
-                >
+                  onClick={() => setShowForm(false)}>
                   Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-gradient-to-r from-cyan-500 to-violet-600 px-4 py-2 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity"
-                >
+                </SecondaryButton>
+                <PrimaryButton
+                  type="submit">
+                  
                   {editingLog ? 'Actualizar' : 'Guardar'}
-                </button>
+                
+                </PrimaryButton>
               </div>
             </form>
           </div>

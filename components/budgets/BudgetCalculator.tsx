@@ -46,6 +46,8 @@ const PDFGenerator = dynamic(() => import('@/components/pdf/PDFGenerator'), {
   loading: () => <div className="text-white/60 text-sm">Cargando visor PDF...</div>
 });
 
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import SecondaryButton from '@/components/ui/SecondaryButton';
 export default function BudgetCalculator() {
   const { showToast } = useToast();
   const { settings, financial } = useBusinessSettings();
@@ -671,20 +673,15 @@ export default function BudgetCalculator() {
               description="Guarde el presupuesto para asociarlo al proyecto y sincronizarlo con el servidor."
             >
               <Tooltip content="Guardar presupuesto y actualizar proyecto">
-                <button
+                                <PrimaryButton
+                  type="button"
                   onClick={saveBudget}
                   disabled={saveLoading}
                   className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2 disabled:opacity-50"
+                  icon={<Save className="w-4 h-4" />}
                 >
-                  {saveLoading ? (
-                    <LoadingSpinner size={16} />
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      Guardar
-                    </>
-                  )}
-                </button>
+                  {saveLoading ? 'Guardando...' : 'Guardar'}
+                </PrimaryButton>
               </Tooltip>
             </OnboardingTooltip>
             <Tooltip content="Exportar presupuesto a PDF con membrete corporativo">
@@ -1150,13 +1147,9 @@ export default function BudgetCalculator() {
             })()}
 
             <Tooltip content="Agregar cálculo APU al presupuesto">
-              <button
-                onClick={addAPUCalculation}
-                className="w-full glass-button px-4 py-2 rounded-lg text-white flex items-center justify-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
+                            <PrimaryButton type="button" onClick={addAPUCalculation} className={`w-full glass-button px-4 py-2 rounded-lg text-white flex items-center justify-center gap-2`} icon={<Plus className="w-4 h-4" />}>
                 Agregar Cálculo APU al Presupuesto
-              </button>
+              </PrimaryButton>
             </Tooltip>
           </div>
         )}
@@ -1189,12 +1182,9 @@ export default function BudgetCalculator() {
                         <td className="py-2 px-3 text-white/60">{renglon.category}</td>
                         <td className="py-2 px-3 text-right">
                           <Tooltip content={`Agregar ${renglon.description} al presupuesto`}>
-                            <button
-                              onClick={() => setRenglonConfirm(renglon)}
-                              className="text-cyan-400 hover:text-cyan-300 text-xs"
-                            >
+                                                        <PrimaryButton type="button" onClick={() => setRenglonConfirm(renglon)} className={`text-cyan-400 hover:text-cyan-300 text-xs`}>
                               + Agregar
-                            </button>
+                            </PrimaryButton>
                           </Tooltip>
                         </td>
                       </tr>
@@ -1342,13 +1332,9 @@ export default function BudgetCalculator() {
         </div>
 
         <Tooltip content="Calcular y agregar losa de concreto al presupuesto">
-          <button
-            onClick={addSlabCalculation}
-            className="glass-button w-full px-4 py-2 rounded-lg text-white flex items-center justify-center gap-2"
-          >
-            <Calculator className="w-4 h-4" />
+                    <PrimaryButton type="button" onClick={addSlabCalculation} className={`glass-button w-full px-4 py-2 rounded-lg text-white flex items-center justify-center gap-2`} icon={<Calculator className="w-4 h-4" />}>
             Agregar Cálculo de Losa
-          </button>
+          </PrimaryButton>
         </Tooltip>
       </div>
 

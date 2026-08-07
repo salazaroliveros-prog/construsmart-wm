@@ -12,6 +12,8 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import SecondaryButton from '@/components/ui/SecondaryButton';
 import { clientSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
@@ -204,7 +206,7 @@ const loadClients = async () => {
           description="Agregue clientes para asociarlos a proyectos y hacer seguimiento de créditos."
         >
           <Tooltip content="Agregar nuevo cliente al sistema">
-            <button
+            <PrimaryButton
               onClick={() => {
                 setEditingClient(null);
                 setFormData({
@@ -220,11 +222,10 @@ const loadClients = async () => {
                 });
                 setShowForm(true);
               }}
-              className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 text-white"
+              icon={<Plus className="w-4 h-4" />}
             >
-              <Plus className="w-4 h-4" />
               Nuevo Cliente
-            </button>
+            </PrimaryButton>
           </Tooltip>
         </OnboardingTooltip>
       </div>
@@ -600,21 +601,21 @@ const loadClients = async () => {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button
+                <SecondaryButton
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="flex-1 glass-button px-4 py-2 rounded-lg text-white"
+                  fullWidth
                   aria-label="Cancelar y cerrar formulario de cliente"
                 >
                   Cancelar
-                </button>
-                <button
+                </SecondaryButton>
+                <PrimaryButton
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-cyan-500 to-violet-600 px-4 py-2 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity"
+                  fullWidth
                   aria-label={editingClient ? 'Actualizar cliente existente' : 'Guardar nuevo cliente'}
                 >
                   {editingClient ? 'Actualizar' : 'Guardar'}
-                </button>
+                </PrimaryButton>
               </div>
             </form>
           </div>

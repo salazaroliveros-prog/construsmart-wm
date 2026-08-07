@@ -11,6 +11,8 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import SecondaryButton from '@/components/ui/SecondaryButton';
 import { formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { subcontractorSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
@@ -539,13 +541,17 @@ export default function SubcontractorManager() {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button type="button" onClick={closeModal} className="flex-1 glass-button px-4 py-2 rounded-lg text-white">
+                <SecondaryButton type="button" onClick={closeModal} fullWidth>
                   Cancelar
-                </button>
-                <button type="submit" disabled={saveLoading} className="flex-1 glass-button px-4 py-2 rounded-lg text-white bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 disabled:opacity-50 flex items-center justify-center gap-2">
-                  <Save className="w-4 h-4" />
+                </SecondaryButton>
+                <PrimaryButton
+                  type="submit"
+                  fullWidth
+                  disabled={saveLoading}
+                  icon={<Save className="w-4 h-4" />}
+                >
                   {saveLoading ? <LoadingSpinner size={16} /> : (editingSubcontractor ? 'Actualizar' : 'Crear')}
-                </button>
+                </PrimaryButton>
               </div>
             </form>
           </div>

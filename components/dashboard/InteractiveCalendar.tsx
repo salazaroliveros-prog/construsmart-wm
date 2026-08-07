@@ -17,6 +17,8 @@ interface CalendarEvent {
   projectName?: string;
 }
 
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import SecondaryButton from '@/components/ui/SecondaryButton';
 export default function InteractiveCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -246,19 +248,12 @@ export default function InteractiveCalendar() {
                 </select>
               </div>
               <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowEventForm(false)}
-                  className="flex-1 glass-button px-3 py-1.5 rounded text-[11px] text-white"
-                >
+                                <SecondaryButton type="button" onClick={() => setShowEventForm(false)}>
                   Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-gradient-to-r from-cyan-500 to-violet-600 px-3 py-1.5 rounded text-[11px] text-white font-semibold"
-                >
+                </SecondaryButton>
+                                <PrimaryButton type="submit">
                   Guardar
-                </button>
+                </PrimaryButton>
               </div>
             </form>
           </div>
