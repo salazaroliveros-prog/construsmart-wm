@@ -1,6 +1,6 @@
 'use client';
 
-import { LayoutDashboard, FolderKanban, Calculator, DollarSign, Users, Warehouse, TrendingUp, Database, LogOut, AlertCircle, BookOpen, Settings, Truck, ClipboardList, Wallet, UserCircle } from 'lucide-react';
+import { Database, LogOut, AlertCircle, LayoutDashboard, type LucideIcon } from 'lucide-react';
 import { useState, useEffect, useCallback, memo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -10,30 +10,23 @@ import { getSyncStats } from '@/lib/utils/offlineSync';
 import { useCompanySettings } from '@/lib/hooks/useBusinessSettings';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
+import { NAVIGATION_TABS, type NavigationTabId } from '@/components/dashboard/navigation';
 
 interface NavItem {
-  id: string;
+  id: NavigationTabId;
   label: string;
-  icon: string;
+  icon: LucideIcon;
   badge?: number;
   badgeColor?: 'cyan' | 'amber' | 'red';
 }
 
-const NAV_ITEMS_BASE: NavItem[] = [
-  { id: 'dashboard', label: 'Tablero Principal', icon: 'LayoutDashboard' },
-  { id: 'projects', label: 'Proyectos', icon: 'FolderKanban' },
-  { id: 'budgets', label: 'Presupuestos', icon: 'Calculator' },
-  { id: 'finances', label: 'Finanzas', icon: 'DollarSign' },
-  { id: 'payroll', label: 'Nómina', icon: 'Users' },
-  { id: 'warehouse', label: 'Almacén', icon: 'Warehouse' },
-  { id: 'progress', label: 'Progreso', icon: 'TrendingUp' },
-  { id: 'suppliers', label: 'Proveedores', icon: 'Truck' },
-  { id: 'orders', label: 'Órdenes', icon: 'ClipboardList' },
-  { id: 'subcontractors', label: 'Subcontratos', icon: 'Users' },
-  { id: 'clients', label: 'Clientes', icon: 'Users' },
-  { id: 'logs', label: 'Bitácora', icon: 'BookOpen' },
-  { id: 'settings', label: 'Ajustes', icon: 'Settings' },
-];
+// Fuente de verdad única: proviene de components/dashboard/navigation.ts,
+// la misma que usa la barra de tabs superior en app/page.tsx.
+const NAV_ITEMS_BASE: NavItem[] = NAVIGATION_TABS.map(tab => ({
+  id: tab.id,
+  label: tab.label,
+  icon: tab.icon,
+}));
 
 interface DashboardNavProps {
   activeTab: string;
@@ -41,22 +34,6 @@ interface DashboardNavProps {
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }
-
-const ICONS: Record<string, React.ReactNode> = {
-  LayoutDashboard: <LayoutDashboard className="w-5 h-5" />,
-  FolderKanban: <FolderKanban className="w-5 h-5" />,
-  Calculator: <Calculator className="w-5 h-5" />,
-  DollarSign: <DollarSign className="w-5 h-5" />,
-  Users: <Users className="w-5 h-5" />,
-  Warehouse: <Warehouse className="w-5 h-5" />,
-  TrendingUp: <TrendingUp className="w-5 h-5" />,
-  Truck: <Truck className="w-5 h-5" />,
-  ClipboardList: <ClipboardList className="w-5 h-5" />,
-  BookOpen: <BookOpen className="w-5 h-5" />,
-  Settings: <Settings className="w-5 h-5" />,
-  Wallet: <Wallet className="w-5 h-5" />,
-  UserCircle: <UserCircle className="w-5 h-5" />,
-};
 
 const NavButton = memo(({
   item,
@@ -70,6 +47,8 @@ const NavButton = memo(({
   onClick?: () => void;
 }) => {
   const isTouch = useRef(false);
+
+  const Icon = item.icon;
 
   const handleTouchStart = () => {
     isTouch.current = true;
@@ -116,7 +95,7 @@ const NavButton = memo(({
       title={isCollapsed ? item.label : undefined}
     >
       <div className={`flex items-center ${isCollapsed ? '' : 'gap-3'}`}>
-        {ICONS[item.icon]}
+        <Icon className="w-5 h-5 flex-shrink-0" />
         {!isCollapsed && <span className="font-medium text-xs sm:text-sm">{item.label}</span>}
       </div>
       {!isCollapsed && item.badge && (
