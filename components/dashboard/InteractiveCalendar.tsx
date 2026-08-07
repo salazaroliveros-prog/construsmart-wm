@@ -156,7 +156,7 @@ export default function InteractiveCalendar() {
           {isLoading && <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" title="Cargando eventos..." />}
           <button
             onClick={goToToday}
-            className="text-[10px] text-cyan-400 hover:text-cyan-300 transition-colors"
+            className="text-[10px] text-cyan-400 hover:text-cyan-300 transition-colors min-h-[44px] flex items-center px-1"
           >
             Hoy
           </button>
@@ -164,7 +164,8 @@ export default function InteractiveCalendar() {
         <div className="flex items-center gap-0.5">
           <button
             onClick={goToPreviousMonth}
-            className="p-0.5 rounded text-white/60 hover:text-white transition-colors"
+            className="p-2 rounded text-white/60 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Mes anterior"
           >
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
@@ -173,7 +174,8 @@ export default function InteractiveCalendar() {
           </span>
           <button
             onClick={goToNextMonth}
-            className="p-0.5 rounded text-white/60 hover:text-white transition-colors"
+            className="p-2 rounded text-white/60 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Mes siguiente"
           >
             <ChevronRight className="w-3.5 h-3.5" />
           </button>

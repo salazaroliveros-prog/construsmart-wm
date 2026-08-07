@@ -46,6 +46,13 @@ body {
 }
 
 /* Modal Backdrop with Enhanced Gaussian Blur */
+/* iOS dvh: evita que 100vh/90vh desborden al ocultarse la barra del navegador */
+@supports (height: 100dvh) {
+  .modal-backdrop > .glass-panel,
+  .modal-backdrop .modal-content {
+    max-height: 88dvh;
+  }
+}
 .modal-backdrop {
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(calc(var(--glass-blur-intensity) * 1.2)) saturate(150%);
