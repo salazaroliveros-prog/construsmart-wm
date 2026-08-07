@@ -8,7 +8,8 @@ import {
   updateLastSyncTimestamp, 
   isOnline,
   getSyncStats,
-} from '@/lib/utils/offlineSync';
+} from '@/lib/utils/offlineSync';
+import { useBusinessSettings } from '@/lib/hooks/useBusinessSettings';
 
 /**
  * Wires the offline-first sync engine into the app.
@@ -32,6 +33,8 @@ import {
  */
 export default function SyncProvider() {
   const initializedRef = useRef(false);
+  const intervalRef = useRef<number | null>(null);
+  const { settings } = useBusinessSettings();
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -58,7 +61,7 @@ export default function SyncProvider() {
       if (!isOnline()) return;
       try {
         const stats = await getSyncStats();
-        const totalPending = 
+        const totalPending =
           stats.pendingProjects + stats.pendingBudgets + stats.pendingBudgetItems +
           stats.pendingTransactions + stats.pendingPayroll +
           stats.pendingWarehouse + stats.pendingClients +
@@ -72,7 +75,7 @@ export default function SyncProvider() {
           const result = await forceFullSync();
           if (result.success) {
             updateLastSyncTimestamp();
-            console.log(`Sync pull: ${result.synced} registros actualizados desde servidor`);
+            console.log(`[Sync] pull: ${result.synced} registros actualizados desde servidor`);
           }
         } else {
           // Hay cambios pendientes: primero hacemos push de esos cambios
@@ -80,7 +83,7 @@ export default function SyncProvider() {
           // Luego hacemos pull para traer datos actualizados
           const result = await forceFullSync();
           if (result.success) {
-            console.log(`Sync pull: ${result.synced} registros sincronizados desde servidor`);
+            console.log(`[Sync] pull: ${result.synced} registros sincronizados desde servidor`);
           }
         }
       } catch (error) {
@@ -108,18 +111,30 @@ export default function SyncProvider() {
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
 
-    // Sincronización periódica (cada 5 minutos)
-    const intervalId = window.setInterval(() => {
-      if (isOnline()) {
-        runPush().then(() => runPull());
+    const startInterval = () => {
+      if (intervalRef.current) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
-    }, 300_000);
+      const minutes = Number(settings.syncInterval) || 5;
+      const ms = Math.max(1, minutes) * 60 * 1000;
+      intervalRef.current = window.setInterval(() => {
+        if (isOnline()) {
+          runPush().then(() => runPull());
+        }
+      }, ms);
+    };
+
+    startInterval();
 
     return () => {
-      window.clearInterval(intervalId);
+      if (intervalRef.current) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, []);
+  }, [settings.syncInterval]);
 
   return null;
 }

@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export interface ColorPalette {
   id: string;
   name: string;
@@ -143,18 +145,18 @@ export const GLASS_PRESETS: GlassPreset[] = [
     shadowIntensity: 60,
   },
   {
-    id: 'minimal',
-    name: 'Minimalista',
-    description: 'Efectos sutiles para máxima claridad',
-    cardTransparency: 70,
-    glassBlurIntensity: 50,
-    glassGrainIntensity: 20,
-    borderOpacity: 8,
-    shadowIntensity: 40,
+    id: 'subtle',
+    name: 'Sutil',
+    description: 'Efecto mínimo para máximo rendimiento',
+    cardTransparency: 75,
+    glassBlurIntensity: 30,
+    glassGrainIntensity: 10,
+    borderOpacity: 5,
+    shadowIntensity: 20,
   },
   {
-    id: 'frosted',
-    name: 'Escarchado',
+    id: 'intense',
+    name: 'Intenso',
     description: 'Desenfoque intenso con alta transparencia',
     cardTransparency: 40,
     glassBlurIntensity: 150,
@@ -331,3 +333,102 @@ export const COLOR_PALETTES: ColorPalette[] = [
     backgroundEnd: '#075985',
   },
 ];
+
+export const CompanySettingsSchema: z.ZodType<CompanySettings> = z.object({
+  name: z.string().max(200).optional().default(''),
+  shortName: z.string().max(100).optional().default(''),
+  nit: z.string().max(50).optional().default(''),
+  address: z.string().max(300).optional().default(''),
+  phone: z.string().max(30).optional().default(''),
+  email: z.string().email().optional().default(''),
+  logoUrl: z.string().url().optional().default(''),
+});
+
+export const FinancialSettingsSchema: z.ZodType<FinancialSettings> = z.object({
+  currency: z.enum(['GTQ', 'USD', 'EUR']),
+  currencySymbol: z.string().max(10),
+  vatRate: z.number().min(0).max(100),
+  profitMargin: z.number().min(0).max(100),
+  includeVatInPrices: z.boolean(),
+  indirectPercentage: z.number().min(0).max(100),
+  contingencyPercentage: z.number().min(0).max(100),
+  profitPercentage: z.number().min(0).max(100),
+});
+
+export const ExportSettingsSchema: z.ZodType<ExportSettings> = z.object({
+  pdfIncludeLogo: z.boolean(),
+  pdfIncludeSignature: z.boolean(),
+  pdfIncludeDetailedBreakdown: z.boolean(),
+  csvDelimiter: z.enum([',', ';']),
+  csvIncludeHeaders: z.boolean(),
+  dateFormat: z.enum(['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD']),
+});
+
+export const DashboardSettingsSchema: z.ZodType<DashboardSettings> = z.object({
+  visibleWidgets: z.array(z.string()),
+  widgetOrder: z.array(z.string()),
+  gridColumns: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+  showCharts: z.boolean(),
+  showCalendar: z.boolean(),
+  showStats: z.boolean(),
+  showBudgetSummary: z.boolean(),
+});
+
+export const NotificationSettingsSchema: z.ZodType<NotificationSettings> = z.object({
+  pushEnabled: z.boolean(),
+  emailEnabled: z.boolean(),
+  inAppEnabled: z.boolean(),
+  notifyOnSyncComplete: z.boolean(),
+  notifyOnError: z.boolean(),
+  notifyOnNewProject: z.boolean(),
+  notifyOnLowStock: z.boolean(),
+  notifyOnBudgetExceeded: z.boolean(),
+  notifyOnPayrollDue: z.boolean(),
+});
+
+export const ThemeAccentSettingsSchema: z.ZodType<ThemeAccentSettings> = z.object({
+  borderRadius: z.enum(['sm', 'md', 'lg', 'xl', 'full']),
+  spacing: z.enum(['compact', 'normal', 'relaxed']),
+  buttonStyle: z.enum(['glass', 'solid', 'outline']),
+  cardStyle: z.enum(['glass', 'solid', 'border']),
+  fontScale: z.union([z.literal(0.875), z.literal(1), z.literal(1.125)]),
+});
+
+export const LocaleSettingsSchema: z.ZodType<LocaleSettings> = z.object({
+  language: z.enum(['es', 'en']),
+  region: z.enum(['GT', 'US', 'EU']),
+  timezone: z.string().max(100),
+  firstDayOfWeek: z.union([z.literal(0), z.literal(1)]),
+  numberFormat: z.enum(['es-GT', 'en-US', 'de-DE']),
+});
+
+export const UISettingsSchema: z.ZodType<UISettings> = z.object({
+  colorPalette: z.string(),
+  customColors: z.object({
+    primary: z.string().optional(),
+    secondary: z.string().optional(),
+    accent: z.string().optional(),
+    backgroundStart: z.string().optional(),
+    backgroundEnd: z.string().optional(),
+  }).optional(),
+  glassPreset: z.string(),
+  themeMode: z.enum(['dark', 'light', 'auto']),
+  cardTransparency: z.number().min(0).max(100),
+  glassBlurIntensity: z.number().min(0).max(100),
+  glassGrainIntensity: z.number().min(0).max(100),
+  borderOpacity: z.number().min(0).max(100),
+  shadowIntensity: z.number().min(0).max(100),
+  animationSpeed: z.enum(['slow', 'normal', 'fast']),
+  compactMode: z.boolean(),
+  highContrast: z.boolean(),
+  performanceMode: z.enum(['high', 'balanced', 'low']),
+  company: CompanySettingsSchema,
+  financial: FinancialSettingsSchema,
+  export: ExportSettingsSchema,
+  autoSync: z.boolean(),
+  syncInterval: z.number().positive(),
+  dashboard: DashboardSettingsSchema,
+  notifications: NotificationSettingsSchema,
+  accents: ThemeAccentSettingsSchema,
+  locale: LocaleSettingsSchema,
+});

@@ -10,11 +10,17 @@ import {
   DEFAULT_UI_SETTINGS, UISettings,
   CompanySettings, FinancialSettings, ExportSettings,
   DashboardSettings, NotificationSettings, ThemeAccentSettings, LocaleSettings,
-  COLOR_PALETTES, GLASS_PRESETS
+  COLOR_PALETTES, GLASS_PRESETS, UISettingsSchema
 } from '@/lib/types/uiSettings';
 import { applyUISettings } from '@/lib/utils/applySettings';
 import { updateSettingsSingleton } from '@/lib/hooks/useBusinessSettings';
 import { useToast } from '@/components/ui/Toast';
+import {
+  saveUserSettings,
+  loadUserSettings,
+  uploadUserLogo,
+  deleteUserLogo,
+} from '@/app/actions/settings-actions';
 
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import SecondaryButton from '@/components/ui/SecondaryButton';
@@ -24,6 +30,7 @@ export default function SettingsManager() {
   const [activeTab, setActiveTab] = useState<'appearance' | 'glass' | 'dashboard' | 'notifications' | 'accents' | 'company' | 'financial' | 'export' | 'locale' | 'sync'>('appearance');
   const [hasChanges, setHasChanges] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string>('');
+  const [remoteLoading, setRemoteLoading] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -42,17 +49,45 @@ export default function SettingsManager() {
     } catch (error) {
       console.error('Error loading settings:', error);
     }
+
+    if (typeof window === 'undefined') return;
+    setRemoteLoading(true);
+    loadUserSettings()
+      .then(({ settings: remoteSettings, error }) => {
+        if (!error && remoteSettings) {
+          setSettings((prev) => {
+            const merged = { ...DEFAULT_UI_SETTINGS, ...remoteSettings };
+            if (merged.company?.logoUrl) {
+              setLogoPreview(merged.company.logoUrl);
+            }
+            return merged;
+          });
+        }
+      })
+      .catch((err) => console.error('Error loading remote settings:', err))
+      .finally(() => setRemoteLoading(false));
   };
 
-const saveSettings = () => {
+const saveSettings = async () => {
     try {
+      const parsed = UISettingsSchema.safeParse(settings);
+      if (!parsed.success) {
+        const messages = parsed.error.issues.map((e) => e.message).join(', ');
+        showToast('error', `Configuración inválida: ${messages}`);
+        return;
+      }
+
       localStorage.setItem('uiSettings', JSON.stringify(settings));
-      // Aplica los estilos UI usando la función centralizada (única fuente de verdad)
       applyUISettings(settings);
-      // Notifica al singleton para que todos los hooks useBusinessSettings reaccionen
       updateSettingsSingleton(settings);
       setHasChanges(false);
-      showToast('success', 'Configuración guardada exitosamente');
+
+      const result = await saveUserSettings(parsed.data);
+      if (result.success) {
+        showToast('success', 'Configuración guardada y sincronizada');
+      } else {
+        showToast('error', result.error || 'Error al sincronizar en la nube');
+      }
     } catch (error) {
       console.error('Error saving settings:', error);
       showToast('error', 'Error al guardar la configuración');
@@ -149,22 +184,54 @@ const saveSettings = () => {
     setHasChanges(true);
   };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setLogoPreview(base64String);
-        updateCompanySetting('logoUrl', base64String);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
+    if (!allowedTypes.includes(file.type)) {
+      showToast('error', 'Formato no permitido. Usa PNG, JPG, WEBP o SVG.');
+      return;
+    }
+
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      showToast('error', 'El logo no debe superar 2MB.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    showToast('info', 'Subiendo logo...');
+    const result = await uploadUserLogo(formData);
+    if (result.success && result.url) {
+      setLogoPreview(result.url);
+      updateCompanySetting('logoUrl', result.url);
+      showToast('success', 'Logo subido exitosamente');
+    } else {
+      showToast('error', result.error || 'Error al subir logo');
     }
   };
 
-  const handleRemoveLogo = () => {
-    setLogoPreview('');
-    updateCompanySetting('logoUrl', '');
+  const handleRemoveLogo = async () => {
+    const currentLogo = settings.company?.logoUrl || '';
+    if (!currentLogo) return;
+
+    const match = currentLogo.match(/\/storage\/v1\/object\/public\/logos\/(.+)/);
+    let storagePath = '';
+    if (match) {
+      storagePath = decodeURIComponent(match[1]);
+    }
+
+    const result = await deleteUserLogo(storagePath);
+    if (result.success) {
+      setLogoPreview('');
+      updateCompanySetting('logoUrl', '');
+      showToast('success', 'Logo eliminado');
+    } else {
+      showToast('error', result.error || 'Error al eliminar logo');
+    }
   };
 
   const applyGlassPreset = (presetId: string) => {
