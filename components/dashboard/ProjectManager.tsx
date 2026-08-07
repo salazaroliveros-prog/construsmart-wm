@@ -120,8 +120,7 @@ export default function ProjectManager() {
     try {
       // Lectura desde Supabase cuando hay conexión (Server-side pull al store local)
       if (isOnline) {
-        const pulled = await fetchProjectsForOffline();
-        console.log('[ProjectManager] fetchProjectsForOffline trajo=', pulled.length);
+        await fetchProjectsForOffline();
       }
       const localProjects = await offlineDB.projects.toArray();
       const userId = await getUserScope();

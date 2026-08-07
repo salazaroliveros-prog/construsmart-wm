@@ -50,4 +50,21 @@ export function useScrollLock(isLocked: boolean) {
       }
     };
   }, [isLocked]);
+
+  // Safety reset on page unload to prevent stuck scroll lock
+  useEffect(() => {
+    const reset = () => {
+      scrollLockCount = 0;
+      document.body.style.overflow = originalBodyStyle.overflow;
+      document.body.style.position = originalBodyStyle.position;
+      document.body.style.top = originalBodyStyle.top;
+      document.body.style.left = originalBodyStyle.left;
+      document.body.style.width = originalBodyStyle.width;
+      document.body.style.right = originalBodyStyle.right;
+      window.scrollTo(0, previousScrollPosition.current);
+    };
+
+    window.addEventListener('beforeunload', reset);
+    return () => window.removeEventListener('beforeunload', reset);
+  }, []);
 }

@@ -20,7 +20,9 @@ import {
   loadUserSettings,
   uploadUserLogo,
   deleteUserLogo,
+  runRemoteDatabaseDiagnostics,
 } from '@/app/actions/settings-actions';
+import type { RemoteDiagnosticsResult } from '@/app/actions/settings-actions';
 
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import SecondaryButton from '@/components/ui/SecondaryButton';
@@ -31,6 +33,9 @@ export default function SettingsManager() {
   const [hasChanges, setHasChanges] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string>('');
   const [remoteLoading, setRemoteLoading] = useState(false);
+  const [showDiag, setShowDiag] = useState(false);
+  const [diagRunning, setDiagRunning] = useState(false);
+  const [diagResult, setDiagResult] = useState<RemoteDiagnosticsResult | null>(null);
 
   useEffect(() => {
     loadSettings();
@@ -250,6 +255,22 @@ const saveSettings = async () => {
     }
   };
 
+  const runDiagnostics = async () => {
+    setDiagRunning(true);
+    setDiagResult(null);
+    try {
+      const result = await runRemoteDatabaseDiagnostics();
+      setDiagResult(result);
+      if (!result.success) {
+        showToast('error', result.error || 'Error en diagnóstico');
+      }
+    } catch (e) {
+      showToast('error', 'Error ejecutando diagnóstico');
+    } finally {
+      setDiagRunning(false);
+    }
+  };
+
   const tabs = [
     { id: 'appearance' as const, label: 'Apariencia', icon: Palette },
     { id: 'glass' as const, label: 'Glassmorphism', icon: Sliders },
@@ -272,7 +293,15 @@ const saveSettings = async () => {
             <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-white">Configuración del Sistema</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+              Configuración del Sistema
+              {remoteLoading && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-[10px] sm:text-xs">
+                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                  Sincronizando
+                </span>
+              )}
+            </h2>
             <p className="text-xs sm:text-sm text-white/60">Personaliza toda la plataforma</p>
           </div>
         </div>
@@ -335,7 +364,17 @@ const saveSettings = async () => {
         {activeTab === 'financial' && <FinancialTab settings={settings} updateSetting={updateFinancialSetting} />}
         {activeTab === 'export' && <ExportTab settings={settings} updateSetting={updateExportSetting} />}
         {activeTab === 'locale' && <LocaleTab settings={settings} updateSetting={updateLocaleSetting} />}
-        {activeTab === 'sync' && <SyncTab settings={settings} updateSetting={updateSetting} />}
+        {activeTab === 'sync' && (
+          <SyncTab
+            settings={settings}
+            updateSetting={updateSetting}
+            showDiag={showDiag}
+            setShowDiag={setShowDiag}
+            diagRunning={diagRunning}
+            diagResult={diagResult}
+            onRunDiagnostics={runDiagnostics}
+          />
+        )}
       </div>
     </div>
   );
@@ -1109,9 +1148,22 @@ function ExportTab({ settings, updateSetting }: {
   );
 }
 
-function SyncTab({ settings, updateSetting }: { 
-  settings: UISettings; 
+function SyncTab({
+  settings,
+  updateSetting,
+  showDiag,
+  setShowDiag,
+  diagRunning,
+  diagResult,
+  onRunDiagnostics,
+}: {
+  settings: UISettings;
   updateSetting: <K extends keyof UISettings>(key: K, value: UISettings[K]) => void;
+  showDiag: boolean;
+  setShowDiag: (value: boolean) => void;
+  diagRunning: boolean;
+  diagResult: RemoteDiagnosticsResult | null;
+  onRunDiagnostics: () => void;
 }) {
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -1161,6 +1213,84 @@ function SyncTab({ settings, updateSetting }: {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/10 space-y-3 sm:space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs sm:text-sm font-medium text-white">Diagnóstico de BD Remota</p>
+            <p className="text-[10px] sm:text-xs text-white/60">Verifica conexión, usuario admin y tablas</p>
+          </div>
+          <button
+            onClick={() => setShowDiag(!showDiag)}
+            className="px-3 sm:px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-white/80 hover:text-white hover:border-white/20 text-xs sm:text-sm transition-all"
+          >
+            {showDiag ? 'Ocultar' : 'Ver chequeos'}
+          </button>
+        </div>
+
+        {showDiag && (
+          <div className="space-y-3">
+            <PrimaryButton
+              type="button"
+              onClick={onRunDiagnostics}
+              disabled={diagRunning}
+              className={`w-full justify-center ${
+                diagRunning
+                  ? 'bg-white/10 text-white/40 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-cyan-500 to-violet-600 text-white hover:opacity-90'
+              }`}
+            >
+              {diagRunning ? 'Ejecutando diagnóstico...' : 'Ejecutar diagnóstico ahora'}
+            </PrimaryButton>
+
+
+            {diagResult && (
+              <div className="space-y-2">
+                {diagResult.success && diagResult.data && (
+                  <>
+                    <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                      <p className="text-xs sm:text-sm font-medium text-white mb-1">Resumen</p>
+                      <p className="text-[10px] sm:text-xs text-white/60">
+                        Admin: {diagResult.data.admin.exists ? '✅ existe' : '❌ no existe'} |
+                        Confirmado: {diagResult.data.admin.confirmed ? 'sí' : 'no'} |
+                        Último login: {diagResult.data.admin.lastSignIn ?? 'nunca'}
+                      </p>
+                      <p className="text-[10px] text-white/40 mt-1">
+                        {new Date(diagResult.data.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      {diagResult.data.checks.map((check, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-start gap-2 p-2 sm:p-3 rounded-xl bg-white/5 border border-white/10"
+                        >
+                          <span className="text-sm sm:text-base leading-none">{check.ok ? '✅' : '❌'}</span>
+                          <div className="flex-1">
+                            <p className="text-xs sm:text-sm text-white">{check.label}</p>
+                            {check.detail && (
+                              <p className="text-[10px] sm:text-xs text-white/60">{check.detail}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {!diagResult.success && (
+                  <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30">
+                    <p className="text-xs sm:text-sm text-red-300">
+                      {diagResult.error || 'Error desconocido en el diagnóstico'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

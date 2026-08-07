@@ -137,3 +137,87 @@ export async function deleteUserLogo(storagePath: string) {
     };
   }
 }
+
+export type RemoteDiagnosticsResult = {
+  success: boolean;
+  data?: {
+    admin: { email: string; exists: boolean; confirmed: boolean; lastSignIn?: string };
+    checks: { label: string; ok: boolean; detail?: string }[];
+    timestamp: string;
+  };
+  error?: string;
+};
+
+export async function runRemoteDatabaseDiagnostics(): Promise<RemoteDiagnosticsResult> {
+  try {
+    await requireServerAuth();
+
+    const { createSupabaseAdminClient } = await import('@/lib/supabase/admin');
+    const admin = createSupabaseAdminClient();
+
+    const ADMIN_EMAIL = 'salazaroliveros@gmail.com';
+    const checks: { label: string; ok: boolean; detail?: string }[] = [];
+
+    const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 100 });
+    const user = users?.find((u) => u.email === ADMIN_EMAIL);
+    const adminExists = !!user;
+    const adminConfirmed = !!user?.email_confirmed_at;
+
+    checks.push({
+      label: `Usuario administrador (${ADMIN_EMAIL})`,
+      ok: adminExists,
+      detail: adminExists
+        ? `Confirmado: ${adminConfirmed ? 'sí' : 'no'} | Último login: ${user?.last_sign_in_at ?? 'nunca'}`
+        : 'No encontrado en Supabase Auth',
+    });
+
+    const tables = [
+      'projects',
+      'budgets',
+      'budget_items',
+      'financial_transactions',
+      'payroll_employees',
+      'payroll_records',
+      'warehouse_stock',
+      'clients',
+      'project_logs',
+      'suppliers',
+      'purchase_orders',
+      'purchase_order_items',
+      'subcontractors',
+      'user_settings',
+    ];
+
+    for (const table of tables) {
+      const { count, error } = await admin
+        .from(table)
+        .select('*', { count: 'exact', head: true });
+
+      checks.push({
+        label: `Tabla: ${table}`,
+        ok: !error,
+        detail: error ? error.message : `${count ?? 0} registros`,
+      });
+    }
+
+    return {
+      success: true,
+      data: {
+        admin: {
+          email: ADMIN_EMAIL,
+          exists: adminExists,
+          confirmed: adminConfirmed,
+          lastSignIn: user?.last_sign_in_at,
+        },
+        checks,
+        timestamp: new Date().toISOString(),
+      },
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Error ejecutando diagnóstico',
+    };
+  }
+}
+

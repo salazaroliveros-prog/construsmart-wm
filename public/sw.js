@@ -34,8 +34,17 @@ if (isDevelopment) {
     );
   });
   self.addEventListener('fetch', (event) => {
-    // In development, always use network
-    event.respondWith(fetch(event.request));
+    // In development, always use network but don't break page navigations
+    // or throw on requests that legitimately fail (Server Actions, HMR, etc.)
+    const request = event.request;
+    // Skip navigation requests (let the browser handle them) and
+    // non-GET requests (Server Actions, mutations) to avoid breaking the app
+    if (request.mode === 'navigate' || request.method !== 'GET') {
+      return;
+    }
+    event.respondWith(
+      fetch(request).catch(() => Response.error())
+    );
   });
 } else {
   // Production mode: continue with normal caching
@@ -103,6 +112,12 @@ if (isDevelopment) {
       return;
     }
 
+    // Never intercept document (navigation) requests: let the browser handle
+    // them directly to avoid serving stale HTML and breaking the App Router.
+    if (event.request.mode === 'navigate') {
+      return;
+    }
+
     // Handle different request types with appropriate strategies
     if (isStaticAsset(url)) {
       event.respondWith(cacheFirst(event.request));
@@ -126,13 +141,16 @@ if (isDevelopment) {
     }
 
     console.log('[SW] Cache miss, fetching:', request.url);
-    const networkResponse = await fetch(request);
-
-    if (networkResponse.ok) {
-      cache.put(request, networkResponse.clone());
+    try {
+      const networkResponse = await fetch(request);
+      if (networkResponse && networkResponse.ok) {
+        cache.put(request, networkResponse.clone()).catch(() => {});
+      }
+      return networkResponse || Response.error();
+    } catch (error) {
+      console.warn('[SW] Cache-First fetch failed, returning error:', request.url);
+      return Response.error();
     }
-
-    return networkResponse;
   }
 
   // Strategy: Network-First
@@ -143,11 +161,11 @@ if (isDevelopment) {
       console.log('[SW] Network-First: attempting network:', request.url);
       const networkResponse = await fetch(request);
 
-      if (networkResponse.ok) {
-        cache.put(request, networkResponse.clone());
+      if (networkResponse && networkResponse.ok) {
+        cache.put(request, networkResponse.clone()).catch(() => {});
       }
 
-      return networkResponse;
+      return networkResponse || Response.error();
     } catch (error) {
       console.log('[SW] Network failed, using cache:', request.url);
       const cachedResponse = await cache.match(request);
@@ -156,16 +174,14 @@ if (isDevelopment) {
         return cachedResponse;
       }
 
-      if (request.method === 'GET') {
-        return new Response(JSON.stringify({
-          error: 'Offline',
-          message: 'No cached data available'
-        }), {
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-
-      throw error;
+      // Return a graceful JSON error instead of rejecting the promise
+      return new Response(JSON.stringify({
+        error: 'Offline',
+        message: 'No cached data available'
+      }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
   }
 
@@ -176,8 +192,8 @@ if (isDevelopment) {
 
     const fetchPromise = fetch(request)
       .then((networkResponse) => {
-        if (networkResponse.ok) {
-          cache.put(request, networkResponse.clone());
+        if (networkResponse && networkResponse.ok) {
+          cache.put(request, networkResponse.clone()).catch(() => {});
         }
         return networkResponse;
       })
@@ -216,10 +232,16 @@ if (isDevelopment) {
   // Strategy: Network-Only
   async function networkOnly(request) {
     try {
-      return await fetch(request);
+      const response = await fetch(request);
+      return response || Response.error();
     } catch (error) {
-      console.log('[SW] Network request failed:', request.url);
-      throw error;
+      console.warn('[SW] Network request failed (non-cacheable):', request.url);
+      // Return a response instead of throwing to avoid 'Failed to fetch'
+      return new Response(null, {
+        status: 504,
+        statusText: 'Gateway Timeout',
+        headers: new Headers({ 'Content-Type': 'text/plain' }),
+      });
     }
   }
 

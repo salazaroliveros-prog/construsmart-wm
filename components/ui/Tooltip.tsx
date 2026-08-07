@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useId, cloneElement, isValidElement } from 'react';
 
 interface TooltipProps {
   content: string;
@@ -18,6 +18,8 @@ export default function Tooltip({
   const [isVisible, setIsVisible] = useState(false);
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const generatedId = useId();
+  const tooltipId = `tooltip-${generatedId}`;
 
   const showTooltip = () => {
     const id = setTimeout(() => setIsVisible(true), delay);
@@ -43,6 +45,8 @@ export default function Tooltip({
     right: 'right-full top-1/2 -translate-y-1/2 border-r-gray-900 border-t-transparent border-b-transparent border-l-transparent',
   };
 
+  const child = children;
+
   return (
     <div
       className="relative inline-block"
@@ -51,10 +55,10 @@ export default function Tooltip({
       onFocus={showTooltip}
       onBlur={hideTooltip}
     >
-      {children}
       {isVisible && (
         <div
           ref={tooltipRef}
+          id={tooltipId}
           className={`absolute z-50 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap ${positionClasses[position]}`}
           role="tooltip"
         >
@@ -64,6 +68,11 @@ export default function Tooltip({
           />
         </div>
       )}
+      {isValidElement(child)
+        ? cloneElement(child as React.ReactElement<any>, {
+            'aria-describedby': tooltipId,
+          } as any)
+        : child}
     </div>
   );
 }
