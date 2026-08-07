@@ -1,14 +1,11 @@
-v1.0.3 - UI Enhancements & Dashboard Optimization
-- Sidebar colapsable (w-64 ↔ w-16) con iconos visibles
-- Módulo de Settings: 6 paletas de colores, transparencia, blur intensity
-- Gaussian blur en modales (backdrop-filter: blur)
-- Icon animations (float, glow, shake, pulse, bounce, spin)
-- Dashboard responsive con 6 gráficas interactivas
-- Nueva gráfica: Avance Físico vs Financiero
-- Nueva gráfica: Alertas de Stock
-- Zero-scroll viewport design
-- Mobile responsiveness mejorado con orientaciones específicas
-- Dependencias actualizadas: React 19.2.8, Tailwind 3.4.19, PostCSS 8.5.25
-- PWA manifest actualizado con shortcut de Ajustes
-- Service Worker v2 con estrategias de caching optimizadas
+v1.1.0 - PWA nativa & Dashboard Analítico
+- Fix: alta de proyectos con fechas vacías ('' → null) en Server Actions y offline sync
+- Nuevo módulo de Analytics con dashboard analítico
+- Sync bidireccional offline-first (Dexie + Supabase) robusto
+- PWA: manifest completo (id, lang, display_override, launch_handler)
+- PWA: shortcuts para Tablero, Proyectos, Presupuestos, Avance, Subcontratos, Analytics, Ajustes
+- PWA: meta tags nativas iOS/Android (apple-mobile-web-app-capable, etc.)
+- PWA: favicon real + apple-touch-icon + maskable icons precacheados
+- Service Worker v5 con precache de assets de instalación
+- Sidebar colapsable, 6 nuevas gráficas ejecutivas, control de avance físico vs financiero
 - npm run build: ✅ Zero errors

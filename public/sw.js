@@ -1,11 +1,12 @@
 // CONSTRUCTORA WM/M&S - SERVICE WORKER
 // Slogan: "CONSTRUYENDO EL FUTURO"
 // Progressive Web App - 100% Offline Capable
+// v1.1.0 - PWA install assets & icon precache
 
-const CACHE_NAME = 'constructora-wm-v4';
-const STATIC_CACHE = 'constructora-wm-static-v4';
-const DATA_CACHE = 'constructora-wm-data-v4';
-const RUNTIME_CACHE = 'constructora-wm-runtime-v4';
+const CACHE_NAME = 'constructora-wm-v5';
+const STATIC_CACHE = 'constructora-wm-static-v5';
+const DATA_CACHE = 'constructora-wm-data-v5';
+const RUNTIME_CACHE = 'constructora-wm-runtime-v5';
 
 // Detect environment
 const isDevelopment = self.location.hostname === 'localhost' ||
@@ -54,6 +55,11 @@ if (isDevelopment) {
   const STATIC_ASSETS = [
     '/',
     '/manifest.json',
+    '/favicon.ico',
+    '/icons/logo-192x192.png',
+    '/icons/logo-512x512.png',
+    '/icons/logo-192x192-maskable.png',
+    '/icons/logo-512x512-maskable.png',
     '/assets/branding/logo-constructora-wm.jpg',
     '/assets/branding/letterhead-multiservicios.jpg',
   ];

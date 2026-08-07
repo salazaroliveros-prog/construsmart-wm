@@ -1,13 +1,19 @@
 {
+  "id": "/",
   "name": "CONSTRUCTORA WM/M&S",
   "short_name": "Constructora WM",
-  "description": "Sistema de Gestión de Construcción - CONSTRUYENDO EL FUTURO",
+  "description": "Sistema ERP de construcción - CONSTRUYENDO EL FUTURO",
+  "lang": "es",
+  "dir": "ltr",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
-  "orientation": "any",
+  "orientation": "portrait-primary",
   "scope": "/",
+  "launch_handler": { "client_mode": "navigate" },
+  "categories": ["business", "productivity", "utilities"],
   "icons": [
     {
       "src": "/icons/logo-192x192.png",
@@ -34,14 +40,13 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["business", "productivity", "utilities"],
   "screenshots": [],
   "shortcuts": [
     {
       "name": "Tablero Principal",
       "short_name": "Tablero",
       "description": "Ver dashboard principal con KPIs y calendario",
-      "url": "/",
+      "url": "/?tab=dashboard",
       "icons": [
         {
           "src": "/icons/logo-192x192.png",
@@ -74,10 +79,10 @@
       ]
     },
     {
-      "name": "Finanzas",
-      "short_name": "Finanzas",
-      "description": "Gestionar finanzas y transacciones",
-      "url": "/?tab=finances",
+      "name": "Control de Avance",
+      "short_name": "Avance",
+      "description": "Control de avance físico y financiero",
+      "url": "/?tab=progress",
       "icons": [
         {
           "src": "/icons/logo-192x192.png",
@@ -86,10 +91,10 @@
       ]
     },
     {
-      "name": "Nómina",
-      "short_name": "Nómina",
-      "description": "Gestionar nómina y empleados",
-      "url": "/?tab=payroll",
+      "name": "Subcontratos",
+      "short_name": "Subcontratos",
+      "description": "Gestionar subcontratos",
+      "url": "/?tab=subcontractors",
       "icons": [
         {
           "src": "/icons/logo-192x192.png",
@@ -98,10 +103,10 @@
       ]
     },
     {
-      "name": "Almacén",
-      "short_name": "Almacén",
-      "description": "Gestionar inventario de materiales",
-      "url": "/?tab=warehouse",
+      "name": "Analytics",
+      "short_name": "Analytics",
+      "description": "Dashboard analítico con gráficas",
+      "url": "/?tab=analytics",
       "icons": [
         {
           "src": "/icons/logo-192x192.png",
@@ -110,46 +115,10 @@
       ]
     },
     {
-      "name": "Proveedores",
-      "short_name": "Proveedores",
-      "description": "Gestionar proveedores de materiales",
-      "url": "/?tab=suppliers",
-      "icons": [
-        {
-          "src": "/icons/logo-192x192.png",
-          "sizes": "96x96"
-        }
-      ]
-    },
-    {
-      "name": "Órdenes de Compra",
-      "short_name": "Órdenes",
-      "description": "Gestionar órdenes de compra",
-      "url": "/?tab=orders",
-      "icons": [
-        {
-          "src": "/icons/logo-192x192.png",
-          "sizes": "96x96"
-        }
-      ]
-    },
-    {
-      "name": "Clientes",
-      "short_name": "Clientes",
-      "description": "Gestionar clientes (CRM)",
-      "url": "/?tab=clients",
-      "icons": [
-        {
-          "src": "/icons/logo-192x192.png",
-          "sizes": "96x96"
-        }
-      ]
-    },
-    {
-      "name": "Bitácora",
-      "short_name": "Bitácora",
-      "description": "Ver bitácora de proyectos",
-      "url": "/?tab=logs",
+      "name": "Ajustes",
+      "short_name": "Ajustes",
+      "description": "Configuración de la aplicación",
+      "url": "/?tab=settings",
       "icons": [
         {
           "src": "/icons/logo-192x192.png",

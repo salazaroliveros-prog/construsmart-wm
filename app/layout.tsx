@@ -24,6 +24,16 @@ export const metadata: Metadata = {
   authors: [{ name: APP_CONFIG.name }],
   creator: APP_CONFIG.name,
   publisher: APP_CONFIG.name,
+  applicationName: APP_CONFIG.name,
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: APP_CONFIG.name,
+  },
+  formatDetection: {
+    telephone: false,
+  },
   openGraph: {
     type: 'website',
     locale: 'es_GT',
@@ -36,6 +46,14 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: `${APP_CONFIG.name} - Sistema de Control de Seguimiento`,
     description: APP_CONFIG.description,
+  },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icons/logo-192x192.png', type: 'image/png', sizes: '192x192' },
+      { url: '/icons/logo-512x512.png', type: 'image/png', sizes: '512x512' },
+    ],
+    apple: [{ url: '/icons/logo-192x192.png', sizes: '192x192', type: 'image/png' }],
   },
   robots: {
     index: true,
@@ -60,11 +78,15 @@ export default function RootLayout({
   return (
     <html lang="es" className={cn("font-sans", geist.variable)}>
       <head>
-        <link rel="icon" href="/logo.png" />
-        <link rel="apple-touch-icon" href="/logo.png" />
-        <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#0f172a" />
-        <meta name="description" content="Sistema de Gestión de Construcción - CONSTRUCTORA WM/M&S - CONSTRUYENDO EL FUTURO" />
+        <meta name="description" content="Sistema ERP de Construcción - CONSTRUCTORA WM/M&S - CONSTRUYENDO EL FUTURO" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Constructora WM" />
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/icons/logo-192x192.png" />
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={inter.className}>
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-cyan-500 focus:text-white focus:rounded-lg">
