@@ -30,6 +30,7 @@ const PurchaseOrderManager = dynamic(() => import('@/components/warehouse/Purcha
 const SubcontractorManager = dynamic(() => import('@/components/warehouse/SubcontractorManager'), { ssr: false });
 const ProgressTracker = dynamic(() => import('@/components/progress/ProgressTracker'), { ssr: false });
 const SettingsManager = dynamic(() => import('@/components/settings/SettingsManager'), { ssr: false });
+const AnalyticsDashboard = dynamic(() => import('@/components/analytics/AnalyticsDashboard'), { ssr: false });
 
 interface RecentActivity {
   id: string;
@@ -247,6 +248,8 @@ const renderTabContent = () => {
         return isTabLoading ? <TabSkeleton /> : <ClientManager />;
       case 'logs':
         return isTabLoading ? <TabSkeleton /> : <ProjectLogManager />;
+      case 'analytics':
+        return isTabLoading ? <TabSkeleton /> : <AnalyticsDashboard />;
       case 'settings':
         return isTabLoading ? <TabSkeleton /> : <SettingsManager />;
       default:

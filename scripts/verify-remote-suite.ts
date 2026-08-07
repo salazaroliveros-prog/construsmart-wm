@@ -76,6 +76,11 @@ async function checkTables() {
 
   console.log('\n=== 2. TABLAS DE LA SUITE ===');
   for (const table of tables) {
+    const probe = await admin.from(table).select('*').limit(1);
+    if (probe.error && /schema cache|does not exist/i.test(probe.error.message)) {
+      console.log(`❌ ${table.padEnd(24)} NO EXISTE (${probe.error.message})`);
+      continue;
+    }
     const { count, error } = await admin
       .from(table)
       .select('*', { count: 'exact', head: true });

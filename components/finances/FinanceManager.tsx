@@ -28,6 +28,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 interface TransactionFormData {
   project_id?: string;
+  budget_item_id?: string; // ✅ NUEVO: Vínculo a renglón presupuestario
   type: 'income' | 'expense';
   category: 'materiales' | 'mano_de_obra' | 'herramienta' | 'sub_contrato' | 'administrativo' | 'personal' | 'transporte' | 'fijos' | 'hogar' | 'aporte' | 'trabajos_extra' | 'Gastos Operativos / Nómina de Mano de Obra';
   description: string;
@@ -132,6 +133,7 @@ export default function FinanceManager() {
     payment_method: 'transferencia',
     tax_amount: 0,
     is_reconciled: false,
+    budget_item_id: undefined, // ✅ NUEVO
   });
 
   const [availableProjects, setAvailableProjects] = useState<LocalProject[]>([]);
@@ -256,6 +258,7 @@ export default function FinanceManager() {
       unit_cost: 0,
       date: new Date().toISOString().split('T')[0],
       receipt_url: '',
+      budget_item_id: undefined, // ✅ NUEVO
     });
     setEditingTransaction(null);
   };
@@ -265,6 +268,7 @@ export default function FinanceManager() {
       setEditingTransaction(transaction);
       setFormData({
         project_id: transaction.project_id,
+        budget_item_id: (transaction as any).budget_item_id, // ✅ NUEVO
         type: transaction.type as 'income' | 'expense',
         category: transaction.category as any,
         description: transaction.description,
@@ -304,10 +308,11 @@ export default function FinanceManager() {
       // Obtener user_id para tenencia
       const userId = await getCurrentUserId();
 
-      const transactionData: LocalFinancialTransaction = {
+      const transactionData: any = {
         id: editingTransaction?.id || generateId(),
         user_id: userId || undefined,
         project_id: formData.project_id,
+        budget_item_id: formData.budget_item_id, // ✅ NUEVO
         type: formData.type,
         category: formData.category,
         description: formData.description,
@@ -730,6 +735,22 @@ export default function FinanceManager() {
                       <option key={project.id} value={project.id}>{project.name}</option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label className="block text-white/60 text-sm mb-1">Renglón Presupuestario (Opcional) ✅</label>
+                  <select
+                    value={formData.budget_item_id || ''}
+                    onChange={(e) => setFormData({ ...formData, budget_item_id: e.target.value || undefined })}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                  >
+                    <option value="">Sin asociar a presupuesto</option>
+                    {budgetItems.map(item => (
+                      <option key={item.id} value={item.id as string}>
+                        {item.code} - {item.description} ({formatCurrency(item.unit_cost)}/un)
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-white/40 text-xs mt-1">Vincula esta transacción a un renglón presupuestario para análisis de varianza</p>
                 </div>
                 <div>
                   <label className="block text-white/60 text-sm mb-1">Fecha</label>

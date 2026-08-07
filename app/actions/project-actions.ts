@@ -14,6 +14,10 @@ import { z } from 'zod';
 // operación para que los Server Components refresquen los datos.
 // ============================================================================
 
+const emptyToNull = (v: string | null | undefined): string | null => {
+  return v == null || v === '' ? null : v;
+};
+
 const ProjectSchema = z.object({
   id: z.string().uuid().optional(),
   code: z.string().min(1, 'El código es obligatorio').max(20),
@@ -49,15 +53,15 @@ export async function createProject(input: unknown): Promise<{ data: ProjectRow 
       code: parsed.code,
       name: parsed.name,
       client_name: parsed.client_name,
-      client_phone: parsed.client_phone ?? null,
-      client_email: parsed.client_email ?? null,
+      client_phone: emptyToNull(parsed.client_phone),
+      client_email: emptyToNull(parsed.client_email),
       location: parsed.location,
       typology: parsed.typology,
       area_m2: parsed.area_m2,
       quality_level: parsed.quality_level,
       status: parsed.status,
-      start_date: parsed.start_date ?? null,
-      estimated_end_date: parsed.estimated_end_date ?? null,
+      start_date: emptyToNull(parsed.start_date),
+      estimated_end_date: emptyToNull(parsed.estimated_end_date),
       duration_days: parsed.duration_days,
       total_budget: parsed.total_budget,
       budget_total: parsed.budget_total ?? null,
@@ -106,7 +110,14 @@ export async function updateProject(id: string, input: unknown): Promise<{ data:
 
     // Nunca permitir que el cliente modifique el id ni la propiedad (ownership).
     const { id: _ignoredId, ...rest } = parsed;
-    const updatePayload = rest as ProjectUpdate;
+    const updatePayload: ProjectUpdate = {
+      ...rest,
+      // Solo normaliza campos que el cliente incluyó explícitamente en el patch.
+      ...(rest.client_phone !== undefined && { client_phone: emptyToNull(rest.client_phone) }),
+      ...(rest.client_email !== undefined && { client_email: emptyToNull(rest.client_email) }),
+      ...(rest.start_date !== undefined && { start_date: emptyToNull(rest.start_date) }),
+      ...(rest.estimated_end_date !== undefined && { estimated_end_date: emptyToNull(rest.estimated_end_date) }),
+    };
 
     const { data, error } = await supabase
       .from('projects')

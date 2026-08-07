@@ -12,6 +12,7 @@ import {
   Users,
   Wallet,
   Warehouse,
+  TrendingUp,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -34,6 +35,7 @@ export const NAVIGATION_TABS: readonly NavTab[] = [
   { id: 'subcontractors', label: 'Subcontratos', icon: Users },
   { id: 'clients', label: 'Clientes', icon: UserCircle },
   { id: 'logs', label: 'Bitácora', icon: BookOpen },
+  { id: 'analytics', label: 'Analytics', icon: TrendingUp },
   { id: 'settings', label: 'Ajustes', icon: Settings },
 ] as const;
 

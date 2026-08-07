@@ -250,6 +250,10 @@ export default function ProjectManager() {
         id: editingProject?.id || generateId(),
         user_id: userId || undefined,
         ...formData,
+        client_phone: formData.client_phone || undefined,
+        client_email: formData.client_email || undefined,
+        start_date: formData.start_date || undefined,
+        estimated_end_date: formData.estimated_end_date || undefined,
         sync_status: editingProject
           ? resolveSyncStatus({ isNewRecord: false, previousStatus: editingProject.sync_status, isOnline })
           : resolveSyncStatus({ isNewRecord: true, isOnline }),

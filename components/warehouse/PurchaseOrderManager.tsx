@@ -274,6 +274,84 @@ export default function PurchaseOrderManager() {
     }
   };
 
+  // ✅ NUEVO: Actualizar stock automáticamente cuando se recibe la orden
+  const handleReceiveOrder = async (order: LocalPurchaseOrder) => {
+    try {
+      const now = new Date().toISOString();
+      
+      // Obtener todos los items de la orden
+      const orderItems = await offlineDB.purchaseOrderItems
+        .where('purchase_order_id')
+        .equals(order.id!)
+        .toArray();
+
+      if (orderItems.length === 0) {
+        showToast('warning', 'La orden no tiene items para recibir');
+        return;
+      }
+
+      // Procesar cada item para actualizar stock
+      let itemsProcessed = 0;
+      for (const item of orderItems) {
+        const receivedQty = item.received_quantity || item.quantity;
+        
+        // Buscar en warehouse_stock por item_code
+        const stockItems = await offlineDB.warehouseStock
+          .where('item_code')
+          .equals(item.item_code)
+          .toArray();
+
+        if (stockItems.length > 0) {
+          // Actualizar stock existente
+          const stockItem = stockItems[0];
+          const newStock = (stockItem.current_stock || 0) + receivedQty;
+          
+          await offlineDB.warehouseStock.update(stockItem.id!, {
+            current_stock: newStock,
+            updated_at: now,
+            sync_status: resolveSyncStatus({ 
+              isNewRecord: false, 
+              previousStatus: stockItem.sync_status, 
+              isOnline 
+            })
+          });
+          itemsProcessed++;
+        } else {
+          // Crear nuevo registro de stock si no existe
+          const newStockId = `stock-${Date.now()}-${Math.random()}`;
+          await offlineDB.warehouseStock.add({
+            id: newStockId,
+            user_id: order.user_id,
+            project_id: order.project_id,
+            item_code: item.item_code,
+            description: item.description,
+            unit: item.unit,
+            current_stock: receivedQty,
+            minimum_threshold: 10,
+            unit_cost: item.unit_price,
+            sync_status: isOnline ? 'synced' : 'created_offline',
+            created_at: now,
+            updated_at: now
+          } as any);
+          itemsProcessed++;
+        }
+      }
+
+      // Actualizar estado de la orden a 'received'
+      await offlineDB.purchaseOrders.update(order.id!, {
+        status: 'received',
+        updated_at: now,
+        sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: order.sync_status, isOnline }),
+      });
+
+      showToast('success', `Orden recibida: ${itemsProcessed} items actualizados en stock`);
+      loadData();
+    } catch (error) {
+      console.error('Error receiving order:', error);
+      showToast('error', 'Error al recibir la orden');
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
@@ -531,7 +609,7 @@ export default function PurchaseOrderManager() {
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Tooltip content="Ver items de la orden">
                     <button
                       onClick={() => handleViewItems(order)}
@@ -562,6 +640,17 @@ export default function PurchaseOrderManager() {
                         </button>
                       </Tooltip>
                     </>
+                  )}
+                  {order.status === 'approved' && (
+                    <Tooltip content="Marcar como recibida - actualiza stock automáticamente">
+                      <button
+                        onClick={() => handleReceiveOrder(order)}
+                        className="px-3 py-2 rounded-lg bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 transition-all flex items-center gap-1"
+                      >
+                        <Package className="w-4 h-4" />
+                        Recibir
+                      </button>
+                    </Tooltip>
                   )}
                   {order.status !== 'cancelled' && order.status !== 'received' && (
                     <Tooltip content="Editar información de la orden">
@@ -764,9 +853,7 @@ export default function PurchaseOrderManager() {
                 </SecondaryButton>
                 <PrimaryButton
                   type="submit">
-                  
                   {editingOrder ? 'Actualizar' : 'Guardar'}
-                
                 </PrimaryButton>
               </div>
             </form>
@@ -846,9 +933,7 @@ export default function PurchaseOrderManager() {
                 </SecondaryButton>
                 <PrimaryButton
                   type="submit">
-                  
                   Agregar
-                
                 </PrimaryButton>
               </div>
             </form>
