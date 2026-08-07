@@ -11,6 +11,7 @@ import { generateId } from '@/lib/utils/generateId';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useIncrementalList } from '@/lib/hooks/useIncrementalList';
 import { formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
+import { calculateBudgetComparison, calculateFinanceSummary } from '@/lib/utils/summaryCalculations';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
@@ -226,58 +227,14 @@ export default function FinanceManager() {
         );
         setBudgetItems(items);
 
-        // Calculate budget vs actual comparison
+        // Calculate budget vs actual comparison using centralized calculator
         const projectTransactions = transactions.filter(t => t.project_id === projectId);
-        const actualTotal = projectTransactions
-          .filter(t => t.type === 'expense')
-          .reduce((sum, t) => sum + t.total_cost, 0);
-
-        // Calculate estimated by category from APU breakdown
-        const estimatedMaterials = items.reduce((sum, item) => {
-          if (item.apu_result?.breakdown) {
-            return sum + (item.apu_result.breakdown.materials || 0);
-          }
-          // Fallback: si no hay desglose APU, asigna el costo total a "otros" por defecto
-          return sum;
-        }, 0);
-
-        const estimatedLabor = items.reduce((sum, item) => {
-          if (item.apu_result?.breakdown) {
-            return sum + (item.apu_result.breakdown.labor || 0);
-          }
-          return sum;
-        }, 0);
-
-        const estimatedOthers = items.reduce((sum, item) => {
-          if (item.apu_result?.breakdown) {
-            return sum + (item.apu_result.breakdown.machinery || 0);
-          }
-          // Items sin desglose APU se agrupan en "otros" (maquinaria/equipo/subcontratos)
-          return sum + item.total_cost;
-        }, 0);
-
-        const actualMaterials = projectTransactions
-          .filter(t => t.category === 'materiales')
-          .reduce((sum, t) => sum + t.total_cost, 0);
-
-        const actualLabor = projectTransactions
-          .filter(t => t.category === 'mano_de_obra')
-          .reduce((sum, t) => sum + t.total_cost, 0);
-
-        const actualOthers = projectTransactions
-          .filter(t => !['materiales', 'mano_de_obra'].includes(t.category))
-          .reduce((sum, t) => sum + t.total_cost, 0);
-
-        setBudgetComparison({
-          estimatedTotal: budget.total_amount,
-          actualTotal,
-          variance: budget.total_amount - actualTotal,
-          byCategory: {
-            materiales: { estimated: estimatedMaterials, actual: actualMaterials },
-            mano_de_obra: { estimated: estimatedLabor, actual: actualLabor },
-            otros: { estimated: estimatedOthers, actual: actualOthers },
-          },
+        const budgetComparison = calculateBudgetComparison({
+          budget,
+          items,
+          transactions: projectTransactions,
         });
+        setBudgetComparison(budgetComparison);
       } else {
         setActiveBudget(null);
         setBudgetItems([]);
@@ -441,15 +398,7 @@ export default function FinanceManager() {
     resetOnItemsChange: true,
   });
 
-  const totalIncome = filteredTransactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.total_cost, 0);
-
-  const totalExpense = filteredTransactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.total_cost, 0);
-
-  const balance = totalIncome - totalExpense;
+  const { totalIncome, totalExpense, balance } = calculateFinanceSummary(filteredTransactions);
 
   useRealtimeRefresh(['financial_transactions', 'projects'], loadTransactions);
 

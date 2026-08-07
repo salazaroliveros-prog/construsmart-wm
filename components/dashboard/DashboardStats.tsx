@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Building2, DollarSign, TrendingUp, Users, Hammer, Calendar, Target } from 'lucide-react';
 import { offlineDB, LocalProject, LocalFinancialTransaction, LocalPayrollEmployee, LocalWarehouseStock } from '@/lib/db/offlineStore';
 import { useFinancialSettings, formatCurrency, calculateUtilityMarginHelper } from '@/lib/hooks/useBusinessSettings';
+import { calculateDashboardStats } from '@/lib/utils/summaryCalculations';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useBusinessSettings } from '@/lib/hooks/useBusinessSettings';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
@@ -93,27 +94,16 @@ export default function DashboardStats({ selectedProject = 'all' }: DashboardSta
     }
   };
 
-  // Por defecto mostramos proyectos activos (planning + execution).
-  // Si el usuario selecciona un proyecto específico, filtramos por ese proyecto.
-  const visibleProjects = selectedProject === 'all'
-    ? projects.filter(p => p.status === 'execution' || p.status === 'planning')
-    : projects.filter(p => p.id === selectedProject);
+  const stats = calculateDashboardStats({
+    projects,
+    transactions,
+    employees,
+    stockItems,
+    settings,
+    selectedProject,
+  });
 
-  const visibleProjectIds = new Set(visibleProjects.map(p => p.id));
-  const visibleTransactions = selectedProject === 'all'
-    ? transactions
-    : transactions.filter(t => (t.project_id || '').trim() !== '' && visibleProjectIds.has(t.project_id || ''));
-
-  const activeProjects = visibleProjects.filter(p => p.status === 'execution' || p.status === 'planning');
-  const totalBudget = visibleProjects.reduce((sum, p) => sum + (p.total_budget || p.budget_total || 0), 0);
-  const totalSpent = visibleTransactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + (t.total_cost || 0), 0);
-  const activeEmployees = employees.filter(e => e.active).length;
-  const lowStockItems = stockItems.filter(s => s.current_stock <= s.minimum_threshold).length;
-
-  // Calculate utility margin dynamically from settings
-  const utilityMargin = calculateUtilityMarginHelper(totalBudget, totalSpent, settings);
+  const { visibleProjects, visibleTransactions, activeProjects, totalBudget, totalSpent, activeEmployees, lowStockItems, utilityMargin } = stats;
 
   useRealtimeRefresh(
     ['projects', 'financial_transactions', 'payroll_employees', 'warehouse_stock'],

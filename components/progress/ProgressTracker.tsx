@@ -13,6 +13,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import { formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
+import { calculateProgressMetrics } from '@/lib/utils/summaryCalculations';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 // Recharts is a client-only library. We use static imports (like DashboardCharts.tsx)
@@ -164,60 +165,14 @@ export default function ProgressTracker() {
     const project = projects.find(p => p.id === selectedProject);
     if (!project) return;
 
-    // Calculate financial progress (actual spending)
-    const spentAmount = transactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + t.total_cost, 0);
-
-    const financialProgress = (spentAmount / activeBudget.costTotalWithIndirects) * 100;
-
-    // Calculate time progress
-    const startDate = project.start_date ? new Date(project.start_date) : new Date();
-    const endDate = project.estimated_end_date
-      ? new Date(project.estimated_end_date)
-      : new Date(startDate.getTime() + (project.duration_days * 24 * 60 * 60 * 1000));
-
-    const now = new Date();
-    const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    const daysElapsed = Math.max(0, Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
-    const timeProgress = (daysElapsed / totalDays) * 100;
-
-    // Calculate physical progress from project logs if available
-    let physicalProgress: number;
-    if (projectLogs.length > 0) {
-      // Get the most recent physical progress from logs
-      const latestLog = projectLogs
-        .filter(log => log.physical_progress !== undefined && log.physical_progress !== null)
-        .sort((a, b) => new Date(b.log_date).getTime() - new Date(a.log_date).getTime())[0];
-
-      if (latestLog && latestLog.physical_progress !== undefined) {
-        physicalProgress = latestLog.physical_progress;
-      } else {
-        // Fallback to time-based progress if no physical progress in logs
-        physicalProgress = Math.min(100, timeProgress);
-      }
-    } else {
-      // Fallback to time-based progress if no logs
-      physicalProgress = Math.min(100, timeProgress);
-    }
-
-    // Estimated amount that should have been spent based on physical progress
-    const estimatedSpent = (activeBudget.costTotalWithIndirects * physicalProgress) / 100;
-
-    const variance = physicalProgress - financialProgress;
-    const remainingBudget = activeBudget.costTotalWithIndirects - spentAmount;
-
-    setMetrics({
-      physicalProgress,
-      financialProgress,
-      variance,
-      spentAmount,
-      estimatedSpent,
-      remainingBudget,
-      daysElapsed,
-      totalDays,
-      timeProgress,
+    const metrics = calculateProgressMetrics({
+      project,
+      transactions,
+      activeBudget,
+      projectLogs,
     });
+
+    setMetrics(metrics);
   }, [activeBudget, transactions, selectedProject, projects, projectLogs]);
 
   const handleDelete = async (transaction: LocalFinancialTransaction) => {

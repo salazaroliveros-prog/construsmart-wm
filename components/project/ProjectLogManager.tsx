@@ -16,6 +16,7 @@ import PrimaryButton from '@/components/ui/PrimaryButton';
 import SecondaryButton from '@/components/ui/SecondaryButton';
 import ActionButton from '@/components/ui/ActionButton';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
+import { calculateProjectLogSummary } from '@/lib/utils/summaryCalculations';
 
 export default function ProjectLogManager() {
   const { showToast } = useToast();
@@ -248,6 +249,8 @@ export default function ProjectLogManager() {
     loadProjects();
   });
 
+  const summary = calculateProjectLogSummary(logs);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -338,7 +341,7 @@ export default function ProjectLogManager() {
             </div>
             <div>
               <p className="text-white/60 text-xs">Total Entradas</p>
-              <p className="text-white text-xl font-bold">{logs.length}</p>
+              <p className="text-white text-xl font-bold">{summary.totalEntries}</p>
             </div>
           </div>
         </div>
@@ -350,7 +353,7 @@ export default function ProjectLogManager() {
             <div>
               <p className="text-white/60 text-xs">Avances</p>
               <p className="text-white text-xl font-bold">
-                {logs.filter((l) => l.activity_type === 'progress').length}
+                {summary.advances}
               </p>
             </div>
           </div>
@@ -363,7 +366,7 @@ export default function ProjectLogManager() {
             <div>
               <p className="text-white/60 text-xs">Incidencias</p>
               <p className="text-white text-xl font-bold">
-                {logs.filter((l) => l.activity_type === 'issue').length}
+                {summary.issues}
               </p>
             </div>
           </div>
@@ -376,7 +379,7 @@ export default function ProjectLogManager() {
             <div>
               <p className="text-white/60 text-xs">Hitos</p>
               <p className="text-white text-xl font-bold">
-                {logs.filter((l) => l.activity_type === 'milestone').length}
+                {summary.milestones}
               </p>
             </div>
           </div>

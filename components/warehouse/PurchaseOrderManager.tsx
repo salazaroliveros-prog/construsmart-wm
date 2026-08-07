@@ -16,6 +16,7 @@ import PrimaryButton from '@/components/ui/PrimaryButton';
 import SecondaryButton from '@/components/ui/SecondaryButton';
 import { formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
+import { calculatePurchaseOrderSummary } from '@/lib/utils/summaryCalculations';
 
 export default function PurchaseOrderManager() {
   const { showToast } = useToast();
@@ -320,6 +321,8 @@ export default function PurchaseOrderManager() {
     loadData();
   });
 
+  const summary = calculatePurchaseOrderSummary(orders, financial);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -367,7 +370,7 @@ export default function PurchaseOrderManager() {
             </div>
             <div>
               <p className="text-white/60 text-xs">Total Órdenes</p>
-              <p className="text-white text-xl font-bold">{orders.length}</p>
+              <p className="text-white text-xl font-bold">{summary.totalOrders}</p>
             </div>
           </div>
         </div>
@@ -378,7 +381,7 @@ export default function PurchaseOrderManager() {
             </div>
             <div>
               <p className="text-white/60 text-xs">Pendientes</p>
-              <p className="text-white text-xl font-bold">{orders.filter((o) => o.status === 'pending').length}</p>
+              <p className="text-white text-xl font-bold">{summary.pending}</p>
             </div>
           </div>
         </div>
@@ -389,7 +392,7 @@ export default function PurchaseOrderManager() {
             </div>
             <div>
               <p className="text-white/60 text-xs">Por Aprobar</p>
-              <p className="text-white text-xl font-bold">{orders.filter((o) => o.status === 'pending_approval').length}</p>
+              <p className="text-white text-xl font-bold">{summary.pendingApproval}</p>
             </div>
           </div>
         </div>
@@ -400,7 +403,7 @@ export default function PurchaseOrderManager() {
             </div>
             <div>
               <p className="text-white/60 text-xs">Aprobadas</p>
-              <p className="text-white text-xl font-bold">{orders.filter((o) => o.status === 'approved').length}</p>
+              <p className="text-white text-xl font-bold">{summary.approved}</p>
             </div>
           </div>
         </div>
@@ -411,7 +414,7 @@ export default function PurchaseOrderManager() {
             </div>
             <div>
               <p className="text-white/60 text-xs">Recibidas</p>
-              <p className="text-white text-xl font-bold">{orders.filter((o) => o.status === 'received').length}</p>
+              <p className="text-white text-xl font-bold">{summary.received}</p>
             </div>
           </div>
         </div>
@@ -422,7 +425,7 @@ export default function PurchaseOrderManager() {
             </div>
             <div>
               <p className="text-white/60 text-xs">Total</p>
-              <p className="text-white text-xl font-bold">{formatCurrency(orders.reduce((sum, o) => sum + (o.total_amount || 0), 0), financial)}</p>
+              <p className="text-white text-xl font-bold">{formatCurrency(summary.totalAmount, financial)}</p>
             </div>
           </div>
         </div>

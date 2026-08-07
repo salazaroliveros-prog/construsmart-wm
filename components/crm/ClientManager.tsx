@@ -18,6 +18,7 @@ import { clientSchema, validateSchema, formatValidationErrors } from '@/lib/vali
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 import { formatGTQ } from '@/lib/config/app.config';
+import { calculateClientSummary } from '@/lib/utils/summaryCalculations';
 
 export default function ClientManager() {
   const { showToast } = useToast();
@@ -192,6 +193,8 @@ const loadClients = async () => {
   // Realtime refresh: recarga cuando cambios llegan de otros dispositivos
   useRealtimeRefresh(['clients'], loadClients);
 
+  const summary = calculateClientSummary(clients);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -239,7 +242,7 @@ const loadClients = async () => {
             </div>
             <div>
               <p className="text-white/60 text-xs">Total Clientes</p>
-              <p className="text-white text-xl font-bold">{clients.length}</p>
+              <p className="text-white text-xl font-bold">{summary.totalClients}</p>
             </div>
           </div>
         </div>
@@ -251,7 +254,7 @@ const loadClients = async () => {
             <div>
               <p className="text-white/60 text-xs">Corporativos</p>
               <p className="text-white text-xl font-bold">
-                {clients.filter((c) => c.client_type === 'corporate').length}
+                {summary.corporate}
               </p>
             </div>
           </div>
@@ -264,7 +267,7 @@ const loadClients = async () => {
             <div>
               <p className="text-white/60 text-xs">Individuales</p>
               <p className="text-white text-xl font-bold">
-                {clients.filter((c) => c.client_type === 'individual').length}
+                {summary.individual}
               </p>
             </div>
           </div>

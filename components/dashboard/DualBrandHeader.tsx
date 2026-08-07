@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Building2, Calendar, Clock, Wifi, WifiOff, CheckCircle2, AlertTriangle, RefreshCcw } from 'lucide-react';
+import { Building2, Calendar, Clock, Wifi, WifiOff, CheckCircle2, AlertTriangle, RefreshCcw, Menu } from 'lucide-react';
 import UserAvatar from '@/components/ui/UserAvatar';
 import FloatingCalendar from '@/components/ui/FloatingCalendar';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -110,9 +110,19 @@ export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) 
   }, []);
 
   return (
-<header className="glass-panel border-b border-white/10 px-3 sm:px-6 py-2.5 sm:py-4 flex items-center justify-between flex-shrink-0">
+    <header className="glass-panel border-b border-white/10 px-3 sm:px-6 py-2.5 sm:py-4 flex items-center justify-between flex-shrink-0">
       <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
         <div className="flex items-center gap-2 sm:gap-3">
+          {onMenuToggle && (
+            <button
+              type="button"
+              onClick={onMenuToggle}
+              className="md:hidden w-9 h-9 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center active:bg-white/20 transition-colors"
+              aria-label="Abrir menú"
+            >
+              <Menu className="w-5 h-5 text-white" />
+            </button>
+          )}
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center flex-shrink-0">
             <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>

@@ -9,6 +9,7 @@ import { resolveSyncStatus, normalizeSyncStatus } from '@/lib/utils/syncState';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useIncrementalList } from '@/lib/hooks/useIncrementalList';
 import { useFinancialSettings, formatCurrency } from '@/lib/hooks/useBusinessSettings';
+import { calculateWarehouseSummary } from '@/lib/utils/summaryCalculations';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
@@ -557,7 +558,7 @@ export default function WarehouseManager() {
   });
 
   const lowStockItems = stockItems.filter(item => item.current_stock <= item.minimum_threshold);
-  const summary = calculateSummary();
+  const summary = calculateWarehouseSummary(stockItems);
 
   // Realtime refresh: recarga cuando cambios llegan de otros dispositivos
   useRealtimeRefresh(['warehouse_stock', 'projects'], loadStockItems);

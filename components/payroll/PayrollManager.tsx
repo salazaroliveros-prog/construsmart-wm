@@ -9,6 +9,7 @@ import { resolveSyncStatus, normalizeSyncStatus } from '@/lib/utils/syncState';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useIncrementalList } from '@/lib/hooks/useIncrementalList';
 import { useFinancialSettings, formatCurrency } from '@/lib/hooks/useBusinessSettings';
+import { calculatePayrollSummary } from '@/lib/utils/summaryCalculations';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
@@ -689,7 +690,7 @@ const checkOnlineStatus = () => {
     resetOnItemsChange: true,
   });
 
-  const summary = calculateSummary();
+  const summary = calculatePayrollSummary(employees);
 
   // Realtime refresh: reload data when changes arrive from other devices
   useRealtimeRefresh(['payroll_employees', 'payroll_records', 'projects'], () => {

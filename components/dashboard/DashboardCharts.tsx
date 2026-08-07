@@ -38,6 +38,7 @@ import {
 import { offlineDB, LocalProject, LocalFinancialTransaction, LocalWarehouseStock, LocalProjectLog, LocalBudgetItem, LocalBudget, LocalPurchaseOrder, LocalPayrollRecord, LocalClient, LocalSupplier, LocalPurchaseOrderItem, LocalPayrollEmployee } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useBusinessSettings, calculateUtilityMarginHelper, formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
+import { calculateSummaryMetrics as calculateSummaryMetricsFromUtils } from '@/lib/utils/summaryCalculations';
 import { useFinancialDataRealtime } from '@/hooks/useFinancialDataRealtime';
 import { useEarnedValueManagement } from '@/hooks/useEarnedValueManagement';
 import EmptyState from '@/components/ui/EmptyState';
@@ -196,6 +197,15 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
   const [isLoading, setIsLoading] = useState(true);
   const [hasData, setHasData] = useState(false);
   const [showEVM, setShowEVM] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    general: true,
+    control: true,
+    operativo: true,
+  });
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
 
   // ==================== EFFECTS ====================
   useEffect(() => {
@@ -809,100 +819,13 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
   };
 
   const calculateSummaryMetrics = (projects: LocalProject[]): SummaryMetrics => {
-    if (projects.length === 0) {
-      return {
-        totalProjects: 0,
-        activeProjects: 0,
-        avgPhysicalAdvance: 0,
-        avgFinancialAdvance: 0,
-        totalBudget: 0,
-        totalExecuted: 0,
-        budgetVariance: 0,
-        utilityMarginPercentage: 0,
-        utilityMarginTarget: 0,
-        evmSPI: 1,
-        evmCPI: 1,
-        evmSV: 0,
-        evmCV: 0,
-      };
-    }
-
-    const activeProjects = projects.filter(p => p.status === 'execution').length;
-    const totalBudget = projects.reduce((sum, p) => sum + (p.budget_total || p.total_budget), 0);
-
-    let totalPhysical = 0;
-    let totalFinancial = 0;
-    let totalExpenses = 0;
-
-    projects.forEach(project => {
-      if (project.status === 'completed') {
-        totalPhysical += 100;
-        totalFinancial += 100;
-        return;
-      }
-
-      if (!project.start_date) return;
-      const startDate = new Date(project.start_date);
-      const endDate = project.estimated_end_date
-        ? new Date(project.estimated_end_date)
-        : new Date(startDate.getTime() + (project.duration_days || 0) * 86400000);
-      const currentDate = new Date();
-      const totalDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000));
-      const elapsedDays = Math.max(0, Math.ceil((currentDate.getTime() - startDate.getTime()) / 86400000));
-
-      const timeProgress = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
-
-      let physicalProgress = timeProgress;
-      const projectLogsData = projectLogs.filter(l => l.project_id === project.id);
-      if (projectLogsData.length > 0) {
-        const latestLog = projectLogsData
-          .filter(log => log.physical_progress !== undefined && log.physical_progress !== null)
-          .sort((a, b) => new Date(b.log_date).getTime() - new Date(a.log_date).getTime())[0];
-        if (latestLog && latestLog.physical_progress !== undefined) {
-          physicalProgress = latestLog.physical_progress;
-        }
-      }
-
-      if (project.status === 'execution') {
-        totalPhysical += physicalProgress;
-
-        const projectTransactions = transactions.filter(t => t.project_id === project.id);
-        const projectExpenses = projectTransactions
-          .filter(t => t.type === 'expense')
-          .reduce((sum, t) => sum + (t.total_cost || 0), 0);
-        totalExpenses += projectExpenses;
-        const budget = project.budget_total || project.total_budget || 0;
-        totalFinancial += budget > 0 ? Math.min(100, (projectExpenses / budget) * 100) : 0;
-      }
+    return calculateSummaryMetricsFromUtils({
+      projects,
+      transactions,
+      projectLogs,
+      settings,
+      evmMetrics: evmMetrics ?? undefined,
     });
-
-    const avgPhysicalAdvance = projects.length > 0 ? totalPhysical / projects.length : 0;
-    const avgFinancialAdvance = projects.length > 0 ? totalFinancial / projects.length : 0;
-    const totalExecuted = totalBudget * (avgFinancialAdvance / 100);
-    const budgetVariance = totalBudget - totalExecuted;
-
-    const utilityMargin = calculateUtilityMarginHelper(totalBudget, totalExpenses, settings);
-
-    const evmSPI = evmMetrics?.schedulePerformanceIndex || 1;
-    const evmCPI = evmMetrics?.costPerformanceIndex || 1;
-    const evmSV = evmMetrics?.scheduleVariance || 0;
-    const evmCV = evmMetrics?.costVariance || 0;
-
-    return {
-      totalProjects: projects.length,
-      activeProjects,
-      avgPhysicalAdvance,
-      avgFinancialAdvance,
-      totalBudget,
-      totalExecuted,
-      budgetVariance,
-      utilityMarginPercentage: utilityMargin.marginPercentage,
-      utilityMarginTarget: utilityMargin.targetMargin,
-      evmSPI,
-      evmCPI,
-      evmSV,
-      evmCV,
-    };
   };
 
   if (isLoading) {
@@ -994,15 +917,15 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
       </div>
 
       {/* Charts Grid with Scroll */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 overflow-y-auto max-h-[calc(100vh-300px)] pr-2 custom-scrollbar">
-        
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 overflow-y-auto max-h-[calc(100vh-320px)] sm:max-h-[calc(100vh-340px)] pr-1 sm:pr-2 custom-scrollbar">
+
         {/* GRÁFICO 1: CURVA S */}
-        <div className="glass-panel rounded-xl p-4 col-span-2">
-          <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-cyan-500" />
+        <div className="glass-panel rounded-xl p-3 sm:p-4 col-span-2">
+          <h3 className="text-xs sm:text-sm font-semibold text-white mb-2 sm:mb-3 flex items-center gap-2">
+            <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-500" />
             Curva S de Avance Acumulado
           </h3>
-          <div className="h-64">
+          <div className="h-40 sm:h-48 md:h-56">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={sCurveData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -1018,12 +941,12 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
         </div>
 
         {/* GRÁFICO 2: FLUJO DE CAJA */}
-        <div className="glass-panel rounded-xl p-4">
-          <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-emerald-500" />
+        <div className="glass-panel rounded-xl p-3 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-semibold text-white mb-2 sm:mb-3 flex items-center gap-2">
+            <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
             Flujo de Caja
           </h3>
-          <div className="h-64">
+          <div className="h-40 sm:h-48 md:h-56">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={cashFlowData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -1040,12 +963,12 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
         </div>
 
         {/* GRÁFICO 3: DESVIACIÓN DE PRESUPUESTO */}
-        <div className="glass-panel rounded-xl p-4">
-          <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-violet-500" />
+        <div className="glass-panel rounded-xl p-3 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-semibold text-white mb-2 sm:mb-3 flex items-center gap-2">
+            <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-violet-500" />
             Desviación de Presupuesto
           </h3>
-          <div className="h-64">
+          <div className="h-40 sm:h-48 md:h-56">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={budgetDeviationData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -1061,12 +984,12 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
         </div>
 
         {/* GRÁFICO 4: GANTT */}
-        <div className="glass-panel rounded-xl p-4">
-          <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-            <CalendarIcon className="w-4 h-4 text-amber-500" />
+        <div className="glass-panel rounded-xl p-3 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-semibold text-white mb-2 sm:mb-3 flex items-center gap-2">
+            <CalendarIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />
             Diagrama de Gantt
           </h3>
-          <div className="h-64">
+          <div className="h-40 sm:h-48 md:h-56">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={ganttData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -1080,12 +1003,12 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
         </div>
 
         {/* GRÁFICO 5: BURN RATE */}
-        <div className="glass-panel rounded-xl p-4">
-          <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-red-500" />
+        <div className="glass-panel rounded-xl p-3 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-semibold text-white mb-2 sm:mb-3 flex items-center gap-2">
+            <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500" />
             Consumo de Materiales
           </h3>
-          <div className="h-64">
+          <div className="h-40 sm:h-48 md:h-56">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={burnRateData} cx="50%" cy="50%" startAngle={180} endAngle={0} innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="nivelActual" name="Nivel Actual">
@@ -1106,12 +1029,12 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
         </div>
 
         {/* GRÁFICO 6: ÓRDENES DE COMPRA */}
-        <div className="glass-panel rounded-xl p-4">
-          <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-            <FolderOpen className="w-4 h-4 text-violet-500" />
+        <div className="glass-panel rounded-xl p-3 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-semibold text-white mb-2 sm:mb-3 flex items-center gap-2">
+            <FolderOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-violet-500" />
             Órdenes de Compra
           </h3>
-          <div className="h-64">
+          <div className="h-40 sm:h-48 md:h-56">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={purchaseOrderData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -1129,12 +1052,12 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
         </div>
 
         {/* GRÁFICO 7: NÓMINA */}
-        <div className="glass-panel rounded-xl p-4">
-          <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-            <Users className="w-4 h-4 text-emerald-500" />
+        <div className="glass-panel rounded-xl p-3 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-semibold text-white mb-2 sm:mb-3 flex items-center gap-2">
+            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
             Nómina por Periodo
           </h3>
-          <div className="h-64">
+          <div className="h-40 sm:h-48 md:h-56">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={payrollData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -1155,12 +1078,12 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
         </div>
 
         {/* GRÁFICO 8: CLIENTES */}
-        <div className="glass-panel rounded-xl p-4">
-          <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-            <Users className="w-4 h-4 text-cyan-500" />
+        <div className="glass-panel rounded-xl p-3 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-semibold text-white mb-2 sm:mb-3 flex items-center gap-2">
+            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-500" />
             Clientes por Periodo
           </h3>
-          <div className="h-64">
+          <div className="h-40 sm:h-48 md:h-56">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={clientData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -1181,12 +1104,12 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
         </div>
 
         {/* GRÁFICO 9: PROVEEDORES */}
-        <div className="glass-panel rounded-xl p-4">
-          <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-            <FolderOpen className="w-4 h-4 text-violet-500" />
+        <div className="glass-panel rounded-xl p-3 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-semibold text-white mb-2 sm:mb-3 flex items-center gap-2">
+            <FolderOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-violet-500" />
             Proveedores por Periodo
           </h3>
-          <div className="h-64">
+          <div className="h-40 sm:h-48 md:h-56">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={supplierData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />

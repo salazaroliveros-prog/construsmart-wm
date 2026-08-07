@@ -17,6 +17,7 @@ import SecondaryButton from '@/components/ui/SecondaryButton';
 import { supplierSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
+import { calculateSupplierSummary } from '@/lib/utils/summaryCalculations';
 
 export default function SupplierManager() {
   const { showToast } = useToast();
@@ -193,6 +194,8 @@ export default function SupplierManager() {
   // Realtime refresh: recarga cuando cambios llegan de otros dispositivos
   useRealtimeRefresh(['suppliers', 'purchase_orders'], loadSuppliers);
 
+  const summary = calculateSupplierSummary(suppliers);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -242,7 +245,7 @@ export default function SupplierManager() {
             </div>
             <div>
               <p className="text-white/60 text-xs">Total Proveedores</p>
-              <p className="text-white text-xl font-bold">{suppliers.length}</p>
+              <p className="text-white text-xl font-bold">{summary.totalSuppliers}</p>
             </div>
           </div>
         </div>
@@ -253,7 +256,7 @@ export default function SupplierManager() {
             </div>
             <div>
               <p className="text-white/60 text-xs">Activos</p>
-              <p className="text-white text-xl font-bold">{suppliers.length}</p>
+              <p className="text-white text-xl font-bold">{summary.active}</p>
             </div>
           </div>
         </div>
@@ -264,7 +267,7 @@ export default function SupplierManager() {
             </div>
             <div>
               <p className="text-white/60 text-xs">Contactos</p>
-              <p className="text-white text-xl font-bold">{suppliers.length}</p>
+              <p className="text-white text-xl font-bold">{summary.contacts}</p>
             </div>
           </div>
         </div>

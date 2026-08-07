@@ -171,12 +171,14 @@ export default function Dashboard() {
   const touchStartY = useRef<number | null>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (isMobileMenuOpen) return;
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (!isMobile || touchStartX.current === null || touchStartY.current === null) return;
+    if (isMobileMenuOpen) return;
 
     const deltaX = e.changedTouches[0].clientX - touchStartX.current;
     const deltaY = e.changedTouches[0].clientY - touchStartY.current;
@@ -215,7 +217,7 @@ const renderTabContent = () => {
             </div>
 
             {/* Full-width charts with scroll */}
-            <div className="flex-1 min-h-0 overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-anchor-none -mx-1 px-1">
               <DashboardCharts
                 selectedProject={selectedDashboardProject}
                 onProjectChange={setSelectedDashboardProject}
@@ -271,7 +273,7 @@ const renderTabContent = () => {
 
 return (
     <div className="flex flex-col h-dvh bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 font-sans overflow-hidden">
-        <DualBrandHeader />
+        <DualBrandHeader onMenuToggle={() => setIsMobileMenuOpen(prev => !prev)} />
         <RealtimeProvider activeTab={activeTab} />
 
         {/* Tab navigation - right below header, centered */}
@@ -323,7 +325,7 @@ return (
             className={`sidebar-container flex-shrink-0 h-full transition-all duration-300 ease-in-out z-30 ${
               isMobile ? (
                 // Mobile: absolute positioning
-                `fixed top-0 left-0 h-full ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`
+                `fixed top-0 left-0 h-full bg-slate-900/95 backdrop-blur-sm ${isMobileMenuOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'}`
               ) : (
                 // Desktop: relative with width transition
                 isSidebarCollapsed ? 'w-16' : 'w-64'
