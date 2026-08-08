@@ -24,6 +24,8 @@ export default function PrimaryButton({
       disabled={disabled || isLoading}
       className={`
         glass-button
+        min-h-[44px]
+        touch-manipulation
         ${fullWidth ? 'w-full' : ''}
         ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         ${isLoading ? 'cursor-wait' : ''}

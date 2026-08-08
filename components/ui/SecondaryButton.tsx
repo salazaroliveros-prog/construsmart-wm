@@ -28,12 +28,19 @@ export default function SecondaryButton({
         text-white
         border-white/20
         rounded-lg
-        px-4 py-2
+        px-4 py-3
         font-medium
         transition-all
         active:scale-95
         disabled:opacity-50
         disabled:cursor-not-allowed
+        min-h-[44px]
+        touch-manipulation
+        focus-visible:outline-none
+        focus-visible:ring-2
+        focus-visible:ring-cyan-400
+        focus-visible:ring-offset-2
+        focus-visible:ring-offset-slate-900
         ${fullWidth ? 'w-full' : ''}
         ${isLoading ? 'cursor-wait' : ''}
         ${className}

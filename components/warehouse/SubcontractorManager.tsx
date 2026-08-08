@@ -408,7 +408,7 @@ export default function SubcontractorManager() {
               <h2 className="text-xl font-bold text-white">
                 {editingSubcontractor ? 'Editar Subcontrato' : 'Nuevo Subcontrato'}
               </h2>
-              <button onClick={closeModal} className="text-white/60 hover:text-white p-1" aria-label="Cerrar formulario">
+              <button onClick={closeModal} className="text-white/60 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors min-h-[44px] min-w-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900" aria-label="Cerrar formulario">
                 <X className="w-6 h-6" />
               </button>
             </div>

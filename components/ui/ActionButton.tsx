@@ -33,7 +33,7 @@ export default function ActionButton({
       <button
         onClick={onClick}
         disabled={disabled}
-        className={`p-1.5 rounded-lg transition-all duration-200 ${variantStyles[variant]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
+        className={`p-3 rounded-lg transition-all duration-200 min-h-[44px] min-w-[44px] active:scale-95 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${variantStyles[variant]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
         aria-label={label}
       >
         {icon}

@@ -117,7 +117,7 @@ export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) 
             <button
               type="button"
               onClick={onMenuToggle}
-              className="md:hidden w-9 h-9 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center active:bg-white/20 transition-colors"
+              className="md:hidden w-11 h-11 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center active:bg-white/20 transition-colors min-h-[44px] min-w-[44px] touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
               aria-label="Abrir menú"
             >
               <Menu className="w-5 h-5 text-white" />

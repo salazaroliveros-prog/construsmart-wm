@@ -242,6 +242,10 @@ export default function QuickActionFab({
   // Ejecutar acción
   const handleAction = useCallback(async (action: QuickAction) => {
     try {
+      // Haptic feedback before action
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        navigator.vibrate(30); // Short vibration on action
+      }
       await action.action();
     } catch (error) {
       console.error('Error executing action:', error);
@@ -251,6 +255,10 @@ export default function QuickActionFab({
 
   // Toggle del menú
   const toggleMenu = useCallback(() => {
+    // Haptic feedback on toggle
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(20); // Very short vibration on toggle
+    }
     setIsOpen(prev => !prev);
   }, []);
 

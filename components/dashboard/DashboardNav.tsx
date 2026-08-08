@@ -84,8 +84,8 @@ const NavButton = memo(({
       onClick={handleClick}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className={`w-full flex items-center rounded-lg transition-all relative touch-manipulation ${
-        isCollapsed ? 'justify-center px-2 py-2.5' : 'justify-between px-3 py-2.5'
+      className={`w-full flex items-center rounded-lg transition-all relative touch-manipulation min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
+        isCollapsed ? 'justify-center px-2 py-3' : 'justify-between px-3 py-3'
       } ${
         active
           ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-white'

@@ -61,6 +61,7 @@ body {
   inset: 0;
   z-index: 50;
   transition: backdrop-filter var(--animation-duration) ease;
+  overscroll-behavior: contain;
 }
 
 .glass-panel::before {
@@ -562,6 +563,40 @@ label, .text-xs, .text-sm {
     min-width: 44px;
   }
 
+  /* Ensure all interactive elements have minimum touch target */
+  [role="button"], button {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+
+  /* Ensure all inputs have minimum touch target */
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="date"],
+  input[type="password"],
+  select,
+  textarea {
+    min-height: 44px !important;
+  }
+
+  /* Ensure small buttons and badges have minimum touch target */
+  .px-2.py-1, .px-2.py-0\\.5, .px-2.py-0 {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+
+  .px-3.py-2 {
+    min-height: 44px !important;
+  }
+
+  /* Decorative badges can be smaller (not interactive) */
+  .badge, .status-badge, .indicator {
+    min-height: auto !important;
+    min-width: auto !important;
+  }
+
   /* Consistent typography scale */
   h1 { font-size: 1.5rem; line-height: 1.3; }
   h2 { font-size: 1.25rem; line-height: 1.3; }
@@ -602,11 +637,30 @@ label, .text-xs, .text-sm {
     padding: 0.75rem 1rem;
     font-size: 1rem;
     border-radius: 10px;
+    min-height: 44px !important;
   }
 
   /* Hide desktop-only elements */
   .hide-on-mobile { display: none !important; }
   .show-on-mobile { display: block !important; }
+
+  /* Respect reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Increase spacing in lists for better touch targets */
+  .space-y-1 { gap: 0.75rem !important; }
+  .space-y-2 { gap: 1rem !important; }
+  .gap-1 { gap: 0.5rem !important; }
+  .gap-2 { gap: 0.75rem !important; }
+  .gap-3 { gap: 1rem !important; }
 
   /* Sidebar handling */
   .sidebar-container {
