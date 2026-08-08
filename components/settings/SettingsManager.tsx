@@ -12,6 +12,7 @@ import {
   DashboardSettings, NotificationSettings, ThemeAccentSettings, LocaleSettings,
   COLOR_PALETTES, GLASS_PRESETS, UISettingsSchema
 } from '@/lib/types/uiSettings';
+import NotificationSettingsPanel from '@/components/notifications/NotificationSettings';
 import { applyUISettings } from '@/lib/utils/applySettings';
 import { updateSettingsSingleton } from '@/lib/hooks/useBusinessSettings';
 import { useToast } from '@/components/ui/Toast';
@@ -142,14 +143,6 @@ const saveSettings = async () => {
     setSettings(prev => ({
       ...prev,
       dashboard: { ...prev.dashboard, [key]: value }
-    }));
-    setHasChanges(true);
-  };
-
-  const updateNotificationSetting = <K extends keyof NotificationSettings>(key: K, value: NotificationSettings[K]) => {
-    setSettings(prev => ({
-      ...prev,
-      notifications: { ...prev.notifications, [key]: value }
     }));
     setHasChanges(true);
   };
@@ -385,7 +378,7 @@ const saveSettings = async () => {
         )}
         {activeTab === 'glass' && <GlassTab settings={settings} updateSetting={updateSetting} applyPreset={applyGlassPreset} />}
         {activeTab === 'dashboard' && <DashboardTab settings={settings} updateSetting={updateDashboardSetting} />}
-        {activeTab === 'notifications' && <NotificationsTab settings={settings} updateSetting={updateNotificationSetting} />}
+        {activeTab === 'notifications' && <NotificationSettingsPanel />}
         {activeTab === 'accents' && <AccentsTab settings={settings} updateSetting={updateAccentSetting} />}
         {activeTab === 'company' && <CompanyTab settings={settings} updateSetting={updateCompanySetting} logoPreview={logoPreview} onLogoUpload={handleLogoUpload} onRemoveLogo={handleRemoveLogo} />}
         {activeTab === 'financial' && <FinancialTab settings={settings} updateSetting={updateFinancialSetting} />}
@@ -1424,72 +1417,6 @@ function DashboardTab({ settings, updateSetting }: {
             </div>
           ))}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function NotificationsTab({ settings, updateSetting }: {
-  settings: UISettings;
-  updateSetting: <K extends keyof NotificationSettings>(key: K, value: NotificationSettings[K]) => void;
-}) {
-  return (
-    <div className="space-y-4 sm:space-y-6">
-      <div>
-        <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
-          <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
-          Configuración de Notificaciones
-        </h3>
-      </div>
-
-      <div className="space-y-3 sm:space-y-4">
-        <p className="text-xs sm:text-sm font-medium text-white/80 mb-2">Canales</p>
-        {([
-          { key: 'inAppEnabled' as const, label: 'En la App', desc: 'Notificaciones dentro de la plataforma' },
-          { key: 'pushEnabled' as const, label: 'Push', desc: 'Notificaciones push en el navegador' },
-          { key: 'emailEnabled' as const, label: 'Email', desc: 'Notificaciones por correo electrónico' },
-        ]).map(channel => (
-          <div key={channel.key} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-white">{channel.label}</p>
-              <p className="text-[10px] sm:text-xs text-white/60">{channel.desc}</p>
-            </div>
-            <button
-              onClick={() => updateSetting(channel.key, !settings.notifications[channel.key])}
-              className={`relative w-10 h-5 sm:w-12 sm:h-6 rounded-full transition-colors ${
-                settings.notifications[channel.key] ? 'bg-cyan-500' : 'bg-white/20'
-              }`}
-            >
-              <div className={`absolute top-0.5 sm:top-1 w-4 h-4 sm:w-4 sm:h-4 rounded-full bg-white transition-transform ${
-                settings.notifications[channel.key] ? 'left-5 sm:left-7' : 'left-0.5 sm:left-1'
-              }`} />
-            </button>
-          </div>
-        ))}
-
-        <p className="text-xs sm:text-sm font-medium text-white/80 mb-2 mt-4">Eventos</p>
-        {([
-          { key: 'notifyOnSyncComplete' as const, label: 'Sincronización Completada' },
-          { key: 'notifyOnError' as const, label: 'Errores del Sistema' },
-          { key: 'notifyOnNewProject' as const, label: 'Nuevo Proyecto Creado' },
-          { key: 'notifyOnLowStock' as const, label: 'Stock Bajo en Almacén' },
-          { key: 'notifyOnBudgetExceeded' as const, label: 'Presupuesto Excedido' },
-          { key: 'notifyOnPayrollDue' as const, label: 'Nómina por Vencer' },
-        ]).map(event => (
-          <div key={event.key} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
-            <span className="text-xs sm:text-sm text-white">{event.label}</span>
-            <button
-              onClick={() => updateSetting(event.key, !settings.notifications[event.key])}
-              className={`relative w-10 h-5 sm:w-12 sm:h-6 rounded-full transition-colors ${
-                settings.notifications[event.key] ? 'bg-cyan-500' : 'bg-white/20'
-              }`}
-            >
-              <div className={`absolute top-0.5 sm:top-1 w-4 h-4 sm:w-4 sm:h-4 rounded-full bg-white transition-transform ${
-                settings.notifications[event.key] ? 'left-5 sm:left-7' : 'left-0.5 sm:left-1'
-              }`} />
-            </button>
-          </div>
-        ))}
       </div>
     </div>
   );

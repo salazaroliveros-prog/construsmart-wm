@@ -112,8 +112,8 @@ export default function DashboardStats({ selectedProject = 'all' }: DashboardSta
 
   return (
     <div className="flex flex-col w-full h-full gap-2">
-      {/* KPI Cards - mobile-first: 3 columnas en móvil */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-1 flex-shrink-0">
+      {/* KPI Cards - mobile-first: 2 columnas en móvil para mejor legibilidad */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1 flex-shrink-0">
         {!isLoading ? (
           <>
             <MemoizedStatCard
@@ -122,8 +122,6 @@ export default function DashboardStats({ selectedProject = 'all' }: DashboardSta
               subtitle={`${projects.length} total`}
               icon={<Building2 className="w-4 h-4" />}
               color="cyan"
-              trend={activeProjects.length > 0 ? '+2' : undefined}
-              trendUp={true}
             />
             <MemoizedStatCard
               title="Presupuesto Total"
@@ -138,8 +136,6 @@ export default function DashboardStats({ selectedProject = 'all' }: DashboardSta
               subtitle={totalBudget > 0 ? `${((totalSpent / totalBudget) * 100).toFixed(1)}% presup.` : 'Sin presupuesto'}
               icon={<TrendingUp className="w-4 h-4" />}
               color="violet"
-              trend={totalBudget > 0 ? '+12%' : undefined}
-              trendUp={true}
             />
             <MemoizedStatCard
               title="Empleados"
@@ -154,8 +150,6 @@ export default function DashboardStats({ selectedProject = 'all' }: DashboardSta
               subtitle={`${stockItems.length} items`}
               icon={<Hammer className="w-4 h-4" />}
               color="red"
-              trend={lowStockItems > 0 ? '+3' : undefined}
-              trendUp={false}
             />
             <MemoizedStatCard
               title="Margen Utilidad"

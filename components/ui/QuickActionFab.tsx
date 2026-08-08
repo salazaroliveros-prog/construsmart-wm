@@ -11,7 +11,9 @@ import {
   Search,
   Package,
   DollarSign,
-  FileText
+  FileText,
+  Bell,
+  BellRing
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/components/ui/Toast';
@@ -19,6 +21,8 @@ import { offlineDB } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { getUserScope } from '@/lib/utils/userScope';
+import { useNotifications } from '@/lib/hooks/useNotifications';
+import NotificationCenter from '@/components/notifications/NotificationCenter';
 
 interface QuickAction {
   id: string;
@@ -45,7 +49,9 @@ export default function QuickActionFab({
 }: QuickActionFabProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState<string | null>(null);
+  const [showNotifications, setShowNotifications] = useState(false);
   const { showToast } = useToast();
+  const { unreadCount } = useNotifications();
   const fabRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -131,6 +137,16 @@ export default function QuickActionFab({
         } else {
           await handleManualSync();
         }
+      }
+    },
+    {
+      id: 'notifications',
+      label: 'Notificaciones',
+      icon: unreadCount > 0 ? <BellRing className="w-5 h-5" /> : <Bell className="w-5 h-5" />,
+      color: unreadCount > 0 ? 'from-red-500 to-orange-500' : 'from-cyan-500 to-blue-500',
+      action: async () => {
+        setShowNotifications(true);
+        setIsOpen(false);
       }
     }
   ];
@@ -361,7 +377,24 @@ export default function QuickActionFab({
             style={{ zIndex: -1 }}
           />
         )}
+
+        {/* Notification badge */}
+        {unreadCount > 0 && !isOpen && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full text-white text-xs font-bold flex items-center justify-center border-2 border-slate-900"
+          >
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </motion.div>
+        )}
       </motion.button>
+
+      {/* Notification Center */}
+      <NotificationCenter 
+        isOpen={showNotifications} 
+        onClose={() => setShowNotifications(false)} 
+      />
     </div>
   );
 }

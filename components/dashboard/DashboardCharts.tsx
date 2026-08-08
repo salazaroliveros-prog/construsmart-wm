@@ -235,23 +235,46 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
     }
   }, [hasData, selectedProject, settings, projects, transactions, projectLogs, budgetItems, budgets, purchaseOrders, purchaseOrderItems, payrollRecords, payrollEmployees, clients, suppliers]);
 
-  useRealtimeRefresh(['projects', 'financial_transactions', 'warehouse_stock', 'project_logs', 'budget_items', 'budgets', 'purchase_orders', 'purchase_order_items', 'payroll_records', 'payroll_employees', 'clients', 'suppliers'], () => {
+  // Optimized refresh: split into groups to reduce frequent renders
+  useRealtimeRefresh(['projects', 'project_logs'], () => {
     loadProjects();
-    loadTransactions();
-    loadWarehouseStock();
     loadProjectLogs();
+  });
+
+  useRealtimeRefresh(['financial_transactions'], () => {
+    loadTransactions();
+  });
+
+  useRealtimeRefresh(['warehouse_stock'], () => {
+    loadWarehouseStock();
+  });
+
+  useRealtimeRefresh(['budget_items', 'budgets'], () => {
     loadBudgetItems();
     loadBudgets();
+  });
+
+  useRealtimeRefresh(['purchase_orders', 'purchase_order_items'], () => {
     loadPurchaseOrders();
     loadPurchaseOrderItems();
+  });
+
+  useRealtimeRefresh(['payroll_records', 'payroll_employees'], () => {
     loadPayrollRecords();
     loadPayrollEmployees();
+  });
+
+  useRealtimeRefresh(['clients', 'suppliers'], () => {
     loadClients();
     loadSuppliers();
+  });
+
+  // Reload analytics when data changes
+  useEffect(() => {
     if (hasData) {
       loadAnalyticsData();
     }
-  });
+  }, [hasData, selectedProject, settings, projects, transactions, projectLogs, budgetItems, budgets, purchaseOrders, purchaseOrderItems, payrollRecords, payrollEmployees, clients, suppliers]);
 
   // ==================== HELPER FUNCTIONS ====================
   const formatPercent = (value: number): string => {
@@ -462,7 +485,7 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
             const latestLog = projectLogsData
               .filter(log => log.physical_progress !== undefined && log.physical_progress !== null)
               .sort((a, b) => new Date(b.log_date).getTime() - new Date(a.log_date).getTime())[0];
-            if (latestLog && latestLog.physical_progress !== undefined) {
+            if (latestLog && latestLog.physical_progress !== undefined && latestLog.physical_progress !== null) {
               physicalProgress = latestLog.physical_progress;
             }
           }
@@ -925,9 +948,9 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
             <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-500" />
             Curva S de Avance Acumulado
           </h3>
-          <div className="h-40 sm:h-48 md:h-56">
+          <div className="h-48 sm:h-52 md:h-56 lg:h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={sCurveData}>
+              <AreaChart data={sCurveData} aria-label="Gráfica de Curva S mostrando avance planificado y avance real de proyectos">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis dataKey="period" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} className="text-white" />
                 <YAxis stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickFormatter={(value) => `${value}%`} className="text-white" />
@@ -946,9 +969,9 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
             <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
             Flujo de Caja
           </h3>
-          <div className="h-40 sm:h-48 md:h-56">
+          <div className="h-48 sm:h-52 md:h-56 lg:h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={cashFlowData}>
+              <ComposedChart data={cashFlowData} aria-label="Gráfica de Flujo de Caja mostrando ingresos, egresos y saldo neto por mes">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis dataKey="period" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} className="text-white" />
                 <YAxis stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} className="text-white" />
@@ -968,9 +991,9 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
             <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-violet-500" />
             Desviación de Presupuesto
           </h3>
-          <div className="h-40 sm:h-48 md:h-56">
+          <div className="h-48 sm:h-52 md:h-56 lg:h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={budgetDeviationData} layout="vertical">
+              <BarChart data={budgetDeviationData} layout="vertical" aria-label="Gráfica de Desviación de Presupuesto por capítulos de construcción">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis type="number" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 11 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickFormatter={(value) => `Q${(value / 1000).toFixed(0)}k`} className="text-white" />
                 <YAxis type="category" dataKey="capitulo" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 11 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} width={100} interval={0} className="text-white" />
@@ -989,9 +1012,9 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
             <CalendarIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />
             Diagrama de Gantt
           </h3>
-          <div className="h-40 sm:h-48 md:h-56">
+          <div className="h-48 sm:h-52 md:h-56 lg:h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={ganttData} layout="vertical">
+              <BarChart data={ganttData} layout="vertical" aria-label="Diagrama de Gantt mostrando fases y progreso de proyectos">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis type="number" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 11 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} domain={[0, 100]} tickFormatter={(value) => `${value}%`} className="text-white" />
                 <YAxis type="category" dataKey="tarea" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 11 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} width={120} interval={0} className="text-white" />
@@ -1008,9 +1031,9 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
             <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500" />
             Consumo de Materiales
           </h3>
-          <div className="h-40 sm:h-48 md:h-56">
+          <div className="h-48 sm:h-52 md:h-56 lg:h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
+              <PieChart aria-label="Gráfica de Consumo de Materiales mostrando niveles actuales y puntos de reorden">
                 <Pie data={burnRateData} cx="50%" cy="50%" startAngle={180} endAngle={0} innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="nivelActual" name="Nivel Actual">
                   {burnRateData.map((entry, index) => {
                     const isBelowReorder = entry.nivelActual < entry.puntoReorden;
@@ -1034,9 +1057,9 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
             <FolderOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-violet-500" />
             Órdenes de Compra
           </h3>
-          <div className="h-40 sm:h-48 md:h-56">
+          <div className="h-48 sm:h-52 md:h-56 lg:h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={purchaseOrderData}>
+              <BarChart data={purchaseOrderData} aria-label="Gráfica de Órdenes de Compra mostrando estados por mes">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis dataKey="periodo" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} className="text-white" />
                 <YAxis stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} className="text-white" />
@@ -1057,9 +1080,9 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
             <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
             Nómina por Periodo
           </h3>
-          <div className="h-40 sm:h-48 md:h-56">
+          <div className="h-48 sm:h-52 md:h-56 lg:h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={payrollData}>
+              <ComposedChart data={payrollData} aria-label="Gráfica de Nómina mostrando costos totales, empleados activos y horas extra por periodo">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis dataKey="periodo" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} className="text-white" />
                 <YAxis yAxisId="left" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickFormatter={(value) => `Q${(value / 1000).toFixed(0)}k`} className="text-white" />
@@ -1083,9 +1106,9 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
             <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-500" />
             Clientes por Periodo
           </h3>
-          <div className="h-40 sm:h-48 md:h-56">
+          <div className="h-48 sm:h-52 md:h-56 lg:h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={clientData}>
+              <ComposedChart data={clientData} aria-label="Gráfica de Clientes mostrando nuevos clientes, clientes activos y saldo pendiente por periodo">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis dataKey="periodo" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} className="text-white" />
                 <YAxis yAxisId="left" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} className="text-white" />
@@ -1109,9 +1132,9 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
             <FolderOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-violet-500" />
             Proveedores por Periodo
           </h3>
-          <div className="h-40 sm:h-48 md:h-56">
+          <div className="h-48 sm:h-52 md:h-56 lg:h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={supplierData}>
+              <ComposedChart data={supplierData} aria-label="Gráfica de Proveedores mostrando órdenes, montos totales y proveedores activos por periodo">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis dataKey="periodo" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} className="text-white" />
                 <YAxis yAxisId="left" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} className="text-white" />

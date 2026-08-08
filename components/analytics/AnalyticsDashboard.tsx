@@ -72,7 +72,7 @@ export default function AnalyticsDashboard() {
       const totalEV = (completionPercent / 100) * totalPV;
 
       // Calculate CPI and SPI
-      const CPI = totalEV > 0 ? totalAC / totalEV : 1;
+      const CPI = totalAC > 0 ? totalEV / totalAC : 1;
       const SPI = totalPV > 0 ? totalEV / totalPV : 1;
 
       // Variance
@@ -143,10 +143,11 @@ export default function AnalyticsDashboard() {
 
     return dates.map(date => {
       cumulative += dateGroups[date];
+      const plannedValue = totalBudget > 0 ? (cumulative / totalBudget) * 100 : 0;
       return {
         date: new Date(date).toLocaleDateString('es-GT'),
         actual: cumulative,
-        planned: (cumulative / (totalBudget || cumulative)) * totalBudget
+        planned: Math.min(100, plannedValue) // Limitar a 100%
       };
     });
   };
