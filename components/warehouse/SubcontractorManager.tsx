@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, DollarSign, Percent, Calendar, FileText, X, CheckCircle, Clock, Save } from 'lucide-react';
 import { offlineDB, LocalSubcontractor, LocalSupplier, LocalProject } from '@/lib/db/offlineStore';
 import { resolveSyncStatus } from '@/lib/utils/syncState';
+import { queueDelete } from '@/lib/utils/offlineSync';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useToast } from '@/components/ui/Toast';
 import EmptyState from '@/components/ui/EmptyState';
@@ -202,7 +203,12 @@ export default function SubcontractorManager() {
   const handleDelete = async () => {
     if (!deleteConfirm) return;
     try {
+      // Encolar eliminación remota para sincronización con Supabase
+      await queueDelete('subcontractors', deleteConfirm);
+      
+      // Eliminar de localStorage
       await offlineDB.subcontractors.delete(deleteConfirm.id!);
+      
       showToast('success', 'Subcontrato eliminado');
       setDeleteConfirm(null);
       loadData();

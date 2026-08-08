@@ -218,8 +218,8 @@ export const DEFAULT_UI_SETTINGS: UISettings = {
     profitMargin: 20,
     includeVatInPrices: false,
     indirectPercentage: 15,
-    contingencyPercentage: 10,
-    profitPercentage: 20,
+    contingencyPercentage: 5,
+    profitPercentage: 10,
   },
   export: {
     pdfIncludeLogo: true,
