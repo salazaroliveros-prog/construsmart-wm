@@ -1295,3 +1295,23 @@ html, body {
   background: rgba(255, 255, 255, 0.25);
 }
 
+/* Settings Tab Content Scrollbar (Glass Panel Internal) */
+.glass-panel.flex.flex-col > div:last-child::-webkit-scrollbar {
+  width: 6px;
+}
+
+.glass-panel.flex.flex-col > div:last-child::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.glass-panel.flex.flex-col > div:last-child::-webkit-scrollbar-thumb {
+  background: rgba(6, 182, 212, 0.5);
+  border-radius: 3px;
+}
+
+.glass-panel.flex.flex-col > div:last-child::-webkit-scrollbar-thumb:hover {
+  background: rgba(6, 182, 212, 0.7);
+}
+
+

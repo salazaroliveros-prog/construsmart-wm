@@ -271,14 +271,14 @@ const saveSettings = async () => {
     }
     const { data } = diagResult;
     const lines: string[] = [
-      'CONSTRUCTORA WM/M&S — Diagnóstico de BD Remota',
+      'CONSTRUCTORA WM/M&S - Diagnóstico de BD Remota',
       `Fecha: ${new Date(data.timestamp).toLocaleString()}`,
       '',
       `Administrador (${data.admin.email}): ${data.admin.exists ? 'OK' : 'FALTA'} | Confirmado: ${data.admin.confirmed ? 'sí' : 'no'} | Último login: ${data.admin.lastSignIn ?? 'nunca'}`,
       `Resumen: ${data.summary.ok}/${data.summary.total} OK | ${data.summary.failed} fallos`,
       '',
       'Chequeos:',
-      ...data.checks.map((c) => `  [${c.ok ? 'OK' : 'FALLO'}] ${c.label} — ${c.detail ?? ''}`),
+      ...data.checks.map((c) => `  [${c.ok ? 'OK' : 'FALLO'}] ${c.label} - ${c.detail ?? ''}`),
       '',
       'Sugerencias:',
       ...data.suggestions.map((s) => `  • (${s.severity}) ${s.title}\n    ${s.description}\n    Acción: ${s.action.split('\n').join(' ')}`),
@@ -367,35 +367,37 @@ const saveSettings = async () => {
       </div>
 
       {/* Tab Content */}
-      <div className="glass-panel rounded-2xl p-4 sm:p-6">
-        {activeTab === 'appearance' && (
-          <AppearanceTab
-            settings={settings}
-            updateSetting={updateSetting}
-            updateCustomColor={updateCustomColor}
-            resetCustomColors={resetCustomColors}
-          />
-        )}
-        {activeTab === 'glass' && <GlassTab settings={settings} updateSetting={updateSetting} applyPreset={applyGlassPreset} />}
-        {activeTab === 'dashboard' && <DashboardTab settings={settings} updateSetting={updateDashboardSetting} />}
-        {activeTab === 'notifications' && <NotificationSettingsPanel />}
-        {activeTab === 'accents' && <AccentsTab settings={settings} updateSetting={updateAccentSetting} />}
-        {activeTab === 'company' && <CompanyTab settings={settings} updateSetting={updateCompanySetting} logoPreview={logoPreview} onLogoUpload={handleLogoUpload} onRemoveLogo={handleRemoveLogo} />}
-        {activeTab === 'financial' && <FinancialTab settings={settings} updateSetting={updateFinancialSetting} />}
-        {activeTab === 'export' && <ExportTab settings={settings} updateSetting={updateExportSetting} />}
-        {activeTab === 'locale' && <LocaleTab settings={settings} updateSetting={updateLocaleSetting} />}
-        {activeTab === 'sync' && (
-          <SyncTab
-            settings={settings}
-            updateSetting={updateSetting}
-            showDiag={showDiag}
-            setShowDiag={setShowDiag}
-            diagRunning={diagRunning}
-            diagResult={diagResult}
-            onRunDiagnostics={runDiagnostics}
-            onCopyReport={copyDiagnosticsReport}
-          />
-        )}
+      <div className="glass-panel rounded-2xl p-4 sm:p-6 flex flex-col" style={{ maxHeight: '70vh' }}>
+        <div className="flex-1 overflow-y-auto space-y-4 sm:space-y-6 pr-2">
+          {activeTab === 'appearance' && (
+            <AppearanceTab
+              settings={settings}
+              updateSetting={updateSetting}
+              updateCustomColor={updateCustomColor}
+              resetCustomColors={resetCustomColors}
+            />
+          )}
+          {activeTab === 'glass' && <GlassTab settings={settings} updateSetting={updateSetting} applyPreset={applyGlassPreset} />}
+          {activeTab === 'dashboard' && <DashboardTab settings={settings} updateSetting={updateDashboardSetting} />}
+          {activeTab === 'notifications' && <NotificationSettingsPanel />}
+          {activeTab === 'accents' && <AccentsTab settings={settings} updateSetting={updateAccentSetting} />}
+          {activeTab === 'company' && <CompanyTab settings={settings} updateSetting={updateCompanySetting} logoPreview={logoPreview} onLogoUpload={handleLogoUpload} onRemoveLogo={handleRemoveLogo} />}
+          {activeTab === 'financial' && <FinancialTab settings={settings} updateSetting={updateFinancialSetting} />}
+          {activeTab === 'export' && <ExportTab settings={settings} updateSetting={updateExportSetting} />}
+          {activeTab === 'locale' && <LocaleTab settings={settings} updateSetting={updateLocaleSetting} />}
+          {activeTab === 'sync' && (
+            <SyncTab
+              settings={settings}
+              updateSetting={updateSetting}
+              showDiag={showDiag}
+              setShowDiag={setShowDiag}
+              diagRunning={diagRunning}
+              diagResult={diagResult}
+              onRunDiagnostics={runDiagnostics}
+              onCopyReport={copyDiagnosticsReport}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
@@ -498,7 +500,7 @@ function AppearanceTab({
             <p className="text-xs sm:text-sm font-medium text-white mb-2">Previsualización</p>
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 rounded-xl" style={{ background: `linear-gradient(135deg, ${settings.customColors?.primary ?? 'var(--primary-color)'}, ${settings.customColors?.secondary ?? 'var(--secondary-color)'})` }}>
-                <p className="text-xs text-white">Primario → Secundario</p>
+                <p className="text-xs text-white">Primario - Secundario</p>
               </div>
               <div className="p-3 rounded-xl" style={{ background: `linear-gradient(135deg, ${settings.customColors?.backgroundStart ?? 'var(--background-start)'}, ${settings.customColors?.backgroundEnd ?? 'var(--background-end)'})` }}>
                 <p className="text-xs text-white">Fondo</p>
