@@ -582,7 +582,7 @@ label, .text-xs, .text-sm {
   }
 
   /* Ensure small buttons and badges have minimum touch target */
-  .px-2.py-1, .px-2.py-0\\.5, .px-2.py-0 {
+  .px-2.py-1, .px-2.py-0\.5, .px-2.py-0 {
     min-height: 44px !important;
     min-width: 44px !important;
   }
