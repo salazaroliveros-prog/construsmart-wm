@@ -584,6 +584,11 @@ export async function syncOfflineData(): Promise<SyncResult> {
         advance_balance: s.advance_balance,
         retention_balance: s.retention_balance,
         is_active: s.is_active,
+        contract_start_date: s.contract_start_date,
+        contract_end_date: s.contract_end_date,
+        contract_value: s.contract_value,
+        status: s.status,
+        notes: s.notes,
         sync_status: s.sync_status,
       }),
       (s) => ({
@@ -603,6 +608,11 @@ export async function syncOfflineData(): Promise<SyncResult> {
         advance_balance: s.advance_balance,
         retention_balance: s.retention_balance,
         is_active: s.is_active,
+        contract_start_date: s.contract_start_date,
+        contract_end_date: s.contract_end_date,
+        contract_value: s.contract_value,
+        status: s.status,
+        notes: s.notes,
       }),
       async (s, localId, serverId) => {
         await offlineDB.subcontractors.update(localId, { id: serverId, sync_status: 'synced' });
@@ -809,6 +819,13 @@ export async function syncOfflineData(): Promise<SyncResult> {
         total_cost: t.total_cost,
         date: t.date,
         receipt_url: t.receipt_url,
+        payment_method: t.payment_method,
+        tax_amount: t.tax_amount,
+        related_supplier_id: t.related_supplier_id,
+        related_client_id: t.related_client_id,
+        related_purchase_order_id: t.related_purchase_order_id,
+        document_number: t.document_number,
+        is_reconciled: t.is_reconciled,
         sync_status: t.sync_status,
       }),
       (t) => ({
@@ -822,6 +839,13 @@ export async function syncOfflineData(): Promise<SyncResult> {
         total_cost: t.total_cost,
         date: t.date,
         receipt_url: t.receipt_url,
+        payment_method: t.payment_method,
+        tax_amount: t.tax_amount,
+        related_supplier_id: t.related_supplier_id,
+        related_client_id: t.related_client_id,
+        related_purchase_order_id: t.related_purchase_order_id,
+        document_number: t.document_number,
+        is_reconciled: t.is_reconciled,
       }),
       async (t, localId, serverId) => {
         await offlineDB.financialTransactions.update(localId, { id: serverId, sync_status: 'synced' });
