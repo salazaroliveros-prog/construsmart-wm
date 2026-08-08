@@ -10,6 +10,7 @@ import DashboardNav from '@/components/dashboard/DashboardNav';
 import DashboardStats from '@/components/dashboard/DashboardStats';
 import DashboardCharts from '@/components/dashboard/DashboardCharts';
 import ProjectOverview from '@/components/dashboard/ProjectOverview';
+import QuickActionFab from '@/components/ui/QuickActionFab';
 import { offlineDB } from '@/lib/db/offlineStore';
 import { useScrollLock } from '@/lib/hooks/useScrollLock';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
@@ -370,11 +371,41 @@ return (
           </main>
         </div>
 
-        {/* Mobile menu button - bottom right, solo visible en móvil */}
+        {/* Quick Action FAB - mobile only */}
+        {isMounted && isMobile && (
+          <QuickActionFab
+            onQuickAdd={() => {
+              // Abrir modal de agregar rápido según el tab actual
+              switch (activeTab) {
+                case 'projects':
+                  // Trigger project add modal
+                  break;
+                case 'finances':
+                  // Trigger transaction add modal
+                  break;
+                case 'warehouse':
+                  // Trigger stock item add modal
+                  break;
+                default:
+                  // Default action
+                  break;
+              }
+            }}
+            onManualSync={async () => {
+              // Usar el sistema de sync existente del header
+              const syncButton = document.querySelector('[title*="Sincronizar ahora"]') as HTMLButtonElement;
+              if (syncButton) {
+                syncButton.click();
+              }
+            }}
+          />
+        )}
+
+        {/* Mobile menu button - bottom left, solo visible en móvil */}
         {isMounted && isMobile && (
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="fixed right-4 z-40 w-11 h-11 rounded-xl glass-button shadow-lg shadow-cyan-500/20 flex items-center justify-center"
+            className="fixed left-4 z-40 w-11 h-11 rounded-xl glass-button shadow-lg shadow-cyan-500/20 flex items-center justify-center"
             style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
             aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
             aria-expanded={isMobileMenuOpen}
