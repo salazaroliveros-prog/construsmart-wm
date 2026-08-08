@@ -1314,4 +1314,25 @@ html, body {
   background: rgba(6, 182, 212, 0.7);
 }
 
+/* ScrollableWrapper Component Styles */
+.scrollable-wrapper > div:last-child::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollable-wrapper > div:last-child::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.scrollable-wrapper > div:last-child::-webkit-scrollbar-thumb {
+  background: rgba(6, 182, 212, 0.5);
+  border-radius: 3px;
+}
+
+.scrollable-wrapper > div:last-child::-webkit-scrollbar-thumb:hover {
+  background: rgba(6, 182, 212, 0.7);
+}
+
+
+
 

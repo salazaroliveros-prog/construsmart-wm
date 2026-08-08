@@ -27,6 +27,8 @@ import type { RemoteDiagnosticsResult } from '@/app/actions/settings-actions';
 
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import SecondaryButton from '@/components/ui/SecondaryButton';
+import ScrollableWrapper from '@/components/ui/ScrollableWrapper';
+
 export default function SettingsManager() {
   const { showToast } = useToast();
   const [settings, setSettings] = useState<UISettings>(DEFAULT_UI_SETTINGS);
@@ -367,8 +369,8 @@ const saveSettings = async () => {
       </div>
 
       {/* Tab Content */}
-      <div className="glass-panel rounded-2xl p-4 sm:p-6 flex flex-col" style={{ maxHeight: '70vh' }}>
-        <div className="flex-1 overflow-y-auto space-y-4 sm:space-y-6 pr-2">
+      <div className="glass-panel rounded-2xl p-4 sm:p-6">
+        <ScrollableWrapper maxHeight="70vh">
           {activeTab === 'appearance' && (
             <AppearanceTab
               settings={settings}
@@ -397,7 +399,7 @@ const saveSettings = async () => {
               onCopyReport={copyDiagnosticsReport}
             />
           )}
-        </div>
+        </ScrollableWrapper>
       </div>
     </div>
   );
