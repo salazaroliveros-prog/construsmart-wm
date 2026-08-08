@@ -25,12 +25,12 @@ export default function PrimaryButton({
       className={`
         glass-button
         min-h-[44px]
-        touch-manipulation
         ${fullWidth ? 'w-full' : ''}
         ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         ${isLoading ? 'cursor-wait' : ''}
         ${className}
       `}
+      style={{ touchAction: 'manipulation' }}
       {...props}
     >
       {isLoading ? (

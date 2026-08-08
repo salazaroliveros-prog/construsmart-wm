@@ -35,7 +35,6 @@ export default function SecondaryButton({
         disabled:opacity-50
         disabled:cursor-not-allowed
         min-h-[44px]
-        touch-manipulation
         focus-visible:outline-none
         focus-visible:ring-2
         focus-visible:ring-cyan-400
@@ -45,6 +44,7 @@ export default function SecondaryButton({
         ${isLoading ? 'cursor-wait' : ''}
         ${className}
       `}
+      style={{ touchAction: 'manipulation' }}
       {...props}
     >
       {isLoading ? (
