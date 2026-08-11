@@ -17,6 +17,7 @@ import SecondaryButton from '@/components/ui/SecondaryButton';
 import ActionButton from '@/components/ui/ActionButton';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 import { calculateProjectLogSummary } from '@/lib/utils/summaryCalculations';
+import { projectLogSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 
 export default function ProjectLogManager() {
   const { showToast } = useToast();
@@ -101,6 +102,17 @@ export default function ProjectLogManager() {
     e.preventDefault();
 
     try {
+      // Validar con Zod schema
+      const validation = validateSchema(projectLogSchema, {
+        ...formData,
+        project_id: selectedProject,
+      });
+      if (!validation.success) {
+        const errorMessages = formatValidationErrors(validation.errors);
+        showToast('error', errorMessages.join(', '));
+        return;
+      }
+
       const now = new Date().toISOString();
 
       // Detect roadblock keywords in description (multilingual)
@@ -146,6 +158,35 @@ export default function ProjectLogManager() {
           updated_at: now,
           sync_status: resolveSyncStatus({ isNewRecord: false, previousStatus: editingLog?.sync_status ?? 'synced', isOnline }),
         });
+
+        // Re-evaluate roadblocks for the project if the edited log was previously a roadblock
+        if (editingLog.is_critical_roadblock && !isCriticalRoadblock) {
+          // Check if there are other critical roadblocks in recent logs
+          const projectLogs = await offlineDB.projectLogs
+            .where('project_id')
+            .equals(selectedProject)
+            .toArray();
+          
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          
+          const recentCriticalLogs = projectLogs.filter(
+            log => 
+              log.id !== editingLog.id &&
+              new Date(log.log_date) >= sevenDaysAgo &&
+              (log.is_critical_roadblock || log.severity === 'critical' || log.severity === 'high')
+          );
+          
+          // If no other critical roadblocks, clear the project flag
+          if (recentCriticalLogs.length === 0) {
+            await offlineDB.projects.update(selectedProject, {
+              has_critical_roadblock: false,
+              roadblock_type: undefined,
+              roadblock_description: undefined,
+              roadblock_date: undefined,
+            } as any);
+          }
+        }
       } else {
         const newLog: LocalProjectLog = {
           ...formData,
@@ -510,8 +551,9 @@ export default function ProjectLogManager() {
                     type="number"
                     min="0"
                     max="100"
+                    step="0.1"
                     value={formData.physical_progress || 0}
-                    onChange={(e) => setFormData({ ...formData, physical_progress: parseFloat(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, physical_progress: parseFloat(e.target.value) || 0 })}
                     className="glass-input w-full px-4 py-2 rounded-lg text-white"
                   />
                 </div>
@@ -521,8 +563,9 @@ export default function ProjectLogManager() {
                     type="number"
                     min="0"
                     max="100"
+                    step="0.1"
                     value={formData.financial_progress || 0}
-                    onChange={(e) => setFormData({ ...formData, financial_progress: parseFloat(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, financial_progress: parseFloat(e.target.value) || 0 })}
                     className="glass-input w-full px-4 py-2 rounded-lg text-white"
                   />
                 </div>

@@ -164,12 +164,20 @@ export const useRoadblockDetection = () => {
                 }
               }
               
-              // Calculate buffer days remaining
-              const bufferDays = project.estimated_end_date 
-                ? Math.max(0, Math.ceil(
+              // Calculate buffer days remaining - consider project status
+              let bufferDays = 0;
+              if (project.estimated_end_date && project.status === 'execution') {
+                bufferDays = Math.max(0, Math.ceil(
                   (new Date(project.estimated_end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-                ))
-                : 0;
+                ));
+              } else if (project.status === 'paused') {
+                // For paused projects, use the estimated end date but mark as paused
+                bufferDays = project.estimated_end_date 
+                  ? Math.max(0, Math.ceil(
+                    (new Date(project.estimated_end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                  ))
+                  : 0;
+              }
               
               detectedRoadblocks.push({
                 projectId: project.id!,

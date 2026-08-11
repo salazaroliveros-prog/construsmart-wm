@@ -43,12 +43,14 @@ export function useProjectProgress(projectId?: string) {
         scopeLocalRows(await offlineDB.financialTransactions.where('project_id').equals(pid).toArray(), userId),
       ]);
 
-      // Calculate aggregate progress from logs
-      const latestProgressLog = logs
-        .filter(log => log.activity_type === 'progress' && log.physical_progress !== undefined)
-        .sort((a, b) => new Date(b.log_date).getTime() - new Date(a.log_date).getTime())[0];
-
-      const physicalProgress = latestProgressLog?.physical_progress || 0;
+      // Calculate aggregate progress from logs - use MAX instead of latest for better accuracy
+      const progressLogs = logs
+        .filter(log => log.activity_type === 'progress' && log.physical_progress !== undefined);
+      
+      // Use the maximum physical progress value from all progress logs
+      const physicalProgress = progressLogs.length > 0
+        ? Math.max(...progressLogs.map(log => log.physical_progress || 0))
+        : 0;
       
       // Calculate financial progress from transactions
       const totalSpent = transactions
