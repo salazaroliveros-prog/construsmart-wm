@@ -13,7 +13,10 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   : ['http://localhost:3000', 'http://localhost:3001'];
 
 function isOriginAllowed(origin: string | null): boolean {
-  if (!origin) return false; // Denegar requests sin origin (direct navigation)
+  // Si no hay origin, verificar si es same-origin request (referer mismo dominio)
+  if (!origin) {
+    return true; // Permitir requests sin origin (same-origin)
+  }
   
   // Normalizar origin para comparación exacta
   const normalizedOrigin = origin.trim().toLowerCase();
@@ -38,9 +41,16 @@ export async function POST(request: Request) {
   try {
     // Validación CSRF: verificar origin
     const origin = request.headers.get('origin');
+    
+    // Logging para depuración (temporal en producción)
+    console.log('[Session] Origin received:', origin);
+    console.log('[Session] NEXT_PUBLIC_SITE_URL:', process.env.NEXT_PUBLIC_SITE_URL);
+    console.log('[Session] ALLOWED_ORIGINS:', ALLOWED_ORIGINS);
+    
     if (!isOriginAllowed(origin)) {
+      console.error('[Session] Origin not allowed:', origin);
       return NextResponse.json(
-        { success: false, error: 'Origen no permitido' },
+        { success: false, error: 'Origen no permitido', origin, allowedOrigins: Array.from(new Set(ALLOWED_ORIGINS)) },
         { status: 403 }
       );
     }
