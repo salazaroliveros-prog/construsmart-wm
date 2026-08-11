@@ -32,76 +32,51 @@ export interface RoadblockDetectionResult {
   affectedProjects: number;
 }
 
-// Critical roadblock keywords in multiple languages (Spanish + English)
+// Critical roadblock keywords in multiple languages (Spanish, English, Portuguese, French)
 const CRITICAL_KEYWORDS = [
   // Spanish
-  'retraso por clima',
-  'falta de cemento',
-  'falta de material',
-  'sin material',
-  'problema técnico',
-  'permiso denegado',
-  'problema financiero',
-  'huelga',
-  'personal',
-  'accidente',
-  'falta de',
-  'sin',
-  'parada',
-  'detenido',
-  'esperando',
-  'atrasado',
-  'retraso',
+  'retraso por clima', 'falta de cemento', 'falta de material', 'sin material',
+  'problema técnico', 'permiso denegado', 'problema financiero', 'huelga', 'personal', 'accidente',
+  'falta de', 'sin', 'parada', 'detenido', 'esperando', 'atrasado', 'retraso',
   // English
-  'weather delay',
-  'cement shortage',
-  'material shortage',
-  'out of stock',
-  'technical issue',
-  'permit denied',
-  'financial problem',
-  'strike',
-  'staff',
-  'accident',
-  'lack of',
-  'without',
-  'stopped',
-  'halted',
-  'waiting',
-  'delayed',
-  'delay'
+  'weather delay', 'cement shortage', 'material shortage', 'out of stock',
+  'technical issue', 'permit denied', 'financial problem', 'strike', 'staff', 'accident',
+  'lack of', 'without', 'stopped', 'halted', 'waiting', 'delayed', 'delay',
+  // Portuguese
+  'atraso por clima', 'falta de cimento', 'falta de material', 'sem material',
+  'problema técnico', 'permissão negada', 'problema financeiro', 'greve', 'pessoal', 'acidente',
+  'falta de', 'sem', 'parada', 'parado', 'esperando', 'atrasado', 'atraso',
+  // French
+  'retard dû au climat', 'manque de ciment', 'manque de matériel', 'sans matériel',
+  'problème technique', 'permis refusé', 'problème financier', 'grève', 'personnel', 'accident',
+  'manque de', 'sans', 'arrêt', 'arrêté', 'en attente', 'retardé', 'retard'
 ];
 
 const ROADBLOCK_CATEGORIES: Record<string, 'clima' | 'material' | 'personal' | 'técnico' | 'permiso' | 'financiero' | 'otro'> = {
   // Spanish
-  'clima': 'clima',
-  'lluvia': 'clima',
-  'tiempo': 'clima',
-  'cemento': 'material',
-  'material': 'material',
-  'personal': 'personal',
-  'técnico': 'técnico',
-  'permiso': 'permiso',
-  'financiero': 'financiero',
-  'dinero': 'financiero',
-  'crédito': 'financiero',
-  'pago': 'financiero',
+  'clima': 'clima', 'lluvia': 'clima', 'tiempo': 'clima',
+  'cemento': 'material', 'material': 'material',
+  'personal': 'personal', 'técnico': 'técnico', 'permiso': 'permiso',
+  'financiero': 'financiero', 'dinero': 'financiero', 'crédito': 'financiero', 'pago': 'financiero',
   // English
-  'weather': 'clima',
-  'rain': 'clima',
-  'storm': 'clima',
+  'weather': 'clima', 'rain': 'clima', 'storm': 'clima',
   'cement': 'material',
-  'staff': 'personal',
-  'worker': 'personal',
-  'labor': 'personal',
-  'technical': 'técnico',
-  'permit': 'permiso',
-  'financial': 'financiero',
-  'money': 'financiero',
-  'budget': 'financiero',
-  'cost': 'financiero',
-  'credit': 'financiero',
-  'payment': 'financiero'
+  'staff': 'personal', 'worker': 'personal', 'labor': 'personal',
+  'technical': 'técnico', 'permit': 'permiso',
+  'financial': 'financiero', 'money': 'financiero', 'budget': 'financiero', 'cost': 'financiero',
+  'credit': 'financiero', 'payment': 'financiero',
+  // Portuguese
+  'chuva': 'clima',
+  'cimento': 'material',
+  'pessoal': 'personal', 'greve': 'personal',
+  'permissão': 'permiso',
+  'financeiro': 'financiero', 'dinheiro': 'financiero', 'pagamento': 'financiero',
+  // French
+  'climat': 'clima', 'pluie': 'clima',
+  'ciment': 'material', 'matériel': 'material',
+  'personnel': 'personal', 'grève': 'personal',
+  'technique': 'técnico', 'permis': 'permiso',
+  'financier': 'financiero', 'argent': 'financiero', 'paiement': 'financiero'
 };
 
 export const useRoadblockDetection = () => {

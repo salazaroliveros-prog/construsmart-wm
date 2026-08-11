@@ -113,6 +113,23 @@ export default function ProjectLogManager() {
         return;
       }
 
+      // Validar límite de frecuencia (máximo 10 entradas por día por proyecto)
+      if (!editingLog) {
+        const projectLogs = await offlineDB.projectLogs
+          .where('project_id')
+          .equals(selectedProject)
+          .toArray();
+        
+        const todayLogs = projectLogs.filter(
+          log => log.log_date === formData.log_date
+        );
+        
+        if (todayLogs.length >= 10) {
+          showToast('error', 'Has alcanzado el límite de 10 entradas por día para este proyecto. Intenta mañana o edita una entrada existente.');
+          return;
+        }
+      }
+
       const now = new Date().toISOString();
 
       // Detect roadblock keywords in description (multilingual)
@@ -124,12 +141,20 @@ export default function ProjectLogManager() {
       let roadblockCategory: 'clima' | 'material' | 'personal' | 'técnico' | 'permiso' | 'financiero' | 'otro' | undefined = undefined;
       let isCriticalRoadblock = false;
 
-      // Multilingual critical keywords (Spanish + English)
+      // Multilingual critical keywords (Spanish, English, Portuguese, French)
       const criticalKeywords = [
+        // Spanish
         'retraso por clima', 'falta de cemento', 'falta de material', 'sin material',
         'problema técnico', 'permiso denegado', 'problema financiero', 'huelga', 'personal', 'accidente',
+        // English
         'weather delay', 'cement shortage', 'material shortage', 'out of stock',
-        'technical issue', 'permit denied', 'financial problem', 'strike', 'staff', 'accident'
+        'technical issue', 'permit denied', 'financial problem', 'strike', 'staff', 'accident',
+        // Portuguese
+        'atraso por clima', 'falta de cimento', 'falta de material', 'sem material',
+        'problema técnico', 'permissão negada', 'problema financeiro', 'greve', 'pessoal', 'acidente',
+        // French
+        'retard dû au climat', 'manque de ciment', 'manque de matériel', 'sans matériel',
+        'problème technique', 'permis refusé', 'problème financier', 'grève', 'personnel', 'accident'
       ];
 
       if (isCriticalIssue) {
@@ -137,13 +162,28 @@ export default function ProjectLogManager() {
           severity = 'critical';
           isCriticalRoadblock = true;
 
-          // Determine category (multilingual)
-          if (description.includes('clima') || description.includes('lluvia') || description.includes('weather') || description.includes('rain') || description.includes('storm')) roadblockCategory = 'clima';
-          else if (description.includes('material') || description.includes('cemento') || description.includes('cement')) roadblockCategory = 'material';
-          else if (description.includes('personal') || description.includes('huelga') || description.includes('strike') || description.includes('staff') || description.includes('worker') || description.includes('labor')) roadblockCategory = 'personal';
-          else if (description.includes('técnico') || description.includes('technical')) roadblockCategory = 'técnico';
-          else if (description.includes('permiso') || description.includes('permit')) roadblockCategory = 'permiso';
-          else if (description.includes('financiero') || description.includes('dinero') || description.includes('financial') || description.includes('money') || description.includes('budget') || description.includes('cost')) roadblockCategory = 'financiero';
+          // Determine category (multilingual: Spanish, English, Portuguese, French)
+          if (description.includes('clima') || description.includes('lluvia') || description.includes('tiempo') ||
+              description.includes('weather') || description.includes('rain') || description.includes('storm') ||
+              description.includes('chuva') || description.includes('tempo') ||
+              description.includes('climat') || description.includes('pluie')) roadblockCategory = 'clima';
+          else if (description.includes('material') || description.includes('cemento') || description.includes('cement') ||
+                   description.includes('cimento') || description.includes('matériel')) roadblockCategory = 'material';
+          else if (description.includes('personal') || description.includes('huelga') || description.includes('strike') ||
+                   description.includes('staff') || description.includes('worker') || description.includes('labor') ||
+                   description.includes('pessoal') || description.includes('greve') ||
+                   description.includes('personnel')) roadblockCategory = 'personal';
+          else if (description.includes('técnico') || description.includes('technical') ||
+                   description.includes('technique')) roadblockCategory = 'técnico';
+          else if (description.includes('permiso') || description.includes('permit') ||
+                   description.includes('permissão') || description.includes('permis')) roadblockCategory = 'permiso';
+          else if (description.includes('financiero') || description.includes('dinero') || description.includes('financial') ||
+                   description.includes('money') || description.includes('budget') || description.includes('cost') ||
+                   description.includes('crédito') || description.includes('pago') || description.includes('credit') ||
+                   description.includes('payment') || description.includes('financeiro') || description.includes('dinheiro') ||
+                   description.includes('crédito') || description.includes('pagamento') ||
+                   description.includes('financier') || description.includes('argent') || description.includes('crédit') ||
+                   description.includes('paiement')) roadblockCategory = 'financiero';
         } else {
           severity = 'high';
         }

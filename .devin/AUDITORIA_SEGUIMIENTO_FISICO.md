@@ -310,17 +310,16 @@ const physicalProgress = latestProgressLog?.physical_progress || 0;
 | # | Inconsistencia | Impacto | Prioridad | Estado |
 |---|----------------|---------|-----------|--------|
 | 1 | Falta validación de rango en avance físico/financiero | MEDIO | 🔴 ALTA | ✅ CORREGIDO |
-| 2 | Detección de roadblocks solo en español/inglés | BAJO | 🟢 BAJA | ⚠️ DOCUMENTADO |
+| 2 | Detección de roadblocks solo en español/inglés | BAJO | 🟢 BAJA | ✅ CORREGIDO |
 | 3 | Cálculo de buffer days no considera pauses | MEDIO | 🟡 MEDIA | ✅ CORREGIDO |
 | 4 | No hay schema de validación para project logs | MEDIO | 🔴 ALTA | ✅ CORREGIDO |
 | 5 | Sincronización de roadblock flags no revierte al limpiar log | MEDIO | 🟡 MEDIA | ✅ CORREGIDO |
-| 6 | No hay límite de frecuencia para entradas de bitácora | BAJO | 🟢 BAJA | ⚠️ DOCUMENTADO |
+| 6 | No hay límite de frecuencia para entradas de bitácora | BAJO | 🟢 BAJA | ✅ CORREGIDO |
 | 7 | Physical progress no se calcula desde logs en progreso | ALTO | 🔴 ALTA | ✅ CORREGIDO |
 | 8 | No hay validación de fecha futura en bitácora | MEDIO | 🟡 MEDIA | ✅ CORREGIDO |
 
 **Total**: 8 inconsistencias
-- ✅ **CORREGIDAS**: 6
-- ⚠️ **DOCUMENTADAS**: 2
+- ✅ **CORREGIDAS**: 8 (100%)
 
 ---
 
@@ -359,20 +358,22 @@ const physicalProgress = latestProgressLog?.physical_progress || 0;
    - Comparación con fecha actual (sin horas)
    - Mensaje de error claro para el usuario
 
-### ⚠️ Prioridad BAJA - DOCUMENTADO
-7. ⚠️ Documentar que detección de roadblocks es solo en español/inglés
-   - Documentado en auditoría
-   - Se mantiene como diseño intencional para el mercado actual
+### ✅ Prioridad BAJA - COMPLETADO
+7. ✅ Agregar soporte para más idiomas en detección de roadblocks
+   - Agregado soporte para portugués y francés
+   - Keywords y categorías expandidas
+   - Detección ahora soporta 4 idiomas
 
-8. ⚠️ Considerar límite de frecuencia para entradas de bitácora
-   - Documentado en auditoría
-   - Se mantiene sin límite (diseño intencional)
+8. ✅ Agregar límite de frecuencia para entradas de bitácora
+   - Límite de 10 entradas por día por proyecto
+   - Validación implementada en handleSubmit
+   - Mensaje de error claro al alcanzar límite
 
 ---
 
 ## 🎉 Estado General
 
-**Estado del sistema de seguimiento físico**: ✅ MEJORADO - 6 de 8 inconsistencias corregidas
+**Estado del sistema de seguimiento físico**: ✅ MEJORADO - 8 de 8 inconsistencias corregidas (100%)
 
 **Aspectos correctos**:
 - ✅ Bitácora implementada correctamente
@@ -388,9 +389,7 @@ const physicalProgress = latestProgressLog?.physical_progress || 0;
 - ✅ Validación de fechas futuras agregada
 - ✅ Validación de rango para avance físico/financiero
 - ✅ Cálculo de buffer days considera estado del proyecto
+- ✅ Detección de roadblocks multilingüe (español, inglés, portugués, francés)
+- ✅ Límite de frecuencia para entradas de bitácora (10 por día)
 
-**Aspectos documentados**:
-- ⚠️ Detección de roadblocks solo en español/inglés
-- ⚠️ No hay límite de frecuencia para entradas de bitácora
-
-**No se encontraron inconsistencias críticas** que impidan el funcionamiento del sistema. Las correcciones implementadas mejoran significativamente la integridad de datos y la precisión del seguimiento físico.
+**No se encontraron inconsistencias críticas** que impidan el funcionamiento del sistema. Todas las inconsistencias identificadas han sido corregidas.
