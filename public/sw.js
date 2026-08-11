@@ -1,12 +1,12 @@
 // CONSTRUCTORA WM/M&S - SERVICE WORKER
 // Slogan: "CONSTRUYENDO EL FUTURO"
 // Progressive Web App - 100% Offline Capable
-// v1.1.0 - PWA install assets & icon precache
+// v1.2.0 - Cache version v6 for CSS contrast updates
 
-const CACHE_NAME = 'constructora-wm-v5';
-const STATIC_CACHE = 'constructora-wm-static-v5';
-const DATA_CACHE = 'constructora-wm-data-v5';
-const RUNTIME_CACHE = 'constructora-wm-runtime-v5';
+const CACHE_NAME = 'constructora-wm-v6';
+const STATIC_CACHE = 'constructora-wm-static-v6';
+const DATA_CACHE = 'constructora-wm-data-v6';
+const RUNTIME_CACHE = 'constructora-wm-runtime-v6';
 
 // Detect environment
 const isDevelopment = self.location.hostname === 'localhost' ||
