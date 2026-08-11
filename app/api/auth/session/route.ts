@@ -18,10 +18,19 @@ function isOriginAllowed(origin: string | null): boolean {
   // Normalizar origin para comparación exacta
   const normalizedOrigin = origin.trim().toLowerCase();
   
+  // Lista dinámica de orígenes permitidos
+  const allowedOrigins = new Set(ALLOWED_ORIGINS);
+  
+  // Agregar el origen del sitio en producción si está configurado
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL.trim();
+    allowedOrigins.add(siteUrl);
+  }
+  
   // Comparación exacta (no usar endsWith para evitar ataques como evil.com/allowed.com)
-  return ALLOWED_ORIGINS.some(allowed => {
+  return Array.from(allowedOrigins).some(allowed => {
     const normalizedAllowed = allowed.trim().toLowerCase();
-    return normalizedOrigin === normalizedAllowed;
+    return normalizedAllowed === normalizedOrigin;
   });
 }
 
