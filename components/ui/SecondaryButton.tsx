@@ -23,10 +23,10 @@ export default function SecondaryButton({
     <button
       disabled={disabled || isLoading}
       className={`
-        bg-white/10
-        hover:bg-white/20
-        text-white
-        border-white/20
+        bg-white/15
+        hover:bg-white/25
+        text-white/90
+        border-white/25
         rounded-lg
         px-4 py-3
         font-medium

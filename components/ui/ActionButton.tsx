@@ -23,9 +23,9 @@ export default function ActionButton({
   className = '',
 }: ActionButtonProps) {
   const variantStyles = {
-    danger: 'text-red-400 hover:text-red-300 hover:bg-red-500/10',
-    primary: 'text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10',
-    secondary: 'text-white/60 hover:text-white hover:bg-white/10',
+    danger: 'text-red-300 hover:text-red-200 hover:bg-red-500/15',
+    primary: 'text-cyan-300 hover:text-cyan-200 hover:bg-cyan-500/15',
+    secondary: 'text-white/80 hover:text-white hover:bg-white/15',
   };
 
   return (
