@@ -521,6 +521,11 @@ export async function syncOfflineData(): Promise<SyncResult> {
         total_budget: p.total_budget,
         budget_total: p.budget_total,
         calculated_duration: p.calculated_duration,
+        has_critical_roadblock: p.has_critical_roadblock || false,
+        roadblock_type: p.roadblock_type || null,
+        roadblock_description: p.roadblock_description || null,
+        roadblock_date: p.roadblock_date || null,
+        completion_buffer_days: p.completion_buffer_days || null,
         sync_status: p.sync_status,
       }),
       (p) => ({
@@ -539,6 +544,11 @@ export async function syncOfflineData(): Promise<SyncResult> {
         total_budget: p.total_budget,
         budget_total: p.budget_total,
         calculated_duration: p.calculated_duration,
+        has_critical_roadblock: p.has_critical_roadblock || false,
+        roadblock_type: p.roadblock_type || null,
+        roadblock_description: p.roadblock_description || null,
+        roadblock_date: p.roadblock_date || null,
+        completion_buffer_days: p.completion_buffer_days || null,
       }),
       async (p, localId, serverId) => {
         await offlineDB.projects.update(localId, { id: serverId, sync_status: 'synced' });
@@ -802,6 +812,8 @@ export async function syncOfflineData(): Promise<SyncResult> {
         slab_type: i.slab_type,
         apu_result: i.apu_result,
         apu_params: i.apu_params,
+        actual_consumption: i.actual_consumption || 0,
+        consumption_variance: i.consumption_variance || 0,
         sync_status: i.sync_status,
       }),
       (i) => ({
@@ -822,6 +834,8 @@ export async function syncOfflineData(): Promise<SyncResult> {
         slab_type: i.slab_type,
         apu_result: i.apu_result,
         apu_params: i.apu_params,
+        actual_consumption: i.actual_consumption || 0,
+        consumption_variance: i.consumption_variance || 0,
       }),
       async (i, localId, serverId) => {
         await offlineDB.budgetItems.update(localId, { id: serverId, sync_status: 'synced' });
