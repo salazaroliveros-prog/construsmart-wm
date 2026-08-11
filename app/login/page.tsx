@@ -2,10 +2,11 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Building2, Mail, Lock, ArrowRight, AlertCircle, Loader2, Shield } from 'lucide-react';
+import { Building2, Mail, Lock, ArrowRight, AlertCircle, Loader2, Shield, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useToast } from '@/components/ui/Toast';
 import PrimaryButton from '@/components/ui/PrimaryButton';
+import zxcvbn from 'zxcvbn';
 
 function LoginForm() {
   const router = useRouter();
@@ -16,6 +17,25 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState<{ score: number; warning?: string } | null>(null);
+
+  // Validar fortaleza de password con zxcvbn
+  const validatePassword = (pwd: string) => {
+    if (!pwd) {
+      setPasswordStrength(null);
+      return true;
+    }
+    
+    const result = zxcvbn(pwd);
+    setPasswordStrength({
+      score: result.score,
+      warning: result.feedback.warning
+    });
+    
+    // Score 0-4 (4 = muy fuerte). Aceptamos scores >= 2
+    return result.score >= 2;
+  };
 
   // Valida que la ruta de destino sea interna (evita open-redirect).
   const getSafeNextPath = (next?: string | null): string => {
@@ -37,6 +57,14 @@ function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    // Validar fortaleza de password antes de enviar
+    if (!validatePassword(password)) {
+      setError('La contraseña es muy débil. Por favor usa una contraseña más fuerte.');
+      showToast('error', 'Contraseña muy débil');
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -121,15 +149,59 @@ function LoginForm() {
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
               <input
                 id="password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  validatePassword(e.target.value);
+                }}
                 placeholder="••••••••"
                 required
                 autoComplete="current-password"
-                className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                className="w-full pl-12 pr-12 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/60 transition-colors"
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
+            
+            {/* Password Strength Indicator */}
+            {passwordStrength && password && (
+              <div className="mt-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full transition-all duration-300 ${
+                        passwordStrength.score >= 4 ? 'bg-emerald-500' :
+                        passwordStrength.score >= 3 ? 'bg-cyan-500' :
+                        passwordStrength.score >= 2 ? 'bg-yellow-500' :
+                        'bg-red-500'
+                      }`}
+                      style={{ width: `${(passwordStrength.score + 1) * 20}%` }}
+                    />
+                  </div>
+                  <span className={`text-xs ${
+                    passwordStrength.score >= 4 ? 'text-emerald-400' :
+                    passwordStrength.score >= 3 ? 'text-cyan-400' :
+                    passwordStrength.score >= 2 ? 'text-yellow-400' :
+                    'text-red-400'
+                  }`}>
+                    {passwordStrength.score >= 4 ? 'Muy fuerte' :
+                     passwordStrength.score >= 3 ? 'Fuerte' :
+                     passwordStrength.score >= 2 ? 'Aceptable' :
+                     'Muy débil'}
+                  </span>
+                </div>
+                {passwordStrength.warning && (
+                  <p className="text-white/60 text-xs">{passwordStrength.warning}</p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Error Message */}
