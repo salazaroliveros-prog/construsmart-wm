@@ -285,7 +285,7 @@ const loadClients = async () => {
           <div className="flex gap-2">
             <button
               onClick={() => setFilterType('all')}
-              className={`px-4 py-2 rounded-lg text-sm transition-all ${
+              className={`min-h-[44px] px-4 py-2 rounded-lg text-sm transition-all ${
                 filterType === 'all'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
                   : 'glass-button text-white/60'
@@ -297,7 +297,7 @@ const loadClients = async () => {
             </button>
             <button
               onClick={() => setFilterType('individual')}
-              className={`px-4 py-2 rounded-lg text-sm transition-all ${
+              className={`min-h-[44px] px-4 py-2 rounded-lg text-sm transition-all ${
                 filterType === 'individual'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
                   : 'glass-button text-white/60'
@@ -309,7 +309,7 @@ const loadClients = async () => {
             </button>
             <button
               onClick={() => setFilterType('corporate')}
-              className={`px-4 py-2 rounded-lg text-sm transition-all ${
+              className={`min-h-[44px] px-4 py-2 rounded-lg text-sm transition-all ${
                 filterType === 'corporate'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
                   : 'glass-button text-white/60'
@@ -415,7 +415,7 @@ const loadClients = async () => {
                 </button>
                 <button
                   onClick={() => setDeleteDialog({ show: true, client })}
-                  className="px-3 py-2 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-all"
+                  className="min-h-[44px] min-w-[44px] px-3 py-2 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-all"
                   aria-label={`Eliminar cliente ${client.name}`}
                 >
                   <Trash2 className="w-4 h-4" />

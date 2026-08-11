@@ -417,13 +417,12 @@ function FinanceManager() {
               description="Registre ingresos o gastos para mantener el flujo de caja actualizado."
             >
               <Tooltip content="Registrar nueva transacción financiera">
-                <button
+                <PrimaryButton
                   onClick={() => openModal()}
-                  className="glass-button px-4 py-2 rounded-lg text-white flex items-center gap-2"
+                  icon={<Plus className="w-4 h-4" />}
                 >
-                  <Plus className="w-4 h-4" />
                   Nueva Transacción
-                </button>
+                </PrimaryButton>
               </Tooltip>
             </OnboardingTooltip>
           </div>

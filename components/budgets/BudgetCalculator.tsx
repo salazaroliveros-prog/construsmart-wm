@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Calculator, Plus, Save, Download, FolderOpen, Building2, Map as MapIcon, AlertTriangle, Wallet, TrendingUp, CreditCard } from 'lucide-react';
+import { Calculator, Plus, Save, Download, FolderOpen, Building2, Map as MapIcon, AlertTriangle, Wallet, TrendingUp, CreditCard, X } from 'lucide-react';
 import { useMaterialAlertContext } from '@/context/MaterialAlertContext';
 import { calculateSlab, SlabDimensions, calculateSlabCost, SlabCostParams } from '@/lib/calculators/slabCalculators';
 import {
@@ -687,6 +687,21 @@ export default function BudgetCalculator() {
                 </PrimaryButton>
               </Tooltip>
             </OnboardingTooltip>
+            <Tooltip content="Cancelar y limpiar el presupuesto actual">
+              <SecondaryButton
+                type="button"
+                onClick={() => {
+                  setItems([]);
+                  setSelectedProject('');
+                  setSelectedClient('');
+                  showToast('info', 'Presupuesto cancelado y limpiado');
+                }}
+                className="px-4 py-2 rounded-lg text-white flex items-center gap-2"
+                icon={<X className="w-4 h-4" />}
+              >
+                Cancelar
+              </SecondaryButton>
+            </Tooltip>
             <Tooltip content="Exportar presupuesto a PDF con membrete corporativo">
               <button
                 onClick={generatePDF}
@@ -1185,7 +1200,7 @@ export default function BudgetCalculator() {
                         <td className="py-2 px-3 text-white/60">{renglon.category}</td>
                         <td className="py-2 px-3 text-right">
                           <Tooltip content={`Agregar ${renglon.description} al presupuesto`}>
-                                                        <PrimaryButton type="button" onClick={() => setRenglonConfirm(renglon)} className={`text-cyan-400 hover:text-cyan-300 text-xs`}>
+                                                        <PrimaryButton type="button" onClick={() => setRenglonConfirm(renglon)} className={`min-h-[44px] min-w-[44px] text-cyan-400 hover:text-cyan-300 text-xs`}>
                               + Agregar
                             </PrimaryButton>
                           </Tooltip>

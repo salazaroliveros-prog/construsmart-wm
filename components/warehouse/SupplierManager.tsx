@@ -362,7 +362,8 @@ export default function SupplierManager() {
                 </button>
                 <button
                   onClick={() => setDeleteDialog({ show: true, supplier })}
-                  className="px-3 py-2 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-all"
+                  className="min-h-[44px] min-w-[44px] px-3 py-2 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-all"
+                  aria-label={`Eliminar proveedor ${supplier.name}`}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

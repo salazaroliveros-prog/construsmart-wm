@@ -415,7 +415,7 @@ export default function PurchaseOrderManager() {
           description="Cree una orden de compra para proveedores y vincúlela a un proyecto."
         >
           <Tooltip content="Crear nueva orden de compra">
-            <button
+            <PrimaryButton
               onClick={() => {
                 setEditingOrder(null);
                 setFormData({
@@ -430,11 +430,10 @@ export default function PurchaseOrderManager() {
                 });
                 setShowForm(true);
               }}
-              className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 text-white"
+              icon={<Plus className="w-4 h-4" />}
             >
-              <Plus className="w-4 h-4" />
               Nueva Orden
-            </button>
+            </PrimaryButton>
           </Tooltip>
         </OnboardingTooltip>
       </div>
@@ -525,7 +524,7 @@ export default function PurchaseOrderManager() {
           <div className="flex gap-2">
             <button
               onClick={() => setFilterStatus('all')}
-              className={`px-4 py-2 rounded-lg text-sm transition-all ${
+              className={`min-h-[44px] px-4 py-2 rounded-lg text-sm transition-all ${
                 filterStatus === 'all'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
                   : 'glass-button text-white/60'
@@ -535,7 +534,7 @@ export default function PurchaseOrderManager() {
             </button>
             <button
               onClick={() => setFilterStatus('pending')}
-              className={`px-4 py-2 rounded-lg text-sm transition-all ${
+              className={`min-h-[44px] px-4 py-2 rounded-lg text-sm transition-all ${
                 filterStatus === 'pending'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
                   : 'glass-button text-white/60'
@@ -545,7 +544,7 @@ export default function PurchaseOrderManager() {
             </button>
             <button
               onClick={() => setFilterStatus('approved')}
-              className={`px-4 py-2 rounded-lg text-sm transition-all ${
+              className={`min-h-[44px] px-4 py-2 rounded-lg text-sm transition-all ${
                 filterStatus === 'approved'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
                   : 'glass-button text-white/60'
@@ -555,7 +554,7 @@ export default function PurchaseOrderManager() {
             </button>
             <button
               onClick={() => setFilterStatus('received')}
-              className={`px-4 py-2 rounded-lg text-sm transition-all ${
+              className={`min-h-[44px] px-4 py-2 rounded-lg text-sm transition-all ${
                 filterStatus === 'received'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
                   : 'glass-button text-white/60'
@@ -613,7 +612,7 @@ export default function PurchaseOrderManager() {
                   <Tooltip content="Ver items de la orden">
                     <button
                       onClick={() => handleViewItems(order)}
-                      className="glass-button px-3 py-2 rounded-lg text-white text-sm flex items-center gap-2"
+                      className="glass-button min-h-[44px] min-w-[44px] px-3 py-2 rounded-lg text-white text-sm flex items-center gap-2"
                     >
                       <Package className="w-4 h-4" />
                       Items
@@ -656,7 +655,7 @@ export default function PurchaseOrderManager() {
                     <Tooltip content="Editar información de la orden">
                       <button
                         onClick={() => handleEdit(order)}
-                        className="glass-button px-3 py-2 rounded-lg text-white text-sm flex items-center gap-2"
+                        className="glass-button min-h-[44px] min-w-[44px] px-3 py-2 rounded-lg text-white text-sm flex items-center gap-2"
                       >
                         <Edit className="w-4 h-4" />
                         Editar
@@ -686,7 +685,8 @@ export default function PurchaseOrderManager() {
               <h3 className="text-xl font-bold text-white">Items de Orden {selectedOrder.code}</h3>
               <button
                 onClick={() => setSelectedOrder(null)}
-                className="glass-button p-2 rounded-lg text-white"
+                className="glass-button min-h-[44px] min-w-[44px] p-2 rounded-lg text-white"
+                aria-label="Cerrar modal de items"
               >
                 <X className="w-5 h-5" />
               </button>

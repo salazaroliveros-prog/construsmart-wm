@@ -236,13 +236,12 @@ export default function SubcontractorManager() {
           description="Cree un subcontrato para controlar anticipos, retenciones y valores de contrato."
         >
           <Tooltip content="Crear nuevo subcontrato">
-            <button
+            <PrimaryButton
               onClick={() => openModal()}
-              className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 text-white"
+              icon={<Plus className="w-4 h-4" />}
             >
-              <Plus className="w-4 h-4" />
               Nuevo Subcontrato
-            </button>
+            </PrimaryButton>
           </Tooltip>
         </OnboardingTooltip>
       </div>
@@ -385,7 +384,7 @@ export default function SubcontractorManager() {
                   <Tooltip content="Editar subcontrato">
                     <button
                       onClick={() => openModal(sub)}
-                      className="glass-button px-3 py-2 rounded-lg text-white text-sm flex items-center gap-2"
+                      className="glass-button min-h-[44px] min-w-[44px] px-3 py-2 rounded-lg text-white text-sm flex items-center gap-2"
                     >
                       <Edit className="w-4 h-4" />
                       Editar

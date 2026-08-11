@@ -260,7 +260,7 @@ export default function ProjectLogManager() {
           <p className="text-white/60 text-sm">Registro de avance, incidencias y notas</p>
         </div>
         <Tooltip content="Agregar nueva entrada a la bitácora">
-          <button
+          <PrimaryButton
             onClick={() => {
               if (!selectedProject) {
                 showToast('warning', 'Por favor selecciona un proyecto primero');
@@ -278,11 +278,10 @@ export default function ProjectLogManager() {
               });
               setShowForm(true);
             }}
-            className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 text-white"
+            icon={<Plus className="w-4 h-4" />}
           >
-            <Plus className="w-4 h-4" />
             Nueva Entrada
-          </button>
+          </PrimaryButton>
         </Tooltip>
       </div>
 
@@ -440,13 +439,15 @@ export default function ProjectLogManager() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEdit(log)}
-                    className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                    className="min-h-[44px] min-w-[44px] p-2 rounded-lg hover:bg-white/10 transition-colors"
+                    aria-label={`Editar entrada ${log.description}`}
                   >
                     <Edit className="w-4 h-4 text-white/60" />
                   </button>
                   <button
                     onClick={() => setDeleteDialog({ show: true, log })}
-                    className="p-2 rounded-lg hover:bg-red-500/20 transition-colors"
+                    className="min-h-[44px] min-w-[44px] p-2 rounded-lg hover:bg-red-500/20 transition-colors"
+                    aria-label={`Eliminar entrada ${log.description}`}
                   >
                     <Trash2 className="w-4 h-4 text-red-400" />
                   </button>
