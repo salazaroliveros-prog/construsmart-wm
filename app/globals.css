@@ -23,6 +23,13 @@
   /* Enterprise Glassmorphism 2.0 Dynamic Variables */
   --glass-opacity: 0.15;
   --glass-blur: 16px;
+
+  /* Breakpoint Variables for Consistent Responsive Design */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
 }
 
 body {

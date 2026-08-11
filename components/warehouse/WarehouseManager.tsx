@@ -777,7 +777,7 @@ export default function WarehouseManager() {
                 placeholder="Buscar materiales..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-white/10 border border-white/20 rounded-lg pl-10 pr-4 py-2 text-white text-sm"
+                className="glass-input w-full pl-10 pr-4 py-2 text-white text-sm"
               />
             </div>
           </div>

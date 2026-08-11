@@ -641,7 +641,7 @@ function ProjectManager() {
                     type="text"
                     value={formData.code}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                    className="glass-input w-full px-3 py-2 text-white text-sm"
                     required
                   />
                 </div>
@@ -651,7 +651,7 @@ function ProjectManager() {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                    className="glass-input w-full px-3 py-2 text-white text-sm"
                     required
                   />
                 </div>
@@ -661,7 +661,7 @@ function ProjectManager() {
                     type="text"
                     value={formData.client_name}
                     onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                    className="glass-input w-full px-3 py-2 text-white text-sm"
                     required
                   />
                 </div>
@@ -671,7 +671,7 @@ function ProjectManager() {
                     type="text"
                     value={formData.client_phone}
                     onChange={(e) => setFormData({ ...formData, client_phone: e.target.value })}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                    className="glass-input w-full px-3 py-2 text-white text-sm"
                   />
                 </div>
                 <div>
@@ -680,7 +680,7 @@ function ProjectManager() {
                     type="email"
                     value={formData.client_email}
                     onChange={(e) => setFormData({ ...formData, client_email: e.target.value })}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                    className="glass-input w-full px-3 py-2 text-white text-sm"
                   />
                 </div>
                 <div>
@@ -689,7 +689,7 @@ function ProjectManager() {
                     type="text"
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                    className="glass-input w-full px-3 py-2 text-white text-sm"
                     required
                   />
                 </div>
@@ -698,7 +698,7 @@ function ProjectManager() {
                   <select
                     value={formData.typology}
                     onChange={(e) => setFormData({ ...formData, typology: e.target.value as any })}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                    className="glass-input w-full px-3 py-2 text-white text-sm"
                   >
                     <option value="residential">Residencial</option>
                     <option value="commercial">Comercial</option>
@@ -714,7 +714,7 @@ function ProjectManager() {
                     step="0.01"
                     value={formData.area_m2}
                     onChange={(e) => setFormData({ ...formData, area_m2: Number(e.target.value) })}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                    className="glass-input w-full px-3 py-2 text-white text-sm"
                     required
                   />
                 </div>
@@ -723,7 +723,7 @@ function ProjectManager() {
                   <select
                     value={formData.quality_level}
                     onChange={(e) => setFormData({ ...formData, quality_level: e.target.value as any })}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                    className="glass-input w-full px-3 py-2 text-white text-sm"
                   >
                     <option value="basic">Básico (Q.3,000-3,500/m²)</option>
                     <option value="moderate">Moderado (Q.3,500-4,000/m²)</option>
@@ -735,7 +735,7 @@ function ProjectManager() {
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                    className="glass-input w-full px-3 py-2 text-white text-sm"
                   >
                     <option value="planning">Planificación</option>
                     <option value="execution">En Ejecución</option>
@@ -749,7 +749,7 @@ function ProjectManager() {
                     type="date"
                     value={formData.start_date}
                     onChange={(e) => handleStartDateChange(e.target.value)}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                    className="glass-input w-full px-3 py-2 text-white text-sm"
                   />
                 </div>
                 <div>
@@ -767,7 +767,7 @@ function ProjectManager() {
                     type="number"
                     value={formData.duration_days}
                     onChange={(e) => handleDurationChange(Number(e.target.value))}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                    className="glass-input w-full px-3 py-2 text-white text-sm"
                   />
                 </div>
                 <div>
@@ -777,7 +777,7 @@ function ProjectManager() {
                     step="0.01"
                     value={formData.total_budget}
                     onChange={(e) => setFormData({ ...formData, total_budget: Number(e.target.value) })}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                    className="glass-input w-full px-3 py-2 text-white text-sm"
                     required
                   />
                 </div>

@@ -734,7 +734,7 @@ export default function BudgetCalculator() {
           <select
             value={selectedProject}
             onChange={(e) => handleProjectChange(e.target.value)}
-            className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-cyan-500/50"
+            className="flex-1 glass-input rounded-lg px-4 py-2 text-white focus:outline-none focus:border-cyan-500/50"
           >
             <option value="">Seleccione un proyecto en planificación...</option>
             {projects.map(project => (
@@ -751,7 +751,7 @@ export default function BudgetCalculator() {
           <select
             value={selectedClient}
             onChange={(e) => setSelectedClient(e.target.value)}
-            className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500/50"
+            className="flex-1 glass-input rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500/50"
           >
             <option value="">Seleccione un cliente...</option>
             {clients.map(client => (
@@ -976,7 +976,7 @@ export default function BudgetCalculator() {
                   type="number"
                   value={topographyData.volumeCut}
                   onChange={(e) => setTopographyData({ ...topographyData, volumeCut: Number(e.target.value) })}
-                  className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-xs"
+                  className="w-full glass-input rounded px-2 py-1 text-white text-xs"
                 />
               </Tooltip>
             </div>
@@ -987,7 +987,7 @@ export default function BudgetCalculator() {
                   type="number"
                   value={topographyData.volumeFill}
                   onChange={(e) => setTopographyData({ ...topographyData, volumeFill: Number(e.target.value) })}
-                  className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-xs"
+                  className="w-full glass-input rounded px-2 py-1 text-white text-xs"
                 />
               </Tooltip>
             </div>
@@ -998,7 +998,7 @@ export default function BudgetCalculator() {
                   type="number"
                   value={topographyData.terrainArea}
                   onChange={(e) => setTopographyData({ ...topographyData, terrainArea: Number(e.target.value) })}
-                  className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-xs"
+                  className="w-full glass-input rounded px-2 py-1 text-white text-xs"
                 />
               </Tooltip>
             </div>
@@ -1014,7 +1014,7 @@ export default function BudgetCalculator() {
                     const cutFactor = getVolumetricFactor(newSoilType, 'corte');
                     setApuParams({ ...apuParams, volumetricFactor: cutFactor });
                   }}
-                  className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-xs"
+                  className="w-full glass-input rounded px-2 py-1 text-white text-xs"
                 >
                   {Object.entries(MATERIAL_FACTORS).map(([key, factor]) => (
                     <option key={key} value={key}>
@@ -1055,7 +1055,7 @@ export default function BudgetCalculator() {
                   type="number"
                   value={apuParams.theoreticalQuantity}
                   onChange={(e) => setApuParams({ ...apuParams, theoreticalQuantity: Number(e.target.value) })}
-                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                  className="w-full glass-input rounded-lg px-3 py-2 text-white text-sm"
                 />
               </div>
               <div>
@@ -1064,7 +1064,7 @@ export default function BudgetCalculator() {
                   type="number"
                   value={apuParams.wastePercentage}
                   onChange={(e) => setApuParams({ ...apuParams, wastePercentage: Number(e.target.value) })}
-                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                  className="w-full glass-input rounded-lg px-3 py-2 text-white text-sm"
                 />
               </div>
               <div>
@@ -1074,7 +1074,7 @@ export default function BudgetCalculator() {
                   step="0.01"
                   value={apuParams.volumetricFactor}
                   onChange={(e) => setApuParams({ ...apuParams, volumetricFactor: Number(e.target.value) })}
-                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                  className="w-full glass-input rounded-lg px-3 py-2 text-white text-sm"
                 />
               </div>
               <div>
@@ -1083,7 +1083,7 @@ export default function BudgetCalculator() {
                   type="number"
                   value={apuParams.crewDailySalary}
                   onChange={(e) => setApuParams({ ...apuParams, crewDailySalary: Number(e.target.value) })}
-                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                  className="w-full glass-input rounded-lg px-3 py-2 text-white text-sm"
                 />
               </div>
               <div>
@@ -1092,7 +1092,7 @@ export default function BudgetCalculator() {
                   type="number"
                   value={apuParams.dailyPerformance}
                   onChange={(e) => setApuParams({ ...apuParams, dailyPerformance: Number(e.target.value) })}
-                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                  className="w-full glass-input rounded-lg px-3 py-2 text-white text-sm"
                 />
               </div>
               <div>
@@ -1101,7 +1101,7 @@ export default function BudgetCalculator() {
                   type="number"
                   value={apuParams.indirectPercentage}
                   onChange={(e) => setApuParams({ ...apuParams, indirectPercentage: Number(e.target.value) })}
-                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                  className="w-full glass-input rounded-lg px-3 py-2 text-white text-sm"
                 />
               </div>
               <div>
@@ -1110,7 +1110,7 @@ export default function BudgetCalculator() {
                   type="number"
                   value={apuParams.materialUnitCost}
                   onChange={(e) => setApuParams({ ...apuParams, materialUnitCost: Number(e.target.value) })}
-                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                  className="w-full glass-input rounded-lg px-3 py-2 text-white text-sm"
                 />
               </div>
               <div>
@@ -1119,7 +1119,7 @@ export default function BudgetCalculator() {
                   type="number"
                   value={apuParams.machineryCost}
                   onChange={(e) => setApuParams({ ...apuParams, machineryCost: Number(e.target.value) })}
-                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                  className="w-full glass-input rounded-lg px-3 py-2 text-white text-sm"
                 />
               </div>
             </div>
