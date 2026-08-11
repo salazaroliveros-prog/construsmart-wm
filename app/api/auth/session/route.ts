@@ -42,11 +42,6 @@ export async function POST(request: Request) {
     // Validación CSRF: verificar origin
     const origin = request.headers.get('origin');
     
-    // Logging para depuración (temporal en producción)
-    console.log('[Session] Origin received:', origin);
-    console.log('[Session] NEXT_PUBLIC_SITE_URL:', process.env.NEXT_PUBLIC_SITE_URL);
-    console.log('[Session] ALLOWED_ORIGINS:', ALLOWED_ORIGINS);
-    
     if (!isOriginAllowed(origin)) {
       console.error('[Session] Origin not allowed:', origin);
       return NextResponse.json(

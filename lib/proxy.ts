@@ -32,23 +32,19 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Do not run code between createServerClient and
-  // supabase.auth.getClaims(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
-  // IMPORTANT: If you remove getClaims() and you use server-side rendering
-  // with the Supabase client, your users may be randomly logged out.
+  // Usar getUser() en lugar de getClaims() para mayor robustez
+  // getUser() es más estable y menos propenso a errores 503
   let user = null
   try {
-    const { data } = await supabase.auth.getClaims()
-    user = data?.claims ?? null
+    const { data } = await supabase.auth.getUser()
+    user = data?.user ?? null
   } catch (err) {
-    console.error('[Proxy] getClaims failed:', err)
+    console.error('[Proxy] getUser failed:', err)
     // No romper toda la respuesta con un 500; continuar como usuario anónimo.
     // El AuthGuard y rutas protegidas ya manejan la redirección a /login.
   }
 
-  console.log('[Proxy] getClaims user=', user?.email || 'null')
+  console.log('[Proxy] getUser user=', user?.email || 'null')
 
   if (
     !user &&
