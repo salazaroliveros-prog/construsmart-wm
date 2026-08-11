@@ -476,3 +476,70 @@ export const subcontractorSchema = z.object({
 });
 
 export type SubcontractorFormData = z.infer<typeof subcontractorSchema>;
+
+// ============================================================================
+// PURCHASE ORDER SCHEMA
+// ============================================================================
+export const purchaseOrderSchema = z.object({
+  supplier_id: z.string().uuid('ID de proveedor inválido'),
+  project_id: z.string().uuid('ID de proyecto inválido').optional().or(z.literal('')),
+  code: z.string()
+    .min(1, 'Código es requerido')
+    .max(50, 'Código no puede exceder 50 caracteres'),
+  order_date: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha debe estar en formato YYYY-MM-DD')
+    .refine(date => {
+      const parsed = new Date(date);
+      const today = new Date();
+      return parsed <= today;
+    }, 'Fecha no puede ser futura'),
+  expected_delivery_date: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha debe estar en formato YYYY-MM-DD')
+    .optional().or(z.literal('')),
+  status: z.enum(['pending', 'ordered', 'partial', 'received', 'cancelled']),
+  subtotal: z.number()
+    .min(0, 'Subtotal no puede ser negativo')
+    .max(9999999999.99, 'Subtotal excede el máximo permitido'),
+  tax_amount: z.number()
+    .min(0, 'Impuesto no puede ser negativo')
+    .max(999999999.99, 'Impuesto excede el máximo permitido')
+    .optional(),
+  total_amount: z.number()
+    .min(0, 'Total no puede ser negativo')
+    .max(9999999999.99, 'Total excede el máximo permitido'),
+  notes: z.string().max(500).optional().or(z.literal('')),
+});
+
+export type PurchaseOrderFormData = z.infer<typeof purchaseOrderSchema>;
+
+// ============================================================================
+// PURCHASE ORDER ITEM SCHEMA
+// ============================================================================
+export const purchaseOrderItemSchema = z.object({
+  purchase_order_id: z.string().uuid('ID de orden de compra inválido'),
+  item_code: z.string()
+    .min(1, 'Código de item es requerido')
+    .max(50, 'Código no puede exceder 50 caracteres'),
+  description: z.string()
+    .min(1, 'Descripción es requerida')
+    .min(3, 'Descripción debe tener al menos 3 caracteres')
+    .max(200, 'Descripción no puede exceder 200 caracteres'),
+  quantity: z.number()
+    .min(0.01, 'Cantidad debe ser mayor a 0')
+    .max(9999999.99, 'Cantidad excede el máximo permitido'),
+  unit: z.string()
+    .min(1, 'Unidad es requerida')
+    .max(20, 'Unidad no puede exceder 20 caracteres'),
+  unit_cost: z.number()
+    .min(0, 'Costo unitario no puede ser negativo')
+    .max(999999999.99, 'Costo unitario excede el máximo permitido'),
+  total_cost: z.number()
+    .min(0, 'Costo total no puede ser negativo')
+    .max(9999999999.99, 'Costo total excede el máximo permitido'),
+  received_quantity: z.number()
+    .min(0, 'Cantidad recibida no puede ser negativa')
+    .max(9999999.99, 'Cantidad recibida excede el máximo permitido')
+    .optional(),
+});
+
+export type PurchaseOrderItemFormData = z.infer<typeof purchaseOrderItemSchema>;

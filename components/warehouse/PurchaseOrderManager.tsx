@@ -17,6 +17,7 @@ import SecondaryButton from '@/components/ui/SecondaryButton';
 import { formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 import { calculatePurchaseOrderSummary } from '@/lib/utils/summaryCalculations';
+import { purchaseOrderSchema, purchaseOrderItemSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 
 export default function PurchaseOrderManager() {
   const { showToast } = useToast();
@@ -118,6 +119,14 @@ export default function PurchaseOrderManager() {
     e.preventDefault();
 
     try {
+      // Validar con Zod schema
+      const validation = validateSchema(purchaseOrderSchema, formData);
+      if (!validation.success) {
+        const errorMessages = formatValidationErrors(validation.errors);
+        showToast('error', errorMessages.join(', '));
+        return;
+      }
+
       const now = new Date().toISOString();
 
       // Validar propiedad del proyecto antes de guardar
@@ -173,6 +182,17 @@ export default function PurchaseOrderManager() {
     e.preventDefault();
 
     try {
+      // Validar con Zod schema para items
+      const itemValidation = validateSchema(purchaseOrderItemSchema, {
+        ...itemFormData,
+        purchase_order_id: selectedOrder?.id || '',
+      });
+      if (!itemValidation.success) {
+        const errorMessages = formatValidationErrors(itemValidation.errors);
+        showToast('error', errorMessages.join(', '));
+        return;
+      }
+
       const now = new Date().toISOString();
       const total_price = (itemFormData.quantity || 0) * (itemFormData.unit_price || 0);
 
