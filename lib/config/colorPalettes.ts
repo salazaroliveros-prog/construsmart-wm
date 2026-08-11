@@ -17,6 +17,30 @@ export const BRAND_COLORS = {
   blue: '#3b82f6',
 } as const;
 
+// Colores con mejor contraste para modo oscuro (WCAG AA compliant)
+export const HIGH_CONTRAST_COLORS = {
+  cyan: '#67e8f9',      // cyan-300 (mejor que cyan-400)
+  emerald: '#6ee7b7',   // emerald-300
+  violet: '#c4b5fd',    // violet-300
+  amber: '#fcd34d',     // amber-300
+  red: '#fca5a5',       // red-300
+  blue: '#93c5fd',      // blue-300
+  rose: '#fda4af',      // rose-300
+  orange: '#fdba74',    // orange-300
+} as const;
+
+// Colores para badges con contraste mejorado
+export const BADGE_COLORS = {
+  cyan: { bg: 'rgba(6, 182, 212, 0.3)', text: '#a5f3fc', border: 'rgba(6, 182, 212, 0.4)' },
+  emerald: { bg: 'rgba(16, 185, 129, 0.3)', text: '#6ee7b7', border: 'rgba(16, 185, 129, 0.4)' },
+  violet: { bg: 'rgba(139, 92, 246, 0.3)', text: '#c4b5fd', border: 'rgba(139, 92, 246, 0.4)' },
+  amber: { bg: 'rgba(245, 158, 11, 0.3)', text: '#fcd34d', border: 'rgba(245, 158, 11, 0.4)' },
+  red: { bg: 'rgba(239, 68, 68, 0.3)', text: '#fca5a5', border: 'rgba(239, 68, 68, 0.4)' },
+  blue: { bg: 'rgba(59, 130, 246, 0.3)', text: '#93c5fd', border: 'rgba(59, 130, 246, 0.4)' },
+  rose: { bg: 'rgba(244, 63, 94, 0.3)', text: '#fda4af', border: 'rgba(244, 63, 94, 0.4)' },
+  orange: { bg: 'rgba(249, 115, 22, 0.3)', text: '#fdba74', border: 'rgba(249, 115, 22, 0.4)' },
+} as const;
+
 // Categorías de transacciones financieras
 export const FINANCIAL_CATEGORY_COLORS: Record<string, string> = {
   materiales: BRAND_COLORS.cyan,
@@ -109,4 +133,18 @@ export const getProjectStatusColor = (status: string): string => {
 // Helper para obtener color de tipología de proyecto
 export const getProjectTypologyColor = (typology: string): string => {
   return PROJECT_TYPOLOGY_COLORS[typology] || BRAND_COLORS.slate;
+};
+
+// Helper para obtener color de alto contraste
+export const getHighContrastColor = (color: keyof typeof HIGH_CONTRAST_COLORS): string => {
+  return HIGH_CONTRAST_COLORS[color] || HIGH_CONTRAST_COLORS.cyan;
+};
+
+// Helper para obtener estilos de badge con contraste mejorado
+export const getBadgeStyles = (color: keyof typeof BADGE_COLORS): {
+  bg: string;
+  text: string;
+  border: string;
+} => {
+  return BADGE_COLORS[color] || BADGE_COLORS.cyan;
 };
