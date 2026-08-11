@@ -91,6 +91,11 @@ export const updateSyncStatus = async (
 // Statuses that mark a row as pending to be pushed to Supabase.
 // Incluye created_offline y updated_offline (asignados por resolveSyncStatus
 // cuando el usuario trabaja sin conexión) para que el motor de sync los procese.
+//
+// CORRECCIÓN: Tras eliminar escritura dual directa a Supabase desde componentes,
+// el motor de sync es ahora el único punto de escritura a Supabase.
+// Los componentes solo escriben en IndexedDB con estos estados de sync,
+// y el motor de sync propaga los cambios a Supabase de forma consistente.
 export const PENDING_STATUSES = ['pending', 'syncing', 'sync_failed', 'created_offline', 'updated_offline'];
 
 /**
@@ -238,6 +243,34 @@ function emitSyncEnd(ok: boolean, error?: string) {
 
 // Prevents concurrent sync runs (interval + online event + manual calls).
 let syncInProgress = false;
+let syncTimeoutId: NodeJS.Timeout | null = null;
+const SYNC_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutos de timeout
+
+// CORRECCIÓN: Implementar timeout automático para evitar deadlocks
+// syncOfflineData ya tiene finally { setSyncInProgress(false); } en línea 1158
+function setSyncInProgress(value: boolean): void {
+  syncInProgress = value;
+  
+  if (value) {
+    // Limpiar timeout anterior si existe
+    if (syncTimeoutId) {
+      clearTimeout(syncTimeoutId);
+    }
+    
+    // Establecer nuevo timeout para limpiar el flag automáticamente
+    syncTimeoutId = setTimeout(() => {
+      console.warn('[Sync] Timeout alcanzado, limpiando syncInProgress flag');
+      setSyncInProgress(false);
+      syncTimeoutId = null;
+    }, SYNC_TIMEOUT_MS);
+  } else {
+    // Limpiar timeout al completar sync
+    if (syncTimeoutId) {
+      clearTimeout(syncTimeoutId);
+      syncTimeoutId = null;
+    }
+  }
+}
 
 // Remaps a foreign key that was stored as a local id to the server id assigned
 // during this sync run. Unknown/local-only ids are kept as-is.
@@ -457,7 +490,7 @@ export async function syncOfflineData(): Promise<SyncResult> {
     emitSyncEnd(false, result.errors.join('; '));
     return result;
   }
-  syncInProgress = true;
+  setSyncInProgress(true);
 
   logger.info('Starting sync...', undefined, 'Sync');
 
@@ -1122,7 +1155,7 @@ export async function syncOfflineData(): Promise<SyncResult> {
     result.errors.push(`Sync failed: ${error}`);
     return result;
   } finally {
-    syncInProgress = false;
+    setSyncInProgress(false);
     emitSyncEnd(result.success, result.errors.length ? result.errors.join('; ') : undefined);
   }
 }
@@ -1363,7 +1396,7 @@ export async function forceFullSync(): Promise<SyncResult> {
     emitSyncEnd(false, result.errors.join('; '));
     return result;
   }
-  syncInProgress = true;
+  setSyncInProgress(true);
 
   const tables: { local: Table<any, any>; remote: string }[] = [
     { local: offlineDB.projects, remote: 'projects' },
@@ -1462,6 +1495,6 @@ export async function forceFullSync(): Promise<SyncResult> {
     logger.error(`Sync failed: ${error}`, undefined, 'Sync');
     return result;
   } finally {
-    syncInProgress = false;
+    setSyncInProgress(false);
   }
 }

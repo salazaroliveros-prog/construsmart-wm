@@ -53,12 +53,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
         setIsAuthenticated(true);
       } catch (error) {
-        console.error('Error al verificar sesión:', error);
-        if (supabase) {
-          await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+        // CORRECCIÓN: Mejorar manejo de errores con recuperación específica
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[AuthContext] Error al verificar sesión:', error);
         }
-        setUser(null);
-        setIsAuthenticated(false);
+        
+        // Diferenciar tipos de error
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        // Si es error de red, no hacer logout inmediatamente
+        if (errorMessage.includes('fetch') || errorMessage.includes('network') || errorMessage.includes('timeout')) {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[AuthContext] Error de red detectado, manteniendo sesión local');
+          }
+          // No hacer logout en errores de red temporales
+          setUser(null);
+          setIsAuthenticated(false);
+        } else {
+          // Para errores de auth u otros, hacer logout
+          if (supabase) {
+            await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+          }
+          setUser(null);
+          setIsAuthenticated(false);
+        }
       } finally {
         setLoading(false);
       }
@@ -98,19 +116,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      console.log('[AuthContext] Attempting sign in for:', email);
+      // Solo log en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[AuthContext] Attempting sign in for:', email);
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        console.error('[AuthContext] Sign in error:', error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[AuthContext] Sign in error:', error);
+        }
         throw new Error(error.message || 'Credenciales inválidas');
       }
 
       if (data.user && data.session) {
-        console.log('[AuthContext] Sign in successful for:', data.user.email);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[AuthContext] Sign in successful for:', data.user.email);
+        }
 
         try {
           const response = await fetch('/api/auth/session', {
@@ -123,14 +149,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
 
           const result = await response.json();
-          console.log('[AuthContext] session sync status=', response.status, 'result=', result);
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[AuthContext] session sync status=', response.status, 'result=', result);
+          }
 
           if (!response.ok || !result.success) {
-            console.error('[AuthContext] Session cookie sync failed:', result.error);
+            if (process.env.NODE_ENV === 'development') {
+              console.error('[AuthContext] Session cookie sync failed:', result.error);
+            }
             throw new Error(result.error || 'No se pudo sincronizar la sesión en el servidor');
           }
         } catch (sessionError) {
-          console.error('[AuthContext] Session sync error:', sessionError);
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[AuthContext] Session sync error:', sessionError);
+          }
           throw new Error('Error al sincronizar la sesión. Intenta nuevamente.');
         }
 
@@ -145,7 +178,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('[AuthContext] isAuthenticated set to true');
       }
     } catch (error: any) {
-      console.error('[AuthContext] Sign in failed:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[AuthContext] Sign in failed:', error);
+      }
       throw new Error(error.message || 'Error al iniciar sesión');
     }
   };
@@ -162,7 +197,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setIsAuthenticated(false);
     } catch (error) {
-      console.error('Error al cerrar sesión:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[AuthContext] Error al cerrar sesión:', error);
+      }
       // Forzar cierre local incluso si hay error
       setUser(null);
       setIsAuthenticated(false);

@@ -11,7 +11,7 @@ import AuthGuard from '@/components/auth/AuthGuard';
 import { MaterialAlertProvider } from '@/context/MaterialAlertContext';
 import { OfflineSyncIndicator } from '@/components/common/OfflineSyncIndicator';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/index";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 

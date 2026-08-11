@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plus, Edit, Trash2, Search, Package, AlertTriangle, TrendingUp, X, Save, ArrowDown, ArrowUp, PackagePlus, Warehouse, FolderOpen, ShoppingCart, RefreshCw } from 'lucide-react';
 import { offlineDB, LocalWarehouseStock, LocalProject, LocalSupplier } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
@@ -27,6 +27,7 @@ import { useAutoPurchaseOrder } from '@/hooks/useAutoPurchaseOrder';
 import { WAREHOUSE_UNIT_COLORS, getWarehouseUnitColor } from '@/lib/config/colorPalettes';
 import { BUSINESS_CONFIG } from '@/lib/config/app.config';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { hexToRgba, hexToLightRgb } from '@/lib/utils/colorUtils';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -59,22 +60,6 @@ const unitLabels: Record<string, string> = {
   bolsa: 'Bolsa',
   rollo: 'Rollo',
   galón: 'Galón'
-};
-
-// Helper para convertir color hex a rgba
-const hexToRgba = (hex: string, alpha: number): string => {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-};
-
-// Helper para obtener color RGB más claro
-const hexToLightRgb = (hex: string): string => {
-  const r = Math.min(255, parseInt(hex.slice(1, 3), 16) + 80);
-  const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + 80);
-  const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + 80);
-  return `rgb(${r}, ${g}, ${b})`;
 };
 
 // Colores de unidades basados en paleta centralizada
@@ -267,10 +252,10 @@ export default function WarehouseManager() {
     setIsModalOpen(true);
   };
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
     resetForm();
-  };
+  }, []);
 
   // ---------------------------------------------------------------------------
   // CRUD OPERATIONS
@@ -538,12 +523,14 @@ export default function WarehouseManager() {
   // FILTERING
   // ---------------------------------------------------------------------------
 
-  const filteredItems = stockItems.filter(item => {
-    const matchesSearch = item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          item.item_code.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesProject = selectedProject === 'all' || item.project_id === selectedProject;
-    return matchesSearch && matchesProject;
-  });
+  const filteredItems = useMemo(() => {
+    return stockItems.filter(item => {
+      const matchesSearch = item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            item.item_code.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesProject = selectedProject === 'all' || item.project_id === selectedProject;
+      return matchesSearch && matchesProject;
+    });
+  }, [stockItems, searchTerm, selectedProject]);
 
   // Renderizado incremental: evita saturar el DOM con miles de materiales.
   const {

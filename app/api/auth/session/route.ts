@@ -7,8 +7,35 @@ assertSupabaseEnv('Session API');
 
 export const runtime = 'nodejs';
 
+// Lista de orígenes permitidos para CSRF protection
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : ['http://localhost:3000', 'http://localhost:3001'];
+
+function isOriginAllowed(origin: string | null): boolean {
+  if (!origin) return false; // Denegar requests sin origin (direct navigation)
+  
+  // Normalizar origin para comparación exacta
+  const normalizedOrigin = origin.trim().toLowerCase();
+  
+  // Comparación exacta (no usar endsWith para evitar ataques como evil.com/allowed.com)
+  return ALLOWED_ORIGINS.some(allowed => {
+    const normalizedAllowed = allowed.trim().toLowerCase();
+    return normalizedOrigin === normalizedAllowed;
+  });
+}
+
 export async function POST(request: Request) {
   try {
+    // Validación CSRF: verificar origin
+    const origin = request.headers.get('origin');
+    if (!isOriginAllowed(origin)) {
+      return NextResponse.json(
+        { success: false, error: 'Origen no permitido' },
+        { status: 403 }
+      );
+    }
+
     const { access_token, refresh_token } = await request.json();
 
     if (!access_token || !refresh_token) {
@@ -42,7 +69,10 @@ export async function POST(request: Request) {
       refresh_token,
     });
 
-    console.log('[Session] setSession error=', error?.message || 'null', 'user=', data.user?.email || 'null');
+    // Solo log en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Session] setSession error=', error?.message || 'null', 'user=', data.user?.email || 'null');
+    }
 
     if (error || !data.session) {
       return NextResponse.json(
@@ -51,16 +81,42 @@ export async function POST(request: Request) {
       );
     }
 
+    // CORRECCIÓN DE SEGURIDAD: No exponer tokens en headers HTTP
+    // Los tokens se gestionan a través de cookies HTTPS-only del cliente Supabase
     const response = NextResponse.json({ success: true, user: data.user });
-    response.headers.set('x-auth-access-token', access_token);
-    response.headers.set('x-auth-refresh-token', refresh_token);
+    
+    // Set CORS headers para orígenes permitidos
+    response.headers.set('Access-Control-Allow-Origin', origin || '');
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
     return response;
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : 'Error interno';
     return NextResponse.json(
-      { success: false, error: err.message || 'Error interno' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }
 }
 
-export const GET = POST;
+// OPTIONS para preflight CORS
+export async function OPTIONS(request: Request) {
+  const origin = request.headers.get('origin');
+  if (!isOriginAllowed(origin)) {
+    return NextResponse.json(
+      { success: false, error: 'Origen no permitido' },
+      { status: 403 }
+    );
+  }
+
+  const response = NextResponse.json({ success: true });
+  response.headers.set('Access-Control-Allow-Origin', origin || '');
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
+  response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  response.headers.set('Access-Control-Max-Age', '86400'); // 24 horas
+  
+  return response;
+}

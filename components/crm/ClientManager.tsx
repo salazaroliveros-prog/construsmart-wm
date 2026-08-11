@@ -19,6 +19,7 @@ import { getCurrentUserId } from '@/lib/auth/userId';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 import { formatGTQ } from '@/lib/config/app.config';
 import { calculateClientSummary } from '@/lib/utils/summaryCalculations';
+import { generateSequentialCode } from '@/lib/utils/generateCode';
 
 export default function ClientManager() {
   const { showToast } = useToast();
@@ -181,13 +182,7 @@ const loadClients = async () => {
   };
 
   const generateClientCode = () => {
-    const all = clients;
-    const maxNum = all.reduce((max, c) => {
-      const m = c.code.match(/^CLI-(\d+)$/);
-      const n = m ? parseInt(m[1], 10) : 0;
-      return n > max ? n : max;
-    }, 0);
-    return `CLI-${String(maxNum + 1).padStart(4, '0')}`;
+    return generateSequentialCode(clients, 'CLI');
   };
 
   // Realtime refresh: recarga cuando cambios llegan de otros dispositivos

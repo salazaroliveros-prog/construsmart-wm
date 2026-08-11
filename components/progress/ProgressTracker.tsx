@@ -3,10 +3,9 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, BarChart3, Activity, DollarSign, Target, Clock, AlertTriangle } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, Legend } from 'recharts';
-import { offlineDB, LocalProject, LocalFinancialTransaction, LocalProjectLog } from '@/lib/db/offlineStore';
+import { offlineDB, LocalProject, LocalFinancialTransaction, LocalProjectLog, LocalBudget } from '@/lib/db/offlineStore';
 import { queueDelete } from '@/lib/utils/offlineSync';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
-import { budgetState, ActiveBudgetState } from '@/lib/state/budgetState';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EmptyState from '@/components/ui/EmptyState';
@@ -48,7 +47,7 @@ export default function ProgressTracker() {
   const { financial } = useFinancialSettings();
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('');
-  const [activeBudget, setActiveBudget] = useState<ActiveBudgetState | null>(null);
+  const [activeBudget, setActiveBudget] = useState<LocalBudget | null>(null);
   const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
   const [projectLogs, setProjectLogs] = useState<LocalProjectLog[]>([]);
   const [metrics, setMetrics] = useState<ProgressMetrics | null>(null);
@@ -85,13 +84,6 @@ export default function ProgressTracker() {
   };
 
   const loadBudgetState = async () => {
-    // Try to get budget from global state first
-    const state = budgetState.get();
-    if (state && state.projectId === selectedProject) {
-      setActiveBudget(state);
-      return;
-    }
-
     // Fallback: read the latest budget from the local DB (e.g. created on another device)
     try {
       const userId = await getUserScope();
@@ -111,19 +103,7 @@ export default function ProgressTracker() {
 
       if (budgets.length > 0) {
         const budget = budgets[budgets.length - 1];
-        setActiveBudget({
-          projectId: selectedProject,
-          budgetId: budget.id as string,
-          typology: 'residential',
-          costDirectTotal: budget.direct_cost || 0,
-          costTotalWithIndirects: budget.total_amount || 0,
-          breakdown: {
-            materials: 0,
-            labor: 0,
-            machinery: 0,
-          },
-          calculatedAt: budget.updated_at || '',
-        });
+        setActiveBudget(budget);
         return;
       }
     } catch (error) {
@@ -217,17 +197,17 @@ export default function ProgressTracker() {
   const budgetBreakdownData = activeBudget ? [
     {
       name: 'Materiales',
-      value: activeBudget.breakdown.materials,
+      value: activeBudget.direct_cost * 0.6, // Estimado: 60% materiales
       fill: '#3b82f6',
     },
     {
       name: 'Mano de Obra',
-      value: activeBudget.breakdown.labor,
+      value: activeBudget.direct_cost * 0.3, // Estimado: 30% mano de obra
       fill: '#10b981',
     },
     {
       name: 'Maquinaria',
-      value: activeBudget.breakdown.machinery,
+      value: activeBudget.direct_cost * 0.1, // Estimado: 10% maquinaria
       fill: '#f59e0b',
     },
   ] : [];
@@ -374,13 +354,13 @@ export default function ProgressTracker() {
               <div>
                 <p className="text-white/60 text-sm">Costo Directo (CD)</p>
                 <p className="text-white font-medium text-lg">
-                  {formatCurrency(activeBudget.costDirectTotal, financial)}
+                  {formatCurrency(activeBudget.direct_cost, financial)}
                 </p>
               </div>
               <div>
                 <p className="text-white/60 text-sm">Costo Total (CD + CI)</p>
                 <p className="text-white font-medium text-lg">
-                  {formatCurrency(activeBudget.costTotalWithIndirects, financial)}
+                  {formatCurrency(activeBudget.total_amount, financial)}
                 </p>
               </div>
               <div>
@@ -471,35 +451,6 @@ export default function ProgressTracker() {
               </div>
             )}
           </div>
-
-          {/* Topography Data */}
-          {activeBudget.topographyData && (
-            <div className="glass-panel rounded-2xl p-4 sm:p-6">
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Target className="w-5 h-5 text-cyan-400" />
-                Datos de Topografía (Integración APU)
-              </h2>
-              
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div>
-                  <p className="text-white/60 text-sm">Volumen Corte</p>
-                  <p className="text-white font-medium">{activeBudget.topographyData.volumeCut} m³</p>
-                </div>
-                <div>
-                  <p className="text-white/60 text-sm">Volumen Relleno</p>
-                  <p className="text-white font-medium">{activeBudget.topographyData.volumeFill} m³</p>
-                </div>
-                <div>
-                  <p className="text-white/60 text-sm">Área Terreno</p>
-                  <p className="text-white font-medium">{activeBudget.topographyData.terrainArea} m²</p>
-                </div>
-                <div>
-                  <p className="text-white/60 text-sm">Tipo de Suelo</p>
-                  <p className="text-white font-medium">{activeBudget.topographyData.soilType}</p>
-                </div>
-              </div>
-            </div>
-          )}
         </>
       )}
 

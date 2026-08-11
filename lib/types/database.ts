@@ -10,7 +10,7 @@ export type ProjectStatus = 'planning' | 'execution' | 'paused' | 'completed';
 export type ProjectTypology = 'residential' | 'commercial' | 'industrial' | 'civil' | 'public';
 export type QualityLevel = 'basic' | 'moderate' | 'premium';
 export type SyncStatus = 'synced' | 'created_offline' | 'updated_offline' | 'syncing' | 'pending' | 'sync_failed';
-export type ExpenseCategory = 'materiales' | 'mano_de_obra' | 'herramienta' | 'sub_contrato' | 'administrativo' | 'personal' | 'transporte' | 'fijos' | 'hogar' | 'aporte' | 'trabajos_extra' | 'Gastos Operativos / Nómina de Mano de Obra';
+export type ExpenseCategory = 'materiales' | 'mano_de_obra' | 'herramienta' | 'sub_contrato' | 'administrativo' | 'personal' | 'transporte' | 'fijos' | 'hogar' | 'aporte' | 'trabajos_extra' | 'gastos_operativos_nomina';
 export type OrderStatus = 'pending' | 'pending_approval' | 'approved' | 'ordered' | 'received' | 'cancelled';
 export type ClientType = 'individual' | 'corporate';
 

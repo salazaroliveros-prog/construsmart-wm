@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Building2, DollarSign, TrendingUp, Users, Hammer, Calendar, Target } from 'lucide-react';
 import { offlineDB, LocalProject, LocalFinancialTransaction, LocalPayrollEmployee, LocalWarehouseStock } from '@/lib/db/offlineStore';
-import { useFinancialSettings, formatCurrency, calculateUtilityMarginHelper } from '@/lib/hooks/useBusinessSettings';
+import { useFinancialSettings, formatCurrency } from '@/lib/hooks/useBusinessSettings';
 import { calculateDashboardStats } from '@/lib/utils/summaryCalculations';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useBusinessSettings } from '@/lib/hooks/useBusinessSettings';

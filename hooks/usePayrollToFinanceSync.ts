@@ -30,7 +30,7 @@ export const usePayrollToFinanceSync = () => {
     const existingTransaction = await offlineDB.financialTransactions
       .filter(tx =>
         tx.type === 'expense' &&
-        tx.category === 'Gastos Operativos / Nómina de Mano de Obra' &&
+        tx.category === 'gastos_operativos_nomina' &&
         (payrollRecord.project_id === undefined || tx.project_id === payrollRecord.project_id) &&
         tx.description.includes(`${payrollRecord.period_start} - ${payrollRecord.period_end}`) &&
         tx.total_cost === totalAmount
@@ -61,7 +61,7 @@ export const usePayrollToFinanceSync = () => {
       id: generateUUID(),
       project_id: payrollRecord.project_id,
       type: 'expense',
-      category: 'Gastos Operativos / Nómina de Mano de Obra',
+      category: 'gastos_operativos_nomina',
       description: `Nómina Periodo ${payrollRecord.period_start} - ${payrollRecord.period_end}`,
       quantity: 1, // 1 payroll period
       unit: 'periodo',

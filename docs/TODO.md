@@ -8,7 +8,7 @@
 
 ## ALTA PRIORIDAD
 - [x] 5. Alinear `ExpenseCategory` en `lib/types/database.ts` con el CHECK real de la BD (ya incluye la categoría; la migración SQL ahora la soporta)
-- [ ] 6. Eliminar escritura dual directa a Supabase en módulos (delegar al motor de sync)
+- [x] 6. Eliminar escritura dual directa a Supabase en módulos (delegar al motor de sync)
 
 ## MEDIA PRIORIDAD
 - [x] 7. `budgetToWarehouse.ts`: detectar conectividad real vía `navigator.onLine` en vez de hardcodear `isOnline: true`

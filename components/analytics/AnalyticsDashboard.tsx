@@ -7,14 +7,32 @@ import { offlineDB, LocalProject, LocalFinancialTransaction, LocalBudgetItem } f
 import { formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
+interface EVMDataPoint {
+  name: string;
+  project_id: string | undefined;
+  PV: number;
+  AC: number;
+  EV: number;
+  CPI: number;
+  SPI: number;
+  CV: number;
+  SV: number;
+  completion: number;
+}
+
+interface CategoryDataPoint {
+  name: string;
+  value: number;
+}
+
 export default function AnalyticsDashboard() {
   const { financial } = useFinancialSettings();
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('all');
   const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
   const [budgetItems, setBudgetItems] = useState<LocalBudgetItem[]>([]);
-  const [evmData, setEvmData] = useState<any[]>([]);
-  const [categoryData, setCategoryData] = useState<any[]>([]);
+  const [evmData, setEvmData] = useState<EVMDataPoint[]>([]);
+  const [categoryData, setCategoryData] = useState<CategoryDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
   const COLORS = ['#06b6d4', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#f97316'];

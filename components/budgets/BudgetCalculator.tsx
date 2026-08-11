@@ -557,8 +557,7 @@ export default function BudgetCalculator() {
         }
       }
 
-      // Enviar materiales al almacén (solo en el primer guardado para evitar duplicados)
-      // TODO: Implementar upsert para actualizaciones incrementales
+      // Enviar materiales al almacén (upsert: inserta o actualiza según corresponda)
       if (warehouseInputs.length > 0) {
         await sendBudgetMaterialsToWarehouse(warehouseInputs);
         showToast('info', `${warehouseInputs.length} materiales sincronizados con el almacén`);
@@ -623,7 +622,7 @@ export default function BudgetCalculator() {
       // Trigger stock validation for warehouse integration
       if (selectedProject && items.length > 0) {
         try {
-          const stockAlerts = await triggerStockCheck(selectedProject, items, projectName);
+          const stockAlerts = await triggerStockCheck(selectedProject, items as LocalBudgetItem[], projectName);
           if (stockAlerts.length > 0) {
             showToast('warning', `${stockAlerts.length} materiales con stock insuficiente para el proyecto`);
           }

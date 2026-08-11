@@ -60,10 +60,21 @@ class Logger {
   }
 
   private sendToExternalService(entry: LogEntry): void {
-    // TODO: Implementar envío a servicio de logging externo
-    // Ejemplo: Sentry, LogRocket, Datadog, etc.
+    // Servicio de logging externo pendiente de configuración
+    // Requiere integración con Sentry, LogRocket, Datadog, etc.
+    // Para implementar:
+    // 1. Instalar el paquete correspondiente (ej: npm install @sentry/nextjs)
+    // 2. Configurar el servicio en lib/supabase/env.ts o en next.config.ts
+    // 3. Descomentar y adaptar el código según el servicio elegido
+    // 
+    // Ejemplo para Sentry:
     // if (typeof window !== 'undefined' && window.Sentry) {
     //   window.Sentry.captureException(entry.data);
+    // }
+    //
+    // Ejemplo para LogRocket:
+    // if (typeof window !== 'undefined' && window.LogRocket) {
+    //   window.LogRocket.captureException(entry.data);
     // }
   }
 

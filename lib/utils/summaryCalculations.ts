@@ -1,20 +1,35 @@
 'use client';
 
-import { calculateUtilityMarginHelper } from '@/lib/hooks/useBusinessSettings';
+import { calculateUtilityMargin, FinancialSettings } from '@/lib/calculators/utilityMargin';
+import { 
+  LocalProject, 
+  LocalFinancialTransaction, 
+  LocalPayrollEmployee, 
+  LocalWarehouseStock,
+  LocalProjectLog,
+  LocalBudgetItem,
+  LocalBudget,
+  LocalPurchaseOrder,
+  LocalPayrollRecord,
+  LocalClient,
+  LocalSupplier,
+  LocalPurchaseOrderItem
+} from '@/lib/db/offlineStore';
+import { UISettings } from '@/lib/types/uiSettings';
 
 export interface DashboardStatsInput {
-  projects: any[];
-  transactions: any[];
-  employees: any[];
-  stockItems: any[];
-  settings: any;
+  projects: LocalProject[];
+  transactions: LocalFinancialTransaction[];
+  employees: LocalPayrollEmployee[];
+  stockItems: LocalWarehouseStock[];
+  settings: UISettings;
   selectedProject?: string;
 }
 
 export interface DashboardStatsResult {
-  visibleProjects: any[];
-  visibleTransactions: any[];
-  activeProjects: any[];
+  visibleProjects: LocalProject[];
+  visibleTransactions: LocalFinancialTransaction[];
+  activeProjects: LocalProject[];
   totalBudget: number;
   totalSpent: number;
   activeEmployees: number;
@@ -23,10 +38,10 @@ export interface DashboardStatsResult {
 }
 
 export interface DashboardChartsMetricsInput {
-  projects: any[];
-  transactions: any[];
-  projectLogs: any[];
-  settings: any;
+  projects: LocalProject[];
+  transactions: LocalFinancialTransaction[];
+  projectLogs: LocalProjectLog[];
+  settings: UISettings;
   evmMetrics?: {
     schedulePerformanceIndex?: number;
     costPerformanceIndex?: number;
@@ -52,9 +67,9 @@ export interface SummaryMetrics {
 }
 
 export interface BudgetComparisonInput {
-  budget: any;
-  items: any[];
-  transactions: any[];
+  budget: LocalBudget;
+  items: LocalBudgetItem[];
+  transactions: LocalFinancialTransaction[];
 }
 
 export interface BudgetComparisonResult {
@@ -169,7 +184,13 @@ export const calculateSummaryMetrics = (input: DashboardChartsMetricsInput): Sum
   const totalExecuted = totalBudget * (avgFinancialAdvance / 100);
   const budgetVariance = totalBudget - totalExecuted;
 
-  const utilityMargin = calculateUtilityMarginHelper(totalBudget, totalExpenses, settings);
+  // CORRECCIÓN: Usar calculateUtilityMargin directamente (fuente única de verdad)
+  const financialSettings: FinancialSettings = {
+    indirectPercentage: settings.financial.indirectPercentage,
+    contingencyPercentage: settings.financial.contingencyPercentage,
+    profitPercentage: settings.financial.profitPercentage,
+  };
+  const utilityMargin = calculateUtilityMargin(totalBudget, totalExpenses, financialSettings);
 
   return {
     totalProjects: projects.length,
@@ -209,7 +230,13 @@ export const calculateDashboardStats = (input: DashboardStatsInput): DashboardSt
   const activeEmployees = employees.filter(e => e.active).length;
   const lowStockItems = stockItems.filter(s => s.current_stock <= s.minimum_threshold).length;
 
-  const utilityMargin = calculateUtilityMarginHelper(totalBudget, totalSpent, settings);
+  // CORRECCIÓN: Usar calculateUtilityMargin directamente (fuente única de verdad)
+  const financialSettings: FinancialSettings = {
+    indirectPercentage: settings.financial.indirectPercentage,
+    contingencyPercentage: settings.financial.contingencyPercentage,
+    profitPercentage: settings.financial.profitPercentage,
+  };
+  const utilityMargin = calculateUtilityMargin(totalBudget, totalSpent, financialSettings);
 
   return {
     visibleProjects,
@@ -276,7 +303,7 @@ export const calculateBudgetComparison = (input: BudgetComparisonInput): BudgetC
   };
 };
 
-export const calculateWarehouseSummary = (stockItems: any[]): WarehouseSummaryResult => {
+export const calculateWarehouseSummary = (stockItems: LocalWarehouseStock[]): WarehouseSummaryResult => {
   const totalItems = stockItems.length;
   const lowStockItems = stockItems.filter(item => item.current_stock <= item.minimum_threshold);
   const totalInventoryValue = stockItems.reduce((sum, item) => sum + (item.current_stock * item.unit_cost), 0);
@@ -291,7 +318,7 @@ export const calculateWarehouseSummary = (stockItems: any[]): WarehouseSummaryRe
 };
 
 
-export const calculateFinanceSummary = (transactions: any[]) => {
+export const calculateFinanceSummary = (transactions: LocalFinancialTransaction[]) => {
   const totalIncome = transactions
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + t.total_cost, 0);
@@ -326,7 +353,7 @@ const calculateGuatemalanBenefits = (baseSalary: number) => {
   };
 };
 
-export const calculatePayrollSummary = (employees: any[]): PayrollSummaryResult => {
+export const calculatePayrollSummary = (employees: LocalPayrollEmployee[]): PayrollSummaryResult => {
   const activeEmployees = employees.filter(e => e.active);
   const totalMonthlyPayroll = activeEmployees.reduce((sum, e) => sum + (e.daily_rate * 30), 0);
   const totalBenefits = activeEmployees.reduce((sum, e) => {
@@ -343,10 +370,10 @@ export const calculatePayrollSummary = (employees: any[]): PayrollSummaryResult 
 };
 
 export const calculateProgressMetrics = (input: {
-  project: any;
-  transactions: any[];
-  activeBudget: any;
-  projectLogs: any[];
+  project: LocalProject;
+  transactions: LocalFinancialTransaction[];
+  activeBudget: LocalBudget;
+  projectLogs: LocalProjectLog[];
 }): ProgressMetrics => {
   const { project, transactions, activeBudget, projectLogs } = input;
 
@@ -354,7 +381,8 @@ export const calculateProgressMetrics = (input: {
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.total_cost, 0);
 
-  const financialProgress = (spentAmount / activeBudget.costTotalWithIndirects) * 100;
+  const budgetTotal = activeBudget.total_amount || activeBudget.direct_cost * (1 + activeBudget.indirect_percentage / 100);
+  const financialProgress = budgetTotal > 0 ? (spentAmount / budgetTotal) * 100 : 0;
 
   const startDate = project.start_date ? new Date(project.start_date) : new Date();
   const endDate = project.estimated_end_date
@@ -381,9 +409,9 @@ export const calculateProgressMetrics = (input: {
     physicalProgress = Math.min(100, timeProgress);
   }
 
-  const estimatedSpent = (activeBudget.costTotalWithIndirects * physicalProgress) / 100;
+  const estimatedSpent = (budgetTotal * physicalProgress) / 100;
   const variance = physicalProgress - financialProgress;
-  const remainingBudget = activeBudget.costTotalWithIndirects - spentAmount;
+  const remainingBudget = budgetTotal - spentAmount;
 
   return {
     physicalProgress,
@@ -398,30 +426,30 @@ export const calculateProgressMetrics = (input: {
   };
 };
 
-export const calculatePurchaseOrderSummary = (orders: any[], financial: any) => ({
+export const calculatePurchaseOrderSummary = (orders: LocalPurchaseOrder[], financial: unknown) => ({
   totalOrders: orders.length,
-  pending: orders.filter((o: any) => o.status === 'pending').length,
-  pendingApproval: orders.filter((o: any) => o.status === 'pending_approval').length,
-  approved: orders.filter((o: any) => o.status === 'approved').length,
-  received: orders.filter((o: any) => o.status === 'received').length,
-  totalAmount: orders.reduce((sum: number, o: any) => sum + (o.total_amount || 0), 0),
+  pending: orders.filter((o) => o.status === 'pending').length,
+  pendingApproval: orders.filter((o) => o.status === 'pending_approval').length,
+  approved: orders.filter((o) => o.status === 'approved').length,
+  received: orders.filter((o) => o.status === 'received').length,
+  totalAmount: orders.reduce((sum, o) => sum + (o.total_amount || 0), 0),
 });
 
-export const calculateSupplierSummary = (suppliers: any[]) => ({
+export const calculateSupplierSummary = (suppliers: LocalSupplier[]) => ({
   totalSuppliers: suppliers.length,
   active: suppliers.length,
   contacts: suppliers.length,
 });
 
-export const calculateClientSummary = (clients: any[]) => ({
+export const calculateClientSummary = (clients: LocalClient[]) => ({
   totalClients: clients.length,
-  corporate: clients.filter((c: any) => c.client_type === 'corporate').length,
-  individual: clients.filter((c: any) => c.client_type === 'individual').length,
+  corporate: clients.filter((c) => c.client_type === 'corporate').length,
+  individual: clients.filter((c) => c.client_type === 'individual').length,
 });
 
-export const calculateProjectLogSummary = (logs: any[]) => ({
+export const calculateProjectLogSummary = (logs: LocalProjectLog[]) => ({
   totalEntries: logs.length,
-  advances: logs.filter((l: any) => l.activity_type === 'progress').length,
-  issues: logs.filter((l: any) => l.activity_type === 'issue').length,
-  milestones: logs.filter((l: any) => l.activity_type === 'milestone').length,
+  advances: logs.filter((l) => l.activity_type === 'progress').length,
+  issues: logs.filter((l) => l.activity_type === 'issue').length,
+  milestones: logs.filter((l) => l.activity_type === 'milestone').length,
 });

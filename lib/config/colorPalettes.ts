@@ -30,7 +30,7 @@ export const FINANCIAL_CATEGORY_COLORS: Record<string, string> = {
   hogar: BRAND_COLORS.violet,
   aporte: BRAND_COLORS.emerald,
   trabajos_extra: BRAND_COLORS.amber,
-  'Gastos Operativos / Nómina de Mano de Obra': BRAND_COLORS.red,
+  gastos_operativos_nomina: BRAND_COLORS.red,
 } as const;
 
 // Unidades de almacén

@@ -18,6 +18,7 @@ import { supplierSchema, validateSchema, formatValidationErrors } from '@/lib/va
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 import { calculateSupplierSummary } from '@/lib/utils/summaryCalculations';
+import { generateSequentialCode } from '@/lib/utils/generateCode';
 
 export default function SupplierManager() {
   const { showToast } = useToast();
@@ -182,13 +183,7 @@ export default function SupplierManager() {
   };
 
   const generateSupplierCode = () => {
-    const all = suppliers;
-    const maxNum = all.reduce((max, s) => {
-      const m = s.code.match(/^SUP-(\d+)$/);
-      const n = m ? parseInt(m[1], 10) : 0;
-      return n > max ? n : max;
-    }, 0);
-    return `SUP-${String(maxNum + 1).padStart(4, '0')}`;
+    return generateSequentialCode(suppliers, 'SUP');
   };
 
   // Realtime refresh: recarga cuando cambios llegan de otros dispositivos

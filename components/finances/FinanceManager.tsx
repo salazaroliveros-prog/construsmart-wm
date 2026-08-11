@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plus, Edit, Trash2, Search, TrendingUp, TrendingDown, DollarSign, Wallet, ArrowDownCircle, ArrowUpCircle, Calendar, X, Save, Inbox, Calculator } from 'lucide-react';
 import { offlineDB, LocalFinancialTransaction, LocalProject, LocalBudget, LocalBudgetItem } from '@/lib/db/offlineStore';
 import { budgetState } from '@/lib/state/budgetState';
-import { supabase } from '@/lib/supabase/client';
 import { queueDelete, PENDING_STATUSES, isServerId } from '@/lib/utils/offlineSync';
 import { resolveSyncStatus } from '@/lib/utils/syncState';
 import { generateId } from '@/lib/utils/generateId';
@@ -22,15 +21,17 @@ import PrimaryButton from '@/components/ui/PrimaryButton';
 import SecondaryButton from '@/components/ui/SecondaryButton';
 import { financialTransactionSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
+import { hexToRgba, hexToLightRgb } from '@/lib/utils/colorUtils';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 import { FINANCIAL_CATEGORY_COLORS, getFinancialCategoryColor } from '@/lib/config/colorPalettes';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import type { ExpenseCategory } from '@/lib/types/database';
 
 interface TransactionFormData {
   project_id?: string;
   budget_item_id?: string; // ✅ NUEVO: Vínculo a renglón presupuestario
   type: 'income' | 'expense';
-  category: 'materiales' | 'mano_de_obra' | 'herramienta' | 'sub_contrato' | 'administrativo' | 'personal' | 'transporte' | 'fijos' | 'hogar' | 'aporte' | 'trabajos_extra' | 'Gastos Operativos / Nómina de Mano de Obra';
+  category: 'materiales' | 'mano_de_obra' | 'herramienta' | 'sub_contrato' | 'administrativo' | 'personal' | 'transporte' | 'fijos' | 'hogar' | 'aporte' | 'trabajos_extra' | 'gastos_operativos_nomina';
   description: string;
   quantity: number;
   unit: string;
@@ -58,23 +59,7 @@ const categoryLabels: Record<string, string> = {
   hogar: 'Hogar',
   aporte: 'Aporte',
   trabajos_extra: 'Trabajos Extra',
-  'Gastos Operativos / Nómina de Mano de Obra': 'Nómina de Mano de Obra'
-};
-
-// Helper para convertir color hex a rgba
-const hexToRgba = (hex: string, alpha: number): string => {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-};
-
-// Helper para obtener color RGB más claro
-const hexToLightRgb = (hex: string): string => {
-  const r = Math.min(255, parseInt(hex.slice(1, 3), 16) + 80);
-  const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + 80);
-  const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + 80);
-  return `rgb(${r}, ${g}, ${b})`;
+  gastos_operativos_nomina: 'Nómina de Mano de Obra'
 };
 
 // Colores de categorías basados en paleta centralizada
@@ -90,10 +75,10 @@ const categoryColors: Record<string, { bg: string; text: string; border: string 
   hogar: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.hogar, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.hogar), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.hogar, 0.3) },
   aporte: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.aporte, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.aporte), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.aporte, 0.3) },
   trabajos_extra: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.trabajos_extra, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.trabajos_extra), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.trabajos_extra, 0.3) },
-  'Gastos Operativos / Nómina de Mano de Obra': { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS['Gastos Operativos / Nómina de Mano de Obra'], 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS['Gastos Operativos / Nómina de Mano de Obra']), border: hexToRgba(FINANCIAL_CATEGORY_COLORS['Gastos Operativos / Nómina de Mano de Obra'], 0.3) }
+  gastos_operativos_nomina: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.gastos_operativos_nomina, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.gastos_operativos_nomina), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.gastos_operativos_nomina, 0.3) }
 };
 
-export default function FinanceManager() {
+function FinanceManager() {
   const { showToast } = useToast();
   const { financial } = useFinancialSettings();
   const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
@@ -268,9 +253,9 @@ export default function FinanceManager() {
       setEditingTransaction(transaction);
       setFormData({
         project_id: transaction.project_id,
-        budget_item_id: (transaction as any).budget_item_id, // ✅ NUEVO
+        budget_item_id: transaction.budget_item_id,
         type: transaction.type as 'income' | 'expense',
-        category: transaction.category as any,
+        category: transaction.category,
         description: transaction.description,
         quantity: transaction.quantity,
         unit: transaction.unit,
@@ -284,12 +269,12 @@ export default function FinanceManager() {
     setIsModalOpen(true);
   };
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setIsModalOpen(false);
     resetForm();
-  };
+  }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setSaveLoading(true);
 
@@ -308,11 +293,11 @@ export default function FinanceManager() {
       // Obtener user_id para tenencia
       const userId = await getCurrentUserId();
 
-      const transactionData: any = {
+      const transactionData: LocalFinancialTransaction = {
         id: editingTransaction?.id || generateId(),
         user_id: userId || undefined,
         project_id: formData.project_id,
-        budget_item_id: formData.budget_item_id, // ✅ NUEVO
+        budget_item_id: formData.budget_item_id,
         type: formData.type,
         category: formData.category,
         description: formData.description,
@@ -346,28 +331,23 @@ export default function FinanceManager() {
       closeModal();
       loadTransactions();
 
-      if (isOnline && supabase && isServerId(transactionData.id)) {
-        const { error } = await supabase.from('financial_transactions').upsert([transactionData]);
-        if (error) {
-          await offlineDB.financialTransactions.update(transactionData.id!, { sync_status: resolveSyncStatus({ isNewRecord: true, isOnline }) });
-          showToast('warning', 'Transacción guardada localmente; pendiente de sync');
-        } else {
-          await offlineDB.financialTransactions.update(transactionData.id!, { sync_status: 'synced' });
-        }
-      }
+      // CORRECCIÓN: Eliminada escritura dual directa a Supabase
+      // La sincronización ahora se delega completamente al motor de sync en lib/utils/offlineSync.ts
+      // Esto elimina duplicación de lógica y asegura consistencia (único source of truth para sync)
+      // Los datos se guardarán en IndexedDB y el motor de sync los propagará a Supabase cuando sea apropiado
     } catch (error) {
       console.error('Error saving transaction:', error);
       showToast('error', 'Error al guardar la transacción');
     } finally {
       setSaveLoading(false);
     }
-  };
+  }, [formData, editingTransaction, showToast, closeModal, loadTransactions, isOnline]);
 
-  const handleDelete = async (transaction: LocalFinancialTransaction) => {
+  const handleDelete = useCallback((transaction: LocalFinancialTransaction) => {
     setDeleteConfirm(transaction);
-  };
+  }, []);
 
-  const confirmDelete = async () => {
+  const confirmDelete = useCallback(async () => {
     if (!deleteConfirm) return;
 
     try {
@@ -381,15 +361,17 @@ export default function FinanceManager() {
     } finally {
       setDeleteConfirm(null);
     }
-  };
+  }, [deleteConfirm, showToast, loadTransactions]);
 
-  const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = filterType === 'all' || transaction.type === filterType;
-    const matchesCategory = filterCategory === 'all' || transaction.category === filterCategory;
-    const matchesProject = selectedProject === 'all' || transaction.project_id === selectedProject;
-    return matchesSearch && matchesType && matchesCategory && matchesProject;
-  });
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(transaction => {
+      const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesType = filterType === 'all' || transaction.type === filterType;
+      const matchesCategory = filterCategory === 'all' || transaction.category === filterCategory;
+      const matchesProject = selectedProject === 'all' || transaction.project_id === selectedProject;
+      return matchesSearch && matchesType && matchesCategory && matchesProject;
+    });
+  }, [transactions, searchTerm, filterType, filterCategory, selectedProject]);
 
   // Renderizado incremental: evita saturar el DOM con miles de filas.
   const {
@@ -601,7 +583,8 @@ export default function FinanceManager() {
           />
         ) : (
           <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
-            <table className="w-full text-sm min-w-[600px]">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[600px]">
               <thead>
                 <tr className="border-b border-white/10">
                   <th className="text-left text-white/60 py-3 px-4">Fecha</th>
@@ -666,6 +649,7 @@ export default function FinanceManager() {
                 ))}
               </tbody>
             </table>
+            </div>
             {hasMoreTransactions && (
               <div className="text-center py-3 border-t border-white/10">
                 <button
@@ -704,7 +688,7 @@ export default function FinanceManager() {
                   <label className="block text-white/60 text-sm mb-1">Tipo</label>
                   <select
                     value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as 'income' | 'expense' })}
                     className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
                   >
                     <option value="income">Ingreso</option>
@@ -715,7 +699,7 @@ export default function FinanceManager() {
                   <label className="block text-white/60 text-sm mb-1">Categoría</label>
                   <select
                     value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value as ExpenseCategory })}
                     className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
                   >
                     {Object.entries(categoryLabels).map(([key, label]) => (
@@ -817,7 +801,7 @@ export default function FinanceManager() {
                   <label className="block text-white/60 text-sm mb-1">Método de Pago</label>
                   <select
                     value={formData.payment_method || ''}
-                    onChange={(e) => setFormData({ ...formData, payment_method: e.target.value as any })}
+                    onChange={(e) => setFormData({ ...formData, payment_method: e.target.value as 'efectivo' | 'transferencia' | 'cheque' | 'tarjeta' | 'anticipo' })}
                     className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
                   >
                     <option value="">Seleccione...</option>
@@ -887,3 +871,6 @@ export default function FinanceManager() {
     </div>
   );
 }
+
+// Memoización para evitar re-renders innecesarios
+export default React.memo(FinanceManager);

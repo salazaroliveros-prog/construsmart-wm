@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plus, Edit, Trash2, Search, Users, DollarSign, Calendar, BadgeCheck, X, Save, UserPlus, Wallet, FolderOpen, AlertTriangle, TrendingUp } from 'lucide-react';
 import { offlineDB, LocalPayrollEmployee, LocalPayrollRecord, LocalProject, LocalFinancialTransaction } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
@@ -22,6 +22,7 @@ import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 import { useLaborCostOverrun } from '@/hooks/useLaborCostOverrun';
 import { PAYROLL_CATEGORY_COLORS, getPayrollCategoryColor } from '@/lib/config/colorPalettes';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { hexToRgba, hexToLightRgb } from '@/lib/utils/colorUtils';
 
 // Configuration: Hours per workday (configurable per organization)
 const HOURS_PER_WORKDAY = 8;
@@ -59,22 +60,6 @@ interface PayrollFormData {
 const categoryLabels: Record<string, string> = {
   obrero: 'Obrero',
   empleado: 'Empleado'
-};
-
-// Helper para convertir color hex a rgba
-const hexToRgba = (hex: string, alpha: number): string => {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-};
-
-// Helper para obtener color RGB más claro
-const hexToLightRgb = (hex: string): string => {
-  const r = Math.min(255, parseInt(hex.slice(1, 3), 16) + 80);
-  const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + 80);
-  const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + 80);
-  return `rgb(${r}, ${g}, ${b})`;
 };
 
 // Colores de categorías basados en paleta centralizada
@@ -289,10 +274,10 @@ const checkOnlineStatus = () => {
     setIsEmployeeModalOpen(true);
   };
 
-  const handleCloseEmployeeModal = () => {
+  const handleCloseEmployeeModal = useCallback(() => {
     setIsEmployeeModalOpen(false);
     resetEmployeeForm();
-  };
+  }, []);
 
   const handleSaveEmployee = async () => {
     setSaveLoading(true);
@@ -459,10 +444,10 @@ const checkOnlineStatus = () => {
     setIsPayrollModalOpen(true);
   };
 
-  const handleClosePayrollModal = () => {
+  const handleClosePayrollModal = useCallback(() => {
     setIsPayrollModalOpen(false);
     resetPayrollForm();
-  };
+  }, []);
 
   const handleSavePayroll = async () => {
     setSaveLoading(true);
@@ -537,7 +522,7 @@ const checkOnlineStatus = () => {
           user_id: userId || undefined,
           project_id: payrollFormData.project_id,
           type: 'expense',
-          category: 'Gastos Operativos / Nómina de Mano de Obra', // Updated category for Payroll integration
+          category: 'gastos_operativos_nomina', // Updated category for Payroll integration
           description: `Nómina: ${employee.name} - ${period}`,
           quantity: payrollFormData.days_worked,
           unit: 'días',
@@ -592,7 +577,7 @@ const checkOnlineStatus = () => {
           user_id: userId || undefined,
           project_id: payrollFormData.project_id,
           type: 'expense',
-          category: 'Gastos Operativos / Nómina de Mano de Obra', // Updated category for Payroll integration
+          category: 'gastos_operativos_nomina', // Updated category for Payroll integration
           description: `Nómina: ${employee.name} - ${period}`,
           quantity: payrollFormData.days_worked,
           unit: 'días',
@@ -657,15 +642,19 @@ const checkOnlineStatus = () => {
   // FILTERING
   // ---------------------------------------------------------------------------
 
-  const filteredEmployees = employees.filter(employee =>
-    employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.position.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredEmployees = useMemo(() => {
+    return employees.filter(employee =>
+      employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.position.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [employees, searchTerm]);
 
-  const filteredPayrollRecords = payrollRecords.filter(record => {
-    const matchesProject = selectedProject === 'all' || record.project_id === selectedProject;
-    return matchesProject;
-  });
+  const filteredPayrollRecords = useMemo(() => {
+    return payrollRecords.filter(record => {
+      const matchesProject = selectedProject === 'all' || record.project_id === selectedProject;
+      return matchesProject;
+    });
+  }, [payrollRecords, selectedProject]);
 
   // Renderizado incremental: evita saturar el DOM con cientos/miles de filas.
   const {
@@ -920,7 +909,8 @@ const checkOnlineStatus = () => {
             />
           ) : (
             <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
-              <table className="w-full text-sm min-w-[600px]">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[600px]">
                 <thead>
                   <tr className="border-b border-white/10">
                     <th className="text-left text-white/60 py-3 px-4">Nombre</th>
@@ -983,6 +973,7 @@ const checkOnlineStatus = () => {
                   ))}
 </tbody>
               </table>
+              </div>
               {hasMoreEmployees && (
                 <div className="text-center py-3 border-t border-white/10">
                   <button
@@ -1016,7 +1007,8 @@ const checkOnlineStatus = () => {
                 </PrimaryButton>
               </div>
               <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
-                <table className="w-full text-sm min-w-[600px]">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm min-w-[600px]">
                   <thead>
                     <tr className="border-b border-white/10">
                       <th className="text-left text-white/60 py-3 px-4">Empleado</th>
@@ -1045,6 +1037,7 @@ const checkOnlineStatus = () => {
                     })}
                   </tbody>
                 </table>
+                </div>
                 {hasMorePayrollRecords && (
                   <div className="text-center py-3 border-t border-white/10">
                     <button

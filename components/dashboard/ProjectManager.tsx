@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Save, X, FolderOpen, AlertTriangle } from 'lucide-react';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
 import { queueDelete, isServerId, fetchProjectsForOffline } from '@/lib/utils/offlineSync';
@@ -70,7 +70,7 @@ const qualityLabels = {
   premium: 'Premium (Q.4,000-5,000/m²)'
 };
 
-export default function ProjectManager() {
+function ProjectManager() {
   const { showToast } = useToast();
   const { financial } = useFinancialSettings();
   const [projects, setProjects] = useState<LocalProject[]>([]);
@@ -839,3 +839,6 @@ export default function ProjectManager() {
     </div>
   );
 }
+
+// Memoización para evitar re-renders innecesarios
+export default React.memo(ProjectManager);

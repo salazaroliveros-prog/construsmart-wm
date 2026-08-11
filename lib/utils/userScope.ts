@@ -4,8 +4,8 @@
 //
 // Alinea las lecturas locales con el aislamiento por auth.uid() que aplica el
 // RLS en Supabase: filtra las filas locales por el user_id autenticado.
-// Se usa con un guard `!row.user_id || row.user_id === uid` para no ocultar
-// filas heredadas sin user_id (legacy) ni las de la propia sesión.
+// CORRECCIÓN DE SEGURIDAD: Eliminado fallback de datos legacy sin user_id
+// para mayor seguridad y consistencia con RLS actualizado.
 // ============================================================================
 
 import { getCurrentUserId } from '@/lib/auth/userId';
@@ -21,13 +21,13 @@ export async function getUserScope(): Promise<string | null> {
 /**
  * Filtra una lista de filas locales por el user_id autenticado.
  * - Retorna todas las filas si no hay sesión.
- * - Mantiene filas legacy sin user_id y las de la propia sesión.
- * - Oculta filas de otros usuarios.
+ * - CORREGIDO: Solo filas con user_id del usuario actual (eliminado fallback legacy)
+ * - Oculta filas de otros usuarios y filas sin user_id.
  */
 export function scopeLocalRows<T extends { user_id?: string | null }>(
   rows: T[],
   userId: string | null | undefined
 ): T[] {
   if (!userId) return rows;
-  return rows.filter((row) => !row.user_id || row.user_id === userId);
+  return rows.filter((row) => row.user_id === userId);
 }

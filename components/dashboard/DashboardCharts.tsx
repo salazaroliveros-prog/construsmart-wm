@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   TrendingUp,
   DollarSign,
@@ -37,7 +37,7 @@ import {
 } from 'recharts';
 import { offlineDB, LocalProject, LocalFinancialTransaction, LocalWarehouseStock, LocalProjectLog, LocalBudgetItem, LocalBudget, LocalPurchaseOrder, LocalPayrollRecord, LocalClient, LocalSupplier, LocalPurchaseOrderItem, LocalPayrollEmployee } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
-import { useBusinessSettings, calculateUtilityMarginHelper, formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
+import { useBusinessSettings, formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
 import { calculateSummaryMetrics as calculateSummaryMetricsFromUtils } from '@/lib/utils/summaryCalculations';
 import { useFinancialDataRealtime } from '@/hooks/useFinancialDataRealtime';
 import { useEarnedValueManagement } from '@/hooks/useEarnedValueManagement';
@@ -145,7 +145,7 @@ const COLORS = {
 
 // ==================== MAIN COMPONENT ====================
 
-export default function DashboardCharts({ selectedProject, onProjectChange }: DashboardChartsProps) {
+function DashboardCharts({ selectedProject, onProjectChange }: DashboardChartsProps) {
   // ==================== STATE ====================
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
@@ -203,9 +203,9 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
     operativo: true,
   });
 
-  const toggleSection = (section: string) => {
+  const toggleSection = useCallback((section: string) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
-  };
+  }, []);
 
   // ==================== EFFECTS ====================
   useEffect(() => {
@@ -1155,3 +1155,6 @@ export default function DashboardCharts({ selectedProject, onProjectChange }: Da
     </div>
   );
 }
+
+// Memoización para evitar re-renders innecesarios
+export default React.memo(DashboardCharts);

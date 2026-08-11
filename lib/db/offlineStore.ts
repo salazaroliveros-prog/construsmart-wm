@@ -160,10 +160,11 @@ export interface LocalFinancialTransaction extends SyncableEntity {
   id?: string;
   user_id?: string; // For tenant isolation
   project_id?: string;
+  budget_item_id?: string; // Reference to budget item for tracking
   type: 'income' | 'expense';
   category: 'materiales' | 'mano_de_obra' | 'herramienta' | 'sub_contrato' |
            'administrativo' | 'personal' | 'transporte' | 'fijos' | 'hogar' | 'aporte' | 'trabajos_extra' |
-           'Gastos Operativos / Nómina de Mano de Obra';
+           'gastos_operativos_nomina';
   description: string;
   quantity: number;
   unit: string;
@@ -398,16 +399,16 @@ export class WMDatabase extends Dexie {
     this.version(10).stores({
       projects: 'id, user_id, code, name, sync_status, status, typology, created_at, updated_at, budget_total, calculated_duration, has_critical_roadblock, roadblock_type, roadblock_date',
       budgets: 'id, user_id, project_id, version, sync_status, created_at, updated_at',
-      budgetItems: 'id, user_id, budget_id, project_id, parent_id, code, sync_status, item_order, created_at, updated_at, actual_consumption, consumption_variance, category',
+      budgetItems: 'id, user_id, budget_id, project_id, parent_id, code, sync_status, item_order, created_at, updated_at, actual_consumption, consumption_variance, category, [budget_id+sync_status], [project_id+sync_status]',
       budgetItemBreakdowns: 'id, user_id, budget_item_id, resource_type, code, sync_status, created_at, updated_at',
-      financialTransactions: 'id, user_id, project_id, type, category, date, sync_status, created_at, updated_at',
+      financialTransactions: 'id, user_id, project_id, type, category, date, sync_status, created_at, updated_at, [project_id+category], [project_id+sync_status], [type+date], [project_id+date]',
       payrollEmployees: 'id, user_id, name, position, category, department, sync_status, created_at, updated_at',
-      payrollRecords: 'id, user_id, project_id, employee_id, period_start, period_end, sync_status, created_at, updated_at, budget_item_id, is_overrun_warning_fired',
-      warehouseStock: 'id, user_id, project_id, item_code, budget_item_id, sync_status, created_at, updated_at, preferred_supplier_id, auto_generate_po, category',
+      payrollRecords: 'id, user_id, project_id, employee_id, period_start, period_end, sync_status, created_at, updated_at, budget_item_id, is_overrun_warning_fired, [project_id+period_start], [employee_id+period_start], [project_id+employee_id]',
+      warehouseStock: 'id, user_id, project_id, item_code, budget_item_id, sync_status, created_at, updated_at, preferred_supplier_id, auto_generate_po, category, [project_id+category], [category+sync_status], [item_code+project_id]',
       clients: 'id, user_id, code, name, client_type, sync_status, created_at, updated_at, account_balance, credit_limit, is_delinquent',
-      projectLogs: 'id, user_id, project_id, log_date, activity_type, sync_status, created_at, updated_at, is_critical_roadblock, roadblock_category, severity',
+      projectLogs: 'id, user_id, project_id, log_date, activity_type, sync_status, created_at, updated_at, is_critical_roadblock, roadblock_category, severity, [project_id+log_date], [project_id+activity_type]',
       suppliers: 'id, user_id, code, name, sync_status, created_at, updated_at, categories, is_preferred',
-      purchaseOrders: 'id, user_id, code, supplier_id, project_id, status, order_date, sync_status, created_at, updated_at',
+      purchaseOrders: 'id, user_id, code, supplier_id, project_id, status, order_date, sync_status, created_at, updated_at, [project_id+status], [supplier_id+status], [project_id+supplier_id], [order_date+status]',
       purchaseOrderItems: 'id, user_id, purchase_order_id, item_code, sync_status, created_at, updated_at',
       subcontractors: 'id, user_id, supplier_id, code, status, sync_status, created_at, updated_at',
       pendingDeletes: '++id, table, serverId, created_at'

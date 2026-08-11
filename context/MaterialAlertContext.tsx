@@ -9,7 +9,7 @@
 'use client';
 
 import { createContext, useContext, useState, ReactNode } from 'react';
-import { offlineDB } from '@/lib/db/offlineStore';
+import { offlineDB, LocalBudgetItem } from '@/lib/db/offlineStore';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 // Aliases de unidades para normalizar equivalentes escritos distinto
@@ -69,7 +69,7 @@ interface MaterialAlertContextType {
   addAlert: (alert: MaterialAlert) => void;
   clearAlerts: (projectId: string) => void;
   clearAllAlerts: () => void;
-  triggerStockCheck: (projectId: string, budgetItems: any[], projectName: string) => Promise<MaterialAlert[]>;
+  triggerStockCheck: (projectId: string, budgetItems: LocalBudgetItem[], projectName: string) => Promise<MaterialAlert[]>;
 }
 
 const MaterialAlertContext = createContext<MaterialAlertContextType | undefined>(undefined);
@@ -98,7 +98,7 @@ export const MaterialAlertProvider = ({ children }: { children: ReactNode }) => 
 
   const triggerStockCheck = async (
     projectId: string, 
-    budgetItems: any[], 
+    budgetItems: LocalBudgetItem[], 
     projectName: string
   ): Promise<MaterialAlert[]> => {
     // ---- Agregación de requerimientos SÓLO para el proyecto indicado ----
@@ -109,32 +109,32 @@ export const MaterialAlertProvider = ({ children }: { children: ReactNode }) => 
     budgetItems.forEach(item => {
       // Scoping: descartar ítems que pertenecen a otro proyecto
       if (item.project_id && String(item.project_id) !== String(projectId)) return;
-      if (!item.materialBreakdown) return;
+      // Nota: breakdown contiene totales por categoría (materials, labor, machinery)
+      // Como no tenemos desglose por material individual, usamos el total de materiales
+      const breakdown = (item as any).breakdown || (item as any).apuResult?.breakdown;
+      if (!breakdown || !breakdown.materials) return;
 
-      item.materialBreakdown.forEach((material: any) => {
-        const code = material.code;
-        if (!code) return;
+      // Usar el código del item para agrupar (aproximación para validación de stock)
+      const code = item.code || `BUD-${item.id}`;
+      const unit = item.unit || 'und';
+      const quantity = breakdown.materials; // Total de materiales para este item
 
-        const unit = normalizeUnit(material.unit);
-        const quantity = Number(material.quantity) || 0;
+      const existing = materialRequirements.get(code);
+      if (!existing) {
+        materialRequirements.set(code, { quantity, unit });
+        return;
+      }
 
-        const existing = materialRequirements.get(code);
-        if (!existing) {
-          materialRequirements.set(code, { quantity, unit });
-          return;
-        }
-
-        // Si la misma clave llega con otra unidad no se puede sumar:
-        // se omite este aporte para conservar la consistencia de unidades.
-        if (unit !== existing.unit) {
-          console.log(
-            '[Material Alert] Unidad inconsistente para el material', code,
-            `(${existing.unit} vs ${unit}) - aporte omitido`
-          );
-          return;
-        }
-        existing.quantity += quantity;
-      });
+      // Si la misma clave llega con otra unidad no se puede sumar:
+      // se omite este aporte para conservar la consistencia de unidades.
+      if (unit !== existing.unit) {
+        console.log(
+          '[Material Alert] Unidad inconsistente para el material', code,
+          `(${existing.unit} vs ${unit}) - aporte omitido`
+        );
+        return;
+      }
+      existing.quantity += quantity;
     });
     
     // ---- Obtener stock del almacén SÓLO del proyecto actual (o compartido) ----
@@ -189,9 +189,10 @@ export const MaterialAlertProvider = ({ children }: { children: ReactNode }) => 
       const shortage = required - available;
       if (!isFinite(shortage) || shortage <= 0) return;
 
-      const materialDescription = budgetItems.find(item => 
-        item.materialBreakdown?.some((m: any) => m.code === materialCode)
-      )?.description || materialCode;
+      const materialDescription = budgetItems.find(item => {
+        const breakdown = (item as any).breakdown || (item as any).apuResult?.breakdown;
+        return breakdown && breakdown.materials > 0 && item.code === materialCode;
+      })?.description || materialCode;
       
       newAlerts.push({
         projectId,

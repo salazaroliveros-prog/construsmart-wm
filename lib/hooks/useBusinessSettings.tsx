@@ -204,16 +204,5 @@ export function calculatePriceWithMargin(basePrice: number, settings?: Financial
   return basePrice * (1 + financial.profitMargin / 100);
 }
 
-// Helper function to calculate utility margin
-export function calculateUtilityMarginHelper(
-  totalBudget: number,
-  totalSpent: number,
-  settings?: UISettings
-) {
-  const financial = settings?.financial || DEFAULT_UI_SETTINGS.financial;
-  return calculateUtilityMargin(totalBudget, totalSpent, {
-    indirectPercentage: financial.indirectPercentage,
-    contingencyPercentage: financial.contingencyPercentage,
-    profitPercentage: financial.profitPercentage,
-  });
-}
+// CORRECCIÓN: Eliminado helper redundante - usar calculateUtilityMargin directamente desde lib/calculators/utilityMargin.ts
+// Esto asegura una sola fuente de verdad para cálculos de utilidad
