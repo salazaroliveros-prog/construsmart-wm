@@ -1,71 +1,94 @@
 # 🔐 Instrucciones para Habilitar Leaked Password Protection
 
+## ⚠️ Limitación Importante
+
+**Leaked Password Protection está disponible solo en planes Pro y superiores de Supabase ($25/mes+)**.
+
+Si estás en el plan Free, recibirás este error:
+```
+Failed to update auth configuration: Configuring leaked password protection via HaveIBeenPwned.org is available on Pro Plans and up.
+```
+
 ## ¿Qué es Leaked Password Protection?
 
 Supabase Auth previene el uso de passwords comprometidos verificándolos contra la base de datos de HaveIBeenPwned.org. Si un usuario intenta usar un password que ha sido filtrado en una brecha de seguridad, el sistema lo rechazará y pedirá que elija uno más seguro.
 
-## Pasos para Habilitarlo (Manual)
+## Alternativas para Plan Free
 
-### 1. Acceder al Dashboard de Supabase
+### Opción 1: Validación de Password en Frontend (Recomendada)
+Usa la librería `zxcvbn` para validar passwords client-side:
 
+```bash
+npm install zxcvbn @types/zxcvbn
+```
+
+**Ejemplo de implementación**:
+```typescript
+import zxcvbn from 'zxcvbn';
+
+function validatePasswordStrength(password: string): {
+  isValid: boolean;
+  score: number;
+  warning?: string;
+} {
+  const result = zxcvbn(password);
+  
+  // Score 0-4 (4 = muy fuerte)
+  if (result.score < 2) {
+    return {
+      isValid: false,
+      score: result.score,
+      warning: result.feedback.warning || 'Password muy débil'
+    };
+  }
+  
+  return {
+    isValid: true,
+    score: result.score
+  };
+}
+```
+
+### Opción 2: Reglas de Password Simples
+Implementa validación básica:
+- Mínimo 8 caracteres
+- Al menos 1 mayúscula
+- Al menos 1 minúscula
+- Al menos 1 número
+- Sin passwords comunes (ej: "password123")
+
+### Opción 3: Actualizar a Plan Pro (Pago)
+**Costo**: $25 USD/mes
+**Beneficios adicionales**:
+- Leaked Password Protection
+- Más bandwidth y storage
+- Soporte prioritario
+- Backups diarios
+- Database backups (Point-in-Time Recovery)
+
+**Pasos**:
 1. Ve a https://supabase.com/dashboard
-2. Selecciona tu proyecto: `yibjsruoxjlgdnkgylld` (CONTROL_SEGUIMIENTO_APP_VoL_10)
-3. Navega a **Authentication** en el menú lateral izquierdo
+2. Selecciona tu proyecto
+3. Ve a **Settings** → **Billing**
+4. Actualiza a **Pro Plan**
 
-### 2. Configurar Password Security
+## Recomendación
 
-1. En la sección de Authentication, busca la pestaña **Policies** o **Password**
-2. Busca la sección **Password Strength & Leaked Password Protection**
-3. Habilita la opción **Leaked Password Protection** o **Prevent use of leaked passwords**
+**Para el plan Free actual**:
+- ✅ Implementar validación frontend con `zxcvbn`
+- ✅ Usar reglas de password básicas
+- ✅ No es crítico para aplicaciones de uso interno
 
-### 3. Configurar Opciones Adicionales (Opcional)
-
-Puedes configurar:
-- **Minimum password length**: Recomendado 8-12 caracteres
-- **Require uppercase letters**: Recomendado
-- **Require lowercase letters**: Recomendado
-- **Require numbers**: Recomendado
-- **Require special characters**: Recomendado
-
-### 4. Guardar Cambios
-
-1. Haz clic en **Save** o **Apply**
-2. Los cambios se aplican inmediatamente a nuevas sesiones
-
-## Beneficios
-
-✅ **Seguridad mejorada**: Los usuarios no pueden usar passwords comprometidos
-✅ **Protección contra brechas**: Mitiga el riesgo de credenciales reutilizadas
-✅ **Cumplimiento**: Mejora el cumplimiento de estándares de seguridad
-
-## Impacto en Usuarios
-
-- **Usuarios existentes**: No se ven afectados (solo aplica a nuevos passwords o cambios)
-- **Nuevos registros**: Si intentan usar un password comprometido, recibirán un error amigable
-- **Cambio de password**: Si intentan cambiar a un password comprometido, será rechazado
-
-## Mensaje de Error (Ejemplo)
-
-Si un usuario intenta usar un password comprometido:
-```
-This password has been leaked in a data breach. Please choose a different password.
-```
-
-## Verificación
-
-Después de habilitar:
-1. Intenta registrar un nuevo usuario con un password conocido comprometido (ej: "password123")
-2. Verifica que el sistema rechaza el password
-3. El usuario verá un mensaje indicando que el password ha sido filtrado
+**Para proyectos empresariales**:
+- ⚠️ Considerar actualizar a Pro por la seguridad adicional
 
 ## Documentación Oficial
 
-Para más información, visita:
 https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
 
 ---
 
 ## Estado Actual
 
-⚠️ **Pendiente**: Leaked password protection está deshabilitado
-📝 **Acción requerida**: Habilitar manualmente en el dashboard de Supabase Auth
+⚠️ **Limitación**: Leaked password protection requiere plan Pro ($25/mes+)
+✅ **Alternativa**: Implementar validación frontend con `zxcvbn` (gratuito)
