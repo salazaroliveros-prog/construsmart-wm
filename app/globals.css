@@ -543,13 +543,25 @@ body {
   padding: 0.5rem 0.75rem !important;
 }
 
-/* WCAG AA Compliance - Minimum contrast ratio 4.5:1 for normal text */
-.text-white\/40, .text-white\/30, .text-white\/20 {
-  color: rgba(255, 255, 255, 0.7) !important;
+/* WCAG AA Compliance - Enhanced contrast ratios for all UI elements */
+
+/* Text with very low opacity - boost to meet 4.5:1 minimum */
+.text-white\/20,
+.text-white\/30,
+.text-white\/40 {
+  color: rgba(255, 255, 255, 0.75) !important;
 }
 
 .text-white\/50 {
-  color: rgba(255, 255, 255, 0.75) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.text-white\/60 {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.text-white\/70 {
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 
 /* Ensure labels and small text meet WCAG AA */
@@ -559,7 +571,61 @@ label, .text-xs, .text-sm {
 
 /* Improve zinc-400 contrast for better readability */
 .text-zinc-400 {
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+
+/* Improve pastel colors for dark mode - increase brightness */
+.text-cyan-400,
+.text-emerald-400,
+.text-violet-400,
+.text-amber-400,
+.text-red-400,
+.text-blue-400,
+.text-rose-400,
+.text-orange-400 {
+  filter: brightness(1.3) !important;
+}
+
+/* Improve badge contrast - increase background opacity */
+.bg-red-500\/20,
+.bg-emerald-500\/20,
+.bg-amber-500\/20,
+.bg-cyan-500\/20,
+.bg-violet-500\/20,
+.bg-blue-500\/20,
+.bg-rose-500\/20,
+.bg-orange-500\/20 {
+  opacity: 1.4 !important;
+}
+
+/* Improve badge text - lighter shade for better contrast */
+.bg-red-500\/20 .text-red-300,
+.bg-emerald-500\/20 .text-emerald-300,
+.bg-amber-500\/20 .text-amber-300,
+.bg-cyan-500\/20 .text-cyan-300,
+.bg-violet-500\/20 .text-violet-300,
+.bg-blue-500\/20 .text-blue-300 {
+  filter: brightness(1.2) !important;
+}
+
+/* Improve border contrast - increase opacity */
+.border-white\/10,
+.border-white\/20 {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Improve placeholder contrast */
+.placeholder-white\/40,
+.placeholder-white\/30 {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+/* Focus states for better visibility */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid rgba(34, 211, 238, 0.5) !important;
+  outline-offset: 2px;
 }
 
 /* Responsive Typography & Components */
