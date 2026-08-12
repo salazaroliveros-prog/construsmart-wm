@@ -27,6 +27,8 @@
     "test:e2e:screenshots": "node scripts/e2e-visual-screenshots.js",
     "test:e2e:complete-crud": "node scripts/e2e-complete-visual-crud.js",
     "test:e2e:exhaustive": "node scripts/e2e-exhaustive-suite-validation.js",
+    "test:e2e:budget-extreme": "node scripts/e2e-budget-extreme-e2e.js",
+    "test:e2e:budget-extreme-improved": "node scripts/e2e-budget-extreme-e2e-improved.js",
     "validate-config": "node scripts/validate-config.js"
   },
   "keywords": [
