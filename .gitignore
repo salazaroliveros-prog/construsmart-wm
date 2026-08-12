@@ -84,3 +84,9 @@ playwright-report/
 test-results/
 e2e/
 .playwright/
+
+# Screenshots in root directory
+*.png
+*.jpg
+*.jpeg
+*.gif
