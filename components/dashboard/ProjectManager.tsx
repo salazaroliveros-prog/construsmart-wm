@@ -246,6 +246,16 @@ function ProjectManager() {
       // Obtener user_id para tenencia
       const userId = await getCurrentUserId();
 
+      // Validar transición a ejecución sin presupuesto (solo proyectos existentes)
+      if (formData.status === 'execution' && editingProject && editingProject.status !== 'execution') {
+        const budgetCount = await offlineDB.budgets.where('project_id').equals(editingProject.id!).count();
+        if (budgetCount === 0) {
+          showToast('error', 'No se puede cambiar a ejecución sin un presupuesto. Cree el presupuesto primero.');
+          setSaveLoading(false);
+          return;
+        }
+      }
+
       const projectData: LocalProject = {
         id: editingProject?.id || generateId(),
         user_id: userId || undefined,
@@ -257,7 +267,8 @@ function ProjectManager() {
         sync_status: editingProject
           ? resolveSyncStatus({ isNewRecord: false, previousStatus: editingProject.sync_status, isOnline })
           : resolveSyncStatus({ isNewRecord: true, isOnline }),
-        created_at: editingProject?.created_at || new Date().toISOString()
+        created_at: editingProject?.created_at || new Date().toISOString(),
+        total_budget: formData.budget_total ?? formData.total_budget,
       };
 
       if (editingProject) {
@@ -777,9 +788,13 @@ function ProjectManager() {
                     step="0.01"
                     value={formData.total_budget}
                     onChange={(e) => setFormData({ ...formData, total_budget: Number(e.target.value) })}
-                    className="glass-input w-full px-3 py-2 text-white text-sm"
+                    readOnly={!!editingProject?.budget_total}
+                    className={`glass-input w-full px-3 py-2 text-sm ${editingProject?.budget_total ? 'bg-white/5 border border-white/10 text-white/60 cursor-not-allowed' : ''}`}
                     required
                   />
+                  {editingProject?.budget_total && (
+                    <p className="text-white/40 text-xs mt-1">Bloqueado: proviene del presupuesto calculado</p>
+                  )}
                 </div>
                 {formData.budget_total && (
                   <div>

@@ -119,6 +119,18 @@ export async function updateProject(id: string, input: unknown): Promise<{ data:
       ...(rest.estimated_end_date !== undefined && { estimated_end_date: emptyToNull(rest.estimated_end_date) }),
     };
 
+    // Guarda de negocio: no permitir transición a execution sin presupuesto
+    if (updatePayload.status === 'execution') {
+      const { count: budgetCount, error: budgetError } = await supabase
+        .from('budgets')
+        .select('id', { count: 'exact', head: true })
+        .eq('project_id', id);
+
+      if (budgetError || !budgetCount) {
+        return { data: null, error: 'No se puede cambiar a ejecución sin un presupuesto asociado. Cree al menos un presupuesto primero.' };
+      }
+    }
+
     const { data, error } = await supabase
       .from('projects')
       .update(updatePayload)
