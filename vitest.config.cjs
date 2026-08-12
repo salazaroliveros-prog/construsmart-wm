@@ -10,7 +10,6 @@ module.exports = defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./tests/setup.ts'],
     testTimeout: 30000, // 30 segundos para tests largos
     // Disable worker threads on Windows CI/local where spawning may fail
     threads: false,
