@@ -26,6 +26,7 @@ import { FINANCIAL_CATEGORY_COLORS, getFinancialCategoryColor } from '@/lib/conf
 import { getVariantColor } from '@/lib/utils/colorVariantUtils';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import type { ExpenseCategory } from '@/lib/types/database';
+import { useSubcontractorBalance } from '@/hooks/useSubcontractorBalance';
 
 interface TransactionFormData {
   project_id?: string;
@@ -43,6 +44,7 @@ interface TransactionFormData {
   related_supplier_id?: string;
   related_client_id?: string;
   related_purchase_order_id?: string;
+  related_subcontractor_id?: string; // ✅ NUEVO: Vínculo a subcontratista para saldos automáticos
   document_number?: string;
   is_reconciled?: boolean;
 }
@@ -70,6 +72,7 @@ const getCategoryColor = (category: string) => {
 function FinanceManager() {
   const { showToast } = useToast();
   const { financial } = useFinancialSettings();
+  const { updateSubcontractorBalance } = useSubcontractorBalance();
   const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<LocalFinancialTransaction | null>(null);
@@ -315,6 +318,21 @@ function FinanceManager() {
       } else {
         await offlineDB.financialTransactions.add(transactionData);
         showToast('success', 'Transacción creada exitosamente');
+      }
+
+      // ✅ NUEVO: Si es relacionada con subcontratista, actualizar saldo automáticamente
+      if (formData.related_subcontractor_id && formData.category === 'sub_contrato') {
+        try {
+          await updateSubcontractorBalance(
+            formData.related_subcontractor_id,
+            formData.payment_method === 'anticipo' ? 'advance' : 'payment',
+            total_cost
+          );
+          showToast('success', 'Transacción guardada y saldo de subcontratista actualizado');
+        } catch (error) {
+          console.error('Error updating subcontractor balance:', error);
+          showToast('warning', 'Transacción guardada pero no se actualizó el saldo del subcontratista');
+        }
       }
 
       closeModal();
