@@ -11,7 +11,7 @@ import { Plus, Trash2, Calculator } from 'lucide-react';
 import { RENGLONES_BY_TYPOLOGY_DETAILED } from '@/lib/data/apuRenglonesDetailed';
 import { ProjectTypology } from '@/lib/types/apu';
 import { formatQuetzales } from '@/lib/calculators/apuCalculator';
-import EmptyState from '@/components/ui/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import RenglonAccordion from '@/components/budgets/RenglonAccordion';
 import { BudgetItem } from './types';

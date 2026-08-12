@@ -1,181 +1,207 @@
-// Logging estructurado para la aplicación
-// Proporciona niveles de log y formato consistente
+/**
+ * Secure Logging System
+ * CONSTRUCTORA WM/M&S - "CONSTRUYENDO EL FUTURO"
+ * 
+ * Centralized logging with environment-aware sensitivity controls
+ * Prevents accidental exposure of sensitive data in production
+ */
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
-
-interface LogEntry {
-  timestamp: string;
-  level: LogLevel;
-  message: string;
-  data?: unknown;
-  context?: string;
+export enum LogLevel {
+  DEBUG = 0,
+  INFO = 1,
+  WARN = 2,
+  ERROR = 3,
+  FATAL = 4,
 }
 
-class Logger {
-  private enabled: boolean;
-  private minLevel: LogLevel;
+export interface LogContext {
+  module?: string;
+  userId?: string;
+  requestId?: string;
+  [key: string]: any;
+}
 
-  constructor() {
-    // Habilitar logging en desarrollo o si está explícitamente activado
-    this.enabled = process.env.NODE_ENV === 'development' || 
-                   typeof window !== 'undefined' && localStorage.getItem('wm_debug_mode') === 'true';
+/**
+ * Check if detailed logging is enabled for a specific module
+ */
+function isModuleLoggingEnabled(module: string): boolean {
+  // Check environment variable for module-specific logging
+  const enabledModules = process.env.DEBUG_MODULES || '';
+  return enabledModules.split(',').includes(module);
+}
+
+/**
+ * Check if sensitive data logging is allowed
+ */
+function isSensitiveLoggingAllowed(): boolean {
+  // Only allow in development with explicit consent
+  return process.env.NODE_ENV === 'development' && 
+         process.env.DEBUG_SENSITIVE === 'true';
+}
+
+/**
+ * Sanitize sensitive data from logs
+ */
+function sanitizeData(data: any): any {
+  if (!data || typeof data !== 'object') {
+    return data;
+  }
+
+  const sensitiveKeys = [
+    'password', 'token', 'secret', 'key', 'authorization',
+    'credit_card', 'ssn', 'social_security', 'api_key',
+    'access_token', 'refresh_token', 'session_token',
+    'private_key', 'auth_token', 'bearer'
+  ];
+
+  const sanitized = { ...data };
+
+  for (const key in sanitized) {
+    const lowerKey = key.toLowerCase();
     
-    // Nivel mínimo de logs a mostrar
-    this.minLevel = this.enabled ? 'debug' : 'warn';
-  }
-
-  private shouldLog(level: LogLevel): boolean {
-    const levels: Record<LogLevel, number> = {
-      debug: 0,
-      info: 1,
-      warn: 2,
-      error: 3,
-    };
-    return levels[level] >= levels[this.minLevel];
-  }
-
-  private formatMessage(entry: LogEntry): void {
-    const { timestamp, level, message, data, context } = entry;
-    const contextStr = context ? `[${context}]` : '';
-    const dataStr = data ? `\n${JSON.stringify(data, null, 2)}` : '';
-    
-    const logMessage = `${timestamp} ${level.toUpperCase()} ${contextStr} ${message}${dataStr}`;
-
-    switch (level) {
-      case 'debug':
-        console.debug(logMessage);
-        break;
-      case 'info':
-        console.info(logMessage);
-        break;
-      case 'warn':
-        console.warn(logMessage);
-        break;
-      case 'error':
-        console.error(logMessage);
-        // Aquí se podría enviar a un servicio de logging externo (Sentry, LogRocket, etc.)
-        this.sendToExternalService(entry);
-        break;
+    // Check if this is a sensitive key
+    if (sensitiveKeys.some(sensitive => lowerKey.includes(sensitive))) {
+      if (isSensitiveLoggingAllowed()) {
+        sanitized[key] = '[SENSITIVE_DATA_VISIBLE]';
+      } else {
+        sanitized[key] = '[REDACTED]';
+      }
+    } else if (typeof sanitized[key] === 'object' && sanitized[key] !== null) {
+      sanitized[key] = sanitizeData(sanitized[key]);
     }
   }
 
-  private sendToExternalService(entry: LogEntry): void {
-    // Servicio de logging externo pendiente de configuración
-    // Requiere integración con Sentry, LogRocket, Datadog, etc.
-    // Para implementar:
-    // 1. Instalar el paquete correspondiente (ej: npm install @sentry/nextjs)
-    // 2. Configurar el servicio en lib/supabase/env.ts o en next.config.ts
-    // 3. Descomentar y adaptar el código según el servicio elegido
-    // 
-    // Ejemplo para Sentry:
-    // if (typeof window !== 'undefined' && window.Sentry) {
-    //   window.Sentry.captureException(entry.data);
-    // }
-    //
-    // Ejemplo para LogRocket:
-    // if (typeof window !== 'undefined' && window.LogRocket) {
-    //   window.LogRocket.captureException(entry.data);
-    // }
+  return sanitized;
+}
+
+/**
+ * Format log message with context
+ */
+function formatLogMessage(
+  level: LogLevel,
+  message: string,
+  context?: LogContext,
+  data?: any
+): string {
+  const timestamp = new Date().toISOString();
+  const levelNames = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
+  const levelName = levelNames[level];
+  
+  const parts = [
+    `[${timestamp}]`,
+    `[${levelName}]`,
+  ];
+
+  if (context?.module) {
+    parts.push(`[${context.module}]`);
   }
 
-  private createEntry(level: LogLevel, message: string, data?: unknown, context?: string): LogEntry {
-    return {
-      timestamp: new Date().toISOString(),
-      level,
-      message,
-      data,
-      context,
-    };
+  if (context?.requestId) {
+    parts.push(`[${context.requestId}]`);
   }
 
-  debug(message: string, data?: unknown, context?: string) {
-    if (this.shouldLog('debug')) {
-      this.formatMessage(this.createEntry('debug', message, data, context));
-    }
+  parts.push(message);
+
+  let logString = parts.join(' ');
+
+  if (data) {
+    const sanitizedData = sanitizeData(data);
+    logString += ' ' + JSON.stringify(sanitizedData);
   }
 
-  info(message: string, data?: unknown, context?: string) {
-    if (this.shouldLog('info')) {
-      this.formatMessage(this.createEntry('info', message, data, context));
-    }
+  return logString;
+}
+
+/**
+ * Main logging function
+ */
+function log(
+  level: LogLevel,
+  message: string,
+  context?: LogContext,
+  data?: any
+): void {
+  // Check if this log level should be shown
+  const minLevel = parseInt(process.env.LOG_LEVEL || '1', 10); // Default to INFO
+  if (level < minLevel) {
+    return;
   }
 
-  warn(message: string, data?: unknown, context?: string) {
-    if (this.shouldLog('warn')) {
-      this.formatMessage(this.createEntry('warn', message, data, context));
-    }
+  // Check module-specific logging
+  if (context?.module && !isModuleLoggingEnabled(context.module)) {
+    return;
   }
 
-  error(message: string, data?: unknown, context?: string) {
-    if (this.shouldLog('error')) {
-      this.formatMessage(this.createEntry('error', message, data, context));
-    }
-  }
+  const logString = formatLogMessage(level, message, context, data);
 
-  // Método para medir performance
-  time(label: string): void {
-    console.time(`[${label}]`);
-  }
-
-  timeEnd(label: string): void {
-    console.timeEnd(`[${label}]`);
-  }
-
-  // Método para agrupar logs
-  group(label: string): void {
-    if (this.shouldLog('debug')) {
-      console.group(`[${label}]`);
-    }
-  }
-
-  groupEnd(): void {
-    if (this.shouldLog('debug')) {
-      console.groupEnd();
-    }
-  }
-
-  // Habilitar/deshabilitar modo debug dinámicamente
-  setDebugMode(enabled: boolean): void {
-    this.enabled = enabled;
-    this.minLevel = enabled ? 'debug' : 'warn';
-    
-    if (enabled) {
-      this.info('Modo debug activado', undefined, 'Logger');
-    } else {
-      this.info('Modo debug desactivado', undefined, 'Logger');
-    }
-  }
-
-  // Limpiar consola (útil para desarrollo)
-  clear(): void {
-    console.clear();
+  // Use appropriate console method
+  switch (level) {
+    case LogLevel.DEBUG:
+      console.debug(logString);
+      break;
+    case LogLevel.INFO:
+      console.info(logString);
+      break;
+    case LogLevel.WARN:
+      console.warn(logString);
+      break;
+    case LogLevel.ERROR:
+    case LogLevel.FATAL:
+      console.error(logString);
+      break;
   }
 }
 
-// Singleton instance
-export const logger = new Logger();
+/**
+ * Logger object with convenience methods
+ */
+export const logger = {
+  debug: (message: string, context?: LogContext, data?: any) => {
+    log(LogLevel.DEBUG, message, context, data);
+  },
+  
+  info: (message: string, context?: LogContext, data?: any) => {
+    log(LogLevel.INFO, message, context, data);
+  },
+  
+  warn: (message: string, context?: LogContext, data?: any) => {
+    log(LogLevel.WARN, message, context, data);
+  },
+  
+  error: (message: string, context?: LogContext, data?: any) => {
+    log(LogLevel.ERROR, message, context, data);
+  },
+  
+  fatal: (message: string, context?: LogContext, data?: any) => {
+    log(LogLevel.FATAL, message, context, data);
+  },
+};
 
-// Hook para usar logger en componentes React
-export function useLogger(context?: string) {
+/**
+ * Create a module-specific logger
+ */
+export function createModuleLogger(moduleName: string) {
   return {
-    debug: (message: string, data?: unknown) => logger.debug(message, data, context),
-    info: (message: string, data?: unknown) => logger.info(message, data, context),
-    warn: (message: string, data?: unknown) => logger.warn(message, data, context),
-    error: (message: string, data?: unknown) => logger.error(message, data, context),
+    debug: (message: string, data?: any) => 
+      logger.debug(message, { module: moduleName }, data),
+    
+    info: (message: string, data?: any) => 
+      logger.info(message, { module: moduleName }, data),
+    
+    warn: (message: string, data?: any) => 
+      logger.warn(message, { module: moduleName }, data),
+    
+    error: (message: string, data?: any) => 
+      logger.error(message, { module: moduleName }, data),
+    
+    fatal: (message: string, data?: any) => 
+      logger.fatal(message, { module: moduleName }, data),
   };
 }
 
-// Helper para logging de errores de API
-export function logApiError(error: unknown, context?: string): void {
-  const errorData = {
-    message: error instanceof Error ? error.message : 'Unknown error',
-    stack: error instanceof Error ? error.stack : undefined,
-    error,
-  };
-  logger.error('Error en llamada API', errorData, context);
-}
-
-// Helper para logging de operaciones de base de datos
-export function logDbOperation(operation: string, table: string, data?: unknown): void {
-  logger.debug(`DB Operation: ${operation}`, { table, data }, 'Database');
-}
+// Predefined module loggers
+export const authLogger = createModuleLogger('Auth');
+export const syncLogger = createModuleLogger('Sync');
+export const dbLogger = createModuleLogger('Database');
+export const apiLogger = createModuleLogger('API');
+export const uiLogger = createModuleLogger('UI');

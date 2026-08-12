@@ -115,10 +115,10 @@ export function getAdminEmail(): string {
     return (
       process.env.NEXT_PUBLIC_ADMIN_EMAIL ||
       process.env.ADMIN_EMAIL ||
-      'salazaroliveros@gmail.com'
+      'admin@example.com'
     );
   }
-  return 'salazaroliveros@gmail.com';
+  return 'admin@example.com';
 }
 
 export const DEFAULT_ADMIN_EMAIL = getAdminEmail();

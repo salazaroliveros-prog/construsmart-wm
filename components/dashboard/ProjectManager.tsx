@@ -10,13 +10,15 @@ import { createProject as serverCreateProject, updateProject as serverUpdateProj
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import EmptyState from '@/components/ui/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import SecondaryButton from '@/components/ui/SecondaryButton';
 import { projectSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
+import { validateProject } from '@/lib/validation/businessRules';
+import { canDeleteProject } from '@/lib/validation/referentialIntegrity';
 import { getCurrentUserId } from '@/lib/auth/userId';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 import { calculateCompletionBuffer, getBufferSeverity } from '@/lib/config/app.config';
@@ -256,6 +258,14 @@ function ProjectManager() {
         }
       }
 
+      // Validar reglas de negocio
+      const businessValidation = validateProject(formData);
+      if (!businessValidation.valid) {
+        showToast('error', businessValidation.errors.join(', ') || 'Validación de negocio falló');
+        setSaveLoading(false);
+        return;
+      }
+
       const projectData: LocalProject = {
         id: editingProject?.id || generateId(),
         user_id: userId || undefined,
@@ -312,6 +322,14 @@ function ProjectManager() {
     if (!deleteConfirm) return;
 
     try {
+      // Validar integridad referencial antes de eliminar
+      const integrityCheck = await canDeleteProject(deleteConfirm.id!);
+      if (!integrityCheck.canDelete) {
+        showToast('error', `No se puede eliminar el proyecto: ${integrityCheck.dependencies.join(', ')}`);
+        setDeleteConfirm(null);
+        return;
+      }
+
       await queueDelete('projects', deleteConfirm);
       await offlineDB.projects.delete(deleteConfirm.id);
 

@@ -12,7 +12,7 @@ import { useFinancialSettings, formatCurrency } from '@/lib/hooks/useBusinessSet
 import { calculatePayrollSummary } from '@/lib/utils/summaryCalculations';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import EmptyState from '@/components/ui/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
@@ -898,14 +898,13 @@ const checkOnlineStatus = () => {
         {activeTab === 'employees' ? (
           filteredEmployees.length === 0 ? (
             <EmptyState
-              icon={<UserPlus className="w-8 h-8 text-white/30" />}
+              type="payroll"
               title={employees.length === 0 ? "No hay empleados" : "Sin resultados"}
               description={employees.length === 0 ? "Registre empleados para comenzar a gestionar la nómina." : "Intente con otros términos de búsqueda."}
-              action={employees.length === 0 ? (
-                                <PrimaryButton type="button" onClick={() => handleOpenEmployeeModal()} aria-label="Crear nuevo empleado" icon={<Plus className="w-4 h-4" />}>
-                  Nuevo Empleado
-                </PrimaryButton>
-              ) : undefined}
+              action={employees.length === 0 ? {
+                label: "Nuevo Empleado",
+                onClick: () => handleOpenEmployeeModal()
+              } : undefined}
             />
           ) : (
             <div className="data-table-container rounded-xl border border-white/10 overflow-hidden">
@@ -990,14 +989,13 @@ const checkOnlineStatus = () => {
         ) : (
           filteredPayrollRecords.length === 0 ? (
             <EmptyState
-              icon={<DollarSign className="w-8 h-8 text-white/30" />}
+              type="payroll"
               title="No hay registros de pago"
               description={selectedProject !== 'all' ? 'No hay registros de nómina para el proyecto seleccionado.' : 'Genere registros de nómina para los empleados registrados.'}
-              action={
-                                <PrimaryButton type="button" onClick={() => handleOpenPayrollModal()} aria-label="Crear nuevo registro de nómina" icon={<Plus className="w-4 h-4" />}>
-                  Nuevo Registro
-                </PrimaryButton>
-              }
+              action={{
+                label: "Nuevo Registro",
+                onClick: () => handleOpenPayrollModal()
+              }}
             />
           ) : (
             <div className="space-y-4">

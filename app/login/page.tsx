@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { useToast } from '@/components/ui/Toast';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import zxcvbn from 'zxcvbn';
+import { getSafeRedirectPath } from '@/lib/auth/validation';
 
 function LoginForm() {
   const router = useRouter();
@@ -37,14 +38,6 @@ function LoginForm() {
     return result.score >= 2;
   };
 
-  // Valida que la ruta de destino sea interna (evita open-redirect).
-  const getSafeNextPath = (next?: string | null): string => {
-    if (next && next.startsWith('/') && !next.startsWith('//')) {
-      return next;
-    }
-    return '/';
-  };
-
   // Verificar si hay error de autorización en la URL
   useEffect(() => {
     const errorParam = searchParams.get('error');
@@ -71,7 +64,7 @@ function LoginForm() {
       await signIn(email, password);
       showToast('success', 'Inicio de sesión exitoso');
       // Navegar a la ruta original (si es válida e interna) o al dashboard
-      const next = getSafeNextPath(searchParams.get('next'));
+      const next = getSafeRedirectPath(searchParams.get('next'));
       router.replace(next);
     } catch (err: any) {
       setError(err.message || 'Error al iniciar sesión');

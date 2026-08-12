@@ -13,7 +13,15 @@
 import { Table } from 'dexie';
 import { offlineDB, validateSyncTransition, type SyncStatus } from '@/lib/db/offlineStore';
 import { supabase } from '@/lib/supabase/client';
-import { logger } from './logger';
+import { logger, syncLogger } from './logger';
+import { 
+  detectConflict, 
+  resolveConflict, 
+  ConflictData, 
+  ConflictResolution,
+  emitConflictEvent,
+  getDefaultConflictResolution 
+} from '@/lib/sync/conflictResolution';
 
 export interface SyncResult {
   success: boolean;
@@ -259,7 +267,11 @@ function setSyncInProgress(value: boolean): void {
     
     // Establecer nuevo timeout para limpiar el flag automáticamente
     syncTimeoutId = setTimeout(() => {
-      console.warn('[Sync] Timeout alcanzado, limpiando syncInProgress flag');
+      syncLogger.warn('Timeout alcanzado, limpiando syncInProgress flag', {
+        syncInProgress,
+        syncTimeoutId,
+        timestamp: new Date().toISOString()
+      });
       setSyncInProgress(false);
       syncTimeoutId = null;
     }, SYNC_TIMEOUT_MS);
@@ -369,29 +381,37 @@ async function syncRows<T extends Syncable>(
           // Conflict: server is newer
           logger.warn(`Conflict detected in ${rowDescription}: server is newer (${serverUpdatedAt} > ${localUpdatedAt})`, undefined, 'Sync');
           
-          // LWW: Server wins - pull server data and update local
-          const { data: latestServerRow, error: pullError } = await withRetry(
-            async () => {
-              const { data, error } = await supabase!
-                .from(supabaseTable)
-                .select('*')
-                .eq('id', row.id!)
-                .single();
-              if (error) throw error;
-              return data;
-            },
-            `pull ${rowDescription}`
+          // Use new conflict resolution system
+          const conflictData: ConflictData = {
+            local: row,
+            server: serverRow,
+            localUpdatedAt,
+            serverUpdatedAt,
+            table: supabaseTable,
+            recordId: row.id!,
+          };
+
+          // Emit conflict event for UI handling
+          emitConflictEvent(conflictData);
+
+          // For now, use default resolution (server wins) for automated sync
+          // In a future enhancement, this could wait for user input
+          const resolution = getDefaultConflictResolution(conflictData);
+          
+          logger.info(`Using conflict resolution: ${resolution} for ${rowDescription}`, undefined, 'Sync');
+
+          const resolutionResult = await resolveConflict(
+            conflictData,
+            resolution,
+            supabase,
+            offlineDB
           );
 
-          if (pullError) throw pullError;
+          if (!resolutionResult.success) {
+            throw new Error(`Conflict resolution failed: ${resolutionResult.error}`);
+          }
 
-          // Update local with server data (preserving local sync_status)
-          await offlineDB.table(supabaseTable).update(row.id!, {
-            ...latestServerRow,
-            sync_status: 'synced',
-          });
-
-          logger.info(`Conflict resolved: server wins for ${rowDescription}`, undefined, 'Sync');
+          logger.info(`Conflict resolved with ${resolution} for ${rowDescription}`, undefined, 'Sync');
           result.synced++;
           continue;
         }

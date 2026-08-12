@@ -41,7 +41,7 @@ import { useBusinessSettings, formatCurrency, useFinancialSettings } from '@/lib
 import { calculateSummaryMetrics as calculateSummaryMetricsFromUtils } from '@/lib/utils/summaryCalculations';
 import { useFinancialDataRealtime } from '@/hooks/useFinancialDataRealtime';
 import { useEarnedValueManagement } from '@/hooks/useEarnedValueManagement';
-import EmptyState from '@/components/ui/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 // ==================== TYPES & INTERFACES ====================

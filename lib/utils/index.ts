@@ -6,7 +6,7 @@
 // ============================================================================
 
 export { generateId, isValidUUID } from './generateId';
-export { logger, useLogger, logApiError, logDbOperation } from './logger';
+export { logger, createModuleLogger, authLogger, syncLogger, dbLogger, apiLogger, uiLogger } from './logger';
 export { 
   calculateDashboardStats,
   calculateSummaryMetrics,

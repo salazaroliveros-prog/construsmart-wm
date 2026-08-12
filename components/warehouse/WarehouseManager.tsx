@@ -12,7 +12,7 @@ import { useFinancialSettings, formatCurrency } from '@/lib/hooks/useBusinessSet
 import { calculateWarehouseSummary } from '@/lib/utils/summaryCalculations';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import EmptyState from '@/components/ui/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';
 import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
@@ -801,18 +801,17 @@ export default function WarehouseManager() {
       <div className="glass-panel rounded-2xl p-4 sm:p-6">
         {stockItems.length === 0 ? (
           <EmptyState
-            icon={<PackagePlus className="w-8 h-8 text-white/30" />}
+            type="warehouse"
             title="Inventario vacío"
             description="Agregue materiales al inventario para comenzar a gestionar el almacén."
-            action={
-              <PrimaryButton onClick={() => handleOpenModal()} icon={<Plus className="w-4 h-4" />} aria-label="Agregar nuevo material al inventario">
-                <span>Nuevo Material</span>
-              </PrimaryButton>
-            }
+            action={{
+              label: "Nuevo Material",
+              onClick: () => handleOpenModal()
+            }}
           />
         ) : filteredItems.length === 0 ? (
           <EmptyState
-            icon={<Search className="w-8 h-8 text-white/30" />}
+            type="search"
             title="Sin resultados"
             description="Intente con otros términos de búsqueda."
           />

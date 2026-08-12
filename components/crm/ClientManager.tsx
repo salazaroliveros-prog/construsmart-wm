@@ -7,7 +7,7 @@ import { queueDelete } from '@/lib/utils/offlineSync';
 import { resolveSyncStatus } from '@/lib/utils/syncState';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useToast } from '@/components/ui/Toast';
-import EmptyState from '@/components/ui/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
 import ActionButton from '@/components/ui/ActionButton';

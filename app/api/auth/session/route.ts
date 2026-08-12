@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { SUPABASE_ENV, assertSupabaseEnv } from '@/lib/supabase/env';
+import { checkRateLimit, getClientIP, RATE_LIMIT_CONFIG } from '@/lib/auth/rateLimit';
 
 assertSupabaseEnv('Session API');
 
@@ -39,6 +40,30 @@ function isOriginAllowed(origin: string | null): boolean {
 
 export async function POST(request: Request) {
   try {
+    // Rate limiting check
+    const clientIP = getClientIP(request);
+    const rateLimitResult = checkRateLimit(clientIP, RATE_LIMIT_CONFIG.session);
+    
+    if (!rateLimitResult.success) {
+      console.warn('[Session] Rate limit exceeded for IP:', clientIP);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Too many requests. Please try again later.',
+          resetTime: rateLimitResult.resetTime 
+        },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': '10',
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': rateLimitResult.resetTime.toString(),
+            'Retry-After': Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000).toString(),
+          }
+        }
+      );
+    }
+    
     // Validación CSRF: verificar origin
     const origin = request.headers.get('origin');
     
@@ -104,6 +129,11 @@ export async function POST(request: Request) {
     response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    // Add rate limit headers
+    response.headers.set('X-RateLimit-Limit', '10');
+    response.headers.set('X-RateLimit-Remaining', rateLimitResult.remaining.toString());
+    response.headers.set('X-RateLimit-Reset', rateLimitResult.resetTime.toString());
     
     return response;
   } catch (err: unknown) {

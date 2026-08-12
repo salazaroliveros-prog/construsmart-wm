@@ -11,12 +11,14 @@ import DashboardStats from '@/components/dashboard/DashboardStats';
 import DashboardCharts from '@/components/dashboard/DashboardCharts';
 import ProjectOverview from '@/components/dashboard/ProjectOverview';
 import QuickActionFab from '@/components/ui/QuickActionFab';
+import OnboardingTooltip from '@/components/ui/OnboardingTooltip';
 import { offlineDB } from '@/lib/db/offlineStore';
 import { useScrollLock } from '@/lib/hooks/useScrollLock';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import RealtimeProvider from '@/components/ui/RealtimeProvider';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 import { NAVIGATION_TABS, type NavigationTabId } from '@/components/dashboard/navigation';
+import { ModuleErrorBoundary, BudgetErrorBoundary, FinanceErrorBoundary, WarehouseErrorBoundary, ProjectErrorBoundary, PayrollErrorBoundary, CRMErrorBoundary, AnalyticsErrorBoundary } from '@/components/ui/ModuleErrorBoundary';
 
 const ProjectManager = dynamic(() => import('@/components/dashboard/ProjectManager'), { 
   ssr: false,
@@ -258,44 +260,108 @@ const renderTabContent = () => {
             <div className="flex flex-col gap-3 h-full">
               {/* KPIs Full width - fixed height */}
               <div className="flex-shrink-0">
-                <DashboardStats selectedProject={selectedDashboardProject} />
+                <OnboardingTooltip
+                  id="dashboard-stats"
+                  title="Panel de Estadísticas"
+                  description="Aquí puedes ver los KPIs principales de tu construcción: proyectos activos, presupuesto total, gastos y progreso general."
+                >
+                  <DashboardStats selectedProject={selectedDashboardProject} />
+                </OnboardingTooltip>
               </div>
 
               {/* Full-width charts with scroll */}
               <div className="flex-1 min-h-0 overflow-y-auto overflow-anchor-none -mx-1 px-1">
-                <DashboardCharts
-                  selectedProject={selectedDashboardProject}
-                  onProjectChange={setSelectedDashboardProject}
-                />
+                <OnboardingTooltip
+                  id="dashboard-charts"
+                  title="Gráficos de Progreso"
+                  description="Visualiza el avance de tus proyectos con gráficos interactivos. Puedes filtrar por proyecto específico."
+                >
+                  <DashboardCharts
+                    selectedProject={selectedDashboardProject}
+                    onProjectChange={setSelectedDashboardProject}
+                  />
+                </OnboardingTooltip>
               </div>
             </div>
           );
         case 'projects':
-          return isTabLoading ? <TabSkeleton /> : <ProjectManager />;
+          return isTabLoading ? <TabSkeleton /> : (
+            <ProjectErrorBoundary>
+              <ProjectManager />
+            </ProjectErrorBoundary>
+          );
         case 'budgets':
-          return isTabLoading ? <TabSkeleton /> : <BudgetCalculator />;
+          return isTabLoading ? <TabSkeleton /> : (
+            <BudgetErrorBoundary>
+              <BudgetCalculator />
+            </BudgetErrorBoundary>
+          );
         case 'progress':
-          return isTabLoading ? <TabSkeleton /> : <ProgressTracker />;
+          return isTabLoading ? <TabSkeleton /> : (
+            <ModuleErrorBoundary moduleName="Seguimiento">
+              <ProgressTracker />
+            </ModuleErrorBoundary>
+          );
         case 'finances':
-          return isTabLoading ? <TabSkeleton /> : <FinanceManager />;
+          return isTabLoading ? <TabSkeleton /> : (
+            <FinanceErrorBoundary>
+              <FinanceManager />
+            </FinanceErrorBoundary>
+          );
         case 'payroll':
-          return isTabLoading ? <TabSkeleton /> : <PayrollManager />;
+          return isTabLoading ? <TabSkeleton /> : (
+            <PayrollErrorBoundary>
+              <PayrollManager />
+            </PayrollErrorBoundary>
+          );
         case 'warehouse':
-          return isTabLoading ? <TabSkeleton /> : <WarehouseManager />;
+          return isTabLoading ? <TabSkeleton /> : (
+            <WarehouseErrorBoundary>
+              <WarehouseManager />
+            </WarehouseErrorBoundary>
+          );
         case 'suppliers':
-          return isTabLoading ? <TabSkeleton /> : <SupplierManager />;
+          return isTabLoading ? <TabSkeleton /> : (
+            <ModuleErrorBoundary moduleName="Proveedores">
+              <SupplierManager />
+            </ModuleErrorBoundary>
+          );
         case 'orders':
-          return isTabLoading ? <TabSkeleton /> : <PurchaseOrderManager />;
+          return isTabLoading ? <TabSkeleton /> : (
+            <ModuleErrorBoundary moduleName="Órdenes de Compra">
+              <PurchaseOrderManager />
+            </ModuleErrorBoundary>
+          );
         case 'subcontractors':
-          return isTabLoading ? <TabSkeleton /> : <SubcontractorManager />;
+          return isTabLoading ? <TabSkeleton /> : (
+            <ModuleErrorBoundary moduleName="Subcontratistas">
+              <SubcontractorManager />
+            </ModuleErrorBoundary>
+          );
         case 'clients':
-          return isTabLoading ? <TabSkeleton /> : <ClientManager />;
+          return isTabLoading ? <TabSkeleton /> : (
+            <CRMErrorBoundary>
+              <ClientManager />
+            </CRMErrorBoundary>
+          );
         case 'logs':
-          return isTabLoading ? <TabSkeleton /> : <ProjectLogManager />;
+          return isTabLoading ? <TabSkeleton /> : (
+            <ModuleErrorBoundary moduleName="Bitácora">
+              <ProjectLogManager />
+            </ModuleErrorBoundary>
+          );
         case 'analytics':
-          return isTabLoading ? <TabSkeleton /> : <AnalyticsDashboard />;
+          return isTabLoading ? <TabSkeleton /> : (
+            <AnalyticsErrorBoundary>
+              <AnalyticsDashboard />
+            </AnalyticsErrorBoundary>
+          );
         case 'settings':
-          return isTabLoading ? <TabSkeleton /> : <SettingsManager />;
+          return isTabLoading ? <TabSkeleton /> : (
+            <ModuleErrorBoundary moduleName="Configuración">
+              <SettingsManager />
+            </ModuleErrorBoundary>
+          );
         default:
           return null;
       }
@@ -429,32 +495,38 @@ return (
 
         {/* Quick Action FAB - mobile only */}
         {isMounted && isMobile && (
-          <QuickActionFab
-            onQuickAdd={() => {
-              // Abrir modal de agregar rápido según el tab actual
-              switch (activeTab) {
-                case 'projects':
-                  // Trigger project add modal
-                  break;
-                case 'finances':
-                  // Trigger transaction add modal
-                  break;
-                case 'warehouse':
-                  // Trigger stock item add modal
-                  break;
-                default:
-                  // Default action
-                  break;
-              }
-            }}
-            onManualSync={async () => {
-              // Usar el sistema de sync existente del header
-              const syncButton = document.querySelector('[title*="Sincronizar ahora"]') as HTMLButtonElement;
-              if (syncButton) {
-                syncButton.click();
-              }
-            }}
-          />
+          <OnboardingTooltip
+            id="quick-action-fab"
+            title="Acciones Rápidas"
+            description="Toca este botón para agregar rápidamente proyectos, transacciones o items de inventario según la sección actual."
+          >
+            <QuickActionFab
+              onQuickAdd={() => {
+                // Abrir modal de agregar rápido según el tab actual
+                switch (activeTab) {
+                  case 'projects':
+                    // Trigger project add modal
+                    break;
+                  case 'finances':
+                    // Trigger transaction add modal
+                    break;
+                  case 'warehouse':
+                    // Trigger stock item add modal
+                    break;
+                  default:
+                    // Default action
+                    break;
+                }
+              }}
+              onManualSync={async () => {
+                // Usar el sistema de sync existente del header
+                const syncButton = document.querySelector('[title*="Sincronizar ahora"]') as HTMLButtonElement;
+                if (syncButton) {
+                  syncButton.click();
+                }
+              }}
+            />
+          </OnboardingTooltip>
         )}
 
         {/* Mobile menu button - bottom left, solo visible en móvil */}

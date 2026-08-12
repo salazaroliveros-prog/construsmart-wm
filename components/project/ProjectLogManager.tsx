@@ -9,7 +9,7 @@ import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useProjectProgress } from '@/lib/hooks/useProjectProgress';
 import { useRoadblockDetection } from '@/hooks/useRoadblockDetection';
 import { useToast } from '@/components/ui/Toast';
-import EmptyState from '@/components/ui/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tooltip from '@/components/ui/Tooltip';
 import PrimaryButton from '@/components/ui/PrimaryButton';

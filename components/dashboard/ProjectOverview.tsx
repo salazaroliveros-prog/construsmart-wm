@@ -5,7 +5,7 @@ import { Building2, Calendar, DollarSign, Inbox } from 'lucide-react';
 import { offlineDB, LocalProject } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { useFinancialSettings, formatCurrency } from '@/lib/hooks/useBusinessSettings';
-import EmptyState from '@/components/ui/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 const statusColors = {

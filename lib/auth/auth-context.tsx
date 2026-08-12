@@ -1,7 +1,12 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { supabase } from '@/lib/supabase/client';
+import { authLogger } from '@/lib/utils/logger';
+import { retryNetworkOperation } from '@/lib/utils/retry';
+import { initializeDeviceValidation, isNewDevice, trustDevice } from '@/lib/auth/deviceValidation';
+import { createInactivityTimeout } from '@/lib/auth/inactivityTimeout';
+import { useRouter } from 'next/navigation';
 
 interface User {
   id: string;
@@ -13,9 +18,11 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
+  isNewDevice: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   getUserAvatar: () => string;
+  trustCurrentDevice: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,8 +31,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentDeviceId, setCurrentDeviceId] = useState<string | null>(null);
+  const [isNewDeviceFlag, setIsNewDeviceFlag] = useState(false);
+  const router = useRouter();
+  const inactivityTimeoutRef = useRef<any>(null);
 
-    useEffect(() => {
+  // Función de logout separada para ser usada por timeout
+  const handleLogout = async () => {
+    try {
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
+      setUser(null);
+      setIsAuthenticated(false);
+      authLogger.info('Sesión cerrada');
+    } catch (error) {
+      authLogger.error('Error al cerrar sesión');
+      // Forzar cierre local incluso si hay error
+      setUser(null);
+      setIsAuthenticated(false);
+    }
+  };
+
+  useEffect(() => {
+    // Inicializar validación de dispositivo
+    const deviceId = initializeDeviceValidation();
+    setCurrentDeviceId(deviceId);
+    setIsNewDeviceFlag(isNewDevice(deviceId));
+    
+    // Inicializar timeout de inactividad
+    const timeoutMinutes = parseInt(process.env.INACTIVITY_TIMEOUT_MINUTES || '30', 10);
+    const warningMinutes = parseInt(process.env.INACTIVITY_WARNING_MINUTES || '5', 10);
+    
+    const inactivityTimeout = createInactivityTimeout({
+      timeoutMs: timeoutMinutes * 60 * 1000,
+      warningMs: warningMinutes * 60 * 1000,
+      onTimeout: () => {
+        authLogger.warn('Timeout de inactividad alcanzado, cerrando sesión');
+        handleLogout();
+        router.push('/login?reason=timeout');
+      },
+      onWarning: () => {
+        authLogger.warn('Advertencia de inactividad: sesión expirará pronto');
+      },
+    });
+    
+    inactivityTimeout.start();
+    inactivityTimeoutRef.current = inactivityTimeout;
+    
     // Verificar sesión activa al montar
     const checkSession = async () => {
       try {
@@ -54,18 +107,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAuthenticated(true);
       } catch (error) {
         // CORRECCIÓN: Mejorar manejo de errores con recuperación específica
-        if (process.env.NODE_ENV === 'development') {
-          console.error('[AuthContext] Error al verificar sesión:', error);
-        }
+        authLogger.error('Error al verificar sesión', { userId: user?.id });
         
         // Diferenciar tipos de error
         const errorMessage = error instanceof Error ? error.message : String(error);
         
         // Si es error de red, no hacer logout inmediatamente
         if (errorMessage.includes('fetch') || errorMessage.includes('network') || errorMessage.includes('timeout')) {
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('[AuthContext] Error de red detectado, manteniendo sesión local');
-          }
+          authLogger.warn('Error de red detectado, manteniendo sesión local');
           // No hacer logout en errores de red temporales
           setUser(null);
           setIsAuthenticated(false);
@@ -108,6 +157,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return () => subscription.unsubscribe();
     }
+
+    // Cleanup function for inactivity timeout
+    return () => {
+      if (inactivityTimeoutRef.current) {
+        inactivityTimeoutRef.current.stop();
+      }
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -116,29 +172,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // Solo log en desarrollo
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[AuthContext] Attempting sign in for:', email);
-      }
+      authLogger.debug('Intentando inicio de sesión', { email });
       
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // Usar endpoint con rate limiting para login
+      const loginResponse = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('[AuthContext] Sign in error:', error);
-        }
-        throw new Error(error.message || 'Credenciales inválidas');
+      const loginResult = await loginResponse.json();
+
+      if (!loginResponse.ok || !loginResult.success) {
+        authLogger.error('Login API error', { status: loginResponse.status, error: loginResult.error });
+        throw new Error(loginResult.error || 'Credenciales inválidas');
       }
 
-      if (data.user && data.session) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[AuthContext] Sign in successful for:', data.user.email);
-        }
+      // Sincronizar sesión con Supabase client
+      const { data, error } = await supabase.auth.setSession({
+        access_token: loginResult.session.access_token,
+        refresh_token: loginResult.session.refresh_token,
+      });
 
-        try {
+      if (error || !data.session) {
+        authLogger.error('Error de sincronización de sesión', { error });
+        throw new Error('Error al sincronizar la sesión. Intenta nuevamente.');
+      }
+
+      authLogger.info('Inicio de sesión exitoso', { userId: data.user?.id });
+
+      try {
+        // Use retry with backoff for session sync to handle network issues
+        const result = await retryNetworkOperation(async () => {
+          if (!data.session) {
+            throw new Error('No session available');
+          }
+          
           const response = await fetch('/api/auth/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -148,39 +217,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }),
           });
 
-          const result = await response.json();
-          
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[AuthContext] session sync status=', response.status, 'result=', result);
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            throw new Error(errorData.error || `HTTP ${response.status}`);
           }
 
-          if (!response.ok || !result.success) {
-            if (process.env.NODE_ENV === 'development') {
-              console.error('[AuthContext] Session cookie sync failed:', result.error);
-            }
-            throw new Error(result.error || 'No se pudo sincronizar la sesión en el servidor');
-          }
-        } catch (sessionError) {
-          if (process.env.NODE_ENV === 'development') {
-            console.error('[AuthContext] Session sync error:', sessionError);
-          }
-          throw new Error('Error al sincronizar la sesión. Intenta nuevamente.');
+          return response.json();
+        }, 3); // 3 retries for session sync
+
+        authLogger.debug('Estado de sincronización de sesión', { success: result.success });
+
+        if (!result.success) {
+          authLogger.error('Falló sincronización de cookie de sesión', { error: result.error });
+          throw new Error(result.error || 'No se pudo sincronizar la sesión en el servidor');
         }
-
-        const userName = data.user.email?.split('@')[0] || 'Usuario';
-
-        setUser({
-          id: data.user.id,
-          email: data.user.email || '',
-          name: userName,
-        });
-        setIsAuthenticated(true);
-        console.log('[AuthContext] isAuthenticated set to true');
+      } catch (sessionError) {
+        authLogger.error('Error de sincronización de sesión', { error: sessionError });
+        throw new Error('Error al sincronizar la sesión. Intenta nuevamente.');
       }
+
+      const userName = data.user?.email?.split('@')[0] || 'Usuario';
+
+      setUser({
+        id: data.user?.id || '',
+        email: data.user?.email || '',
+        name: userName,
+      });
+      setIsAuthenticated(true);
+      authLogger.info('Estado de autenticación establecido en true');
     } catch (error: any) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[AuthContext] Sign in failed:', error);
-      }
+      authLogger.error('Falló inicio de sesión', { email, error: error.message });
       throw new Error(error.message || 'Error al iniciar sesión');
     }
   };
@@ -194,12 +260,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       await supabase.auth.signOut();
+      authLogger.info('Sesión cerrada exitosamente');
       setUser(null);
       setIsAuthenticated(false);
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[AuthContext] Error al cerrar sesión:', error);
-      }
+      authLogger.error('Error al cerrar sesión');
       // Forzar cierre local incluso si hay error
       setUser(null);
       setIsAuthenticated(false);
@@ -221,8 +286,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return 'https://ui-avatars.com/api/?name=User&background=0D8BC&color=fff&size=128';
   };
 
+  const trustCurrentDevice = () => {
+    if (currentDeviceId) {
+      trustDevice(currentDeviceId);
+      setIsNewDeviceFlag(false);
+      authLogger.info('Dispositivo marcado como confiable', { deviceId: currentDeviceId });
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, isAuthenticated, signIn, signOut, getUserAvatar }}>
+    <AuthContext.Provider value={{ user, loading, isAuthenticated, isNewDevice: isNewDeviceFlag, signIn, signOut, getUserAvatar, trustCurrentDevice }}>
       {children}
     </AuthContext.Provider>
   );

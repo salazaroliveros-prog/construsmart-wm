@@ -90,6 +90,143 @@ export class PersistenceService {
   }
 
   /**
+   * CREATE WITH TRANSACTION: Persiste localmente con soporte de transacciones y rollback
+   * Útil para operaciones complejas que involucran múltiples tablas
+   */
+  static async createWithTransaction<T extends { id?: string; user_id?: string; sync_status?: string; created_at?: string; updated_at?: string }>(
+    table: SyncableTable,
+    data: Omit<T, 'id' | 'user_id' | 'sync_status' | 'created_at' | 'updated_at'>,
+    relatedOperations?: (localId: string) => Promise<void>
+  ): Promise<PersistenceResult<T>> {
+    try {
+      const userId = await getCurrentUserId();
+      const localId = generateId();
+      const online = isOnline();
+
+      const fullData: T = {
+        ...data,
+        id: localId,
+        user_id: userId,
+        sync_status: online ? 'synced' : 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as T;
+
+      // Use Dexie transaction for atomic local operations
+      await offlineDB.transaction(
+        'rw',
+        offlineDB[table],
+        offlineDB.projects,
+        offlineDB.budgets,
+        offlineDB.budgetItems,
+        async () => {
+          // 1. Add main record
+          await (offlineDB as any)[table].add(fullData);
+
+          // 2. Execute related operations if provided
+          if (relatedOperations) {
+            await relatedOperations(localId);
+          }
+        }
+      );
+
+      let remoteId = undefined;
+      let syncStatus: 'synced' | 'pending' | 'error' = online ? 'synced' : 'pending';
+
+      // 3. Si está online, sincronizar con Supabase (outside transaction)
+      if (online && supabase) {
+        const { data: remoteRecord, error } = await supabase
+          .from(this.mapTableName(table))
+          .insert([fullData])
+          .select()
+          .single();
+
+        if (error) {
+          // Sync falló, marcar como pending
+          await (offlineDB as any)[table].update(localId, { sync_status: 'pending' });
+          syncStatus = 'pending';
+          console.warn(`[Persistence] Insert to Supabase failed, marked as pending:`, error);
+        } else {
+          remoteId = remoteRecord?.id;
+          // Actualizar con remoteId si fue asignado por servidor
+          if (remoteId !== localId) {
+            // Need to handle foreign key updates for related records
+            await this.updateForeignKeysAfterIdChange(table, localId, remoteId);
+            
+            await (offlineDB as any)[table].delete(localId);
+            (fullData as any).id = remoteId;
+            await (offlineDB as any)[table].add(fullData);
+          }
+        }
+      }
+
+      return {
+        localId,
+        remoteId,
+        data: fullData,
+        syncStatus,
+      };
+    } catch (error) {
+      // Transaction will be automatically rolled back by Dexie if it fails
+      console.error(`[Persistence] Transaction failed for ${table}:`, error);
+      
+      throw {
+        error: `Failed to create with transaction in ${table}: ${error}`,
+        syncStatus: 'error',
+      };
+    }
+  }
+
+  /**
+   * Helper to update foreign keys after ID change during sync
+   */
+  private static async updateForeignKeysAfterIdChange(
+    table: SyncableTable,
+    oldId: string,
+    newId: string
+  ): Promise<void> {
+    const foreignKeyMappings: Record<SyncableTable, { table: string; key: string }[]> = {
+      projects: [
+        { table: 'budgets', key: 'project_id' },
+        { table: 'financialTransactions', key: 'project_id' },
+        { table: 'payrollRecords', key: 'project_id' },
+        { table: 'warehouseStock', key: 'project_id' },
+        { table: 'projectLogs', key: 'project_id' },
+        { table: 'purchaseOrders', key: 'project_id' },
+      ],
+      budgets: [
+        { table: 'budgetItems', key: 'budget_id' },
+      ],
+      budgetItems: [], // No tables reference budgetItems directly
+      financialTransactions: [], // No tables reference financialTransactions directly
+      payrollEmployees: [
+        { table: 'payrollRecords', key: 'employee_id' },
+      ],
+      payrollRecords: [], // No tables reference payrollRecords directly
+      warehouseStock: [], // No tables reference warehouseStock directly
+      clients: [], // No tables reference clients directly
+      projectLogs: [], // No tables reference projectLogs directly
+      suppliers: [
+        { table: 'purchaseOrders', key: 'supplier_id' },
+      ],
+      purchaseOrders: [
+        { table: 'purchaseOrderItems', key: 'purchase_order_id' },
+      ],
+      purchaseOrderItems: [], // No tables reference purchaseOrderItems directly
+      subcontractors: [], // No tables reference subcontractors directly
+    };
+
+    const mappings = foreignKeyMappings[table] || [];
+    
+    for (const mapping of mappings) {
+      await (offlineDB as any)[mapping.table]
+        .where(mapping.key)
+        .equals(oldId)
+        .modify({ [mapping.key]: newId });
+    }
+  }
+
+  /**
    * READ: Lee de Dexie (local), complementa con Supabase si está online
    */
   static async read<T>(table: SyncableTable, id: string): Promise<T | null> {
@@ -173,6 +310,75 @@ export class PersistenceService {
       };
     } catch (error) {
       throw { error: `Failed to update in ${table}: ${error}`, syncStatus: 'error' };
+    }
+  }
+
+  /**
+   * UPDATE WITH TRANSACTION: Actualiza local con soporte de transacciones y rollback
+   * Útil para operaciones complejas que involucran múltiples tablas
+   */
+  static async updateWithTransaction<T extends { id: string; sync_status?: string; updated_at?: string }>(
+    table: SyncableTable,
+    id: string,
+    updates: Partial<T>,
+    relatedOperations?: (id: string) => Promise<void>
+  ): Promise<PersistenceResult<T>> {
+    try {
+      const existing = await (offlineDB as any)[table].get(id);
+      if (!existing) throw new Error(`Record ${id} not found in ${table}`);
+
+      const online = isOnline();
+      const updated: T = {
+        ...existing,
+        ...updates,
+        sync_status: online ? 'synced' : 'pending',
+        updated_at: new Date().toISOString(),
+      } as T;
+
+      // Use Dexie transaction for atomic local operations
+      await offlineDB.transaction(
+        'rw',
+        offlineDB[table],
+        offlineDB.projects,
+        offlineDB.budgets,
+        offlineDB.budgetItems,
+        async () => {
+          // 1. Update main record
+          await (offlineDB as any)[table].update(id, updated);
+
+          // 2. Execute related operations if provided
+          if (relatedOperations) {
+            await relatedOperations(id);
+          }
+        }
+      );
+
+      let syncStatus: 'synced' | 'pending' | 'error' = online ? 'synced' : 'pending';
+
+      // 3. Si está online, sincronizar con Supabase (outside transaction)
+      if (online && supabase) {
+        const { error } = await supabase
+          .from(this.mapTableName(table))
+          .update(updates as any)
+          .eq('id', id);
+
+        if (error) {
+          await (offlineDB as any)[table].update(id, { sync_status: 'pending' });
+          syncStatus = 'pending';
+          console.warn(`[Persistence] Update to Supabase failed, marked as pending:`, error);
+        }
+      }
+
+      return {
+        localId: id,
+        data: updated,
+        syncStatus,
+      };
+    } catch (error) {
+      // Transaction will be automatically rolled back by Dexie if it fails
+      console.error(`[Persistence] Transaction failed for ${table}:`, error);
+      
+      throw { error: `Failed to update with transaction in ${table}: ${error}`, syncStatus: 'error' };
     }
   }
 
