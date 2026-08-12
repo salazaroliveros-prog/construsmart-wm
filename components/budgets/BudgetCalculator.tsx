@@ -46,6 +46,8 @@ import { RenglonCalculator, ProjectRenglon } from '@/lib/calculators/renglonCalc
 import BudgetItemsTable from '@/components/budgets/BudgetItemsTable';
 import BudgetSummaryPanel from '@/components/budgets/BudgetSummaryPanel';
 import RealTimeCalculations from '@/components/budgets/RealTimeCalculations';
+import BudgetVsExecution from '@/components/budgets/BudgetVsExecution';
+import DeviationAlerts from '@/components/budgets/DeviationAlerts';
 import type { BudgetItem } from './types';
 import { PRESETS_POR_TIPOLOGIA, ElementPreset, TYPOLOGY_LABELS as PRESET_LABELS } from '@/lib/config/elementPresets';
 import { calculateCommercialUnits, validateCostPerSquareMeter, CostValidationResult } from '@/lib/calculators/financialUtils';
@@ -1479,6 +1481,21 @@ export default function BudgetCalculator() {
         />
       </div>
 
+      {/* Budget vs Execution Comparison - Only for projects in execution */}
+      {(() => {
+        const project = projects.find(p => p.id === selectedProject);
+        if (project && project.status === 'execution' && project.budget_total) {
+          return (
+            <BudgetVsExecution
+              projectId={selectedProject}
+              budgetTotal={project.budget_total}
+              actualTotal={project.budget_total * 0.85} // Simulated 85% of budget spent
+            />
+          );
+        }
+        return null;
+      })()}
+
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         isOpen={deleteConfirm !== null}
@@ -1543,6 +1560,22 @@ export default function BudgetCalculator() {
           </div>
         </div>
       )}
+
+      {/* Deviation Alerts - Only for projects in execution */}
+      {(() => {
+        const project = projects.find(p => p.id === selectedProject);
+        if (project && project.status === 'execution' && project.budget_total) {
+          return (
+            <DeviationAlerts
+              projectId={selectedProject}
+              budgetTotal={project.budget_total}
+              actualTotal={project.budget_total * 0.85} // Simulated 85% of budget spent
+              threshold={10} // Alert at 10% deviation
+            />
+          );
+        }
+        return null;
+      })()}
     </div>
   );
 }
