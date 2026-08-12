@@ -698,6 +698,17 @@ select:focus {
     width: 100%;
   }
 
+  /* Floating/icon-only glass-buttons keep their utility size (w-11, w-14, etc.) */
+  .glass-button.fixed,
+  .glass-button.relative {
+    width: auto;
+    margin-bottom: 0;
+  }
+  /* .glass-button fuerza position:relative (overflow del ::before); restaura fixed para el FAB/menú flotante */
+  .glass-button.fixed {
+    position: fixed !important;
+  }
+
   .glass-button-inline {
     min-height: 44px;
     font-size: 0.95rem;

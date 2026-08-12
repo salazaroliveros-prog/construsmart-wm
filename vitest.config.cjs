@@ -15,5 +15,8 @@ module.exports = defineConfig({
     // Run tests in the same process to avoid fork/worker issues on Windows
     isolate: true,
     maxConcurrency: 1,
+    // Solo correr unit tests de vitest; los specs de e2e los ejecuta Playwright
+    include: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+    exclude: ['**/node_modules/**', '**/e2e/**', '**/test-results/**'],
   },
 });
