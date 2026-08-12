@@ -634,7 +634,7 @@ export default function BudgetCalculator() {
       if (selectedProject && items.length > 0) {
         try {
           const stockAlerts = await triggerStockCheck(selectedProject, items as LocalBudgetItem[], projectName);
-          if (stockAlerts.length > 0) {
+          if (stockAlerts && stockAlerts.length > 0) {
             showToast('warning', `${stockAlerts.length} materiales con stock insuficiente para el proyecto`);
           }
         } catch (error) {
