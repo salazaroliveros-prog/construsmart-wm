@@ -45,6 +45,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { RenglonCalculator, ProjectRenglon } from '@/lib/calculators/renglonCalculator';
 import BudgetItemsTable from '@/components/budgets/BudgetItemsTable';
 import BudgetSummaryPanel from '@/components/budgets/BudgetSummaryPanel';
+import RealTimeCalculations from '@/components/budgets/RealTimeCalculations';
 import type { BudgetItem } from './types';
 import { PRESETS_POR_TIPOLOGIA, ElementPreset, TYPOLOGY_LABELS as PRESET_LABELS } from '@/lib/config/elementPresets';
 import { calculateCommercialUnits, validateCostPerSquareMeter, CostValidationResult } from '@/lib/calculators/financialUtils';
@@ -93,7 +94,7 @@ export default function BudgetCalculator() {
     try {
       const userId = await getUserScope();
       const allProjects = scopeLocalRows(await offlineDB.projects.toArray(), userId);
-      const planningProjects = allProjects.filter(p => p.status === 'planning');
+      const planningProjects = allProjects.filter(p => p.status === 'planning' || p.status === 'execution');
       setProjects(planningProjects);
     } catch (error) {
       console.error('Error loading projects:', error);
@@ -114,6 +115,36 @@ export default function BudgetCalculator() {
     loadProjects();
     loadClients();
   }, []);
+
+  // Validación de presupuesto base en tiempo real
+  useEffect(() => {
+    if (selectedProject && items.length > 0) {
+      const project = projects.find(p => p.id === selectedProject);
+      if (project && project.total_budget) {
+        const currentTotal = items.reduce((sum, item) => sum + item.total_cost, 0);
+        const budgetVariance = currentTotal - project.total_budget;
+        const budgetVariancePercent = (Math.abs(budgetVariance) / project.total_budget) * 100;
+
+        if (budgetVariance > 0 && budgetVariancePercent > 10) {
+          setBudgetValidation({
+            isValid: false,
+            recommendation: `Los items exceden el presupuesto base en ${budgetVariancePercent.toFixed(1)}% ($${budgetVariance.toLocaleString()})`,
+            severity: 'warning'
+          });
+        } else if (budgetVariance < 0 && budgetVariancePercent > 20) {
+          setBudgetValidation({
+            isValid: true,
+            recommendation: `Los items están ${budgetVariancePercent.toFixed(1)}% por debajo del presupuesto base ($${Math.abs(budgetVariance).toLocaleString()})`,
+            severity: 'info'
+          });
+        } else {
+          setBudgetValidation(null);
+        }
+      }
+    } else {
+      setBudgetValidation(null);
+    }
+  }, [selectedProject, items, projects]);
   
   // Topography Integration State
   const [topographyData, setTopographyData] = useState({
@@ -280,7 +311,7 @@ export default function BudgetCalculator() {
     const cost = calculateSlabCost(result, slabCostParams);
 
     const newItem: BudgetItem = {
-      id: Date.now().toString(),
+      id: generateId(),
       code: `LOS-${dimensions.slabType.toUpperCase()}-${Date.now().toString().slice(-4)}`,
       description: result.description,
       unit: 'm²',
@@ -299,7 +330,7 @@ export default function BudgetCalculator() {
     const apuResult = calculateAPU(apuParams);
     
     const newItem: BudgetItem = {
-      id: Date.now().toString(),
+      id: generateId(),
       code: `APU-${selectedTypology.toUpperCase()}-${Date.now().toString().slice(-4)}`,
       description: `APU ${TYPOLOGY_LABELS[selectedTypology]} - Renglón Personalizado`,
       unit: 'unid',
@@ -318,7 +349,7 @@ export default function BudgetCalculator() {
   // Add renglon from typology catalog
   const addRenglonFromCatalog = (renglon: APURenglon) => {
     const newItem: BudgetItem = {
-      id: Date.now().toString(),
+      id: generateId(),
       code: renglon.code,
       description: renglon.description,
       unit: renglon.unit,
@@ -351,7 +382,7 @@ export default function BudgetCalculator() {
 
   const addItem = () => {
     const newItem: BudgetItem = {
-      id: Date.now().toString(),
+      id: generateId(),
       code: `ITEM-${Date.now().toString().slice(-4)}`,
       description: 'Nuevo Item',
       unit: 'unid',
@@ -430,11 +461,23 @@ export default function BudgetCalculator() {
           project.quality_level === 'moderate' ? 'Moderado' : 'Premium',
           15 // 15% tolerance
         );
-        setCostValidation(validation);
+        const mappedValidation = {
+          isValid: validation.isValid,
+          deviationPercentage: validation.deviationPercentage,
+          isOverBudget: validation.isOverBudget,
+          isUnderBudget: validation.isUnderBudget,
+          recommendation: validation.warningMessage || 'Alerta de coherencia comercial',
+          severity: validation.isOverBudget ? 'critical' : validation.isUnderBudget ? 'warning' : 'info' as const,
+        };
+        setCostValidation(mappedValidation);
 
-        if (!validation.isValid) {
-          showToast('warning', validation.warningMessage || 'Alerta de coherencia comercial');
-          // Don't block save, just warn
+        if (!mappedValidation.isValid) {
+          if (mappedValidation.severity === 'critical') {
+            showToast('error', mappedValidation.recommendation || 'El presupuesto excede los límites comerciales permitidos');
+            setSaveLoading(false);
+            return;
+          }
+          showToast('warning', mappedValidation.recommendation);
         }
       }
 
@@ -476,6 +519,7 @@ export default function BudgetCalculator() {
         }
       } else {
         budgetId = (await offlineDB.budgets.add({
+          id: generateId(),
           project_id: selectedProject,
           version: 1,
           direct_cost: summary.directCost,
@@ -490,13 +534,12 @@ export default function BudgetCalculator() {
         })) as string;
       }
 
-      // Save budget items
+      // Save budget items and accumulate warehouse inputs
       const warehouseInputs: MaterialToWarehouseInput[] = [];
       for (const item of items) {
         // Calculate commercial units for materials
         let unidadesComerciales: number | undefined;
         if (item.unit === 'kg' || item.unit === 'kilogramos') {
-          // Assume cement or steel based on description
           if (item.description.toLowerCase().includes('cemento')) {
             unidadesComerciales = calculateCommercialUnits('cement', item.quantity, item.unit);
           } else if (item.description.toLowerCase().includes('acero') ||
@@ -509,6 +552,7 @@ export default function BudgetCalculator() {
         const budgetItemData: LocalBudgetItem = {
           id: generateId(),
           budget_id: budgetId as string,
+          project_id: selectedProject,
           code: item.code,
           description: item.description,
           unit: item.unit,
@@ -523,7 +567,6 @@ export default function BudgetCalculator() {
           updated_at: new Date().toISOString(),
         };
 
-        // Add APU data if available
         if (item.apuResult) {
           budgetItemData.apu_result = item.apuResult;
           budgetItemData.apu_params = apuParams;
@@ -531,7 +574,6 @@ export default function BudgetCalculator() {
 
         await offlineDB.budgetItems.add(budgetItemData);
 
-        // Acumular materiales para el almacén (se envía al final, solo en el primer guardado)
         if (isFirstSave) {
           const catalogRenglon = RENGLONES_BY_TYPOLOGY_DETAILED[selectedTypology]?.find(
             r => r.code === item.code
@@ -639,6 +681,7 @@ export default function BudgetCalculator() {
           }
         } catch (error) {
           console.error('[Budget→Warehouse Stock Check Error]', error);
+          showToast('error', 'Error al verificar stock en almacén');
         }
       }
 
@@ -762,7 +805,7 @@ export default function BudgetCalculator() {
             onChange={(e) => handleProjectChange(e.target.value)}
             className="flex-1 glass-input rounded-lg px-4 py-2 text-white focus:outline-none focus:border-cyan-500/50"
           >
-            <option value="">Seleccione un proyecto en planificación...</option>
+              <option value="">Seleccione un proyecto (planificación o ejecución)...</option>
             {projects.map(project => (
               <option key={project.id} value={project.id}>
                 {project.code} - {project.name}
@@ -933,18 +976,18 @@ export default function BudgetCalculator() {
                       materialUnitCost: renglon.materialFormula?.materialUnitCost || 45,
                       machineryCost: renglon.machineryFormula?.hourlyCost || 0,
                     });
-                    const newItem: BudgetItem = {
-                      id: Date.now().toString() + Math.random().toString(),
-                      code: renglon.code,
-                      description: renglon.description,
-                      unit: renglon.unit,
-                      quantity: 100,
-                      unit_cost: apuResult.total_cost / 100,
-                      total_cost: apuResult.total_cost,
-                      category: renglon.category || 'general',
-                      timeRequired: apuResult.total_cost / (renglon.laborFormula?.dailySalary || 350),
-                      apuResult,
-                    };
+                      const newItem: BudgetItem = {
+                        id: generateId(),
+                        code: renglon.code,
+                        description: renglon.description,
+                        unit: renglon.unit,
+                        quantity: 100,
+                        unit_cost: apuResult.total_cost / 100,
+                        total_cost: apuResult.total_cost,
+                        category: renglon.category || 'general',
+                        timeRequired: apuResult.total_cost / (renglon.laborFormula?.dailySalary || 350),
+                        apuResult,
+                      };
                     setItems(prev => [...prev, newItem]);
                   });
                   showToast('success', `Cargados ${library.length} renglones APU de la biblioteca estándar`);
@@ -1381,6 +1424,44 @@ export default function BudgetCalculator() {
         onCrewSizeChange={(itemId, value) => updateRenglonParam(itemId, { crewSize: value })}
         onPerformanceChange={(itemId, value) => updateRenglonParam(itemId, { dailyPerformance: value })}
         onEfficiencyChange={(itemId, value) => updateRenglonParam(itemId, { efficiency: value })}
+      />
+
+      {/* Budget Validation Alert */}
+      {budgetValidation && (
+        <div className={`glass-panel rounded-2xl p-4 sm:p-6 border ${
+          budgetValidation.severity === 'warning' 
+            ? 'border-amber-500/30 bg-amber-500/10' 
+            : 'border-cyan-500/30 bg-cyan-500/10'
+        }`} role="alert">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+              budgetValidation.severity === 'warning' ? 'text-amber-400' : 'text-cyan-400'
+            }`} />
+            <div className="flex-1">
+              <h3 className={`font-medium mb-1 ${
+                budgetValidation.severity === 'warning' ? 'text-amber-400' : 'text-cyan-400'
+              }`}>
+                {budgetValidation.severity === 'warning' ? 'Alerta de Presupuesto' : 'Información de Presupuesto'}
+              </h3>
+              <p className="text-white/80 text-sm">{budgetValidation.recommendation}</p>
+            </div>
+            <button
+              onClick={() => setBudgetValidation(null)}
+              className="text-white/60 hover:text-white transition-colors"
+              aria-label="Cerrar alerta"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Real-time Calculations */}
+      <RealTimeCalculations
+        items={items}
+        indirectPercentage={indirectPercentage}
+        contingencyPercentage={contingencyPercentage}
+        profitPercentage={profitPercentage}
       />
 
       {/* Budget Summary */}

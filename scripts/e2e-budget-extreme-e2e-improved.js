@@ -353,33 +353,62 @@ async function runImprovedExtremeE2ETest() {
       logActivity('TRANSICIÓN', 'Proyecto seleccionado', 'EXITOSO');
     }
 
-    // Buscar opción de cambiar estado/fase
-    const statusBtn = page.locator(
+    // Buscar opción de cambiar estado/fase (corregido para abrir select primero)
+    const statusSelect = page.locator(
+      'select[name*="status"], ' +
+      'select[name*="phase"], ' +
+      'select[name*="fase"], ' +
       'button:has-text("Estado"), ' +
-      'button:has-text("Fase"), ' +
-      'button[aria-label*="status" i], ' +
-      'select[name*="status"]'
+      'button:has-text("Fase")'
     ).first();
 
-    if (await statusBtn.count() > 0) {
-      await statusBtn.click();
-      await page.waitForTimeout(1000);
-      logActivity('TRANSICIÓN', 'Selector de estado abierto', 'EXITOSO');
-    }
+    if (await statusSelect.count() > 0) {
+      // Si es un select, hacer click para abrir dropdown
+      const tagName = await statusSelect.evaluate(el => el.tagName.toLowerCase());
+      if (tagName === 'select') {
+        await statusSelect.click();
+        await page.waitForTimeout(500);
+        logActivity('TRANSICIÓN', 'Dropdown de estado abierto', 'EXITOSO');
+        
+        // Seleccionar estado "En Ejecución" por valor
+        const executionOption = page.locator('option[value="execution"], option[value="en_ejecución"]').first();
+        if (await executionOption.count() > 0) {
+          await executionOption.click();
+          await page.waitForTimeout(1000);
+          logActivity('TRANSICIÓN', 'Estado cambiado a Ejecución', 'EXITOSO');
+        } else {
+          // Intentar seleccionar por texto
+          await statusSelect.selectOption({ label: 'En Ejecución' });
+          await page.waitForTimeout(1000);
+          logActivity('TRANSICIÓN', 'Estado cambiado a Ejecución (por texto)', 'EXITOSO');
+        }
+      } else {
+        // Si es un botón, hacer click para abrir modal/dialog
+        await statusSelect.click();
+        await page.waitForTimeout(1000);
+        logActivity('TRANSICIÓN', 'Selector de estado abierto', 'EXITOSO');
+        
+        // Cerrar modales que puedan aparecer
+        await closeModalsAndToasts(page);
+        
+        // Seleccionar estado "En Ejecución"
+        const executionOption = page.locator(
+          'option:has-text("Ejecución"), ' +
+          'option:has-text("execution"), ' +
+          'button:has-text("Ejecución"), ' +
+          'div:has-text("Ejecución")'
+        ).first();
 
-    // Seleccionar estado "En Ejecución"
-    const executionOption = page.locator(
-      'option:has-text("Ejecución"), ' +
-      'option:has-text("execution"), ' +
-      'button:has-text("Ejecución")'
-    ).first();
-
-    if (await executionOption.count() > 0) {
-      await executionOption.click();
-      await page.waitForTimeout(1000);
-      logActivity('TRANSICIÓN', 'Estado cambiado a Ejecución', 'EXITOSO');
+        if (await executionOption.count() > 0) {
+          await executionOption.click();
+          await page.waitForTimeout(1000);
+          logActivity('TRANSICIÓN', 'Estado cambiado a Ejecución', 'EXITOSO');
+        } else {
+          logIssue('MEDIO', 'Transición', 'Opción de estado "Ejecución" no encontrada', 'No se puede cambiar fase', 'Verificar que las opciones de estado incluyan "En Ejecución"');
+        }
+      }
     } else {
-      logIssue('MEDIO', 'Transición', 'Opción de estado "Ejecución" no encontrada', 'No se puede cambiar fase', 'Verificar que las opciones de estado incluyan "En Ejecución"');
+      logIssue('MEDIO', 'Transición', 'Selector de estado no encontrado', 'No se puede cambiar fase', 'Verificar visibilidad del selector de estado');
     }
 
     // Guardar cambio de estado
