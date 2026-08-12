@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart } from 'recharts';
-import { TrendingUp, DollarSign, AlertTriangle, Calendar, Target, Zap } from 'lucide-react';
-import { offlineDB, LocalProject, LocalFinancialTransaction, LocalBudgetItem } from '@/lib/db/offlineStore';
+import { TrendingUp, DollarSign, AlertTriangle, Calendar, Target, Zap, Package, ShoppingCart, Users, User, ClipboardList, Building } from 'lucide-react';
 import { formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
-import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
+import { useDashboardData } from '@/lib/hooks/useDashboardData';
+import { offlineDB, LocalProject, LocalFinancialTransaction, LocalBudgetItem } from '@/lib/db/offlineStore';
 
 interface EVMDataPoint {
   name: string;
@@ -27,49 +27,48 @@ interface CategoryDataPoint {
 
 export default function AnalyticsDashboard() {
   const { financial } = useFinancialSettings();
-  const [projects, setProjects] = useState<LocalProject[]>([]);
+  const { 
+    projects, 
+    transactions, 
+    stock,
+    purchaseOrders,
+    suppliers,
+    payrollRecords,
+    logs,
+    clients,
+    budgetItems,
+    loading 
+  } = useDashboardData();
+  
   const [selectedProject, setSelectedProject] = useState<string>('all');
-  const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
-  const [budgetItems, setBudgetItems] = useState<LocalBudgetItem[]>([]);
   const [evmData, setEvmData] = useState<EVMDataPoint[]>([]);
   const [categoryData, setCategoryData] = useState<CategoryDataPoint[]>([]);
-  const [loading, setLoading] = useState(true);
 
   const COLORS = ['#06b6d4', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#f97316'];
 
   useEffect(() => {
-    loadData();
-  }, [selectedProject]);
+    calculateAnalytics();
+  }, [selectedProject, projects, transactions, budgetItems, stock, purchaseOrders, suppliers, payrollRecords, logs, clients]);
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const userId = await getUserScope();
+  const calculateAnalytics = () => {
+    let filteredTransactions = transactions;
+    let filteredBudgetItems = budgetItems;
+    let filteredStock = stock;
+    let filteredPurchaseOrders = purchaseOrders;
+    let filteredPayrollRecords = payrollRecords;
+    let filteredLogs = logs;
 
-      // Load projects
-      const allProjects = scopeLocalRows(await offlineDB.projects.toArray(), userId);
-      setProjects(allProjects);
-
-      // Load transactions and budget items
-      let allTransactions = scopeLocalRows(await offlineDB.financialTransactions.toArray(), userId);
-      let allBudgetItems = scopeLocalRows(await offlineDB.budgetItems.toArray(), userId);
-
-      if (selectedProject !== 'all') {
-        allTransactions = allTransactions.filter(t => t.project_id === selectedProject);
-        allBudgetItems = allBudgetItems.filter(b => b.project_id === selectedProject);
-      }
-
-      setTransactions(allTransactions);
-      setBudgetItems(allBudgetItems);
-
-      // Calculate analytics
-      calculateEVM(allTransactions, allBudgetItems, allProjects);
-      calculateCategoryData(allTransactions);
-    } catch (error) {
-      console.error('Error loading analytics data:', error);
-    } finally {
-      setLoading(false);
+    if (selectedProject !== 'all') {
+      filteredTransactions = transactions.filter(t => t.project_id === selectedProject);
+      filteredBudgetItems = budgetItems.filter(b => b.project_id === selectedProject);
+      filteredStock = stock.filter(s => s.project_id === selectedProject);
+      filteredPurchaseOrders = purchaseOrders.filter(po => po.project_id === selectedProject);
+      filteredPayrollRecords = payrollRecords.filter(pr => pr.project_id === selectedProject);
+      filteredLogs = logs.filter(l => l.project_id === selectedProject);
     }
+
+    calculateEVM(filteredTransactions, filteredBudgetItems, projects);
+    calculateCategoryData(filteredTransactions);
   };
 
   const calculateEVM = (txs: LocalFinancialTransaction[], items: LocalBudgetItem[], allProjects: LocalProject[]) => {
@@ -399,6 +398,161 @@ export default function AnalyticsDashboard() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Additional Analytics Sections */}
+          {selectedProject === 'all' && (
+            <>
+              {/* Warehouse Analytics */}
+              <div className="glass-card p-6 rounded-xl">
+                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                  <Package className="w-5 h-5 text-cyan-400" />
+                  Análisis de Almacén
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Total Items en Stock</p>
+                    <p className="text-xl font-bold text-white">{stock.length}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Stock Crítico</p>
+                    <p className="text-xl font-bold text-red-400">
+                      {stock.filter(s => s.current_stock <= s.minimum_threshold).length}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Valor del Inventario</p>
+                    <p className="text-xl font-bold text-emerald-400">
+                      {formatCurrency(stock.reduce((sum, s) => sum + (s.current_stock * s.unit_cost), 0), financial)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Purchase Orders Analytics */}
+              <div className="glass-card p-6 rounded-xl">
+                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                  <ShoppingCart className="w-5 h-5 text-violet-400" />
+                  Análisis de Órdenes de Compra
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Total Órdenes</p>
+                    <p className="text-xl font-bold text-white">{purchaseOrders.length}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Pendientes</p>
+                    <p className="text-xl font-bold text-amber-400">
+                      {purchaseOrders.filter(po => po.status === 'pending').length}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Valor Total</p>
+                    <p className="text-xl font-bold text-emerald-400">
+                      {formatCurrency(purchaseOrders.reduce((sum, po) => sum + (po.total_amount || 0), 0), financial)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Suppliers Analytics */}
+              <div className="glass-card p-6 rounded-xl">
+                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                  <Building className="w-5 h-5 text-emerald-400" />
+                  Análisis de Proveedores
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Total Proveedores</p>
+                    <p className="text-xl font-bold text-white">{suppliers.length}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Proveedores Activos</p>
+                    <p className="text-xl font-bold text-emerald-400">
+                      {suppliers.length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payroll Analytics */}
+              <div className="glass-card p-6 rounded-xl">
+                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-amber-400" />
+                  Análisis de Nómina
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Total Registros</p>
+                    <p className="text-xl font-bold text-white">{payrollRecords.length}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Costo Total</p>
+                    <p className="text-xl font-bold text-emerald-400">
+                      {formatCurrency(payrollRecords.reduce((sum, pr) => sum + (pr.gross_salary || 0), 0), financial)}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Empleados Activos</p>
+                    <p className="text-xl font-bold text-cyan-400">
+                      {transactions.filter(t => t.category === 'gastos_operativos_nomina').length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Project Logs Analytics */}
+              <div className="glass-card p-6 rounded-xl">
+                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-pink-400" />
+                  Análisis de Bitácora
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Total Registros</p>
+                    <p className="text-xl font-bold text-white">{logs.length}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Roadblocks Activos</p>
+                    <p className="text-xl font-bold text-red-400">
+                      {projects.filter(p => p.has_critical_roadblock).length}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Proyectos Activos</p>
+                    <p className="text-xl font-bold text-emerald-400">
+                      {projects.filter(p => p.status === 'execution').length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Clients Analytics */}
+              <div className="glass-card p-6 rounded-xl">
+                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                  <User className="w-5 h-5 text-blue-400" />
+                  Análisis de Clientes
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Total Clientes</p>
+                    <p className="text-xl font-bold text-white">{clients.length}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Clientes Activos</p>
+                    <p className="text-xl font-bold text-emerald-400">
+                      {clients.filter(c => !c.is_delinquent).length}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Proyectos por Cliente</p>
+                    <p className="text-xl font-bold text-cyan-400">
+                      {clients.length > 0 ? (projects.length / clients.length).toFixed(1) : '0'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </>
       )}

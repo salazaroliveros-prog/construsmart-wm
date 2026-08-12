@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, AlertTriangle, CheckCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { formatCurrency, useFinancialSettings } from '@/lib/hooks/useBusinessSettings';
 
 interface BudgetComparisonData {
   category: string;
@@ -26,6 +27,7 @@ const COLORS = {
 };
 
 export default function BudgetVsExecution({ projectId, budgetTotal, actualTotal = 0 }: BudgetVsExecutionProps) {
+  const { financial } = useFinancialSettings();
   const [comparisonData, setComparisonData] = useState<BudgetComparisonData[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasActualData, setHasActualData] = useState(false);
@@ -69,16 +71,6 @@ export default function BudgetVsExecution({ projectId, budgetTotal, actualTotal 
 
     generateComparisonData();
   }, [budgetTotal, actualTotal, projectId]);
-
-  const formatCurrency = (value: number | undefined) => {
-    if (value === undefined) return 'Q 0';
-    return new Intl.NumberFormat('es-GT', {
-      style: 'currency',
-      currency: 'GTQ',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   const overallVariance = actualTotal - budgetTotal;
   const overallVariancePercent = budgetTotal > 0 ? (overallVariance / budgetTotal) * 100 : 0;
@@ -178,7 +170,7 @@ export default function BudgetVsExecution({ projectId, budgetTotal, actualTotal 
                 borderRadius: '8px',
                 color: 'white'
               }}
-              formatter={(value: any) => formatCurrency(typeof value === 'number' ? value : undefined)}
+              formatter={(value: any, name: any) => [formatCurrency(value !== undefined ? value : 0, financial), name]}
             />
             <Legend />
             <Bar dataKey="planned" name="Planificado" fill={COLORS.planned} />
@@ -213,7 +205,7 @@ export default function BudgetVsExecution({ projectId, budgetTotal, actualTotal 
                   borderRadius: '8px',
                   color: 'white'
                 }}
-                formatter={(value: any) => formatCurrency(typeof value === 'number' ? value : undefined)}
+                formatter={(value: any) => formatCurrency(value !== undefined ? value : 0, financial)}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -243,7 +235,7 @@ export default function BudgetVsExecution({ projectId, budgetTotal, actualTotal 
                   borderRadius: '8px',
                   color: 'white'
                 }}
-                formatter={(value: any) => formatCurrency(typeof value === 'number' ? value : undefined)}
+                formatter={(value: any) => formatCurrency(value !== undefined ? value : 0, financial)}
               />
             </PieChart>
           </ResponsiveContainer>

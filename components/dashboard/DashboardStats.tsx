@@ -1,13 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Building2, DollarSign, TrendingUp, Users, Hammer, Calendar, Target } from 'lucide-react';
-import { offlineDB, LocalProject, LocalFinancialTransaction, LocalPayrollEmployee, LocalWarehouseStock } from '@/lib/db/offlineStore';
 import { useFinancialSettings, formatCurrency } from '@/lib/hooks/useBusinessSettings';
 import { calculateDashboardStats } from '@/lib/utils/summaryCalculations';
-import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
+import { useDashboardData } from '@/lib/hooks/useDashboardData';
 import { useBusinessSettings } from '@/lib/hooks/useBusinessSettings';
-import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 interface StatCardProps {
   title: string;
@@ -63,58 +61,24 @@ const MemoizedStatCard = React.memo(StatCard);
 export default function DashboardStats({ selectedProject = 'all' }: DashboardStatsProps) {
   const { financial } = useFinancialSettings();
   const { settings } = useBusinessSettings();
-  const [projects, setProjects] = useState<LocalProject[]>([]);
-  const [transactions, setTransactions] = useState<LocalFinancialTransaction[]>([]);
-  const [employees, setEmployees] = useState<LocalPayrollEmployee[]>([]);
-  const [stockItems, setStockItems] = useState<LocalWarehouseStock[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    loadRealData();
-  }, []);
-
-  const loadRealData = async () => {
-    try {
-      const userId = await getUserScope();
-      const [localProjects, localTransactions, localEmployees, localStock] = await Promise.all([
-        scopeLocalRows(await offlineDB.projects.toArray(), userId),
-        scopeLocalRows(await offlineDB.financialTransactions.toArray(), userId),
-        scopeLocalRows(await offlineDB.payrollEmployees.toArray(), userId),
-        scopeLocalRows(await offlineDB.warehouseStock.toArray(), userId)
-      ]);
-
-      setProjects(localProjects);
-      setTransactions(localTransactions);
-      setEmployees(localEmployees);
-      setStockItems(localStock);
-    } catch (error) {
-      console.error('Error loading real data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { projects, transactions, employees, stock, loading } = useDashboardData();
 
   const stats = calculateDashboardStats({
     projects,
     transactions,
     employees,
-    stockItems,
+    stockItems: stock,
     settings,
     selectedProject,
   });
 
   const { visibleProjects, visibleTransactions, activeProjects, totalBudget, totalSpent, activeEmployees, lowStockItems, utilityMargin } = stats;
 
-  useRealtimeRefresh(
-    ['projects', 'financial_transactions', 'payroll_employees', 'warehouse_stock'],
-    loadRealData
-  );
-
   return (
     <div className="flex flex-col w-full h-full gap-2">
       {/* KPI Cards - mobile-first: 2 columnas en móvil para mejor legibilidad */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 flex-shrink-0 w-full mx-auto max-w-7xl">
-        {!isLoading ? (
+        {!loading ? (
           <>
             <MemoizedStatCard
               title="Proyectos Activos"
@@ -147,7 +111,7 @@ export default function DashboardStats({ selectedProject = 'all' }: DashboardSta
             <MemoizedStatCard
               title="Stock Bajo"
               value={lowStockItems.toString()}
-              subtitle={`${stockItems.length} items`}
+              subtitle={`${stock.length} items`}
               icon={<Hammer className="w-4 h-4" />}
               color="red"
             />
