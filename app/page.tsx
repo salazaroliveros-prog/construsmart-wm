@@ -18,20 +18,62 @@ import RealtimeProvider from '@/components/ui/RealtimeProvider';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 import { NAVIGATION_TABS, type NavigationTabId } from '@/components/dashboard/navigation';
 
-const ProjectManager = dynamic(() => import('@/components/dashboard/ProjectManager'), { ssr: false });
-const BudgetCalculator = dynamic(() => import('@/components/budgets/BudgetCalculator'), { ssr: false });
-const FinanceManager = dynamic(() => import('@/components/finances/FinanceManager'), { ssr: false });
-const PayrollManager = dynamic(() => import('@/components/payroll/PayrollManager'), { ssr: false });
-const WarehouseManager = dynamic(() => import('@/components/warehouse/WarehouseManager'), { ssr: false });
-const ClientManager = dynamic(() => import('@/components/crm/ClientManager'), { ssr: false });
-const ProjectLogManager = dynamic(() => import('@/components/project/ProjectLogManager'), { ssr: false });
-const InteractiveCalendar = dynamic(() => import('@/components/dashboard/InteractiveCalendar'), { ssr: false });
-const SupplierManager = dynamic(() => import('@/components/warehouse/SupplierManager'), { ssr: false });
-const PurchaseOrderManager = dynamic(() => import('@/components/warehouse/PurchaseOrderManager'), { ssr: false });
-const SubcontractorManager = dynamic(() => import('@/components/warehouse/SubcontractorManager'), { ssr: false });
-const ProgressTracker = dynamic(() => import('@/components/progress/ProgressTracker'), { ssr: false });
-const SettingsManager = dynamic(() => import('@/components/settings/SettingsManager'), { ssr: false });
-const AnalyticsDashboard = dynamic(() => import('@/components/analytics/AnalyticsDashboard'), { ssr: false });
+const ProjectManager = dynamic(() => import('@/components/dashboard/ProjectManager'), { 
+  ssr: false,
+  loading: () => <div className="text-white/60 text-sm">Cargando proyectos...</div>
+});
+const BudgetCalculator = dynamic(() => import('@/components/budgets/BudgetCalculator'), { 
+  ssr: false,
+  loading: () => <div className="text-white/60 text-sm">Cargando presupuestos...</div>
+});
+const FinanceManager = dynamic(() => import('@/components/finances/FinanceManager'), { 
+  ssr: false,
+  loading: () => <div className="text-white/60 text-sm">Cargando finanzas...</div>
+});
+const PayrollManager = dynamic(() => import('@/components/payroll/PayrollManager'), { 
+  ssr: false,
+  loading: () => <div className="text-white/60 text-sm">Cargando nómina...</div>
+});
+const WarehouseManager = dynamic(() => import('@/components/warehouse/WarehouseManager'), { 
+  ssr: false,
+  loading: () => <div className="text-white/60 text-sm">Cargando almacén...</div>
+});
+const ClientManager = dynamic(() => import('@/components/crm/ClientManager'), { 
+  ssr: false,
+  loading: () => <div className="text-white/60 text-sm">Cargando clientes...</div>
+});
+const ProjectLogManager = dynamic(() => import('@/components/project/ProjectLogManager'), { 
+  ssr: false,
+  loading: () => <div className="text-white/60 text-sm">Cargando bitácora...</div>
+});
+const InteractiveCalendar = dynamic(() => import('@/components/dashboard/InteractiveCalendar'), { 
+  ssr: false,
+  loading: () => <div className="text-white/60 text-sm">Cargando calendario...</div>
+});
+const SupplierManager = dynamic(() => import('@/components/warehouse/SupplierManager'), { 
+  ssr: false,
+  loading: () => <div className="text-white/60 text-sm">Cargando proveedores...</div>
+});
+const PurchaseOrderManager = dynamic(() => import('@/components/warehouse/PurchaseOrderManager'), { 
+  ssr: false,
+  loading: () => <div className="text-white/60 text-sm">Cargando órdenes de compra...</div>
+});
+const SubcontractorManager = dynamic(() => import('@/components/warehouse/SubcontractorManager'), { 
+  ssr: false,
+  loading: () => <div className="text-white/60 text-sm">Cargando subcontratistas...</div>
+});
+const ProgressTracker = dynamic(() => import('@/components/progress/ProgressTracker'), { 
+  ssr: false,
+  loading: () => <div className="text-white/60 text-sm">Cargando seguimiento...</div>
+});
+const SettingsManager = dynamic(() => import('@/components/settings/SettingsManager'), { 
+  ssr: false,
+  loading: () => <div className="text-white/60 text-sm">Cargando configuración...</div>
+});
+const AnalyticsDashboard = dynamic(() => import('@/components/analytics/AnalyticsDashboard'), { 
+  ssr: false,
+  loading: () => <div className="text-white/60 text-sm">Cargando analíticas...</div>
+});
 
 interface RecentActivity {
   id: string;
@@ -209,52 +251,66 @@ export default function Dashboard() {
   // (handleTabChange se define arriba con useCallback)
 
 const renderTabContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return (
-          <div className="flex flex-col gap-3 h-full">
-            {/* KPIs Full width - fixed height */}
-            <div className="flex-shrink-0">
-              <DashboardStats selectedProject={selectedDashboardProject} />
-            </div>
+    try {
+      switch (activeTab) {
+        case 'dashboard':
+          return (
+            <div className="flex flex-col gap-3 h-full">
+              {/* KPIs Full width - fixed height */}
+              <div className="flex-shrink-0">
+                <DashboardStats selectedProject={selectedDashboardProject} />
+              </div>
 
-            {/* Full-width charts with scroll */}
-            <div className="flex-1 min-h-0 overflow-y-auto overflow-anchor-none -mx-1 px-1">
-              <DashboardCharts
-                selectedProject={selectedDashboardProject}
-                onProjectChange={setSelectedDashboardProject}
-              />
+              {/* Full-width charts with scroll */}
+              <div className="flex-1 min-h-0 overflow-y-auto overflow-anchor-none -mx-1 px-1">
+                <DashboardCharts
+                  selectedProject={selectedDashboardProject}
+                  onProjectChange={setSelectedDashboardProject}
+                />
+              </div>
+            </div>
+          );
+        case 'projects':
+          return isTabLoading ? <TabSkeleton /> : <ProjectManager />;
+        case 'budgets':
+          return isTabLoading ? <TabSkeleton /> : <BudgetCalculator />;
+        case 'progress':
+          return isTabLoading ? <TabSkeleton /> : <ProgressTracker />;
+        case 'finances':
+          return isTabLoading ? <TabSkeleton /> : <FinanceManager />;
+        case 'payroll':
+          return isTabLoading ? <TabSkeleton /> : <PayrollManager />;
+        case 'warehouse':
+          return isTabLoading ? <TabSkeleton /> : <WarehouseManager />;
+        case 'suppliers':
+          return isTabLoading ? <TabSkeleton /> : <SupplierManager />;
+        case 'orders':
+          return isTabLoading ? <TabSkeleton /> : <PurchaseOrderManager />;
+        case 'subcontractors':
+          return isTabLoading ? <TabSkeleton /> : <SubcontractorManager />;
+        case 'clients':
+          return isTabLoading ? <TabSkeleton /> : <ClientManager />;
+        case 'logs':
+          return isTabLoading ? <TabSkeleton /> : <ProjectLogManager />;
+        case 'analytics':
+          return isTabLoading ? <TabSkeleton /> : <AnalyticsDashboard />;
+        case 'settings':
+          return isTabLoading ? <TabSkeleton /> : <SettingsManager />;
+        default:
+          return null;
+      }
+    } catch (error) {
+      console.error(`Error rendering tab ${activeTab}:`, error);
+      return (
+        <div className="h-full w-full flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-red-400 mb-2">Error al cargar módulo</div>
+            <div className="text-white/60 text-sm">
+              {error instanceof Error ? error.message : 'Error desconocido'}
             </div>
           </div>
-        );
-      case 'projects':
-        return isTabLoading ? <TabSkeleton /> : <ProjectManager />;
-      case 'budgets':
-        return isTabLoading ? <TabSkeleton /> : <BudgetCalculator />;
-      case 'progress':
-        return isTabLoading ? <TabSkeleton /> : <ProgressTracker />;
-      case 'finances':
-        return isTabLoading ? <TabSkeleton /> : <FinanceManager />;
-      case 'payroll':
-        return isTabLoading ? <TabSkeleton /> : <PayrollManager />;
-      case 'warehouse':
-        return isTabLoading ? <TabSkeleton /> : <WarehouseManager />;
-      case 'suppliers':
-        return isTabLoading ? <TabSkeleton /> : <SupplierManager />;
-      case 'orders':
-        return isTabLoading ? <TabSkeleton /> : <PurchaseOrderManager />;
-      case 'subcontractors':
-        return isTabLoading ? <TabSkeleton /> : <SubcontractorManager />;
-      case 'clients':
-        return isTabLoading ? <TabSkeleton /> : <ClientManager />;
-      case 'logs':
-        return isTabLoading ? <TabSkeleton /> : <ProjectLogManager />;
-      case 'analytics':
-        return isTabLoading ? <TabSkeleton /> : <AnalyticsDashboard />;
-      case 'settings':
-        return isTabLoading ? <TabSkeleton /> : <SettingsManager />;
-      default:
-        return null;
+        </div>
+      );
     }
   };
 
@@ -362,7 +418,7 @@ return (
             aria-label="Contenido principal"
           >
             <div
-              className="w-full h-full flex flex-col px-2 sm:px-3 py-2 overflow-y-auto overflow-anchor-none"
+              className="w-full h-full flex flex-col px-3 sm:px-4 lg:px-6 py-3 overflow-y-auto overflow-anchor-none mx-auto max-w-[1920px]"
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
             >

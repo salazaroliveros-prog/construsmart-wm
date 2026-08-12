@@ -43,6 +43,7 @@ body {
   backdrop-filter: blur(var(--glass-blur-intensity)) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%); /* Fallback fijo para Safari */
   border: 1px solid rgba(255, 255, 255, var(--border-opacity));
+  border-radius: 1rem; /* Consistente con .glass-card */
   box-shadow:
     0 8px 32px 0 rgba(0, 0, 0, calc(0.37 * var(--shadow-intensity))),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
@@ -155,6 +156,7 @@ body {
   backdrop-filter: blur(calc(var(--glass-blur-intensity) * 0.6)) saturate(180%);
   -webkit-backdrop-filter: blur(calc(var(--glass-blur-intensity) * 0.6)) saturate(180%);
   border: 1px solid rgba(255, 255, 255, calc(var(--border-opacity) * 1.6));
+  border-radius: 1rem; /* Consistente con .glass-card y .glass-panel */
   transition: all var(--animation-duration) cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow:
     0 2px 4px -1px rgba(0, 0, 0, calc(0.1 * var(--shadow-intensity))),

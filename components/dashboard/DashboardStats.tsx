@@ -113,7 +113,7 @@ export default function DashboardStats({ selectedProject = 'all' }: DashboardSta
   return (
     <div className="flex flex-col w-full h-full gap-2">
       {/* KPI Cards - mobile-first: 2 columnas en móvil para mejor legibilidad */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1 flex-shrink-0">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 flex-shrink-0 w-full mx-auto max-w-7xl">
         {!isLoading ? (
           <>
             <MemoizedStatCard

@@ -29,6 +29,16 @@ import { BUSINESS_CONFIG } from '@/lib/config/app.config';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { hexToRgba, hexToLightRgb } from '@/lib/utils/colorUtils';
 
+// Manejo seguro de contextos
+const safeUseMaterialAlertContext = () => {
+  try {
+    return useMaterialAlertContext();
+  } catch (error) {
+    console.warn('MaterialAlertContext not available:', error);
+    return null;
+  }
+};
+
 // ============================================================================
 // TYPE DEFINITIONS
 // ============================================================================
@@ -82,7 +92,8 @@ const unitColors: Record<string, { bg: string; text: string; border: string }> =
 export default function WarehouseManager() {
   const { showToast } = useToast();
   const { financial } = useFinancialSettings();
-  const { alerts, clearAlerts } = useMaterialAlertContext();
+  const materialAlertContext = safeUseMaterialAlertContext();
+  const { alerts = [], clearAlerts = () => {} } = materialAlertContext || {};
   const { 
     depletionAlerts, 
     isProcessing, 

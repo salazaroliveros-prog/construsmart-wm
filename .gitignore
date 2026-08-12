@@ -77,3 +77,10 @@ NEXT_PUBLIC_SITE_URL*
 vercel_dep.log
 
 .clinerules/
+
+# Screenshots and test artifacts (generated during testing)
+screenshots/
+playwright-report/
+test-results/
+e2e/
+.playwright/

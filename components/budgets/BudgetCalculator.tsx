@@ -4,6 +4,16 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Calculator, Plus, Save, Download, FolderOpen, Building2, Map as MapIcon, AlertTriangle, Wallet, TrendingUp, CreditCard, X } from 'lucide-react';
 import { useMaterialAlertContext } from '@/context/MaterialAlertContext';
+
+// Manejo seguro de contextos
+const safeUseMaterialAlertContext = () => {
+  try {
+    return useMaterialAlertContext();
+  } catch (error) {
+    console.warn('MaterialAlertContext not available:', error);
+    return null;
+  }
+};
 import { calculateSlab, SlabDimensions, calculateSlabCost, SlabCostParams } from '@/lib/calculators/slabCalculators';
 import {
   calculateAPU,
@@ -52,7 +62,8 @@ import SecondaryButton from '@/components/ui/SecondaryButton';
 export default function BudgetCalculator() {
   const { showToast } = useToast();
   const { settings, financial } = useBusinessSettings();
-  const { triggerStockCheck } = useMaterialAlertContext();
+  const materialAlertContext = safeUseMaterialAlertContext();
+  const { triggerStockCheck = () => {} } = materialAlertContext || {};
   const [items, setItems] = useState<BudgetItem[]>([]);
   const [indirectPercentage, setIndirectPercentage] = useState(financial.indirectPercentage);
   const [contingencyPercentage, setContingencyPercentage] = useState(financial.contingencyPercentage);

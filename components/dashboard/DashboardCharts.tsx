@@ -892,7 +892,7 @@ function DashboardCharts({ selectedProject, onProjectChange }: DashboardChartsPr
       </div>
 
       {/* Summary Metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-2 w-full mx-auto max-w-7xl">
         <div className="glass-panel rounded-lg p-2">
           <div className="text-zinc-400 text-[10px] mb-1">Total Proyectos</div>
           <div className="text-lg font-bold text-white">{summaryMetrics.totalProjects}</div>
@@ -940,7 +940,7 @@ function DashboardCharts({ selectedProject, onProjectChange }: DashboardChartsPr
       </div>
 
       {/* Charts Grid with Scroll */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 overflow-y-auto max-h-[calc(100vh-320px)] sm:max-h-[calc(100vh-340px)] pr-1 sm:pr-2 custom-scrollbar">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 overflow-y-auto max-h-[calc(100vh-320px)] sm:max-h-[calc(100vh-340px)] pr-1 sm:pr-2 custom-scrollbar w-full mx-auto max-w-7xl">
 
         {/* GRÁFICO 1: CURVA S */}
         <div className="glass-panel rounded-xl p-3 sm:p-4 col-span-2">
