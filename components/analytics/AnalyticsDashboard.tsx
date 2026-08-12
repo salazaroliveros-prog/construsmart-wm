@@ -37,6 +37,7 @@ export default function AnalyticsDashboard() {
     logs,
     clients,
     budgetItems,
+    subcontractors,
     loading 
   } = useDashboardData();
   
@@ -48,7 +49,7 @@ export default function AnalyticsDashboard() {
 
   useEffect(() => {
     calculateAnalytics();
-  }, [selectedProject, projects, transactions, budgetItems, stock, purchaseOrders, suppliers, payrollRecords, logs, clients]);
+  }, [selectedProject, projects, transactions, budgetItems, stock, purchaseOrders, suppliers, payrollRecords, logs, clients, subcontractors]);
 
   const calculateAnalytics = () => {
     let filteredTransactions = transactions;
@@ -548,6 +549,32 @@ export default function AnalyticsDashboard() {
                     <p className="text-white/60 text-sm">Proyectos por Cliente</p>
                     <p className="text-xl font-bold text-cyan-400">
                       {clients.length > 0 ? (projects.length / clients.length).toFixed(1) : '0'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Subcontractors Analytics */}
+              <div className="glass-card p-6 rounded-xl">
+                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                  <Building className="w-5 h-5 text-purple-400" />
+                  Análisis de Subcontratos
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Total Subcontratos</p>
+                    <p className="text-xl font-bold text-white">{subcontractors.length}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Gastos Subcontratos</p>
+                    <p className="text-xl font-bold text-violet-400">
+                      {formatCurrency(transactions.filter(t => t.category === 'sub_contrato').reduce((sum, t) => sum + (t.total_cost || 0), 0), financial)}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">% del Total</p>
+                    <p className="text-xl font-bold text-amber-400">
+                      {transactions.length > 0 ? ((transactions.filter(t => t.category === 'sub_contrato').reduce((sum, t) => sum + (t.total_cost || 0), 0) / transactions.reduce((sum, t) => sum + (t.total_cost || 0), 0)) * 100).toFixed(1) : '0'}%
                     </p>
                   </div>
                 </div>

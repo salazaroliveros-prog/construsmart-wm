@@ -20,7 +20,8 @@ import {
   LocalClient,
   LocalSupplier,
   LocalPurchaseOrderItem,
-  LocalPayrollEmployee
+  LocalPayrollEmployee,
+  LocalSubcontractor
 } from '@/lib/db/offlineStore';
 import { useRealtimeRefresh } from '@/lib/hooks/useRealtimeRefresh';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
@@ -291,6 +292,32 @@ export function useSuppliers() {
   return { suppliers, loading, refresh: loadSuppliers };
 }
 
+// Hook para cargar subcontratos
+export function useSubcontractors() {
+  const [subcontractors, setSubcontractors] = useState<LocalSubcontractor[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadSubcontractors = useCallback(async () => {
+    try {
+      const userId = await getUserScope();
+      const allSubcontractors = scopeLocalRows(await offlineDB.subcontractors.toArray(), userId);
+      setSubcontractors(allSubcontractors);
+    } catch (error) {
+      console.error('Error loading subcontractors:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSubcontractors();
+  }, [loadSubcontractors]);
+
+  useRealtimeRefresh(['subcontractors'], loadSubcontractors);
+
+  return { subcontractors, loading, refresh: loadSubcontractors };
+}
+
 // Hook combinado para cargar todos los datos del dashboard
 export function useDashboardData() {
   const { projects, loading: projectsLoading } = useProjects();
@@ -303,6 +330,7 @@ export function useDashboardData() {
   const { payrollRecords, loading: payrollRecordsLoading } = usePayrollRecords();
   const { clients, loading: clientsLoading } = useClients();
   const { suppliers, loading: suppliersLoading } = useSuppliers();
+  const { subcontractors, loading: subcontractorsLoading } = useSubcontractors();
 
   const loading = 
     projectsLoading || 
@@ -314,7 +342,8 @@ export function useDashboardData() {
     purchaseOrdersLoading || 
     payrollRecordsLoading || 
     clientsLoading || 
-    suppliersLoading;
+    suppliersLoading ||
+    subcontractorsLoading;
 
   return {
     projects,
@@ -329,6 +358,7 @@ export function useDashboardData() {
     payrollRecords,
     clients,
     suppliers,
+    subcontractors,
     loading
   };
 }

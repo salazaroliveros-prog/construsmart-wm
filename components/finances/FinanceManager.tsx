@@ -21,9 +21,9 @@ import PrimaryButton from '@/components/ui/PrimaryButton';
 import SecondaryButton from '@/components/ui/SecondaryButton';
 import { financialTransactionSchema, validateSchema, formatValidationErrors } from '@/lib/validation/schemas';
 import { getCurrentUserId } from '@/lib/auth/userId';
-import { hexToRgba, hexToLightRgb } from '@/lib/utils/colorUtils';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 import { FINANCIAL_CATEGORY_COLORS, getFinancialCategoryColor } from '@/lib/config/colorPalettes';
+import { getVariantColor } from '@/lib/utils/colorVariantUtils';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import type { ExpenseCategory } from '@/lib/types/database';
 
@@ -62,20 +62,9 @@ const categoryLabels: Record<string, string> = {
   gastos_operativos_nomina: 'Nómina de Mano de Obra'
 };
 
-// Colores de categorías basados en paleta centralizada
-const categoryColors: Record<string, { bg: string; text: string; border: string }> = {
-  materiales: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.materiales, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.materiales), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.materiales, 0.3) },
-  mano_de_obra: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.mano_de_obra, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.mano_de_obra), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.mano_de_obra, 0.3) },
-  herramienta: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.herramienta, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.herramienta), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.herramienta, 0.3) },
-  sub_contrato: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.sub_contrato, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.sub_contrato), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.sub_contrato, 0.3) },
-  administrativo: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.administrativo, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.administrativo), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.administrativo, 0.3) },
-  personal: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.personal, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.personal), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.personal, 0.3) },
-  transporte: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.transporte, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.transporte), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.transporte, 0.3) },
-  fijos: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.fijos, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.fijos), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.fijos, 0.3) },
-  hogar: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.hogar, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.hogar), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.hogar, 0.3) },
-  aporte: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.aporte, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.aporte), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.aporte, 0.3) },
-  trabajos_extra: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.trabajos_extra, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.trabajos_extra), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.trabajos_extra, 0.3) },
-  gastos_operativos_nomina: { bg: hexToRgba(FINANCIAL_CATEGORY_COLORS.gastos_operativos_nomina, 0.2), text: hexToLightRgb(FINANCIAL_CATEGORY_COLORS.gastos_operativos_nomina), border: hexToRgba(FINANCIAL_CATEGORY_COLORS.gastos_operativos_nomina, 0.3) }
+// Helper para obtener colores de categoría dinámicamente
+const getCategoryColor = (category: string) => {
+  return getVariantColor(category, 0.2);
 };
 
 function FinanceManager() {
@@ -605,9 +594,9 @@ function FinanceManager() {
                       <span
                         className="px-2 py-1 rounded-md text-xs font-medium"
                         style={{
-                          backgroundColor: categoryColors[transaction.category]?.bg || 'rgba(255,255,255,0.1)',
-                          color: categoryColors[transaction.category]?.text || 'white',
-                          border: `1px solid ${categoryColors[transaction.category]?.border || 'rgba(255,255,255,0.2)'}`
+                          backgroundColor: getCategoryColor(transaction.category).bg,
+                          color: getCategoryColor(transaction.category).text,
+                          border: `1px solid ${getCategoryColor(transaction.category).border}`
                         }}
                       >
                         {categoryLabels[transaction.category] || transaction.category}

@@ -25,9 +25,9 @@ import { recordMaterialConsumption } from '@/lib/integrations/budgetToWarehouse'
 import { useMaterialAlertContext } from '@/context/MaterialAlertContext';
 import { useAutoPurchaseOrder } from '@/hooks/useAutoPurchaseOrder';
 import { WAREHOUSE_UNIT_COLORS, getWarehouseUnitColor } from '@/lib/config/colorPalettes';
+import { getVariantColor } from '@/lib/utils/colorVariantUtils';
 import { BUSINESS_CONFIG } from '@/lib/config/app.config';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { hexToRgba, hexToLightRgb } from '@/lib/utils/colorUtils';
 
 // Manejo seguro de contextos
 const safeUseMaterialAlertContext = () => {
@@ -72,17 +72,9 @@ const unitLabels: Record<string, string> = {
   galón: 'Galón'
 };
 
-// Colores de unidades basados en paleta centralizada
-const unitColors: Record<string, { bg: string; text: string; border: string }> = {
-  unid: { bg: hexToRgba(getWarehouseUnitColor('unidad'), 0.2), text: hexToLightRgb(getWarehouseUnitColor('unidad')), border: hexToRgba(getWarehouseUnitColor('unidad'), 0.3) },
-  kg: { bg: hexToRgba(getWarehouseUnitColor('kg'), 0.2), text: hexToLightRgb(getWarehouseUnitColor('kg')), border: hexToRgba(getWarehouseUnitColor('kg'), 0.3) },
-  m: { bg: hexToRgba(getWarehouseUnitColor('m'), 0.2), text: hexToLightRgb(getWarehouseUnitColor('m')), border: hexToRgba(getWarehouseUnitColor('m'), 0.3) },
-  m2: { bg: hexToRgba(getWarehouseUnitColor('m2'), 0.2), text: hexToLightRgb(getWarehouseUnitColor('m2')), border: hexToRgba(getWarehouseUnitColor('m2'), 0.3) },
-  m3: { bg: hexToRgba(getWarehouseUnitColor('m3'), 0.2), text: hexToLightRgb(getWarehouseUnitColor('m3')), border: hexToRgba(getWarehouseUnitColor('m3'), 0.3) },
-  litro: { bg: hexToRgba(getWarehouseUnitColor('litro'), 0.2), text: hexToLightRgb(getWarehouseUnitColor('litro')), border: hexToRgba(getWarehouseUnitColor('litro'), 0.3) },
-  bolsa: { bg: hexToRgba(getWarehouseUnitColor('bolsa'), 0.2), text: hexToLightRgb(getWarehouseUnitColor('bolsa')), border: hexToRgba(getWarehouseUnitColor('bolsa'), 0.3) },
-  rollo: { bg: hexToRgba(getWarehouseUnitColor('rollo'), 0.2), text: hexToLightRgb(getWarehouseUnitColor('rollo')), border: hexToRgba(getWarehouseUnitColor('rollo'), 0.3) },
-  galón: { bg: hexToRgba(getWarehouseUnitColor('galón'), 0.2), text: hexToLightRgb(getWarehouseUnitColor('galón')), border: hexToRgba(getWarehouseUnitColor('galón'), 0.3) }
+// Helper para obtener colores de unidad dinámicamente
+const getUnitColor = (unit: string) => {
+  return getVariantColor(unit, 0.2);
 };
 
 // ============================================================================
@@ -850,9 +842,9 @@ export default function WarehouseManager() {
                       <span
                         className="px-2 py-1 rounded-md text-xs font-medium"
                         style={{
-                          backgroundColor: unitColors[item.unit]?.bg || 'rgba(255,255,255,0.1)',
-                          color: unitColors[item.unit]?.text || 'white',
-                          border: `1px solid ${unitColors[item.unit]?.border || 'rgba(255,255,255,0.2)'}`
+                          backgroundColor: getUnitColor(item.unit).bg,
+                          color: getUnitColor(item.unit).text,
+                          border: `1px solid ${getUnitColor(item.unit).border}`
                         }}
                       >
                         {unitLabels[item.unit] || item.unit}
