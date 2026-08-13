@@ -94,7 +94,7 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 overscroll-contain"
       onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"
@@ -120,7 +120,7 @@ export function Modal({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-[background-color,color,box-shadow] duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
                 aria-label="Cerrar modal"
               >
                 <X className="w-5 h-5" />

@@ -271,6 +271,37 @@ export interface SupplierRow {
 export type SupplierInsert = Omit<SupplierRow, 'created_at' | 'updated_at'>;
 export type SupplierUpdate = Partial<Omit<SupplierRow, 'id' | 'created_at' | 'updated_at'>>;
 
+export interface SubcontractorRow {
+  id: string;
+  user_id: string;
+  supplier_id: string | null;
+  code: string;
+  name: string;
+  company_name: string | null;
+  contact_person: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  city: string | null;
+  specialties: unknown[] | null;
+  retention_rate: number;
+  advance_amount: number;
+  advance_balance: number;
+  retention_balance: number;
+  is_active: boolean;
+  sync_status: SyncStatus;
+  created_at: string;
+  updated_at: string;
+  contract_start_date: string | null;
+  contract_end_date: string | null;
+  contract_value: number;
+  status: 'active' | 'suspended' | 'completed';
+  notes: string | null;
+}
+
+export type SubcontractorInsert = Omit<SubcontractorRow, 'created_at' | 'updated_at'>;
+export type SubcontractorUpdate = Partial<Omit<SubcontractorRow, 'id' | 'created_at' | 'updated_at'>>;
+
 export interface PurchaseOrderRow {
   id: string;
   user_id: string;

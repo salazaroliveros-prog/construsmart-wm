@@ -123,12 +123,15 @@ function LoginForm() {
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
               <input
                 id="email"
+                name="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="salazaroliveros@gmail.com"
+                autoComplete="email"
+                spellCheck={false}
                 required
-                className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/60 focus-visible:outline-none focus-visible:border-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-400/40 transition-[border-color,box-shadow,background-color]"
               />
             </div>
           </div>
@@ -142,6 +145,7 @@ function LoginForm() {
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
               <input
                 id="password"
+                name="password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => {
@@ -151,12 +155,12 @@ function LoginForm() {
                 placeholder="••••••••"
                 required
                 autoComplete="current-password"
-                className="w-full pl-12 pr-12 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                className="w-full pl-12 pr-12 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/60 focus-visible:outline-none focus-visible:border-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-400/40 transition-[border-color,box-shadow,background-color]"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/60 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 rounded-md"
                 aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -169,7 +173,7 @@ function LoginForm() {
                 <div className="flex items-center gap-2 mb-1">
                   <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
                     <div 
-                      className={`h-full transition-all duration-300 ${
+                      className={`h-full transition-[width,background-color] duration-300 ${
                         passwordStrength.score >= 4 ? 'bg-emerald-500' :
                         passwordStrength.score >= 3 ? 'bg-cyan-500' :
                         passwordStrength.score >= 2 ? 'bg-yellow-500' :
@@ -199,7 +203,7 @@ function LoginForm() {
 
           {/* Error Message */}
           {error && (
-            <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+            <div role="alert" aria-live="polite" className="flex items-center gap-2 p-3 bg-red-500/20 border border-red-400/50 rounded-lg">
               <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
               <p className="text-red-400 text-sm">{error}</p>
             </div>

@@ -8,12 +8,16 @@
  * Ejecutar: npx tsx scripts/validate-supabase-schema.ts
  */
 
-import { validateSupabaseSchema, formatValidationReport } from '../lib/supabase/schema-validator';
+import dotenv from 'dotenv';
+
+dotenv.config({ path: '.env.local' });
+dotenv.config({ path: '.env' });
 
 async function main() {
   console.log('🔍 Validando esquema de Supabase...\n');
 
   try {
+    const { validateSupabaseSchema, formatValidationReport } = await import('../lib/supabase/schema-validator');
     const report = await validateSupabaseSchema();
     const formattedReport = formatValidationReport(report);
     
@@ -23,7 +27,7 @@ async function main() {
     if (report.misalignedTables > 0) {
       console.error('\n❌ Esquema desalineado - Se requieren migraciones');
       process.exit(1);
-    } else if (report.partialTables > 0) {
+    } else if (report.partialTables > 0 || report.unknownTables > 0) {
       console.warn('\n⚠️ Esquema parcialmente alineado - Se requieren algunas adiciones');
       process.exit(2);
     } else {

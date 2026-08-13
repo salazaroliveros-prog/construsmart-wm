@@ -73,7 +73,7 @@ export function ToastProvider({ children, position = 'bottom-right' }: { childre
                 <p className="text-sm font-medium text-white">{toast.title}</p>
                 {toast.message && <p className="text-xs text-white/60 mt-0.5">{toast.message}</p>}
               </div>
-              <button onClick={() => removeToast(toast.id)} className="flex-shrink-0 text-white/40 hover:text-white/70">
+              <button type="button" aria-label="Cerrar notificación" onClick={() => removeToast(toast.id)} className="flex-shrink-0 text-white/70 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 rounded-md">
                 <X className="w-4 h-4" />
               </button>
             </div>

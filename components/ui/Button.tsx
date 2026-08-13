@@ -13,7 +13,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const buttonVariants = {
-  primary: 'glass-button bg-gradient-to-r from-cyan-500/20 to-violet-500/20 hover:from-cyan-500/30 hover:to-violet-500/30 border-cyan-500/30 hover:border-cyan-500/50 text-white hover:shadow-[0_0_15px_rgba(6,182,212,0.3)]',
+  primary: 'glass-button bg-cyan-700 hover:bg-cyan-600 border-cyan-400 hover:border-cyan-300 text-white hover:shadow-[0_0_15px_rgba(6,182,212,0.3)]',
   secondary: 'bg-white/15 hover:bg-white/25 text-white/90 border-white/25 hover:border-white/40 hover:shadow-[0_0_8px_rgba(255,255,255,0.1)]',
   danger: 'bg-red-500/20 hover:bg-red-500/30 text-red-300 border-red-500/30 hover:border-red-500/50 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]',
   success: 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/30 hover:border-emerald-500/50 hover:shadow-[0_0_8px_rgba(16,185,129,0.2)]',
@@ -48,7 +48,7 @@ export default function Button({
         ${isLoading ? 'cursor-wait' : ''}
         rounded-lg
         font-medium
-        transition-all
+        transition-[background-color,border-color,box-shadow,transform,color,opacity]
         active:scale-95
         focus-visible:outline-none
         focus-visible:ring-2

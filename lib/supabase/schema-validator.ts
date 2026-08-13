@@ -6,14 +6,28 @@
  * está alineada con las interfaces TypeScript de la suite local
  */
 
-import { supabase } from './client';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
+const supabaseKey =
+  process.env.SUPABASE_SECRET_KEY ||
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+  '';
+
+// Este módulo se usa por el script de validación. Si se ejecuta sin variables
+// remotas, el reporte debe fallar explícitamente, no inventar tablas ausentes.
+const supabase: SupabaseClient | null = supabaseUrl && supabaseKey
+  ? createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
+  : null;
 
 interface TableValidation {
   tableName: string;
   exists: boolean;
   columns: string[];
   missingColumns: string[];
-  alignmentStatus: 'aligned' | 'partial' | 'misaligned';
+  alignmentStatus: 'aligned' | 'partial' | 'misaligned' | 'unknown';
 }
 
 interface SchemaValidationReport {
@@ -21,6 +35,7 @@ interface SchemaValidationReport {
   alignedTables: number;
   partialTables: number;
   misalignedTables: number;
+  unknownTables: number;
   tableValidations: TableValidation[];
   recommendations: string[];
 }
@@ -36,7 +51,7 @@ const EXPECTED_COLUMNS = {
   ],
   clients: [
     'id', 'code', 'name', 'company_name', 'client_type', 'phone', 'email',
-    'address', 'city', 'payment_terms', 'notes', 'created_at', 'updated_at',
+    'address', 'city', 'notes', 'created_at', 'updated_at',
     'sync_status', 'account_balance', 'credit_limit', 'payment_terms_days',
     'is_delinquent', 'user_id', 'contact_person', 'tax_id', 'last_sync_attempt', 'sync_error', 'sync_attempts'
   ],
@@ -125,16 +140,10 @@ async function getTableColumns(tableName: string): Promise<string[]> {
       return Object.keys(data[0]);
     }
 
-    // If no data, try to get column information from information schema
-    const { data: columnsData, error: columnsError } = await supabase
-      .rpc('get_table_columns', { table_name: tableName });
-
-    if (columnsError) {
-      console.error(`Error getting columns via RPC for ${tableName}:`, columnsError);
-      return [];
-    }
-
-    return columnsData || [];
+    // No rows does not mean that the table is missing. PostgREST does not
+    // expose column metadata here, so leave the columns unknown instead of
+    // calling an undeployed RPC and reporting a false negative.
+    return [];
   } catch (error) {
     console.error(`Exception getting columns for ${tableName}:`, error);
     return [];
@@ -157,8 +166,40 @@ async function validateTable(tableName: string): Promise<TableValidation> {
     };
   }
 
+  if (!supabase) {
+    return {
+      tableName,
+      exists: false,
+      columns: [],
+      missingColumns: [],
+      alignmentStatus: 'unknown'
+    };
+  }
+
+  const existenceProbe = await supabase.from(tableName).select('*', { count: 'exact', head: true });
+  if (existenceProbe.error) {
+    const missing = /does not exist|schema cache|relation .* not found/i.test(existenceProbe.error.message);
+    return {
+      tableName,
+      exists: !missing,
+      columns: [],
+      missingColumns: [],
+      alignmentStatus: missing ? 'misaligned' : 'unknown'
+    };
+  }
+
   const actualColumns = await getTableColumns(tableName);
-  const exists = actualColumns.length > 0;
+  const exists = true;
+
+  if (actualColumns.length === 0) {
+    return {
+      tableName,
+      exists,
+      columns: [],
+      missingColumns: [],
+      alignmentStatus: 'unknown'
+    };
+  }
 
   if (!exists) {
     return {
@@ -201,12 +242,15 @@ export async function validateSupabaseSchema(): Promise<SchemaValidationReport> 
   const alignedTables = tableValidations.filter(t => t.alignmentStatus === 'aligned').length;
   const partialTables = tableValidations.filter(t => t.alignmentStatus === 'partial').length;
   const misalignedTables = tableValidations.filter(t => t.alignmentStatus === 'misaligned').length;
+  const unknownTables = tableValidations.filter(t => t.alignmentStatus === 'unknown').length;
 
   const recommendations: string[] = [];
 
   // Generate recommendations based on validation results
   tableValidations.forEach(validation => {
-    if (validation.alignmentStatus === 'misaligned') {
+    if (validation.alignmentStatus === 'unknown') {
+      recommendations.push(`No se pudo inspeccionar columnas de "${validation.tableName}" sin una fila visible; use una clave de servicio o information_schema.`);
+    } else if (validation.alignmentStatus === 'misaligned') {
       if (!validation.exists) {
         recommendations.push(`Crear tabla "${validation.tableName}" con columnas: ${validation.missingColumns.join(', ')}`);
       } else {
@@ -226,6 +270,7 @@ export async function validateSupabaseSchema(): Promise<SchemaValidationReport> 
     alignedTables,
     partialTables,
     misalignedTables,
+    unknownTables,
     tableValidations,
     recommendations
   };
@@ -239,13 +284,14 @@ export function formatValidationReport(report: SchemaValidationReport): string {
   output += `Total Tables: ${report.totalTables}\n`;
   output += `Aligned: ${report.alignedTables} ✅\n`;
   output += `Partial: ${report.partialTables} ⚠️\n`;
-  output += `Misaligned: ${report.misalignedTables} ❌\n\n`;
+  output += `Misaligned: ${report.misalignedTables} ❌\n`;
+  output += `Unknown: ${report.unknownTables} ⚠️\n\n`;
 
   output += `=== TABLE VALIDATIONS ===\n\n`;
   
   report.tableValidations.forEach(validation => {
-    const statusIcon = validation.alignmentStatus === 'aligned' ? '✅' : 
-                      validation.alignmentStatus === 'partial' ? '⚠️' : '❌';
+    const statusIcon = validation.alignmentStatus === 'aligned' ? '✅' :
+                      validation.alignmentStatus === 'partial' || validation.alignmentStatus === 'unknown' ? '⚠️' : '❌';
     output += `${statusIcon} ${validation.tableName}\n`;
     output += `   Exists: ${validation.exists ? 'Yes' : 'No'}\n`;
     output += `   Columns: ${validation.columns.length}\n`;

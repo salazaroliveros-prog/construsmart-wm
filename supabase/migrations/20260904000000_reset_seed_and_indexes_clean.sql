@@ -1,3 +1,10 @@
+-- SAFETY BLOCK: this historical reset/seed migration is intentionally disabled.
+-- It contains TRUNCATE ... CASCADE and must never run against a real database.
+DO $$
+BEGIN
+  RAISE EXCEPTION 'Disabled destructive migration 20260904000000_reset_seed_and_indexes_clean.sql';
+END $$;
+
 -- ============================================================================
 -- CONSTRUCTORA WM/M&S - CONSTRUYENDO EL FUTURO
 -- Reset + Seed limpio + Indices alineados al frontend

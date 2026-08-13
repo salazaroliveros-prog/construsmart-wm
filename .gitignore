@@ -78,6 +78,9 @@ vercel_dep.log
 
 .clinerules/
 
+# Local agent configuration
+.claude/
+
 # Screenshots and test artifacts (generated during testing)
 screenshots/
 playwright-report/

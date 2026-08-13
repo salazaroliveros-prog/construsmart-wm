@@ -109,16 +109,16 @@ export const BUSINESS_CONFIG = {
 // Email de administrador por defecto (centralizado). Se resuelve en este orden:
 // 1) NEXT_PUBLIC_ADMIN_EMAIL (cliente y servidor)
 // 2) ADMIN_EMAIL (compatibilidad)
-// 3) Fallback local.
+// 3) Sin fallback privilegiado: una configuración ausente debe denegar acceso.
 export function getAdminEmail(): string {
   if (typeof process !== 'undefined') {
     return (
       process.env.NEXT_PUBLIC_ADMIN_EMAIL ||
       process.env.ADMIN_EMAIL ||
-      'admin@example.com'
+      ''
     );
   }
-  return 'admin@example.com';
+  return '';
 }
 
 export const DEFAULT_ADMIN_EMAIL = getAdminEmail();

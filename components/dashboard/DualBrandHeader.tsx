@@ -137,8 +137,10 @@ export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) 
 
       <div className="flex items-center gap-2 sm:gap-4">
         {isClient && isMounted && currentTime && (
-          <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 hover:bg-white/20 transition-colors cursor-pointer min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+          <button type="button" className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 hover:bg-white/20 transition-colors cursor-pointer min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
             title="Ver calendario"
+            aria-label="Abrir calendario"
+            aria-expanded={isCalendarOpen}
             onClick={() => setIsCalendarOpen(!isCalendarOpen)}
           >
             <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -147,7 +149,7 @@ export default function DualBrandHeader({ onMenuToggle }: DualBrandHeaderProps) 
             </span>
             <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span className="text-sm">{formatTime(currentTime)}</span>
-          </div>
+          </button>
         )}
 
         <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-emerald-500/20 backdrop-blur-sm border border-emerald-500/30 active:bg-emerald-500/30 transition-colors">

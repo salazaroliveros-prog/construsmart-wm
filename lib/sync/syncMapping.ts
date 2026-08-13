@@ -7,14 +7,16 @@
  */
 
 import type { 
-  ProjectRow, BudgetRow, BudgetItemRow, FinancialTransactionRow, 
-  WarehouseStockRow, PayrollRecordRow, ClientRow, SupplierRow, 
-  PurchaseOrderRow, PurchaseOrderItemRow, PayrollEmployeeRow, ProjectLogRow 
+  ProjectRow, BudgetRow, BudgetItemRow, FinancialTransactionRow,
+  WarehouseStockRow, PayrollRecordRow, ClientRow, SupplierRow,
+  PurchaseOrderRow, PurchaseOrderItemRow, PayrollEmployeeRow, ProjectLogRow,
+  SubcontractorRow
 } from '@/lib/types/database';
 import type {
   LocalProject, LocalBudget, LocalBudgetItem, LocalFinancialTransaction,
   LocalWarehouseStock, LocalPayrollRecord, LocalClient, LocalSupplier,
-  LocalPurchaseOrder, LocalPurchaseOrderItem, LocalPayrollEmployee, LocalProjectLog
+  LocalPurchaseOrder, LocalPurchaseOrderItem, LocalPayrollEmployee, LocalProjectLog,
+  LocalSubcontractor
 } from '@/lib/db/offlineStore';
 
 // ==================== SYNC MAPPING TYPES ====================
@@ -465,6 +467,27 @@ export const purchaseOrderItemsMapping: SyncMapping<LocalPurchaseOrderItem, Purc
   calculatedFields: []
 };
 
+/** Subcontractors Sync Mapping */
+export const subcontractorsMapping: SyncMapping<LocalSubcontractor, SubcontractorRow> = {
+  localToRemote: (local: LocalSubcontractor): SubcontractorRow => local as SubcontractorRow,
+  remoteToLocal: (remote: SubcontractorRow): LocalSubcontractor => ({
+    ...remote,
+    supplier_id: remote.supplier_id || undefined,
+    company_name: remote.company_name || undefined,
+    contact_person: remote.contact_person || undefined,
+    phone: remote.phone || undefined,
+    email: remote.email || undefined,
+    address: remote.address || undefined,
+    city: remote.city || undefined,
+    specialties: remote.specialties || undefined,
+    contract_start_date: remote.contract_start_date || undefined,
+    contract_end_date: remote.contract_end_date || undefined,
+    notes: remote.notes || undefined,
+  }),
+  excludeFields: [],
+  calculatedFields: [],
+};
+
 // ==================== SYNC MAPPING REGISTRY ====================
 
 export const syncMappings: Record<string, SyncMapping<any, any>> = {
@@ -480,6 +503,7 @@ export const syncMappings: Record<string, SyncMapping<any, any>> = {
   suppliers: suppliersMapping,
   purchaseOrders: purchaseOrdersMapping,
   purchaseOrderItems: purchaseOrderItemsMapping,
+  subcontractors: subcontractorsMapping,
 };
 
 // ==================== SYNC MAPPING UTILITIES ====================
