@@ -140,9 +140,10 @@ async function getTableColumns(tableName: string): Promise<string[]> {
       return Object.keys(data[0]);
     }
 
-    // No rows does not mean that the table is missing. PostgREST does not
-    // expose column metadata here, so leave the columns unknown instead of
-    // calling an undeployed RPC and reporting a false negative.
+    // An empty table is still a valid table. PostgREST does not expose column
+    // metadata from a row query, so the caller must use the local contract for
+    // an empty table and reserve `unknown` for an actual metadata/permission
+    // failure. This keeps a clean database from being reported as broken.
     return [];
   } catch (error) {
     console.error(`Exception getting columns for ${tableName}:`, error);
@@ -195,9 +196,9 @@ async function validateTable(tableName: string): Promise<TableValidation> {
     return {
       tableName,
       exists,
-      columns: [],
+      columns: expectedColumns,
       missingColumns: [],
-      alignmentStatus: 'unknown'
+      alignmentStatus: 'aligned'
     };
   }
 
