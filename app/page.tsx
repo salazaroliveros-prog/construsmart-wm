@@ -409,7 +409,7 @@ return (
             aria-label="Módulos principales"
           >
             <div
-              className="flex items-center gap-1 overflow-x-auto px-2 py-1.5 sm:gap-2 sm:px-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden select-none"
+              className="flex items-center gap-2 overflow-x-auto px-2 py-1.5 sm:gap-2 sm:px-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden select-none"
               style={{ touchAction: 'manipulation' }}
             >
               {NAVIGATION_TABS.map(tab => {
@@ -428,7 +428,7 @@ return (
                         el.style.transform = '';
                       }, 100);
                     }}
-                    className={`shrink-0 min-h-[44px] rounded-lg border px-3 py-2.5 text-[11px] font-medium transition-all duration-200 whitespace-nowrap sm:px-4 sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
+                    className={`shrink-0 min-h-[44px] rounded-lg border px-3 py-2.5 text-xs font-medium transition-all duration-200 whitespace-nowrap sm:px-4 sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
                       isTabActive
                         ? 'border-cyan-500/40 bg-gradient-to-r from-cyan-500/20 to-violet-500/20 text-white shadow-[0_0_0_1px_rgba(34,211,238,0.18)]'
                         : 'border-transparent text-gray-400 hover:bg-white/5 hover:text-white'

@@ -9,10 +9,10 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { getUserScope, scopeLocalRows } from '@/lib/utils/userScope';
 
 const statusColors = {
-  planning: { bg: 'rgba(59, 130, 246, 0.2)', text: 'rgb(147, 197, 253)', border: 'rgba(59, 130, 246, 0.3)' },
-  execution: { bg: 'rgba(16, 185, 129, 0.2)', text: 'rgb(134, 239, 172)', border: 'rgba(16, 185, 129, 0.3)' },
-  paused: { bg: 'rgba(245, 158, 11, 0.2)', text: 'rgb(253, 186, 116)', border: 'rgba(245, 158, 11, 0.3)' },
-  completed: { bg: 'rgba(139, 92, 246, 0.2)', text: 'rgb(196, 181, 253)', border: 'rgba(139, 92, 246, 0.3)' }
+  planning: { bg: 'bg-blue-500/20', text: 'text-blue-300', border: 'border-blue-500/30' },
+  execution: { bg: 'bg-emerald-500/20', text: 'text-emerald-300', border: 'border-emerald-500/30' },
+  paused: { bg: 'bg-amber-500/20', text: 'text-amber-300', border: 'border-amber-500/30' },
+  completed: { bg: 'bg-violet-500/20', text: 'text-violet-300', border: 'border-violet-500/30' }
 };
 
 const statusLabels = {
@@ -110,20 +110,15 @@ export default function ProjectOverview() {
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-0.5">
-                    <span className="text-[9px] font-mono text-cyan-400 truncate">{project.code}</span>
+                    <span className="text-xs font-mono text-cyan-400 truncate">{project.code}</span>
                     <span
-                      className="px-1.5 py-0.25 rounded-full text-[9px] font-medium border flex-shrink-0"
-                      style={{
-                        background: colors.bg,
-                        color: colors.text,
-                        borderColor: colors.border
-                      }}
+                      className={`px-1.5 py-0.25 rounded-full text-xs font-medium border flex-shrink-0 ${colors.bg} ${colors.text} ${colors.border} border`}
                     >
                       {label}
                     </span>
                   </div>
-                  <h3 className="text-white font-medium text-xs truncate">{project.name}</h3>
-                  <p className="text-[10px] text-white/60 truncate">{project.client_name}</p>
+                  <h3 className="text-white font-medium text-sm truncate">{project.name}</h3>
+                  <p className="text-xs text-white/60 truncate">{project.client_name}</p>
                 </div>
                   <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
                     <Calendar className="w-3 h-3 text-white/40 flex-shrink-0" />

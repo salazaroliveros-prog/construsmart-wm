@@ -332,7 +332,14 @@ async function remapOrderFks(localId: string, serverId: string): Promise<void> {
     .modify({ purchase_order_id: serverId });
 }
 
-type Syncable = { id?: string; sync_status?: string; sync_attempts?: number };
+type Syncable = { 
+  id?: string; 
+  sync_status?: string; 
+  sync_attempts?: number | null;
+  last_sync_attempt?: string | null;
+  sync_error?: string | null;
+  [key: string]: any; // Allow any additional fields
+};
 
 // Generic push loop: INSERTs rows that were never pushed (created_offline/pending,
 // or updated_offline without a server id) and UPDATEs server-owned rows.

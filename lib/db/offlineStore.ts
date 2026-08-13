@@ -17,8 +17,9 @@ export interface SyncStatusTransition {
 export interface SyncableEntity {
   id?: string;
   sync_status: SyncStatus; // Default: 'synced'
-  last_sync_attempt?: string;
-  sync_error?: string;
+  last_sync_attempt?: string | null;
+  sync_error?: string | null;
+  sync_attempts?: number | null;
   validateTransition?: (newStatus: SyncStatus) => boolean;
 }
 
@@ -261,6 +262,8 @@ export interface LocalClient extends SyncableEntity {
   address: string;
   city: string;
   client_type: 'individual' | 'corporate';
+  contact_person?: string;
+  tax_id?: string;
   notes?: string;
   created_at?: string;
   updated_at?: string;

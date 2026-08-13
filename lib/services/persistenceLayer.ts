@@ -3,6 +3,12 @@ import { offlineDB } from '@/lib/db/offlineStore';
 import { generateId } from '@/lib/utils/generateId';
 import { isOnline } from '@/lib/utils/offlineSync';
 import { getCurrentUserId } from '@/lib/auth/userId';
+import { mapLocalToRemote, mapRemoteToLocal, CALCULATED_FIELDS, EXCLUDE_FIELDS } from '@/lib/sync/syncMapping';
+import type { 
+  ProjectRow, BudgetRow, BudgetItemRow, FinancialTransactionRow, 
+  WarehouseStockRow, PayrollRecordRow, ClientRow, SupplierRow, 
+  PurchaseOrderRow, PurchaseOrderItemRow, PayrollEmployeeRow, ProjectLogRow 
+} from '@/lib/types/database';
 
 export type SyncableTable = 
   | 'projects' | 'budgets' | 'budgetItems' 
@@ -53,9 +59,12 @@ export class PersistenceService {
 
       // 2. Si está online, sincronizar con Supabase
       if (online && supabase) {
+        // Map local data to remote format
+        const remoteData = mapLocalToRemote(table, fullData);
+        
         const { data: remoteRecord, error } = await supabase
           .from(this.mapTableName(table))
-          .insert([fullData])
+          .insert([remoteData])
           .select()
           .single();
 
@@ -135,9 +144,12 @@ export class PersistenceService {
 
       // 3. Si está online, sincronizar con Supabase (outside transaction)
       if (online && supabase) {
+        // Map local data to remote format
+        const remoteData = mapLocalToRemote(table, fullData);
+        
         const { data: remoteRecord, error } = await supabase
           .from(this.mapTableName(table))
-          .insert([fullData])
+          .insert([remoteData])
           .select()
           .single();
 
@@ -197,17 +209,25 @@ export class PersistenceService {
       budgets: [
         { table: 'budgetItems', key: 'budget_id' },
       ],
-      budgetItems: [], // No tables reference budgetItems directly
+      budgetItems: [
+        { table: 'warehouseStock', key: 'budget_item_id' }, // Para trazabilidad almacén
+      ],
       financialTransactions: [], // No tables reference financialTransactions directly
       payrollEmployees: [
         { table: 'payrollRecords', key: 'employee_id' },
       ],
       payrollRecords: [], // No tables reference payrollRecords directly
       warehouseStock: [], // No tables reference warehouseStock directly
-      clients: [], // No tables reference clients directly
-      projectLogs: [], // No tables reference projectLogs directly
+      clients: [
+        { table: 'financialTransactions', key: 'related_client_id' }, // Para transacciones con clientes
+      ],
+      projectLogs: [
+        { table: 'projects', key: 'project_id' }, // Inverso de projects -> projectLogs
+      ],
       suppliers: [
         { table: 'purchaseOrders', key: 'supplier_id' },
+        { table: 'warehouseStock', key: 'preferred_supplier_id' }, // Para stock con proveedor preferido
+        { table: 'financialTransactions', key: 'related_supplier_id' }, // Para transacciones con proveedores
       ],
       purchaseOrders: [
         { table: 'purchaseOrderItems', key: 'purchase_order_id' },
@@ -245,14 +265,17 @@ export class PersistenceService {
           .single();
 
         if (!error && remoteRecord) {
+          // Map remote data to local format
+          const localRecord = mapRemoteToLocal(table, remoteRecord);
+          
           // Comparar timestamps: si remoto es más nuevo, usar ese
           if (
             new Date(remoteRecord.updated_at || 0) > 
             new Date(localRecord.updated_at || 0)
           ) {
             // Actualizar local con versión remota
-            await (offlineDB as any)[table].update(id, remoteRecord);
-            return remoteRecord as T;
+            await (offlineDB as any)[table].update(id, localRecord);
+            return localRecord as T;
           }
         }
       }
@@ -291,9 +314,19 @@ export class PersistenceService {
 
       // 2. Si está online, sincronizar con Supabase
       if (online && supabase) {
+        // For partial updates, we need to filter out calculated fields
+        const tableMapping = this.getTableMapping(table);
+        const remoteUpdates: any = {};
+        
+        Object.keys(updates as any).forEach(key => {
+          if (!tableMapping.excludeFields.includes(key)) {
+            remoteUpdates[key] = (updates as any)[key];
+          }
+        });
+        
         const { error } = await supabase
           .from(this.mapTableName(table))
-          .update(updates as any)
+          .update(remoteUpdates)
           .eq('id', id);
 
         if (error) {
@@ -357,9 +390,19 @@ export class PersistenceService {
 
       // 3. Si está online, sincronizar con Supabase (outside transaction)
       if (online && supabase) {
+        // For partial updates, we need to filter out calculated fields
+        const tableMapping = this.getTableMapping(table);
+        const remoteUpdates: any = {};
+        
+        Object.keys(updates as any).forEach(key => {
+          if (!tableMapping.excludeFields.includes(key)) {
+            remoteUpdates[key] = (updates as any)[key];
+          }
+        });
+        
         const { error } = await supabase
           .from(this.mapTableName(table))
-          .update(updates as any)
+          .update(remoteUpdates)
           .eq('id', id);
 
         if (error) {
@@ -417,6 +460,19 @@ export class PersistenceService {
     } catch (error) {
       console.error(`[Persistence] Delete from ${table} failed:`, error);
     }
+  }
+
+  /**
+   * Helper: Get sync mapping for a table
+   */
+  private static getTableMapping(table: SyncableTable): { excludeFields: string[]; calculatedFields: string[] } {
+    return {
+      excludeFields: [
+        ...(CALCULATED_FIELDS[table as keyof typeof CALCULATED_FIELDS] || []),
+        ...(EXCLUDE_FIELDS[table as keyof typeof EXCLUDE_FIELDS] || [])
+      ],
+      calculatedFields: CALCULATED_FIELDS[table as keyof typeof CALCULATED_FIELDS] || []
+    };
   }
 
   /**

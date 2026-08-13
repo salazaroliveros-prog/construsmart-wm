@@ -23,9 +23,9 @@ export default function ActionButton({
   className = '',
 }: ActionButtonProps) {
   const variantStyles = {
-    danger: 'text-red-300 hover:text-red-200 hover:bg-red-500/15',
-    primary: 'text-cyan-300 hover:text-cyan-200 hover:bg-cyan-500/15',
-    secondary: 'text-white/80 hover:text-white hover:bg-white/15',
+    danger: 'text-red-300 hover:text-red-200 hover:bg-red-500/25 border-red-500/40 hover:border-red-500/60',
+    primary: 'text-cyan-300 hover:text-cyan-200 hover:bg-cyan-500/25 border-cyan-500/40 hover:border-cyan-500/60',
+    secondary: 'text-white/80 hover:text-white hover:bg-white/25 border-white/25 hover:border-white/40',
   };
 
   return (
@@ -33,8 +33,10 @@ export default function ActionButton({
       <button
         onClick={onClick}
         disabled={disabled}
-        className={`p-3 rounded-lg transition-all duration-200 min-h-[44px] min-w-[44px] active:scale-95 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${variantStyles[variant]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
+        className={`p-3 rounded-lg transition-all duration-200 min-h-[44px] min-w-[44px] active:scale-95 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 border ${variantStyles[variant]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
         aria-label={label}
+        aria-disabled={disabled}
+        role="button"
       >
         {icon}
       </button>

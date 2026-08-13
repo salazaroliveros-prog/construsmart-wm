@@ -32,24 +32,24 @@ const EXPECTED_COLUMNS = {
     'area_m2', 'budget_total', 'total_budget', 'start_date', 'estimated_end_date',
     'duration_days', 'calculated_duration', 'created_at', 'updated_at', 'sync_status',
     'has_critical_roadblock', 'roadblock_type', 'roadblock_description', 'roadblock_date',
-    'completion_buffer_days', 'user_id'
+    'completion_buffer_days', 'user_id', 'last_sync_attempt', 'sync_error', 'sync_attempts'
   ],
   clients: [
     'id', 'code', 'name', 'company_name', 'client_type', 'phone', 'email',
     'address', 'city', 'payment_terms', 'notes', 'created_at', 'updated_at',
     'sync_status', 'account_balance', 'credit_limit', 'payment_terms_days',
-    'is_delinquent', 'user_id'
+    'is_delinquent', 'user_id', 'contact_person', 'tax_id', 'last_sync_attempt', 'sync_error', 'sync_attempts'
   ],
   warehouse_stock: [
     'id', 'project_id', 'item_code', 'description', 'unit', 'current_stock',
     'minimum_threshold', 'unit_cost', 'created_at', 'updated_at', 'sync_status',
     'preferred_supplier_id', 'auto_generate_po', 'last_po_date', 'category', 'user_id',
-    'budget_item_id'
-  ], // Note: preferred_supplier_id and budget_item_id are UUID type
+    'budget_item_id', 'last_sync_attempt', 'sync_error', 'sync_attempts'
+  ],
   suppliers: [
     'id', 'code', 'name', 'contact_person', 'phone', 'email', 'address',
     'city', 'payment_terms', 'notes', 'created_at', 'updated_at', 'sync_status',
-    'categories', 'is_preferred', 'user_id'
+    'categories', 'is_preferred', 'user_id', 'last_sync_attempt', 'sync_error', 'sync_attempts'
   ],
   payroll_records: [
     'id', 'project_id', 'employee_id', 'period_start', 'period_end',
@@ -57,42 +57,46 @@ const EXPECTED_COLUMNS = {
     'base_salary', 'overtime_pay', 'gross_salary', 'igss_deduction',
     'aguinaldo_provision', 'vacaciones_provision', 'net_salary', 'created_at',
     'updated_at', 'sync_status', 'total_hours', 'hourly_rate', 'planned_hours',
-    'budget_item_id', 'cost_overrun_amount', 'is_overrun_warning_fired', 'user_id'
-  ], // Note: budget_item_id is UUID type
+    'budget_item_id', 'cost_overrun_amount', 'is_overrun_warning_fired', 'user_id',
+    'last_sync_attempt', 'sync_error', 'sync_attempts'
+  ],
   project_logs: [
     'id', 'project_id', 'log_date', 'activity_type', 'description',
-    'progress_percentage', 'notes', 'created_at', 'updated_at', 'sync_status',
-    'is_critical_roadblock', 'roadblock_category', 'severity', 'user_id'
+    'physical_progress', 'financial_progress', 'photos', 'created_by', 'created_at',
+    'updated_at', 'sync_status', 'is_critical_roadblock', 'roadblock_category', 'severity', 'user_id',
+    'last_sync_attempt', 'sync_error', 'sync_attempts'
   ],
   budgets: [
     'id', 'project_id', 'version', 'direct_cost', 'indirect_percentage',
-    'indirect_cost', 'contingency_percentage', 'contingency', 'profit_percentage',
-    'profit', 'total_amount', 'duration_days', 'created_at', 'updated_at', 'sync_status'
+    'contingency_percentage', 'profit_percentage', 'total_amount', 'duration_days',
+    'created_at', 'updated_at', 'sync_status', 'user_id', 'last_sync_attempt', 'sync_error', 'sync_attempts'
   ],
   budget_items: [
     'id', 'budget_id', 'project_id', 'parent_id', 'code', 'description',
     'unit', 'quantity', 'unit_cost', 'total_cost', 'item_order', 'created_at',
-    'updated_at', 'sync_status', 'actual_consumption', 'consumption_variance'
+    'updated_at', 'sync_status', 'actual_consumption', 'consumption_variance',
+    'length_m', 'width_m', 'depth_m', 'height_m', 'slab_type', 'category',
+    'unidades_comerciales_estimadas', 'is_custom', 'user_id', 'last_sync_attempt', 'sync_error', 'sync_attempts'
   ],
   financial_transactions: [
     'id', 'project_id', 'type', 'category', 'description', 'quantity',
     'unit', 'unit_cost', 'total_cost', 'date', 'receipt_url', 'created_at',
-    'updated_at', 'sync_status', 'reference', 'user_id'
+    'updated_at', 'sync_status', 'user_id', 'last_sync_attempt', 'sync_error', 'sync_attempts'
   ],
   purchase_orders: [
     'id', 'code', 'supplier_id', 'project_id', 'order_date', 'expected_delivery_date',
-    'status', 'created_at', 'updated_at', 'sync_status'
+    'status', 'total_amount', 'notes', 'created_at', 'updated_at', 'sync_status', 'user_id',
+    'last_sync_attempt', 'sync_error', 'sync_attempts'
   ],
   purchase_order_items: [
     'id', 'purchase_order_id', 'item_code', 'description', 'quantity',
-    'unit', 'unit_cost', 'total_cost', 'created_at', 'updated_at', 'sync_status'
+    'unit', 'unit_price', 'total_price', 'received_quantity', 'created_at',
+    'updated_at', 'sync_status', 'user_id', 'last_sync_attempt', 'sync_error', 'sync_attempts'
   ],
   payroll_employees: [
     'id', 'name', 'position', 'daily_rate', 'category', 'department',
-    'hire_date', 'active', 'created_at', 'updated_at', 'sync_status', 'user_id'
-  ],
-  pending_deletes: [
-    '++id', 'table', 'serverId', 'created_at'
+    'hire_date', 'active', 'created_at', 'updated_at', 'sync_status', 'user_id',
+    'last_sync_attempt', 'sync_error', 'sync_attempts'
   ]
 };
 

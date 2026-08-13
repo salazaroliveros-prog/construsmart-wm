@@ -99,7 +99,7 @@ const NavButton = memo(({
         {!isCollapsed && <span className="font-medium text-xs sm:text-sm">{item.label}</span>}
       </div>
       {!isCollapsed && item.badge && (
-        <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium flex items-center gap-1 ${
+        <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 ${
           item.badgeColor === 'red'
             ? 'bg-red-500/20 text-red-300'
             : item.badgeColor === 'amber'
@@ -111,7 +111,7 @@ const NavButton = memo(({
         </span>
       )}
       {isCollapsed && item.badge && (
-        <span className={`absolute top-1 right-1 w-2.5 h-2.5 rounded-full ${
+        <span className={`absolute top-1 right-1 w-3 h-3 rounded-full ${
           item.badgeColor === 'red' ? 'bg-red-500' : item.badgeColor === 'amber' ? 'bg-amber-500' : 'bg-cyan-500'
         }`} />
       )}
@@ -248,7 +248,7 @@ export default function DashboardNav({ activeTab, onTabChange, isCollapsed = fal
 
       {/* Navigation Items */}
       <div className="flex-1 overflow-y-auto overflow-anchor-none py-3 sm:py-4">
-        <div className="px-2 sm:px-3 space-y-1">
+        <div className="px-2 sm:px-3 space-y-2">
           {navItems.map((item) => {
             const active = activeTab === item.id;
             return (

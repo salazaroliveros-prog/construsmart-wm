@@ -72,6 +72,9 @@ export async function createProject(input: unknown): Promise<{ data: ProjectRow 
       roadblock_date: null,
       completion_buffer_days: null,
       sync_status: 'synced',
+      last_sync_attempt: null,
+      sync_error: null,
+      sync_attempts: null,
     };
 
     const { data, error } = await supabase

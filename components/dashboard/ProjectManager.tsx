@@ -45,10 +45,10 @@ interface ProjectFormData {
 }
 
 const statusColors = {
-  planning: { bg: 'rgba(59, 130, 246, 0.2)', text: 'rgb(147, 197, 253)', border: 'rgba(59, 130, 246, 0.3)' },
-  execution: { bg: 'rgba(16, 185, 129, 0.2)', text: 'rgb(134, 239, 172)', border: 'rgba(16, 185, 129, 0.3)' },
-  paused: { bg: 'rgba(245, 158, 11, 0.2)', text: 'rgb(253, 186, 116)', border: 'rgba(245, 158, 11, 0.3)' },
-  completed: { bg: 'rgba(139, 92, 246, 0.2)', text: 'rgb(196, 181, 253)', border: 'rgba(139, 92, 246, 0.3)' }
+  planning: { bg: 'bg-blue-500/20', text: 'text-blue-300', border: 'border-blue-500/30' },
+  execution: { bg: 'bg-emerald-500/20', text: 'text-emerald-300', border: 'border-emerald-500/30' },
+  paused: { bg: 'bg-amber-500/20', text: 'text-amber-300', border: 'border-amber-500/30' },
+  completed: { bg: 'bg-violet-500/20', text: 'text-violet-300', border: 'border-violet-500/30' }
 };
 
 const statusLabels = {
@@ -488,12 +488,7 @@ function ProjectManager() {
                       <td className="py-3 px-4 text-white">{project.area_m2.toLocaleString('es-GT')}</td>
                       <td className="py-3 px-4">
                         <span
-                          className="px-2 py-1 rounded-md text-xs font-medium"
-                          style={{
-                            backgroundColor: statusColors[project.status].bg,
-                            color: statusColors[project.status].text,
-                            border: `1px solid ${statusColors[project.status].border}`
-                          }}
+                          className={`px-2 py-1 rounded-md text-xs font-medium ${statusColors[project.status].bg} ${statusColors[project.status].text} ${statusColors[project.status].border} border`}
                         >
                           {statusLabels[project.status]}
                         </span>
@@ -577,12 +572,7 @@ function ProjectManager() {
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-mono text-cyan-400 truncate">{project.code}</span>
                         <span
-                          className="px-2 py-0.5 rounded-full text-[10px] font-medium border flex-shrink-0"
-                          style={{
-                            backgroundColor: statusColors[project.status].bg,
-                            color: statusColors[project.status].text,
-                            border: `1px solid ${statusColors[project.status].border}`
-                          }}
+                          className={`px-2 py-0.5 rounded-full text-xs font-medium border flex-shrink-0 ${statusColors[project.status].bg} ${statusColors[project.status].text} ${statusColors[project.status].border} border`}
                         >
                           {statusLabels[project.status]}
                         </span>

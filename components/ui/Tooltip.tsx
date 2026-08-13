@@ -13,7 +13,7 @@ export default function Tooltip({
   content,
   children,
   position = 'top',
-  delay = 200,
+  delay = 500,
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);

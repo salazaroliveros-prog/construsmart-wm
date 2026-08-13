@@ -6,9 +6,15 @@
  * Provides user choice when local and server data conflict
  */
 
-export interface ConflictData {
-  local: any;
-  server: any;
+import type { 
+  ProjectRow, BudgetRow, BudgetItemRow, FinancialTransactionRow, 
+  WarehouseStockRow, PayrollRecordRow, ClientRow, SupplierRow, 
+  PurchaseOrderRow, PurchaseOrderItemRow, PayrollEmployeeRow, ProjectLogRow 
+} from '@/lib/types/database';
+
+export interface ConflictData<T = any> {
+  local: T;
+  server: T;
   localUpdatedAt: string;
   serverUpdatedAt: string;
   table: string;

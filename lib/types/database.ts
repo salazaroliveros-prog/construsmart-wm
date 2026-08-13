@@ -39,6 +39,9 @@ export interface ProjectRow {
   roadblock_date: string | null;
   completion_buffer_days: number | null;
   sync_status: SyncStatus;
+  last_sync_attempt: string | null;
+  sync_error: string | null;
+  sync_attempts: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -58,6 +61,9 @@ export interface BudgetRow {
   total_amount: number;
   duration_days: number;
   sync_status: SyncStatus;
+  last_sync_attempt: string | null;
+  sync_error: string | null;
+  sync_attempts: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -79,6 +85,9 @@ export interface FinancialTransactionRow {
   date: string;
   receipt_url: string | null;
   sync_status: SyncStatus;
+  last_sync_attempt: string | null;
+  sync_error: string | null;
+  sync_attempts: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -110,6 +119,9 @@ export interface BudgetItemRow {
   actual_consumption: number | null;
   consumption_variance: number | null;
   sync_status: SyncStatus;
+  last_sync_attempt: string | null;
+  sync_error: string | null;
+  sync_attempts: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -133,6 +145,9 @@ export interface WarehouseStockRow {
   category: string | null;
   budget_item_id: string | null;
   sync_status: SyncStatus;
+  last_sync_attempt: string | null;
+  sync_error: string | null;
+  sync_attempts: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -167,6 +182,9 @@ export interface PayrollRecordRow {
   cost_overrun_amount: number | null;
   is_overrun_warning_fired: boolean;
   sync_status: SyncStatus;
+  last_sync_attempt: string | null;
+  sync_error: string | null;
+  sync_attempts: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -185,18 +203,48 @@ export interface ClientRow {
   address: string;
   city: string;
   client_type: ClientType;
+  contact_person: string | null;
+  tax_id: string | null;
   notes: string | null;
   account_balance: number;
   credit_limit: number;
   payment_terms_days: number;
   is_delinquent: boolean;
   sync_status: SyncStatus;
+  last_sync_attempt: string | null;
+  sync_error: string | null;
+  sync_attempts: number | null;
   created_at: string;
   updated_at: string;
 }
 
 export type ClientInsert = Omit<ClientRow, 'created_at' | 'updated_at'>;
 export type ClientUpdate = Partial<Omit<ClientRow, 'id' | 'created_at' | 'updated_at'>>;
+
+export interface ProjectLogRow {
+  id: string;
+  user_id: string;
+  project_id: string;
+  log_date: string;
+  activity_type: 'progress' | 'issue' | 'milestone' | 'note';
+  description: string;
+  physical_progress: number | null;
+  financial_progress: number | null;
+  photos: string[] | null;
+  created_by: string;
+  sync_status: SyncStatus;
+  is_critical_roadblock: boolean | null;
+  roadblock_category: string | null;
+  severity: string | null;
+  last_sync_attempt: string | null;
+  sync_error: string | null;
+  sync_attempts: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ProjectLogInsert = Omit<ProjectLogRow, 'created_at' | 'updated_at'>;
+export type ProjectLogUpdate = Partial<Omit<ProjectLogRow, 'id' | 'created_at' | 'updated_at'>>;
 
 export interface SupplierRow {
   id: string;
@@ -213,6 +261,9 @@ export interface SupplierRow {
   categories: string[] | null;
   is_preferred: boolean;
   sync_status: SyncStatus;
+  last_sync_attempt: string | null;
+  sync_error: string | null;
+  sync_attempts: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -232,12 +283,58 @@ export interface PurchaseOrderRow {
   total_amount: number;
   notes: string | null;
   sync_status: SyncStatus;
+  last_sync_attempt: string | null;
+  sync_error: string | null;
+  sync_attempts: number | null;
   created_at: string;
   updated_at: string;
 }
 
 export type PurchaseOrderInsert = Omit<PurchaseOrderRow, 'created_at' | 'updated_at'>;
 export type PurchaseOrderUpdate = Partial<Omit<PurchaseOrderRow, 'id' | 'created_at' | 'updated_at'>>;
+
+export interface PurchaseOrderItemRow {
+  id: string;
+  user_id: string;
+  purchase_order_id: string;
+  item_code: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+  total_price: number;
+  received_quantity: number | null;
+  sync_status: SyncStatus;
+  last_sync_attempt: string | null;
+  sync_error: string | null;
+  sync_attempts: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type PurchaseOrderItemInsert = Omit<PurchaseOrderItemRow, 'created_at' | 'updated_at'>;
+export type PurchaseOrderItemUpdate = Partial<Omit<PurchaseOrderItemRow, 'id' | 'created_at' | 'updated_at'>>;
+
+export interface PayrollEmployeeRow {
+  id: string;
+  user_id: string;
+  name: string;
+  position: string;
+  daily_rate: number;
+  category: 'obrero' | 'empleado';
+  department: string;
+  hire_date: string;
+  active: boolean;
+  sync_status: SyncStatus;
+  last_sync_attempt: string | null;
+  sync_error: string | null;
+  sync_attempts: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type PayrollEmployeeInsert = Omit<PayrollEmployeeRow, 'created_at' | 'updated_at'>;
+export type PayrollEmployeeUpdate = Partial<Omit<PayrollEmployeeRow, 'id' | 'created_at' | 'updated_at'>>;
 
 // Esquema de referencia agrupado (compatible con createClient<Database> de Supabase)
 export interface Database {
@@ -273,10 +370,20 @@ export interface Database {
         Insert: PayrollRecordInsert;
         Update: PayrollRecordUpdate;
       };
+      payroll_employees: {
+        Row: PayrollEmployeeRow;
+        Insert: PayrollEmployeeInsert;
+        Update: PayrollEmployeeUpdate;
+      };
       clients: {
         Row: ClientRow;
         Insert: ClientInsert;
         Update: ClientUpdate;
+      };
+      project_logs: {
+        Row: ProjectLogRow;
+        Insert: ProjectLogInsert;
+        Update: ProjectLogUpdate;
       };
       suppliers: {
         Row: SupplierRow;
@@ -287,6 +394,11 @@ export interface Database {
         Row: PurchaseOrderRow;
         Insert: PurchaseOrderInsert;
         Update: PurchaseOrderUpdate;
+      };
+      purchase_order_items: {
+        Row: PurchaseOrderItemRow;
+        Insert: PurchaseOrderItemInsert;
+        Update: PurchaseOrderItemUpdate;
       };
     };
   };
